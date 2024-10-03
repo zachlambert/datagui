@@ -7,9 +7,12 @@
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 #include "datagui/font.hpp"
+#include "datagui/geometry.hpp"
+#include "datagui/renderer.hpp"
 
 
 namespace datagui {
+
 
 struct WindowInput {
     enum class Axis {
@@ -38,6 +41,9 @@ struct WindowInput {
     {}
 };
 
+
+class Widget;
+
 class Window {
 public:
     class Error: public std::runtime_error {
@@ -59,7 +65,7 @@ public:
             font_size(0),
             width(0),
             height(0),
-            vsync(0)
+            vsync(false)
         {}
         static Config defaults() {
             Config config;
@@ -67,12 +73,12 @@ public:
             config.font_size = 18;
             config.width = 900;
             config.height = 600;
-            config.vsync = true;
+            config.vsync = false;
             return config;
         }
     };
 
-    Window(const std::string& title, const Config& config = Config::defaults(), bool open_now=true):
+    Window(const std::string& title, const Config& config = Config::defaults(), bool open_now = true):
         title(title),
         config(config),
         window(nullptr)
@@ -88,12 +94,12 @@ public:
     }
 
     bool running() const {
-        return !glfwWindowShouldClose(window);
+        return window && !glfwWindowShouldClose(window);
     }
 
     void open();
     void poll_events();
-    void render_start();
+    Widget render_start();
     void render_end();
     void close();
 
@@ -101,7 +107,29 @@ private:
     const std::string title;
     const Config config;
     GLFWwindow* window;
+    Renderer renderer;
     WindowInput input;
+};
+
+class Widget {
+public:
+    Widget(Renderer& renderer, int depth, const Boxi& region):
+        renderer(renderer),
+        depth(depth),
+        region(region),
+        offset(Veci::Zero())
+    {}
+
+    void render() {
+        // TEMP
+        renderer.queue_box(depth, region, Color::Red());
+    }
+
+private:
+    Renderer& renderer;
+    int depth;
+    Boxi region;
+    Veci offset;
 };
 
 } // namespace datagui

@@ -34,6 +34,13 @@ void Window::open() {
     if (glewInit() != GLEW_OK) {
         throw Error("Failed to initialise glew");
     }
+
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glEnable(GL_BLEND);
+    // glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_CULL_FACE);
+
+    renderer.init();
 }
 
 void Window::close() {
@@ -73,15 +80,25 @@ void Window::poll_events() {
     }
 }
 
-void Window::render_start() {
-    glClearColor(0, 0, 0, 0);
+Widget Window::render_start() {
+    glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    return Widget(
+        renderer,
+        0,
+        Boxi(
+            Veci::Zero(),
+            Veci(config.width, config.height)
+        )
+    );
 }
 
 void Window::render_end() {
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
+
+    renderer.render(Vecf(display_w, display_h));
     glfwSwapBuffers(window);
 }
 

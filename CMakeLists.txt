@@ -17,6 +17,9 @@ endif()
 # Library
 
 add_library(datagui SHARED
+    src/font.cpp
+    src/renderer.cpp
+    src/shader.cpp
     src/window.cpp
 )
 target_link_libraries(datagui
