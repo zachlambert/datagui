@@ -11,10 +11,16 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(BUILD_ADDITIONAL_TARGETS ON)
 endif()
 
+# TODO: Add later
+# find_package(datapack REQUIRED)
+
 # Library
 
 add_library(datagui SHARED
     src/window.cpp
+)
+target_link_libraries(datagui
+    PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS}
 )
 target_include_directories(datagui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -27,7 +33,8 @@ if (NOT BUILD_ADDITIONAL_TARGETS)
     return()
 endif()
 
-# TODO: Build examples
+add_executable(example1 examples/example1.cpp)
+target_link_libraries(example1 datagui)
 
 # Create install target
 
