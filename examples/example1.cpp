@@ -5,7 +5,8 @@ int main() {
     while (window.running()) {
         window.poll_events();
         auto widget = window.render_start();
-        widget.render();
+        widget.row(100, datagui::Color::Red());
+        widget.row(100, datagui::Color::Blue());
         window.render_end();
     }
     return 0;

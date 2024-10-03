@@ -73,7 +73,7 @@ public:
             config.font_size = 18;
             config.width = 900;
             config.height = 600;
-            config.vsync = false;
+            config.vsync = true;
             return config;
         }
     };
@@ -113,23 +113,38 @@ private:
 
 class Widget {
 public:
-    Widget(Renderer& renderer, int depth, const Boxi& region):
+    Widget(Renderer& renderer, int depth, const Boxf& outer_region, const Color& bg_color):
         renderer(renderer),
         depth(depth),
-        region(region),
-        offset(Veci::Zero())
-    {}
+        region(outer_region),
+        offset(Vecf::Zero()),
+        border_size(10),
+        padding_size(10)
+    {
+        renderer.queue_box(depth, region, bg_color, border_size, Color::Gray(0.25), 50);
+        region.lower += Vecf::Constant(border_size + padding_size);
+        region.upper -= Vecf::Constant(border_size + padding_size);
+    }
 
-    void render() {
-        // TEMP
-        renderer.queue_box(depth, region, Color::Red());
+    Widget row(float height, const Color& bg_color = Color::Gray(0.75)) {
+        Vecf size(region.upper.x-region.lower.x, height);
+        Widget widget(
+            renderer,
+            depth+1,
+            Boxf(region.lower+offset, region.lower+offset+size),
+            bg_color
+        );
+        offset.y += height;
+        return widget;
     }
 
 private:
     Renderer& renderer;
     int depth;
-    Boxi region;
-    Veci offset;
+    Boxf region;
+    Vecf offset;
+    float border_size;
+    float padding_size;
 };
 
 } // namespace datagui

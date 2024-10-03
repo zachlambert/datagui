@@ -32,7 +32,7 @@ out vec3 fs_border_color;
 
 void main(){
     fs_pos = offset + vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
-    gl_Position = vec4(-1 + 2*fs_pos.x/viewport_size.x, 1 - 2*fs_pos.y/viewport_size.y, depth, 1);
+    gl_Position = vec4(-1 + 2*fs_pos.x/viewport_size.x, 1 - 2*fs_pos.y/viewport_size.y, -depth, 1);
 
     fs_box_lower = offset;
     fs_box_upper = offset + size;
@@ -90,7 +90,7 @@ static const std::array<Vecf, 6> quad_vertices = {
 };
 
 Renderer::Renderer() {
-#if 1
+#if 0
     // TEMP
     Element element;
     element.offset = Vecf(100.0, 100.0);
@@ -136,7 +136,7 @@ void Renderer::init() {
 
     // Bind and configure buffer for indices
     glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
-#if 1
+#if 0
     glBufferData(
         GL_ARRAY_BUFFER,
         elements.size() * sizeof(Element),
@@ -204,23 +204,34 @@ void Renderer::init() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::queue_box(int depth, const Boxi& box, const Color& color) {
-#if 0
-    // TEMP
+void Renderer::queue_box(int depth, const Boxf& box, const Color& color, float radius) {
     Element element;
-    element.offset = Vecf(100, 100);
-    element.size = Vecf(300, 300);
-    element.radius = 0;
-    element.depth = 0;
+    element.offset = box.lower;
+    element.size = box.size();
+    element.radius = radius;
+    element.depth = depth;
+    element.bg_color = color;
+    element.border_width = 0.f;
     elements.push_back(element);
-#endif
+}
+
+void Renderer::queue_box(int depth, const Boxf& box, const Color& color, float border_width, Color border_color, float radius) {
+    Element element;
+    element.offset = box.lower;
+    element.size = box.size();
+    element.radius = radius;
+    element.depth = depth;
+    element.bg_color = color;
+    element.border_width = border_width;
+    element.border_color= border_color;
+    elements.push_back(element);
 }
 
 void Renderer::render(const Vecf& viewport_size) {
-#if 0
+#if 1
     glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
     glBufferData(
-        GL_ELEMENT_ARRAY_BUFFER,
+        GL_ARRAY_BUFFER,
         elements.size() * sizeof(Element),
         elements.data(),
         GL_STATIC_DRAW
@@ -232,7 +243,7 @@ void Renderer::render(const Vecf& viewport_size) {
     glBindVertexArray(gl_data.VAO);
     glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertices.size(), elements.size());
 
-#if 0
+#if 1
     elements.clear();
 #endif
 }

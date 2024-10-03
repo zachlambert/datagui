@@ -31,8 +31,8 @@ struct Vec {
     }
 
     Vec& operator-=(const Vec& rhs) {
-        x += rhs.x;
-        y += rhs.y;
+        x -= rhs.x;
+        y -= rhs.y;
         return *this;
     }
 

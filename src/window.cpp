@@ -35,10 +35,9 @@ void Window::open() {
         throw Error("Failed to initialise glew");
     }
 
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glEnable(GL_BLEND);
-    // glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_CULL_FACE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 
     renderer.init();
 }
@@ -83,21 +82,25 @@ void Window::poll_events() {
 Widget Window::render_start() {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    int display_w, display_h;
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+    glViewport(0, 0, display_w, display_h);
+
     return Widget(
         renderer,
         0,
-        Boxi(
-            Veci::Zero(),
-            Veci(config.width, config.height)
-        )
+        Boxf(
+            Vecf::Zero(),
+            Vecf(display_w, display_h)
+        ),
+        Color::Gray(0.8)
     );
 }
 
 void Window::render_end() {
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
-    glViewport(0, 0, display_w, display_h);
-
     renderer.render(Vecf(display_w, display_h));
     glfwSwapBuffers(window);
 }
