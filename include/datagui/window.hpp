@@ -127,7 +127,7 @@ public:
         border_size(10),
         padding_size(10)
     {
-        renderers.geometry.queue_box(depth, region, bg_color, border_size, Color::Gray(0.25), 50);
+        renderers.geometry.queue_box(depth, region, bg_color, border_size, Color::Gray(0.25), 0);
         region.lower += Vecf::Constant(border_size + padding_size);
         region.upper -= Vecf::Constant(border_size + padding_size);
     }

@@ -6,7 +6,7 @@ int main() {
         window.poll_events();
         auto widget = window.render_start();
         widget.row(100, datagui::Color::Red());
-        widget.row(100, datagui::Color::Blue()).text("abc", 10000);
+        widget.row(100, datagui::Color::Blue()).text("hello, world!", 200);
         window.render_end();
     }
     return 0;

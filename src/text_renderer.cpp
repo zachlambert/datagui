@@ -39,14 +39,14 @@ const static std::string texture_fs = R"(
 #version 330 core
 
 in vec2 fs_uv;
+
 uniform sampler2D tex;
 uniform vec3 text_color;
+
 out vec4 color;
 
 void main(){
-    // color = vec4(texture(tex, fs_uv).xyz * text_color, 1);
-    // color = vec4(1, 1, 1, 1);
-    color = texture(tex, fs_uv);
+    color = vec4(text_color, texture(tex, fs_uv).x);
 }
 )";
 
@@ -58,6 +58,8 @@ void TextRenderer::init(Font font, int font_size) {
     gl_data.program_id = create_program(texture_vs, texture_fs);
     gl_data.uniform_viewport_size = glGetUniformLocation(gl_data.program_id, "viewport_size");
     gl_data.uniform_text_color = glGetUniformLocation(gl_data.program_id, "text_color");
+    printf("%i\n", gl_data.uniform_viewport_size);
+    printf("%i\n", gl_data.uniform_text_color);
 
     glGenVertexArrays(1, &gl_data.VAO);
     glGenBuffers(1, &gl_data.VBO);
@@ -80,7 +82,7 @@ void TextRenderer::init(Font font, int font_size) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-#if 0
+#if 1
     // Create font texture
 
     int font_tex_width = 1024; // TODO: Better method to choose these sizes
@@ -117,44 +119,38 @@ void TextRenderer::queue_text(int depth, const Vecf& origin, const std::string& 
 }
 
 void TextRenderer::render(const Vecf& viewport_size) {
-    draw_font_bitmap(viewport_size.x, viewport_size.y, Font::DejaVuSans, 32);
-    commands.clear();
-#if 0
+    // draw_font_bitmap(viewport_size.x, viewport_size.y, Font::DejaVuSans, 32);
+    // commands.clear();
+#if 1
     // TODO: Configure
     float line_height = 16;
 
     std::vector<Vertex> vertices;
     for (const auto& command: commands) {
         Vecf origin = command.origin;
+        origin.y += line_height;
         for (char c_char: command.text) {
-            if (int(c_char) >= characters.size()) {
+            int c_index = int(c_char) - 33;
+            if (c_index >= characters.size()) {
                 continue;
             }
-            const Character& c = characters[c_char];
+            const Character& c = characters[c_index];
             if ((origin.x-command.origin.x) + c.advance > command.line_width) {
                 origin.x = command.origin.x;
                 origin.y += line_height;
             }
 
             Boxf box(origin + c.offset, origin + c.offset + c.size);
+            const Boxf& uv = c.uv;
 
-            std::vector<Vertex> new_vertices = {
-                // Vertex{Vecf(100, 100), c.uv.top_left()},
-                // Vertex{Vecf(200, 100), c.uv.top_right()},
-                // Vertex{Vecf(100, 200), c.uv.bottom_left()}
-                // Vertex{Vecf(500, 500), c.uv.bottom_left()},
-                // Vertex{Vecf(100, 200), c.uv.top_right()},
-                // Vertex{Vecf(200, 200), c.uv.bottom_right()}
 #if 1
-                Vertex{box.bottom_left(), c.uv.top_left()},
-                Vertex{box.bottom_right(), c.uv.top_right()},
-                Vertex{box.top_left(), c.uv.bottom_left()},
-                Vertex{box.bottom_right(), c.uv.top_right()},
-                Vertex{box.top_right(), c.uv.bottom_right()},
-                Vertex{box.top_left(), c.uv.bottom_left()}
+            vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
+            vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
+            vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
+            vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
+            vertices.push_back(Vertex{box.top_right(), uv.bottom_right()});
+            vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
 #endif
-            };
-            std::copy(new_vertices.begin(), new_vertices.end(), std::back_inserter(vertices));
 
             origin.x += c.advance;
         }
@@ -189,9 +185,8 @@ void TextRenderer::render(const Vecf& viewport_size) {
     Color text_color = Color::Black();
 
     glUseProgram(gl_data.program_id);
+    glUniform3f(gl_data.uniform_text_color, text_color.r, text_color.g, text_color.b);
     glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
-    glUniform3fv(gl_data.uniform_text_color, 3, &text_color.r);
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, gl_data.font_texture);
 
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
@@ -205,8 +200,6 @@ void TextRenderer::render(const Vecf& viewport_size) {
 
 void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_size) {
     glViewport(0, 0, width, height);
-
-    Color base_text_color = Color::White();
 
     FT_Library ft_library;
     if (FT_Init_FreeType(&ft_library) != 0) {
@@ -286,7 +279,7 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
 
         glUseProgram(gl_data.program_id);
         glUniform2f(gl_data.uniform_viewport_size, width, height);
-        glUniform3fv(gl_data.uniform_text_color, 3, &base_text_color.r);
+        glUniform3f(gl_data.uniform_text_color, 1, 1, 1);
         glBindVertexArray(gl_data.VAO);
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
@@ -298,16 +291,15 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
 
         Character character;
         character.uv = Boxf(
-            Vecf(bottom_left.x / width, bottom_left.y / height),
-            Vecf(top_right.x / width, top_right.y / height)
+            Vecf(bottom_left.x / width, 1 - bottom_left.y / height),
+            Vecf(top_right.x / width, 1 - top_right.y / height)
         );
 
         character.size = Vecf(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows);
-        character.offset = Vecf(ft_face->glyph->bitmap_left, float(ft_face->glyph->bitmap_top) - ft_face->glyph->bitmap.rows);
+        character.offset = Vecf(ft_face->glyph->bitmap_left, -float(ft_face->glyph->bitmap_top));
         character.advance = float(ft_face->glyph->advance.x) / 64;
 
-        // TEMP
-        // characters.push_back(character);
+        characters.push_back(character);
     }
 
     FT_Done_Face(ft_face);
