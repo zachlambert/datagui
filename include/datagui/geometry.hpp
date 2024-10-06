@@ -169,6 +169,19 @@ struct Box {
     T area() const {
         return (upper.x - lower.x) * (upper.y - lower.y);
     }
+
+    Vec<T> bottom_left() const {
+        return lower;
+    }
+    Vec<T> bottom_right() const {
+        return Vec<T>(upper.x, lower.y);
+    }
+    Vec<T> top_left() const {
+        return Vec<T>(lower.x, upper.y);
+    }
+    Vec<T> top_right() const {
+        return upper;
+    }
 };
 
 using Boxi = Box<int>;

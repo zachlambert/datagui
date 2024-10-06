@@ -9,8 +9,7 @@
 
 namespace datagui {
 
-bool load_file_into_string(const std::string &file_path, std::string& string)
-{
+bool load_file_into_string(const std::string &file_path, std::string& string) {
     std::ifstream file_stream(file_path, std::ios::in);
     if (file_stream.is_open()) {
         std::stringstream sstream;
@@ -48,8 +47,7 @@ void compile_and_check_shader(
     }
 }
 
-unsigned int load_shader(const std::string &vs_code, const std::string &fs_code)
-{
+unsigned int create_program(const std::string &vs_code, const std::string &fs_code) {
     // Create shaders
     unsigned int vertex_program_id = glCreateShader(GL_VERTEX_SHADER);
     unsigned int fragment_program_id = glCreateShader(GL_FRAGMENT_SHADER);

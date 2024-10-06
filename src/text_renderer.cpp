@@ -1,0 +1,312 @@
+#include "datagui/text_renderer.hpp"
+#include <string>
+#include <array>
+#include <GL/glew.h>
+#include "datagui/shader.hpp"
+#include <stdexcept>
+#include <iostream> // TEMP
+
+
+extern "C" {
+#include <ft2build.h>
+#include FT_FREETYPE_H
+}
+
+namespace datagui {
+
+const static std::string texture_vs = R"(
+#version 330 core
+
+// Input vertex data: position and normal
+layout(location = 0) in vec3 vertex_pos;
+layout(location = 1) in vec2 uv;
+
+uniform vec2 viewport_size;
+out vec2 fs_uv;
+
+void main(){
+    gl_Position = vec4(
+        -1.f + 2 * vertex_pos.x / viewport_size.x,
+        1.f - 2 * vertex_pos.y / viewport_size.y,
+        0,
+        1
+    );
+    fs_uv = uv;
+}
+)";
+
+const static std::string texture_fs = R"(
+#version 330 core
+
+in vec2 fs_uv;
+uniform sampler2D tex;
+uniform vec3 text_color;
+out vec4 color;
+
+void main(){
+    // color = vec4(texture(tex, fs_uv).xyz * text_color, 1);
+    // color = vec4(1, 1, 1, 1);
+    color = texture(tex, fs_uv);
+}
+)";
+
+static const std::array<Vecf, 6> quad_vertices = {
+    Vecf(0.f, 1.f),
+    Vecf(1.f, 0.f),
+    Vecf(0.f, 0.f),
+    Vecf(0.f, 1.f),
+    Vecf(1.f, 0.f),
+    Vecf(1.f, 1.f)
+};
+
+TextRenderer::TextRenderer() {}
+
+void TextRenderer::init(Font font, int font_size) {
+
+    // Load FT_Library
+
+    FT_Library ft_library;
+    if (FT_Init_FreeType(&ft_library) != 0) {
+        throw std::runtime_error("Failed to initialize freetype library");
+    }
+
+    FT_Face ft_face;
+    if (auto path = find_font_path(font); path.has_value()) {
+        if (FT_New_Face(ft_library, path.value().c_str(), 0, &ft_face) != 0) {
+            throw std::runtime_error("Failed to load font");
+        }
+    } else {
+        throw std::runtime_error("Failed to find font");
+    }
+    FT_Set_Pixel_Sizes(ft_face, 0, font_size);
+
+    // Configure shader program and buffers
+
+    gl_data.program_id = create_program(texture_vs, texture_fs);
+    gl_data.uniform_viewport_size = glGetUniformLocation(gl_data.program_id, "viewport_size");
+    gl_data.uniform_text_color = glGetUniformLocation(gl_data.program_id, "text_color");
+
+    glGenVertexArrays(1, &gl_data.VAO);
+    glGenBuffers(1, &gl_data.VBO);
+
+    glBindVertexArray(gl_data.VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
+
+    glVertexAttribPointer(
+        0, 2, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex), (void*)offsetof(Vertex, pos)
+    );
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(
+        1, 2, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex), (void*)offsetof(Vertex, uv)
+    );
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Generate frame buffer and font texture
+
+    unsigned int font_texture_framebuffer;
+    glGenFramebuffers(1, &font_texture_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, font_texture_framebuffer);
+
+    // TODO: Use a more informed method of deciding this size
+    int font_tex_width = 1024;
+    int font_tex_height = 728;
+    glGenTextures(1, &gl_data.font_texture);
+    glBindTexture(GL_TEXTURE_2D, gl_data.font_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, font_tex_width, font_tex_height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gl_data.font_texture, 0);
+
+    // Draw to frame buffer to create font texture
+
+    glBindFramebuffer(GL_FRAMEBUFFER, font_texture_framebuffer);
+    glViewport(0, 0, font_tex_width, font_tex_height);
+
+    Color base_text_color = Color::White();
+
+    glUseProgram(gl_data.program_id);
+    glUniform2f(gl_data.uniform_viewport_size, font_tex_width, font_tex_height);
+    glUniform3fv(gl_data.uniform_text_color, 3, &base_text_color.r);
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(gl_data.VAO);
+
+    int font_pos_x = 0;
+    int font_pos_y = 0;
+    int font_row_height = 0;
+    for (int i = 0; i < 128; i++) {
+        if (FT_Load_Char(ft_face, char(i), FT_LOAD_RENDER) != 0) {
+            throw std::runtime_error("Failed to load character: " + std::to_string(char(i)));
+        }
+
+        if (font_pos_x + ft_face->glyph->bitmap.width > font_tex_width) {
+            font_pos_x = 0;
+            font_pos_y += font_row_height;
+            font_row_height = 0;
+        }
+
+        unsigned int char_texture;
+        glGenTextures(1, &char_texture);
+        glBindTexture(GL_TEXTURE_2D, char_texture);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            ft_face->glyph->bitmap.width,
+            ft_face->glyph->bitmap.rows,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            ft_face->glyph->bitmap.buffer
+        );
+        glBindTexture(GL_TEXTURE_2D, char_texture);
+
+        Vecf bottom_left(
+            font_pos_x,
+            font_pos_y+ft_face->glyph->bitmap.rows);
+        Vecf top_right(
+            font_pos_x + ft_face->glyph->bitmap.width,
+            font_pos_y);
+        Vecf bottom_right(top_right.x, bottom_left.y);
+        Vecf top_left(bottom_left.x, top_right.y);
+
+        std::vector<Vertex> vertices = {
+            Vertex{bottom_left, Vecf(0, 0)},
+            Vertex{bottom_right, Vecf(1, 0)},
+            Vertex{top_left, Vecf(0, 1)},
+            Vertex{bottom_right, Vecf(1, 0)},
+            Vertex{top_right, Vecf(1, 1)},
+            Vertex{top_left, Vecf(0, 1)}
+        };
+
+        glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            vertices.size() * sizeof(Vertex),
+            vertices.data(),
+            GL_STATIC_DRAW
+        );
+
+        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
+        glDeleteTextures(1, &char_texture);
+
+        font_row_height = std::max(font_row_height, int(ft_face->glyph->bitmap.rows));
+        font_pos_x += ft_face->glyph->bitmap.width;
+
+        Character character;
+        character.uv = Boxf(
+            Vecf(bottom_left.x / font_tex_width, bottom_left.y / font_tex_height),
+            Vecf(top_right.x / font_tex_width, top_right.y / font_tex_height)
+        );
+
+        character.size = Vecf(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows);
+        character.offset = Vecf(ft_face->glyph->bitmap_left, float(ft_face->glyph->bitmap_top) - ft_face->glyph->bitmap.rows);
+        character.advance = float(ft_face->glyph->advance.x) / 64;
+        characters.push_back(character);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &font_texture_framebuffer);
+}
+
+void TextRenderer::queue_text(int depth, const Vecf& origin, const std::string& text, float line_width) {
+    Command command;
+    command.depth = depth;
+    command.origin = origin;
+    command.text = text;
+    command.color = Color::Black();
+    command.line_width = line_width;
+    commands.push_back(command);
+}
+
+void TextRenderer::render(const Vecf& viewport_size) {
+    // TODO: Configure
+    float line_height = 16;
+
+    std::vector<Vertex> vertices;
+    for (const auto& command: commands) {
+        Vecf origin = command.origin;
+        for (char c_char: command.text) {
+            if (int(c_char) >= characters.size()) {
+                continue;
+            }
+            const Character& c = characters[c_char];
+            if ((origin.x-command.origin.x) + c.advance > command.line_width) {
+                origin.x = command.origin.x;
+                origin.y += line_height;
+            }
+
+            Boxf box(origin + c.offset, origin + c.offset + c.size);
+
+            std::vector<Vertex> new_vertices = {
+                // Vertex{Vecf(100, 100), c.uv.top_left()},
+                // Vertex{Vecf(200, 100), c.uv.top_right()},
+                // Vertex{Vecf(100, 200), c.uv.bottom_left()}
+                // Vertex{Vecf(500, 500), c.uv.bottom_left()},
+                // Vertex{Vecf(100, 200), c.uv.top_right()},
+                // Vertex{Vecf(200, 200), c.uv.bottom_right()}
+#if 1
+                Vertex{box.bottom_left(), c.uv.top_left()},
+                Vertex{box.bottom_right(), c.uv.top_right()},
+                Vertex{box.top_left(), c.uv.bottom_left()},
+                Vertex{box.bottom_right(), c.uv.top_right()},
+                Vertex{box.top_right(), c.uv.bottom_right()},
+                Vertex{box.top_left(), c.uv.bottom_left()}
+#endif
+            };
+            std::copy(new_vertices.begin(), new_vertices.end(), std::back_inserter(vertices));
+
+            origin.x += c.advance;
+        }
+    }
+
+#if 0
+    // TEMP
+    {
+        Boxf box(Vecf(100, 100), Vecf(800, 400));
+        Boxf uv(Vecf(0, 0), Vecf(1, 1));
+
+        vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
+        vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
+        vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
+        vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
+        vertices.push_back(Vertex{box.top_right(), uv.bottom_right()});
+        vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
+    }
+#endif
+
+    glBindVertexArray(gl_data.VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        vertices.size() * sizeof(Vertex),
+        vertices.data(),
+        GL_STATIC_DRAW
+    );
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // TODO: Use user-defined color
+    Color text_color = Color::Black();
+
+    glUseProgram(gl_data.program_id);
+    glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
+    glUniform3fv(gl_data.uniform_text_color, 3, &text_color.r);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gl_data.font_texture);
+
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    commands.clear();
+}
+
+} // namespace datagui

@@ -1,18 +1,20 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include "datagui/geometry.hpp"
 #include "datagui/color.hpp"
 
-
 namespace datagui {
 
-class Renderer {
+class GeometryRenderer {
 public:
-    Renderer();
+    GeometryRenderer();
     void init();
+
     void queue_box(int depth, const Boxf& box, const Color& color, float radius = 0.f);
     void queue_box(int depth, const Boxf& box, const Color& color, float border_radius, Color border_color, float radius = 0.f);
+
     void render(const Vecf& viewport_size);
 
 private:

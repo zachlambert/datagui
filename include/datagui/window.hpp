@@ -8,7 +8,8 @@
 #include <stdexcept>
 #include "datagui/font.hpp"
 #include "datagui/geometry.hpp"
-#include "datagui/renderer.hpp"
+#include "datagui/geometry_renderer.hpp"
+#include "datagui/text_renderer.hpp"
 
 
 namespace datagui {
@@ -41,6 +42,11 @@ struct WindowInput {
     {}
 };
 
+struct Renderers {
+    GeometryRenderer geometry;
+    TextRenderer text;
+};
+
 
 class Widget;
 
@@ -70,7 +76,7 @@ public:
         static Config defaults() {
             Config config;
             config.font = Font::DejaVuSans;
-            config.font_size = 18;
+            config.font_size = 28;
             config.width = 900;
             config.height = 600;
             config.vsync = true;
@@ -107,21 +113,21 @@ private:
     const std::string title;
     const Config config;
     GLFWwindow* window;
-    Renderer renderer;
+    Renderers renderers;
     WindowInput input;
 };
 
 class Widget {
 public:
-    Widget(Renderer& renderer, int depth, const Boxf& outer_region, const Color& bg_color):
-        renderer(renderer),
+    Widget(Renderers& renderers, int depth, const Boxf& outer_region, const Color& bg_color):
+        renderers(renderers),
         depth(depth),
         region(outer_region),
         offset(Vecf::Zero()),
         border_size(10),
         padding_size(10)
     {
-        renderer.queue_box(depth, region, bg_color, border_size, Color::Gray(0.25), 50);
+        renderers.geometry.queue_box(depth, region, bg_color, border_size, Color::Gray(0.25), 50);
         region.lower += Vecf::Constant(border_size + padding_size);
         region.upper -= Vecf::Constant(border_size + padding_size);
     }
@@ -129,7 +135,7 @@ public:
     Widget row(float height, const Color& bg_color = Color::Gray(0.75)) {
         Vecf size(region.upper.x-region.lower.x, height);
         Widget widget(
-            renderer,
+            renderers,
             depth+1,
             Boxf(region.lower+offset, region.lower+offset+size),
             bg_color
@@ -138,8 +144,12 @@ public:
         return widget;
     }
 
+    void text(const std::string& text, float line_width) {
+        renderers.text.queue_text(depth+1, region.lower, text, line_width);
+    }
+
 private:
-    Renderer& renderer;
+    Renderers& renderers;
     int depth;
     Boxf region;
     Vecf offset;

@@ -1,4 +1,4 @@
-#include "datagui/renderer.hpp"
+#include "datagui/geometry_renderer.hpp"
 #include <string>
 #include <array>
 #include <GL/glew.h>
@@ -89,23 +89,10 @@ static const std::array<Vecf, 6> quad_vertices = {
     Vecf(1.f, 1.f)
 };
 
-Renderer::Renderer() {
-#if 0
-    // TEMP
-    Element element;
-    element.offset = Vecf(100.0, 100.0);
-    element.size = Vecf(400.0, 400.0);
-    element.radius = 40.0;
-    element.depth = 0;
-    element.border_width = 20.0;
-    element.bg_color = Color::Red();
-    element.border_color = Color::Blue();
-    elements.push_back(element);
-#endif
-}
+GeometryRenderer::GeometryRenderer() {}
 
-void Renderer::init() {
-    gl_data.program_id = load_shader(rect_vs, rect_fs);
+void GeometryRenderer::init() {
+    gl_data.program_id = create_program(rect_vs, rect_fs);
 
     gl_data.uniform_viewport_size = glGetUniformLocation(gl_data.program_id, "viewport_size");
 
@@ -136,14 +123,6 @@ void Renderer::init() {
 
     // Bind and configure buffer for indices
     glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
-#if 0
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        elements.size() * sizeof(Element),
-        elements.data(),
-        GL_STATIC_DRAW
-    );
-#endif
 
     glVertexAttribPointer(
         index, 2, GL_FLOAT, GL_FALSE, sizeof(Element),
@@ -204,7 +183,7 @@ void Renderer::init() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Renderer::queue_box(int depth, const Boxf& box, const Color& color, float radius) {
+void GeometryRenderer::queue_box(int depth, const Boxf& box, const Color& color, float radius) {
     Element element;
     element.offset = box.lower;
     element.size = box.size();
@@ -215,7 +194,7 @@ void Renderer::queue_box(int depth, const Boxf& box, const Color& color, float r
     elements.push_back(element);
 }
 
-void Renderer::queue_box(int depth, const Boxf& box, const Color& color, float border_width, Color border_color, float radius) {
+void GeometryRenderer::queue_box(int depth, const Boxf& box, const Color& color, float border_width, Color border_color, float radius) {
     Element element;
     element.offset = box.lower;
     element.size = box.size();
@@ -227,8 +206,7 @@ void Renderer::queue_box(int depth, const Boxf& box, const Color& color, float b
     elements.push_back(element);
 }
 
-void Renderer::render(const Vecf& viewport_size) {
-#if 1
+void GeometryRenderer::render(const Vecf& viewport_size) {
     glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
     glBufferData(
         GL_ARRAY_BUFFER,
@@ -236,16 +214,13 @@ void Renderer::render(const Vecf& viewport_size) {
         elements.data(),
         GL_STATIC_DRAW
     );
-#endif
 
     glUseProgram(gl_data.program_id);
     glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
     glBindVertexArray(gl_data.VAO);
     glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertices.size(), elements.size());
 
-#if 1
     elements.clear();
-#endif
 }
 
 } // namespace datagui

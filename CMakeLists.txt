@@ -14,19 +14,23 @@ endif()
 # TODO: Add later
 # find_package(datapack REQUIRED)
 
+find_package(Freetype REQUIRED)
+
 # Library
 
 add_library(datagui SHARED
     src/font.cpp
-    src/renderer.cpp
+    src/geometry_renderer.cpp
     src/shader.cpp
+    src/text_renderer.cpp
     src/window.cpp
 )
 target_link_libraries(datagui
-    PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS}
+    PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES}
 )
 target_include_directories(datagui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${FREETYPE_INCLUDE_DIRS}>
     $<INSTALL_INTERFACE:include>
 )
 

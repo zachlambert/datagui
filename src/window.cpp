@@ -37,9 +37,10 @@ void Window::open() {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
 
-    renderer.init();
+    renderers.geometry.init();
+    renderers.text.init(config.font, config.font_size);
 }
 
 void Window::close() {
@@ -80,7 +81,7 @@ void Window::poll_events() {
 }
 
 Widget Window::render_start() {
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0.5, 0.5, 0.5, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     int display_w, display_h;
@@ -88,7 +89,7 @@ Widget Window::render_start() {
     glViewport(0, 0, display_w, display_h);
 
     return Widget(
-        renderer,
+        renderers,
         0,
         Boxf(
             Vecf::Zero(),
@@ -101,7 +102,11 @@ Widget Window::render_start() {
 void Window::render_end() {
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
-    renderer.render(Vecf(display_w, display_h));
+    Vecf viewport_size(display_w, display_h);
+
+    renderers.geometry.render(viewport_size);
+    renderers.text.render(viewport_size);
+
     glfwSwapBuffers(window);
 }
 
