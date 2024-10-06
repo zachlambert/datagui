@@ -104,7 +104,7 @@ void Window::render_end() {
     glfwGetFramebufferSize(window, &display_w, &display_h);
     Vecf viewport_size(display_w, display_h);
 
-    renderers.geometry.render(viewport_size);
+    // renderers.geometry.render(viewport_size);
     renderers.text.render(viewport_size);
 
     glfwSwapBuffers(window);

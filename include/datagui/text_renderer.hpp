@@ -18,6 +18,8 @@ public:
     void render(const Vecf& viewport_size);
 
 private:
+    void draw_font_bitmap(int width, int height, Font font, int font_size);
+
     struct Vertex {
         Vecf pos;
         Vecf uv;
