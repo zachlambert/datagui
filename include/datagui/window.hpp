@@ -119,15 +119,16 @@ private:
 
 class Widget {
 public:
-    Widget(Renderers& renderers, int depth, const Boxf& outer_region, const Color& bg_color):
+    Widget(Renderers& renderers, int max_depth, int depth, const Boxf& outer_region, const Color& bg_color):
         renderers(renderers),
+        max_depth(max_depth),
         depth(depth),
         region(outer_region),
         offset(Vecf::Zero()),
         border_size(10),
         padding_size(10)
     {
-        renderers.geometry.queue_box(depth, region, bg_color, border_size, Color::Gray(0.25), 0);
+        renderers.geometry.queue_box(float(depth)/max_depth, region, bg_color, border_size, Color::Gray(0.25), 0);
         region.lower += Vecf::Constant(border_size + padding_size);
         region.upper -= Vecf::Constant(border_size + padding_size);
     }
@@ -136,6 +137,7 @@ public:
         Vecf size(region.upper.x-region.lower.x, height);
         Widget widget(
             renderers,
+            max_depth,
             depth+1,
             Boxf(region.lower+offset, region.lower+offset+size),
             bg_color
@@ -145,11 +147,12 @@ public:
     }
 
     void text(const std::string& text, float line_width) {
-        renderers.text.queue_text(depth+1, region.lower, text, line_width);
+        renderers.text.queue_text(float(depth+1)/max_depth, region.lower, text, line_width);
     }
 
 private:
     Renderers& renderers;
+    int max_depth;
     int depth;
     Boxf region;
     Vecf offset;

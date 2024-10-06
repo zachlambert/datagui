@@ -20,6 +20,7 @@ const static std::string texture_vs = R"(
 // Input vertex data: position and normal
 layout(location = 0) in vec3 vertex_pos;
 layout(location = 1) in vec2 uv;
+layout(location = 2) in float depth;
 
 uniform vec2 viewport_size;
 out vec2 fs_uv;
@@ -28,7 +29,7 @@ void main(){
     gl_Position = vec4(
         -1.f + 2 * vertex_pos.x / viewport_size.x,
         1.f - 2 * vertex_pos.y / viewport_size.y,
-        0,
+        depth,
         1
     );
     fs_uv = uv;
@@ -58,8 +59,6 @@ void TextRenderer::init(Font font, int font_size) {
     gl_data.program_id = create_program(texture_vs, texture_fs);
     gl_data.uniform_viewport_size = glGetUniformLocation(gl_data.program_id, "viewport_size");
     gl_data.uniform_text_color = glGetUniformLocation(gl_data.program_id, "text_color");
-    printf("%i\n", gl_data.uniform_viewport_size);
-    printf("%i\n", gl_data.uniform_text_color);
 
     glGenVertexArrays(1, &gl_data.VAO);
     glGenBuffers(1, &gl_data.VBO);
@@ -78,6 +77,12 @@ void TextRenderer::init(Font font, int font_size) {
         sizeof(Vertex), (void*)offsetof(Vertex, uv)
     );
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(
+        2, 1, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex), (void*)offsetof(Vertex, depth)
+    );
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -108,7 +113,7 @@ void TextRenderer::init(Font font, int font_size) {
 #endif
 }
 
-void TextRenderer::queue_text(int depth, const Vecf& origin, const std::string& text, float line_width) {
+void TextRenderer::queue_text(float depth, const Vecf& origin, const std::string& text, float line_width) {
     Command command;
     command.depth = depth;
     command.origin = origin;
@@ -143,14 +148,13 @@ void TextRenderer::render(const Vecf& viewport_size) {
             Boxf box(origin + c.offset, origin + c.offset + c.size);
             const Boxf& uv = c.uv;
 
-#if 1
-            vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
-            vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
-            vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
-            vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
-            vertices.push_back(Vertex{box.top_right(), uv.bottom_right()});
-            vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
-#endif
+            float depth = command.depth;
+            vertices.push_back(Vertex{box.bottom_left(), uv.top_left(), depth});
+            vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), depth});
+            vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
+            vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), depth});
+            vertices.push_back(Vertex{box.top_right(), uv.bottom_right(), depth});
+            vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
 
             origin.x += c.advance;
         }
@@ -260,12 +264,12 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
         Vecf top_left(bottom_left.x, top_right.y);
 
         std::vector<Vertex> vertices = {
-            Vertex{bottom_left, Vecf(0, 1)},
-            Vertex{bottom_right, Vecf(1, 1)},
-            Vertex{top_left, Vecf(0, 0)},
-            Vertex{bottom_right, Vecf(1, 1)},
-            Vertex{top_right, Vecf(1, 0)},
-            Vertex{top_left, Vecf(0, 0)}
+            Vertex{bottom_left, Vecf(0, 1), 0},
+            Vertex{bottom_right, Vecf(1, 1), 0},
+            Vertex{top_left, Vecf(0, 0), 0},
+            Vertex{bottom_right, Vecf(1, 1), 0},
+            Vertex{top_right, Vecf(1, 0), 0},
+            Vertex{top_left, Vecf(0, 0), 0}
         };
 
         glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);

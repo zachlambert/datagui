@@ -13,7 +13,7 @@ public:
     TextRenderer();
     void init(Font font, int font_size);
 
-    void queue_text(int depth, const Vecf& origin, const std::string& text, float line_width);
+    void queue_text(float depth, const Vecf& origin, const std::string& text, float line_width);
 
     void render(const Vecf& viewport_size);
 
@@ -23,6 +23,7 @@ private:
     struct Vertex {
         Vecf pos;
         Vecf uv;
+        float depth;
     };
 
     struct Character {
@@ -34,7 +35,7 @@ private:
     std::vector<Character> characters;
 
     struct Command {
-        int depth;
+        float depth;
         Vecf origin;
         std::string text;
         Color color;

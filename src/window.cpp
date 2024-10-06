@@ -37,7 +37,8 @@ void Window::open() {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    // glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GEQUAL);
 
     renderers.geometry.init();
     renderers.text.init(config.font, config.font_size);
@@ -82,6 +83,7 @@ void Window::poll_events() {
 
 Widget Window::render_start() {
     glClearColor(0.5, 0.5, 0.5, 1);
+    glClearDepth(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     int display_w, display_h;
@@ -90,7 +92,8 @@ Widget Window::render_start() {
 
     return Widget(
         renderers,
-        0,
+        1000, // Arbitrary large number
+        1,
         Boxf(
             Vecf::Zero(),
             Vecf(display_w, display_h)

@@ -32,7 +32,7 @@ out vec3 fs_border_color;
 
 void main(){
     fs_pos = offset + vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
-    gl_Position = vec4(-1 + 2*fs_pos.x/viewport_size.x, 1 - 2*fs_pos.y/viewport_size.y, -depth, 1);
+    gl_Position = vec4(-1 + 2*fs_pos.x/viewport_size.x, 1 - 2*fs_pos.y/viewport_size.y, depth, 1);
 
     fs_box_lower = offset;
     fs_box_upper = offset + size;
@@ -183,7 +183,7 @@ void GeometryRenderer::init() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void GeometryRenderer::queue_box(int depth, const Boxf& box, const Color& color, float radius) {
+void GeometryRenderer::queue_box(float depth, const Boxf& box, const Color& color, float radius) {
     Element element;
     element.offset = box.lower;
     element.size = box.size();
@@ -194,7 +194,7 @@ void GeometryRenderer::queue_box(int depth, const Boxf& box, const Color& color,
     elements.push_back(element);
 }
 
-void GeometryRenderer::queue_box(int depth, const Boxf& box, const Color& color, float border_width, Color border_color, float radius) {
+void GeometryRenderer::queue_box(float depth, const Boxf& box, const Color& color, float border_width, Color border_color, float radius) {
     Element element;
     element.offset = box.lower;
     element.size = box.size();
