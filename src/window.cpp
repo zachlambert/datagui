@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <stack>
+#include <iostream>
 
 
 namespace datagui {
@@ -160,7 +161,7 @@ void Window::calculate_sizes_up() {
 
                 // X direction
                 if (element.input_size_.x == 0) {
-                    int child = 0;
+                    int child = node.first_child;
                     int count = 0;
                     while (child != -1) {
                         count++;
@@ -171,6 +172,7 @@ void Window::calculate_sizes_up() {
                             node.fixed_size.x = std::max(node.fixed_size.x, nodes[child].fixed_size.x);
                             node.dynamic_size.x = std::max(node.dynamic_size.x, nodes[child].dynamic_size.x);
                         }
+                        child = nodes[child].next;
                     }
                     node.fixed_size.x += 2 * element.padding_;
                     if (element.horizontal_) {
@@ -185,7 +187,7 @@ void Window::calculate_sizes_up() {
 
                 // Y direction
                 if (element.input_size_.y == 0) {
-                    int child = 0;
+                    int child = node.first_child;
                     int count = 0;
                     while (child != -1) {
                         count++;
@@ -196,6 +198,7 @@ void Window::calculate_sizes_up() {
                             node.fixed_size.y = std::max(node.fixed_size.y, nodes[child].fixed_size.y);
                             node.dynamic_size.y = std::max(node.dynamic_size.y, nodes[child].dynamic_size.y);
                         }
+                        child = nodes[child].next;
                     }
                     node.fixed_size.y += 2 * element.padding_;
                     if (element.horizontal_) {
@@ -237,20 +240,29 @@ void Window::calculate_sizes_down() {
         Vecf available = parent.size - parent.fixed_size;
         Vecf offset = Vecf::Zero();
 
+        switch (parent.element) {
+            case Element::LinearLayout:
+                {
+                    const auto& element = elements.linear_layout[parent.element_index];
+                    offset.x += element.padding_;
+                    offset.y += element.padding_;
+                }
+                break;
+            default:
+                break;
+        }
+
         int child = parent.first_child;
-        int child_index = 0;
         while (child != -1) {
-            auto& node = nodes[child];
-            node.size = node.fixed_size;
+            auto& child_node = nodes[child];
+            child_node.size = child_node.fixed_size;
             if (parent.dynamic_size.x > 0){
-                node.size.x += node.dynamic_size.x / parent.dynamic_size.x;
+                child_node.size.x += child_node.dynamic_size.x / parent.dynamic_size.x;
             }
             if (parent.dynamic_size.y > 0){
-                node.size.y += node.dynamic_size.y / parent.dynamic_size.y;
+                child_node.size.y += child_node.dynamic_size.y / parent.dynamic_size.y;
             }
-            node.origin = parent.origin + offset;
-            stack.push(child);
-            child = node.next;
+            child_node.origin = parent.origin + offset;
 
             switch (parent.element) {
             case Element::None:
@@ -262,20 +274,17 @@ void Window::calculate_sizes_down() {
             case Element::LinearLayout:
                 {
                     const auto& element = elements.linear_layout[parent.element_index];
-                    if (child_index == 0) {
-                        offset.x += element.padding_;
-                        offset.y += element.padding_;
-                    }
                     if (element.horizontal_) {
-                        offset.x += node.size.x + element.padding_;
+                        offset.x += child_node.size.x + element.padding_;
                     } else {
-                        offset.y += node.size.y + element.padding_;
+                        offset.y += child_node.size.y + element.padding_;
                     }
                 }
                 break;
             }
 
-            child_index++;
+            stack.push(child);
+            child = child_node.next;
         }
     }
 }
@@ -345,7 +354,7 @@ void Window::render_tree() {
     glfwGetFramebufferSize(window, &display_w, &display_h);
     Vecf viewport_size(display_w, display_h);
 
-    // geometry_renderer.render(viewport_size);
+    geometry_renderer.render(viewport_size);
     text_renderer.render(viewport_size);
 }
 
