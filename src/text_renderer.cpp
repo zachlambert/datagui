@@ -4,7 +4,6 @@
 #include <GL/glew.h>
 #include "datagui/shader.hpp"
 #include <stdexcept>
-#include <iostream> // TEMP
 
 
 extern "C" {
@@ -51,9 +50,13 @@ void main(){
 }
 )";
 
-TextRenderer::TextRenderer() {}
+TextRenderer::TextRenderer():
+    font_size(0)
+{}
 
 void TextRenderer::init(Font font, int font_size) {
+    this->font_size = font_size;
+
     // Configure shader program and buffers
 
     gl_data.program_id = create_program(texture_vs, texture_fs);
@@ -87,7 +90,6 @@ void TextRenderer::init(Font font, int font_size) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-#if 1
     // Create font texture
 
     int font_tex_width = 1024; // TODO: Better method to choose these sizes
@@ -110,71 +112,73 @@ void TextRenderer::init(Font font, int font_size) {
     draw_font_bitmap(font_tex_width, font_tex_height, font, font_size);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &temp_framebuffer);
-#endif
 }
 
-void TextRenderer::queue_text(float depth, const Vecf& origin, const std::string& text, float line_width) {
-    Command command;
-    command.depth = depth;
-    command.origin = origin;
-    command.text = text;
-    command.color = Color::Black();
-    command.line_width = line_width;
-    commands.push_back(command);
+void TextRenderer::queue_text(
+    const std::string& text,
+    float max_width,
+    float line_height_factor,
+    const Vecf& origin,
+    float depth,
+    const Color& text_color)
+{
+    bool has_max_width = max_width > 0;
+    float line_height = font_size * line_height_factor;
+    Vecf offset = Vecf::Zero();
+    offset.y += line_height;
+
+    for (char c_char: text) {
+        int c_index = int(c_char) - 33;
+        if (c_index >= characters.size()) {
+            continue;
+        }
+        const Character& c = characters[c_index];
+        if (has_max_width && offset.x + c.advance > max_width) {
+            offset.x = 0;
+            offset.y += line_height;
+        }
+
+        Boxf box(origin + offset + c.offset, origin + offset + c.offset + c.size);
+        const Boxf& uv = c.uv;
+
+        vertices.push_back(Vertex{box.bottom_left(), uv.top_left(), depth});
+        vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), depth});
+        vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
+        vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), depth});
+        vertices.push_back(Vertex{box.top_right(), uv.bottom_right(), depth});
+        vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
+
+        offset.x += c.advance;
+    }
+}
+
+Vecf TextRenderer::text_size(const std::string& text, float max_width, float line_height_factor) {
+    bool has_max_width = max_width > 0;
+    float line_height = font_size * line_height_factor;
+    Vecf offset = Vecf::Zero();
+    offset.y += line_height;
+
+    for (char c_char: text) {
+        int c_index = int(c_char) - 33;
+        if (c_index >= characters.size()) {
+            continue;
+        }
+        const Character& c = characters[c_index];
+        if (has_max_width && offset.x + c.advance > max_width) {
+            offset.x = 0;
+            offset.y += line_height;
+        }
+        offset.x += c.advance;
+    }
+
+    if (has_max_width) {
+        return Vecf(max_width, offset.y);
+    } else {
+        return offset;
+    }
 }
 
 void TextRenderer::render(const Vecf& viewport_size) {
-    // draw_font_bitmap(viewport_size.x, viewport_size.y, Font::DejaVuSans, 32);
-    // commands.clear();
-#if 1
-    // TODO: Configure
-    float line_height = 16;
-
-    std::vector<Vertex> vertices;
-    for (const auto& command: commands) {
-        Vecf origin = command.origin;
-        origin.y += line_height;
-        for (char c_char: command.text) {
-            int c_index = int(c_char) - 33;
-            if (c_index >= characters.size()) {
-                continue;
-            }
-            const Character& c = characters[c_index];
-            if ((origin.x-command.origin.x) + c.advance > command.line_width) {
-                origin.x = command.origin.x;
-                origin.y += line_height;
-            }
-
-            Boxf box(origin + c.offset, origin + c.offset + c.size);
-            const Boxf& uv = c.uv;
-
-            float depth = command.depth;
-            vertices.push_back(Vertex{box.bottom_left(), uv.top_left(), depth});
-            vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), depth});
-            vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
-            vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), depth});
-            vertices.push_back(Vertex{box.top_right(), uv.bottom_right(), depth});
-            vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
-
-            origin.x += c.advance;
-        }
-    }
-
-#if 0
-    // TEMP
-    {
-        Boxf box(Vecf(100, 100), Vecf(800, 400));
-        Boxf uv(Vecf(0, 0), Vecf(1, 1));
-
-        vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
-        vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
-        vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
-        vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
-        vertices.push_back(Vertex{box.top_right(), uv.bottom_right()});
-        vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
-    }
-#endif
-
     glBindVertexArray(gl_data.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
     glBufferData(
@@ -198,8 +202,7 @@ void TextRenderer::render(const Vecf& viewport_size) {
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    commands.clear();
-#endif
+    vertices.clear();
 }
 
 void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_size) {

@@ -12,7 +12,6 @@ public:
     GeometryRenderer();
     void init();
 
-    void queue_box(float depth, const Boxf& box, const Color& color, float radius = 0.f);
     void queue_box(float depth, const Boxf& box, const Color& color, float border_radius, Color border_color, float radius = 0.f);
 
     void render(const Vecf& viewport_size);

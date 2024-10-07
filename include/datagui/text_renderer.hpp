@@ -13,18 +13,15 @@ public:
     TextRenderer();
     void init(Font font, int font_size);
 
-    void queue_text(float depth, const Vecf& origin, const std::string& text, float line_width);
+    void queue_text(const std::string& text, float max_width, float line_height_factor, const Vecf& origin, float depth, const Color& text_color);
+    Vecf text_size(const std::string& text, float max_width, float line_height_factor);
 
     void render(const Vecf& viewport_size);
 
 private:
     void draw_font_bitmap(int width, int height, Font font, int font_size);
 
-    struct Vertex {
-        Vecf pos;
-        Vecf uv;
-        float depth;
-    };
+    int font_size;
 
     struct Character {
         Boxf uv;
@@ -34,14 +31,12 @@ private:
     };
     std::vector<Character> characters;
 
-    struct Command {
+    struct Vertex {
+        Vecf pos;
+        Vecf uv;
         float depth;
-        Vecf origin;
-        std::string text;
-        Color color;
-        int line_width;
     };
-    std::vector<Command> commands;
+    std::vector<Vertex> vertices;
 
     struct {
         // Shader

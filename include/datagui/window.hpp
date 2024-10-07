@@ -6,6 +6,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdexcept>
+#include <variant>
 #include "datagui/font.hpp"
 #include "datagui/geometry.hpp"
 #include "datagui/geometry_renderer.hpp"
@@ -42,13 +43,79 @@ struct WindowInput {
     {}
 };
 
-struct Renderers {
-    GeometryRenderer geometry;
-    TextRenderer text;
+class Window;
+
+namespace element {
+
+class LinearLayout {
+public:
+    LinearLayout& padding(float value) {
+        padding_ = value;
+        return *this;
+    }
+
+    LinearLayout& bg_color(const Color& value) {
+        bg_color_ = value;
+        return *this;
+    }
+
+    LinearLayout(const Vecf& input_size, bool horizontal):
+        input_size_(input_size),
+        horizontal_(horizontal),
+        padding_(0),
+        bg_color_(Color::Gray(0.5))
+    {}
+
+private:
+    Vecf input_size_;
+    bool horizontal_;
+    float padding_;
+    Color bg_color_;
+
+    friend class ::datagui::Window;
 };
 
+class Text {
+public:
+    Text& max_width(float value) {
+        max_width_ = value;
+        return *this;
+    }
 
-class Widget;
+    Text& line_height_factor(float value) {
+        line_height_factor_ = value;
+        return *this;
+    }
+
+    Text& bg_color(const Color& value) {
+        bg_color_ = value;
+        return *this;
+    }
+
+    Text& text_color(const Color& value) {
+        text_color_ = value;
+        return *this;
+    }
+
+    Text(const std::string& text):
+        text_(text),
+        max_width_(0),
+        line_height_factor_(1),
+        bg_color_(Color::White()),
+        text_color_(Color::Black())
+    {}
+
+private:
+    std::string text_;
+    float max_width_;
+    float line_height_factor_;
+    Color bg_color_;
+    Color text_color_;
+
+    friend class ::datagui::Window;
+};
+
+} // namespace element
 
 class Window {
 public:
@@ -87,7 +154,10 @@ public:
     Window(const std::string& title, const Config& config = Config::defaults(), bool open_now = true):
         title(title),
         config(config),
-        window(nullptr)
+        window(nullptr),
+        active_node(-1),
+        depth(0),
+        max_depth(0)
     {
         if (open_now) {
             open();
@@ -105,59 +175,112 @@ public:
 
     void open();
     void poll_events();
-    Widget render_start();
+    void render_begin();
     void render_end();
     void close();
 
+    element::LinearLayout& linear_layout(bool horizontal, float width=0, float height=0) {
+        active_node = create_node(Element::LinearLayout, elements.linear_layout.size(), active_node);
+        depth++;
+        max_depth = std::max(max_depth, depth);
+        elements.linear_layout.emplace_back(Vecf(width, height), horizontal);
+        return elements.linear_layout.back();
+    }
+
+    void layout_end() {
+        if (active_node == -1) {
+            throw std::runtime_error("Called end too many times");
+        }
+        active_node = nodes[active_node].parent;
+        depth--;
+    }
+
+    element::Text& text(const std::string& text) {
+        create_node(Element::Text, elements.text.size(), active_node);
+        elements.text.emplace_back(text);
+        return elements.text.back();
+    }
+
 private:
+    void calculate_sizes_up();
+    void calculate_sizes_down();
+    void render_tree();
+
+    enum class Element {
+        None,
+        LinearLayout,
+        Text
+    };
+
+    int create_node(Element element, int element_index, int parent) {
+        int node_index = nodes.size();
+
+        Node node;
+        node.element = element;
+        node.element_index = element_index;
+        node.parent = parent;
+
+        if (parent != -1) {
+            if (nodes[parent].first_child == -1) {
+                nodes[parent].first_child = node_index;
+            } else {
+                nodes[nodes[parent].last_child].next = node_index;
+            }
+            nodes[parent].last_child = node_index;
+        }
+
+        nodes.push_back(node);
+        return node_index;
+    }
+
+    struct {
+        std::vector<element::LinearLayout> linear_layout;
+        std::vector<element::Text> text;
+    } elements;
+
+    struct Node {
+        // Definition
+        Element element;
+        int element_index;
+
+        // Connectivity
+        int parent;
+        int next;
+        int first_child;
+        int last_child;
+
+        // Layout calculation
+        Vecf fixed_size;
+        Vecf dynamic_size;
+        Vecf origin;
+        Vecf size;
+
+        Node():
+            element(Element::None),
+            element_index(-1),
+            parent(-1),
+            next(-1),
+            first_child(-1),
+            last_child(-1),
+            fixed_size(Vecf::Zero()),
+            dynamic_size(Vecf::Zero()),
+            origin(Vecf::Zero()),
+            size(Vecf::Zero())
+        {}
+    };
+
     const std::string title;
     const Config config;
     GLFWwindow* window;
-    Renderers renderers;
     WindowInput input;
-};
 
-class Widget {
-public:
-    Widget(Renderers& renderers, int max_depth, int depth, const Boxf& outer_region, const Color& bg_color):
-        renderers(renderers),
-        max_depth(max_depth),
-        depth(depth),
-        region(outer_region),
-        offset(Vecf::Zero()),
-        border_size(10),
-        padding_size(10)
-    {
-        renderers.geometry.queue_box(float(depth)/max_depth, region, bg_color, border_size, Color::Gray(0.25), 0);
-        region.lower += Vecf::Constant(border_size + padding_size);
-        region.upper -= Vecf::Constant(border_size + padding_size);
-    }
+    GeometryRenderer geometry_renderer;
+    TextRenderer text_renderer;
 
-    Widget row(float height, const Color& bg_color = Color::Gray(0.75)) {
-        Vecf size(region.upper.x-region.lower.x, height);
-        Widget widget(
-            renderers,
-            max_depth,
-            depth+1,
-            Boxf(region.lower+offset, region.lower+offset+size),
-            bg_color
-        );
-        offset.y += height;
-        return widget;
-    }
-
-    void text(const std::string& text, float line_width) {
-        renderers.text.queue_text(float(depth+1)/max_depth, region.lower, text, line_width);
-    }
-
-private:
-    Renderers& renderers;
-    int max_depth;
+    std::vector<Node> nodes;
+    int active_node;
     int depth;
-    Boxf region;
-    Vecf offset;
-    float border_size;
-    float padding_size;
+    int max_depth;
 };
 
 } // namespace datagui

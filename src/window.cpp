@@ -1,8 +1,7 @@
 #include "datagui/window.hpp"
 
-#include <iostream>
 #include <unordered_map>
-#include <filesystem>
+#include <stack>
 
 
 namespace datagui {
@@ -37,11 +36,11 @@ void Window::open() {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_GEQUAL);
+    // glEnable(GL_DEPTH_TEST);
+    // glDepthFunc(GL_GEQUAL);
 
-    renderers.geometry.init();
-    renderers.text.init(config.font, config.font_size);
+    geometry_renderer.init();
+    text_renderer.init(config.font, config.font_size);
 }
 
 void Window::close() {
@@ -81,7 +80,7 @@ void Window::poll_events() {
     }
 }
 
-Widget Window::render_start() {
+void Window::render_begin() {
     glClearColor(0.5, 0.5, 0.5, 1);
     glClearDepth(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -90,27 +89,264 @@ Widget Window::render_start() {
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
 
-    return Widget(
-        renderers,
-        1000, // Arbitrary large number
-        1,
-        Boxf(
-            Vecf::Zero(),
-            Vecf(display_w, display_h)
-        ),
-        Color::Gray(0.8)
-    );
+    linear_layout(false, display_w, display_h);
 }
 
 void Window::render_end() {
+    layout_end();
+    if (active_node != -1) {
+        throw std::runtime_error("Didn't call layout_... and layout_end the same number of times");
+    }
+
+    calculate_sizes_up();
+    calculate_sizes_down();
+    render_tree();
+
+    glfwSwapBuffers(window);
+
+    nodes.clear();
+    elements.text.clear();
+    elements.linear_layout.clear();
+    max_depth = 0;
+    depth = 0;
+}
+
+void Window::calculate_sizes_up() {
+    /*
+      - Traverse down the tree, where if non-leaf node is reached, all the
+         child nodes are processed first.
+      - Each node must calculate it's 'fixed_size' and 'dynamic_size', where:
+        - For leaf nodes, these are defined by the element and it's properties
+        - For branch nodes, these are defined by the element type, it's properties
+          and the fixed_size/dynamic_size of the children
+    */
+
+    struct State {
+        int index;
+        bool first_visit;
+        State(int index):
+            index(index),
+            first_visit(true)
+        {}
+    };
+    std::stack<State> stack;
+    stack.emplace(0);
+
+    while (!stack.empty()) {
+        State& state = stack.top();
+        Node& node = nodes[state.index];
+
+        // If the node has children, process these first
+        if (node.first_child != -1 && state.first_visit) {
+            state.first_visit = false;
+            int child = node.first_child;
+            while (child != -1) {
+                stack.emplace(child);
+                child = nodes[child].next;
+            }
+            continue;
+        }
+        stack.pop();
+
+        switch (node.element) {
+        case Element::None:
+            {
+                throw std::runtime_error("Node not defined properly");
+            }
+            break;
+        case Element::LinearLayout:
+            {
+                const auto& element = elements.linear_layout[node.element_index];
+
+                // X direction
+                if (element.input_size_.x == 0) {
+                    int child = 0;
+                    int count = 0;
+                    while (child != -1) {
+                        count++;
+                        if (element.horizontal_) {
+                            node.fixed_size.x += nodes[child].fixed_size.x;
+                            node.dynamic_size.x += nodes[child].dynamic_size.x;
+                        } else {
+                            node.fixed_size.x = std::max(node.fixed_size.x, nodes[child].fixed_size.x);
+                            node.dynamic_size.x = std::max(node.dynamic_size.x, nodes[child].dynamic_size.x);
+                        }
+                    }
+                    node.fixed_size.x += 2 * element.padding_;
+                    if (element.horizontal_) {
+                        node.fixed_size.x += (count - 1) * element.padding_;
+                    }
+
+                } else if (element.input_size_.x > 0) {
+                    node.fixed_size.x = element.input_size_.x;
+                } else {
+                    node.dynamic_size.x = -element.input_size_.x;
+                }
+
+                // Y direction
+                if (element.input_size_.y == 0) {
+                    int child = 0;
+                    int count = 0;
+                    while (child != -1) {
+                        count++;
+                        if (!element.horizontal_) {
+                            node.fixed_size.y += nodes[child].fixed_size.y;
+                            node.dynamic_size.y += nodes[child].dynamic_size.y;
+                        } else {
+                            node.fixed_size.y = std::max(node.fixed_size.y, nodes[child].fixed_size.y);
+                            node.dynamic_size.y = std::max(node.dynamic_size.y, nodes[child].dynamic_size.y);
+                        }
+                    }
+                    node.fixed_size.y += 2 * element.padding_;
+                    if (element.horizontal_) {
+                        node.fixed_size.y += (count - 1) * element.padding_;
+                    }
+
+                } else if (element.input_size_.y > 0) {
+                    node.fixed_size.y = element.input_size_.y;
+                } else {
+                    node.dynamic_size.y = -element.input_size_.y;
+                }
+            }
+            break;
+        case Element::Text:
+            {
+                const auto& element = elements.text[node.element_index];
+
+                node.fixed_size = text_renderer.text_size(element.text_, element.max_width_, element.line_height_factor_);
+            }
+            break;
+        };
+    }
+}
+
+void Window::calculate_sizes_down() {
+    std::stack<int> stack;
+    stack.push(0);
+
+    nodes[0].size = nodes[0].fixed_size;
+    nodes[0].origin = Vecf::Zero();
+
+    while (!stack.empty()) {
+        const auto& parent = nodes[stack.top()];
+        stack.pop();
+        if (parent.first_child == -1) {
+            continue;
+        }
+
+        Vecf available = parent.size - parent.fixed_size;
+        Vecf offset = Vecf::Zero();
+
+        int child = parent.first_child;
+        int child_index = 0;
+        while (child != -1) {
+            auto& node = nodes[child];
+            node.size = node.fixed_size;
+            if (parent.dynamic_size.x > 0){
+                node.size.x += node.dynamic_size.x / parent.dynamic_size.x;
+            }
+            if (parent.dynamic_size.y > 0){
+                node.size.y += node.dynamic_size.y / parent.dynamic_size.y;
+            }
+            node.origin = parent.origin + offset;
+            stack.push(child);
+            child = node.next;
+
+            switch (parent.element) {
+            case Element::None:
+                throw std::runtime_error("Node not defined fully");
+                break;
+            case Element::Text:
+                throw std::runtime_error("Text element shouldn't have children");
+                break;
+            case Element::LinearLayout:
+                {
+                    const auto& element = elements.linear_layout[parent.element_index];
+                    if (child_index == 0) {
+                        offset.x += element.padding_;
+                        offset.y += element.padding_;
+                    }
+                    if (element.horizontal_) {
+                        offset.x += node.size.x + element.padding_;
+                    } else {
+                        offset.y += node.size.y + element.padding_;
+                    }
+                }
+                break;
+            }
+
+            child_index++;
+        }
+    }
+}
+
+void Window::render_tree() {
+    std::stack<int> stack;
+    stack.push(0);
+
+    auto get_depth = [&]() -> float {
+        return float(stack.size() + 1) / (max_depth + 3);
+    };
+
+    while (!stack.empty()) {
+        const auto& node = nodes[stack.top()];
+        stack.pop();
+
+        switch (node.element) {
+        case Element::None:
+            break;
+        case Element::Text:
+            {
+                const auto& element = elements.text[node.element_index];
+                geometry_renderer.queue_box(
+                    get_depth(),
+                    Boxf(node.origin, node.origin+node.size),
+                    element.bg_color_,
+                    0,
+                    Color::Black(),
+                    0
+                );
+                text_renderer.queue_text(
+                    element.text_,
+                    element.max_width_,
+                    element.line_height_factor_,
+                    node.origin,
+                    get_depth(),
+                    element.text_color_
+                );
+            }
+            break;
+        case Element::LinearLayout:
+            {
+                const auto& element = elements.linear_layout[node.element_index];
+                geometry_renderer.queue_box(
+                    get_depth(),
+                    Boxf(node.origin, node.origin+node.size),
+                    element.bg_color_,
+                    0,
+                    Color::Black(),
+                    0
+                );
+            }
+            break;
+        }
+
+        if (node.first_child == -1) {
+            continue;
+        }
+        int child = node.first_child;
+        while (child != -1) {
+            stack.push(child);
+            child = nodes[child].next;
+        }
+    }
+
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     Vecf viewport_size(display_w, display_h);
 
-    renderers.geometry.render(viewport_size);
-    renderers.text.render(viewport_size);
-
-    glfwSwapBuffers(window);
+    // geometry_renderer.render(viewport_size);
+    text_renderer.render(viewport_size);
 }
 
 } // namespace datagui

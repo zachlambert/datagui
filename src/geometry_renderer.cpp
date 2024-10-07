@@ -2,6 +2,7 @@
 #include <string>
 #include <array>
 #include <GL/glew.h>
+#include <iostream>
 #include "datagui/shader.hpp"
 
 
@@ -181,17 +182,6 @@ void GeometryRenderer::init() {
     index++;
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void GeometryRenderer::queue_box(float depth, const Boxf& box, const Color& color, float radius) {
-    Element element;
-    element.offset = box.lower;
-    element.size = box.size();
-    element.radius = radius;
-    element.depth = depth;
-    element.bg_color = color;
-    element.border_width = 0.f;
-    elements.push_back(element);
 }
 
 void GeometryRenderer::queue_box(float depth, const Boxf& box, const Color& color, float border_width, Color border_color, float radius) {
