@@ -6,9 +6,9 @@ int main() {
     while (window.running()) {
         window.poll_events();
         window.render_begin();
-        window.linear_layout(false).padding(10);
+        window.vertical_layout(0, 0, {.padding = 10, .bg_color=datagui::Color::Gray(0.5)});
         {
-            window.text("Line 1").bg_color(datagui::Color::Red());
+            window.text("Line 1", 0, {.bg_color=datagui::Color::Red()});
             window.text("Line 2");
         }
         window.layout_end();

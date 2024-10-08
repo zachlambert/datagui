@@ -37,8 +37,8 @@ void Window::open() {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    // glEnable(GL_DEPTH_TEST);
-    // glDepthFunc(GL_GEQUAL);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GEQUAL);
 
     geometry_renderer.init();
     text_renderer.init(config.font, config.font_size);
@@ -90,7 +90,7 @@ void Window::render_begin() {
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
 
-    linear_layout(false, display_w, display_h);
+    vertical_layout(display_w, display_h);
 }
 
 void Window::render_end() {
@@ -106,8 +106,9 @@ void Window::render_end() {
     glfwSwapBuffers(window);
 
     nodes.clear();
+    elements.vertical_layout.clear();
+    elements.horizontal_layout.clear();
     elements.text.clear();
-    elements.linear_layout.clear();
     max_depth = 0;
     depth = 0;
 }
@@ -150,65 +151,88 @@ void Window::calculate_sizes_up() {
         stack.pop();
 
         switch (node.element) {
-        case Element::None:
+        case Element::VerticalLayout:
             {
-                throw std::runtime_error("Node not defined properly");
-            }
-            break;
-        case Element::LinearLayout:
-            {
-                const auto& element = elements.linear_layout[node.element_index];
+                const auto& element = elements.vertical_layout[node.element_index];
 
                 // X direction
-                if (element.input_size_.x == 0) {
+                if (element.input_size.x == 0) {
                     int child = node.first_child;
                     int count = 0;
                     while (child != -1) {
                         count++;
-                        if (element.horizontal_) {
-                            node.fixed_size.x += nodes[child].fixed_size.x;
-                            node.dynamic_size.x += nodes[child].dynamic_size.x;
-                        } else {
-                            node.fixed_size.x = std::max(node.fixed_size.x, nodes[child].fixed_size.x);
-                            node.dynamic_size.x = std::max(node.dynamic_size.x, nodes[child].dynamic_size.x);
-                        }
+                        node.fixed_size.x = std::max(node.fixed_size.x, nodes[child].fixed_size.x);
+                        node.dynamic_size.x = std::max(node.dynamic_size.x, nodes[child].dynamic_size.x);
                         child = nodes[child].next;
                     }
-                    node.fixed_size.x += 2 * element.padding_;
-                    if (element.horizontal_) {
-                        node.fixed_size.x += (count - 1) * element.padding_;
-                    }
+                    node.fixed_size.x += 2 * element.props.padding;
 
-                } else if (element.input_size_.x > 0) {
-                    node.fixed_size.x = element.input_size_.x;
+                } else if (element.input_size.x > 0) {
+                    node.fixed_size.x = element.input_size.x;
                 } else {
-                    node.dynamic_size.x = -element.input_size_.x;
+                    node.dynamic_size.x = -element.input_size.x;
                 }
 
                 // Y direction
-                if (element.input_size_.y == 0) {
+                if (element.input_size.y == 0) {
                     int child = node.first_child;
                     int count = 0;
                     while (child != -1) {
                         count++;
-                        if (!element.horizontal_) {
-                            node.fixed_size.y += nodes[child].fixed_size.y;
-                            node.dynamic_size.y += nodes[child].dynamic_size.y;
-                        } else {
-                            node.fixed_size.y = std::max(node.fixed_size.y, nodes[child].fixed_size.y);
-                            node.dynamic_size.y = std::max(node.dynamic_size.y, nodes[child].dynamic_size.y);
-                        }
+                        node.fixed_size.y += nodes[child].fixed_size.y;
+                        node.dynamic_size.y += nodes[child].dynamic_size.y;
                         child = nodes[child].next;
                     }
-                    node.fixed_size.y += 2 * element.padding_;
-                    if (element.horizontal_) {
-                        node.fixed_size.y += (count - 1) * element.padding_;
-                    }
+                    node.fixed_size.y += 2 * element.props.padding;
+                    node.fixed_size.y += (count - 1) * element.props.padding;
 
-                } else if (element.input_size_.y > 0) {
-                    node.fixed_size.y = element.input_size_.y;
+                } else if (element.input_size.y > 0) {
+                    node.fixed_size.y = element.input_size.y;
                 } else {
-                    node.dynamic_size.y = -element.input_size_.y;
+                    node.dynamic_size.y = -element.input_size.y;
+                }
+            }
+            break;
+        case Element::HorizontalLayout:
+            {
+                const auto& element = elements.horizontal_layout[node.element_index];
+
+                // X direction
+                if (element.input_size.x == 0) {
+                    int child = node.first_child;
+                    int count = 0;
+                    while (child != -1) {
+                        count++;
+                        node.fixed_size.x += nodes[child].fixed_size.x;
+                        node.dynamic_size.x += nodes[child].dynamic_size.x;
+                        child = nodes[child].next;
+                    }
+                    node.fixed_size.x += 2 * element.props.padding;
+                    node.fixed_size.x += (count - 1) * element.props.padding;
+
+                } else if (element.input_size.x > 0) {
+                    node.fixed_size.x = element.input_size.x;
+                } else {
+                    node.dynamic_size.x = -element.input_size.x;
+                }
+
+                // Y direction
+                if (element.input_size.y == 0) {
+                    int child = node.first_child;
+                    int count = 0;
+                    while (child != -1) {
+                        count++;
+                        node.fixed_size.y = std::max(node.fixed_size.y, nodes[child].fixed_size.y);
+                        node.dynamic_size.y = std::max(node.dynamic_size.y, nodes[child].dynamic_size.y);
+                        child = nodes[child].next;
+                    }
+                    node.fixed_size.y += 2 * element.props.padding;
+                    node.fixed_size.y += (count - 1) * element.props.padding;
+
+                } else if (element.input_size.y > 0) {
+                    node.fixed_size.y = element.input_size.y;
+                } else {
+                    node.dynamic_size.y = -element.input_size.y;
                 }
             }
             break;
@@ -216,7 +240,10 @@ void Window::calculate_sizes_up() {
             {
                 const auto& element = elements.text[node.element_index];
 
-                node.fixed_size = text_renderer.text_size(element.text_, element.max_width_, element.line_height_factor_);
+                node.fixed_size = text_renderer.text_size(
+                    element.text,
+                    element.max_width,
+                    element.props.line_height_factor);
             }
             break;
         };
@@ -241,11 +268,18 @@ void Window::calculate_sizes_down() {
         Vecf offset = Vecf::Zero();
 
         switch (parent.element) {
-            case Element::LinearLayout:
+            case Element::VerticalLayout:
                 {
-                    const auto& element = elements.linear_layout[parent.element_index];
-                    offset.x += element.padding_;
-                    offset.y += element.padding_;
+                    const auto& element = elements.vertical_layout[parent.element_index];
+                    offset.x += element.props.padding;
+                    offset.y += element.props.padding;
+                }
+                break;
+            case Element::HorizontalLayout:
+                {
+                    const auto& element = elements.horizontal_layout[parent.element_index];
+                    offset.x += element.props.padding;
+                    offset.y += element.props.padding;
                 }
                 break;
             default:
@@ -265,20 +299,19 @@ void Window::calculate_sizes_down() {
             child_node.origin = parent.origin + offset;
 
             switch (parent.element) {
-            case Element::None:
-                throw std::runtime_error("Node not defined fully");
-                break;
             case Element::Text:
                 throw std::runtime_error("Text element shouldn't have children");
                 break;
-            case Element::LinearLayout:
+            case Element::VerticalLayout:
                 {
-                    const auto& element = elements.linear_layout[parent.element_index];
-                    if (element.horizontal_) {
-                        offset.x += child_node.size.x + element.padding_;
-                    } else {
-                        offset.y += child_node.size.y + element.padding_;
-                    }
+                    const auto& element = elements.vertical_layout[parent.element_index];
+                    offset.y += child_node.size.y + element.props.padding;
+                }
+                break;
+            case Element::HorizontalLayout:
+                {
+                    const auto& element = elements.horizontal_layout[parent.element_index];
+                    offset.x += child_node.size.x + element.props.padding;
                 }
                 break;
             }
@@ -302,36 +335,47 @@ void Window::render_tree() {
         stack.pop();
 
         switch (node.element) {
-        case Element::None:
-            break;
         case Element::Text:
             {
                 const auto& element = elements.text[node.element_index];
                 geometry_renderer.queue_box(
                     get_depth(),
                     Boxf(node.origin, node.origin+node.size),
-                    element.bg_color_,
+                    element.props.bg_color,
                     0,
                     Color::Black(),
                     0
                 );
                 text_renderer.queue_text(
-                    element.text_,
-                    element.max_width_,
-                    element.line_height_factor_,
+                    element.text,
+                    element.max_width,
+                    element.props.line_height_factor,
                     node.origin,
                     get_depth(),
-                    element.text_color_
+                    element.props.text_color
                 );
             }
             break;
-        case Element::LinearLayout:
+        case Element::VerticalLayout:
             {
-                const auto& element = elements.linear_layout[node.element_index];
+                const auto& element = elements.vertical_layout[node.element_index];
                 geometry_renderer.queue_box(
                     get_depth(),
                     Boxf(node.origin, node.origin+node.size),
-                    element.bg_color_,
+                    element.props.bg_color,
+                    0,
+                    Color::Black(),
+                    0
+                );
+            }
+            break;
+        case Element::HorizontalLayout:
+            {
+                const auto& element = elements.horizontal_layout[node.element_index];
+                geometry_renderer.queue_box(
+                    get_depth(),
+                    Boxf(node.origin, node.origin+node.size),
+                    element.props.bg_color,
                     0,
                     Color::Black(),
                     0

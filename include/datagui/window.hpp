@@ -47,72 +47,59 @@ class Window;
 
 namespace element {
 
-class LinearLayout {
-public:
-    LinearLayout& padding(float value) {
-        padding_ = value;
-        return *this;
-    }
+struct VerticalLayout {
+    struct Props {
+        float padding = 0;
+        Color bg_color = Color::White();
+    };
 
-    LinearLayout& bg_color(const Color& value) {
-        bg_color_ = value;
-        return *this;
-    }
-
-    LinearLayout(const Vecf& input_size, bool horizontal):
-        input_size_(input_size),
-        horizontal_(horizontal),
-        padding_(0),
-        bg_color_(Color::Gray(0.5))
+    Vecf input_size;
+    Props props;
+    VerticalLayout(
+        const Vecf& input_size,
+        const Props& props
+    ):
+        input_size(input_size),
+        props(props)
     {}
-
-private:
-    Vecf input_size_;
-    bool horizontal_;
-    float padding_;
-    Color bg_color_;
-
-    friend class ::datagui::Window;
 };
 
-class Text {
-public:
-    Text& max_width(float value) {
-        max_width_ = value;
-        return *this;
-    }
+struct HorizontalLayout {
+    struct Props {
+        float padding = 0;
+        Color bg_color = Color::White();
+    };
 
-    Text& line_height_factor(float value) {
-        line_height_factor_ = value;
-        return *this;
-    }
-
-    Text& bg_color(const Color& value) {
-        bg_color_ = value;
-        return *this;
-    }
-
-    Text& text_color(const Color& value) {
-        text_color_ = value;
-        return *this;
-    }
-
-    Text(const std::string& text):
-        text_(text),
-        max_width_(0),
-        line_height_factor_(1),
-        bg_color_(Color::White()),
-        text_color_(Color::Black())
+    Vecf input_size;
+    Props props;
+    HorizontalLayout(
+        const Vecf& input_size,
+        const Props& props
+    ):
+        input_size(input_size),
+        props(props)
     {}
+};
 
-private:
-    std::string text_;
-    float max_width_;
-    float line_height_factor_;
-    Color bg_color_;
-    Color text_color_;
+struct Text {
+    struct Props {
+        float line_height_factor = 1;
+        Color bg_color = Color::White();
+        Color text_color = Color::Black();
+    };
 
-    friend class ::datagui::Window;
+    std::string text;
+    float max_width;
+    Props props;
+    Text(
+        const std::string& text,
+        float max_width,
+        const Props& props
+    ):
+        text(text),
+        max_width(max_width),
+        props(props)
+    {}
 };
 
 } // namespace element
@@ -179,12 +166,26 @@ public:
     void render_end();
     void close();
 
-    element::LinearLayout& linear_layout(bool horizontal, float width=0, float height=0) {
-        active_node = create_node(Element::LinearLayout, elements.linear_layout.size(), active_node);
+    void vertical_layout(
+        float width=0,
+        float height=0,
+        const element::VerticalLayout::Props& props = element::VerticalLayout::Props())
+    {
+        active_node = create_node(Element::VerticalLayout, elements.vertical_layout.size(), active_node);
         depth++;
         max_depth = std::max(max_depth, depth);
-        elements.linear_layout.emplace_back(Vecf(width, height), horizontal);
-        return elements.linear_layout.back();
+        elements.vertical_layout.emplace_back(Vecf(width, height), props);
+    }
+
+    void horizontal_layout(
+        float width=0,
+        float height=0,
+        const element::HorizontalLayout::Props& props = element::HorizontalLayout::Props())
+    {
+        active_node = create_node(Element::HorizontalLayout, elements.horizontal_layout.size(), active_node);
+        depth++;
+        max_depth = std::max(max_depth, depth);
+        elements.horizontal_layout.emplace_back(Vecf(width, height), props);
     }
 
     void layout_end() {
@@ -195,9 +196,13 @@ public:
         depth--;
     }
 
-    element::Text& text(const std::string& text) {
+    element::Text& text(
+        const std::string& text,
+        float max_width = 0,
+        const element::Text::Props& props = element::Text::Props())
+    {
         create_node(Element::Text, elements.text.size(), active_node);
-        elements.text.emplace_back(text);
+        elements.text.emplace_back(text, max_width, props);
         return elements.text.back();
     }
 
@@ -207,19 +212,13 @@ private:
     void render_tree();
 
     enum class Element {
-        None,
-        LinearLayout,
+        VerticalLayout,
+        HorizontalLayout,
         Text
     };
 
     int create_node(Element element, int element_index, int parent) {
         int node_index = nodes.size();
-
-        Node node;
-        node.element = element;
-        node.element_index = element_index;
-        node.parent = parent;
-
         if (parent != -1) {
             if (nodes[parent].first_child == -1) {
                 nodes[parent].first_child = node_index;
@@ -229,22 +228,23 @@ private:
             nodes[parent].last_child = node_index;
         }
 
-        nodes.push_back(node);
+        nodes.emplace_back(element, element_index, parent);
         return node_index;
     }
 
     struct {
-        std::vector<element::LinearLayout> linear_layout;
+        std::vector<element::VerticalLayout> vertical_layout;
+        std::vector<element::HorizontalLayout> horizontal_layout;
         std::vector<element::Text> text;
     } elements;
 
     struct Node {
         // Definition
-        Element element;
-        int element_index;
+        const Element element;
+        const int element_index;
 
         // Connectivity
-        int parent;
+        const int parent;
         int next;
         int first_child;
         int last_child;
@@ -255,10 +255,10 @@ private:
         Vecf origin;
         Vecf size;
 
-        Node():
-            element(Element::None),
-            element_index(-1),
-            parent(-1),
+        Node(Element element, int element_index, int parent):
+            element(element),
+            element_index(element_index),
+            parent(parent),
             next(-1),
             first_child(-1),
             last_child(-1),
