@@ -105,6 +105,12 @@ struct Text {
 } // namespace element
 
 class Window {
+    enum class Element {
+        VerticalLayout,
+        HorizontalLayout,
+        Text
+    };
+
 public:
     class Error: public std::runtime_error {
     public:
@@ -143,6 +149,8 @@ public:
         config(config),
         window(nullptr),
         active_node(-1),
+        active_prior_prev(-1),
+        active_prior_new(-1),
         depth(0),
         max_depth(0)
     {
@@ -169,68 +177,25 @@ public:
     void vertical_layout(
         float width=0,
         float height=0,
-        const element::VerticalLayout::Props& props = element::VerticalLayout::Props())
-    {
-        active_node = create_node(Element::VerticalLayout, elements.vertical_layout.size(), active_node);
-        depth++;
-        max_depth = std::max(max_depth, depth);
-        elements.vertical_layout.emplace_back(Vecf(width, height), props);
-    }
+        const element::VerticalLayout::Props& props = element::VerticalLayout::Props());
 
     void horizontal_layout(
         float width=0,
         float height=0,
-        const element::HorizontalLayout::Props& props = element::HorizontalLayout::Props())
-    {
-        active_node = create_node(Element::HorizontalLayout, elements.horizontal_layout.size(), active_node);
-        depth++;
-        max_depth = std::max(max_depth, depth);
-        elements.horizontal_layout.emplace_back(Vecf(width, height), props);
-    }
+        const element::HorizontalLayout::Props& props = element::HorizontalLayout::Props());
 
-    void layout_end() {
-        if (active_node == -1) {
-            throw std::runtime_error("Called end too many times");
-        }
-        active_node = nodes[active_node].parent;
-        depth--;
-    }
+    void layout_end();
 
-    element::Text& text(
+    void text(
         const std::string& text,
         float max_width = 0,
-        const element::Text::Props& props = element::Text::Props())
-    {
-        create_node(Element::Text, elements.text.size(), active_node);
-        elements.text.emplace_back(text, max_width, props);
-        return elements.text.back();
-    }
+        const element::Text::Props& props = element::Text::Props());
 
 private:
+    int create_node(Element element, int parent);
     void calculate_sizes_up();
     void calculate_sizes_down();
     void render_tree();
-
-    enum class Element {
-        VerticalLayout,
-        HorizontalLayout,
-        Text
-    };
-
-    int create_node(Element element, int element_index, int parent) {
-        int node_index = nodes.size();
-        if (parent != -1) {
-            if (nodes[parent].first_child == -1) {
-                nodes[parent].first_child = node_index;
-            } else {
-                nodes[nodes[parent].last_child].next = node_index;
-            }
-            nodes[parent].last_child = node_index;
-        }
-
-        nodes.emplace_back(element, element_index, parent);
-        return node_index;
-    }
 
     struct {
         std::vector<element::VerticalLayout> vertical_layout;
@@ -241,7 +206,7 @@ private:
     struct Node {
         // Definition
         const Element element;
-        const int element_index;
+        int element_index;
 
         // Connectivity
         const int parent;
@@ -255,9 +220,9 @@ private:
         Vecf origin;
         Vecf size;
 
-        Node(Element element, int element_index, int parent):
+        Node(Element element, int parent):
             element(element),
-            element_index(element_index),
+            element_index(-1),
             parent(parent),
             next(-1),
             first_child(-1),
@@ -277,8 +242,11 @@ private:
     GeometryRenderer geometry_renderer;
     TextRenderer text_renderer;
 
+    std::vector<Node> prev_nodes;
     std::vector<Node> nodes;
     int active_node;
+    int active_prior_prev;
+    int active_prior_new;
     int depth;
     int max_depth;
 };

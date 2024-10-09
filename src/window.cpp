@@ -55,6 +55,71 @@ void Window::close() {
     window = nullptr;
 }
 
+void Window::vertical_layout(
+    float width,
+    float height,
+    const element::VerticalLayout::Props& props)
+{
+    int node = create_node(Element::VerticalLayout, active_node);
+    if (nodes[node].element_index == -1) {
+        nodes[node].element_index = elements.vertical_layout.size();
+        elements.vertical_layout.emplace_back(Vecf(width, height), props);
+    } else {
+        auto& element = elements.vertical_layout[nodes[node].element_index];
+        element.input_size = Vecf(width, height);
+        element.props = props;
+    }
+
+    active_node = node;
+    depth++;
+    max_depth = std::max(max_depth, depth);
+}
+
+void Window::horizontal_layout(
+    float width,
+    float height,
+    const element::HorizontalLayout::Props& props)
+{
+    int node = create_node(Element::HorizontalLayout, active_node);
+    if (nodes[node].element_index == -1) {
+        nodes[node].element_index = elements.horizontal_layout.size();
+        elements.horizontal_layout.emplace_back(Vecf(width, height), props);
+    } else {
+        auto& element = elements.horizontal_layout[nodes[node].element_index];
+        element.input_size = Vecf(width, height);
+        element.props = props;
+    }
+
+    active_node = node;
+    depth++;
+    max_depth = std::max(max_depth, depth);
+}
+
+void Window::layout_end() {
+    if (active_node == -1) {
+        throw std::runtime_error("Called end too many times");
+    }
+    active_node = nodes[active_node].parent;
+    depth--;
+}
+
+void Window::text(
+    const std::string& text,
+    float max_width,
+    const element::Text::Props& props)
+{
+    int node = create_node(Element::Text, active_node);
+    if (nodes[node].element_index == -1) {
+        nodes[node].element_index = elements.text.size();
+        elements.text.emplace_back(text, max_width, props);
+    } else {
+        auto& element = elements.text[nodes[node].element_index];
+        element.text = text;
+        element.max_width = max_width;
+        element.props = props;
+    }
+}
+
 void Window::poll_events() {
     glfwPollEvents();
 
@@ -105,12 +170,27 @@ void Window::render_end() {
 
     glfwSwapBuffers(window);
 
-    nodes.clear();
-    elements.vertical_layout.clear();
-    elements.horizontal_layout.clear();
-    elements.text.clear();
+    prev_nodes = std::move(nodes);
+    // elements.vertical_layout.clear();
+    // elements.horizontal_layout.clear();
+    // elements.text.clear();
     max_depth = 0;
     depth = 0;
+}
+
+int Window::create_node(Element element, int parent) {
+    int node_index = nodes.size();
+    if (parent != -1) {
+        if (nodes[parent].first_child == -1) {
+            nodes[parent].first_child = node_index;
+        } else {
+            nodes[nodes[parent].last_child].next = node_index;
+        }
+        nodes[parent].last_child = node_index;
+    }
+
+    nodes.emplace_back(element, parent);
+    return node_index;
 }
 
 void Window::calculate_sizes_up() {
