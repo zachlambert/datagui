@@ -7,6 +7,16 @@
 
 namespace datagui {
 
+std::vector<std::pair<GLFWwindow*, Window*>> Window::active_windows;
+
+void Window::glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods) {
+    for (auto [glfw_window, datagui_window]: active_windows) {
+        if (glfw_window == callback_window) {
+            datagui_window->mouse_button_callback(button, action, mods);
+        }
+    }
+}
+
 void Window::open() {
     if (!glfwInit()) {
         throw Error("Failed to initialize glfw");
@@ -42,6 +52,9 @@ void Window::open() {
 
     geometry_renderer.init();
     text_renderer.init(config.font, config.font_size);
+
+    active_windows.emplace_back(window, this);
+    glfwSetMouseButtonCallback(window, Window::glfw_mouse_button_callback);
 }
 
 void Window::close() {
@@ -110,6 +123,7 @@ void Window::text(
     }
 }
 
+#if 0
 void Window::poll_events() {
     glfwPollEvents();
 
@@ -135,6 +149,7 @@ void Window::poll_events() {
         input.buttons[(size_t)WindowInput::Button::RB] = gamepad_state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] == GLFW_PRESS;
     }
 }
+#endif
 
 void Window::render_begin() {
     glClearColor(0.5, 0.5, 0.5, 1);
@@ -154,12 +169,15 @@ void Window::render_end() {
         throw std::runtime_error("Didn't call layout_... and layout_end the same number of times");
     }
 
+    glfwPollEvents();
+
     calculate_sizes_up();
     calculate_sizes_down();
     render_tree();
 
     glfwSwapBuffers(window);
 
+    events.clear();
     max_depth = 0;
     iteration++;
 }
@@ -467,15 +485,38 @@ void Window::calculate_sizes_down() {
 }
 
 void Window::render_tree() {
-    std::stack<int> stack;
-    stack.push(0);
-
-    auto get_depth = [&]() -> float {
-        return float(stack.size() + 1) / (max_depth + 3);
+    struct State {
+        int node;
+        bool parent_clicked;
+        int depth;
+        State(int node, bool parent_clicked, int depth):
+            node(node),
+            parent_clicked(parent_clicked),
+            depth(depth)
+        {}
     };
+    std::stack<State> stack;
+    stack.emplace(root_node, events.mouse_up, 0);
+
+    double mx, my;
+    glfwGetCursorPos(window, &mx, &my);
+    Vecf mouse_pos(mx, my);
+
+    int node_clicked = -1;
+    int node_clicked_depth = -1;
 
     while (!stack.empty()) {
-        const auto& node = nodes[stack.top()];
+        State state = stack.top();
+        const auto& node = nodes[state.node];
+        bool clicked = state.parent_clicked && Boxf(node.origin, node.origin+node.size).contains(mouse_pos);
+
+        if (clicked && state.depth >= node_clicked_depth) {
+            node_clicked = state.node;
+            node_clicked_depth = state.depth;
+        }
+
+        float normalized_depth = float(state.depth) / (max_depth + 1);
+
         stack.pop();
 
         switch (node.element) {
@@ -483,7 +524,7 @@ void Window::render_tree() {
             {
                 const auto& element = elements.text[node.element_index];
                 geometry_renderer.queue_box(
-                    get_depth(),
+                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     element.props.bg_color,
                     0,
@@ -495,7 +536,7 @@ void Window::render_tree() {
                     element.max_width,
                     element.props.line_height_factor,
                     node.origin,
-                    get_depth(),
+                    normalized_depth,
                     element.props.text_color
                 );
             }
@@ -504,7 +545,7 @@ void Window::render_tree() {
             {
                 const auto& element = elements.vertical_layout[node.element_index];
                 geometry_renderer.queue_box(
-                    get_depth(),
+                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     element.props.bg_color,
                     0,
@@ -517,7 +558,7 @@ void Window::render_tree() {
             {
                 const auto& element = elements.horizontal_layout[node.element_index];
                 geometry_renderer.queue_box(
-                    get_depth(),
+                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     element.props.bg_color,
                     0,
@@ -533,9 +574,13 @@ void Window::render_tree() {
         }
         int child = node.first_child;
         while (child != -1) {
-            stack.push(child);
+            stack.emplace(child, clicked, state.depth + 1);
             child = nodes[child].next;
         }
+    }
+
+    if (node_clicked != -1) {
+        std::cout << "Clicked: " << nodes[node_clicked].key << std::endl;
     }
 
     int display_w, display_h;
@@ -544,6 +589,17 @@ void Window::render_tree() {
 
     geometry_renderer.render(viewport_size);
     text_renderer.render(viewport_size);
+}
+
+void Window::mouse_button_callback(int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            events.mouse_down = true;
+        }
+        if (action == GLFW_RELEASE){
+            events.mouse_up = true;
+        }
+    }
 }
 
 } // namespace datagui

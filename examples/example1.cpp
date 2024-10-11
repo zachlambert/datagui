@@ -5,7 +5,6 @@ int main() {
     datagui::Window window("Example 1");
     int i = 0;
     while (window.running()) {
-        window.poll_events();
         window.render_begin();
         if (i < 60) {
             window.vertical_layout("div1", 0, 0, {.padding = 10, .bg_color=datagui::Color::Gray(0.5)});

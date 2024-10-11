@@ -208,7 +208,6 @@ public:
     }
 
     void open();
-    void poll_events();
     void render_begin();
     void render_end();
     void close();
@@ -242,6 +241,25 @@ private:
     void calculate_sizes_down();
     void render_tree();
 
+    void mouse_button_callback(int button, int action, int mods);
+    static void glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods);
+
+    static std::vector<std::pair<GLFWwindow*, Window*>> active_windows;
+
+    struct Events {
+        bool mouse_down;
+        bool mouse_up;
+        Events():
+            mouse_down(false),
+            mouse_up(false)
+        {}
+        void clear() {
+            mouse_down = false;
+            mouse_up = false;
+        }
+    };
+    Events events;
+
     struct {
         VectorMap<element::VerticalLayout> vertical_layout;
         VectorMap<element::HorizontalLayout> horizontal_layout;
@@ -268,6 +286,9 @@ private:
         Vecf origin;
         Vecf size;
 
+        // State
+        bool clicked;
+
         Node(const std::string& key, Element element, int parent, int iteration):
             key(key),
             element(element),
@@ -281,7 +302,8 @@ private:
             fixed_size(Vecf::Zero()),
             dynamic_size(Vecf::Zero()),
             origin(Vecf::Zero()),
-            size(Vecf::Zero())
+            size(Vecf::Zero()),
+            clicked(false)
         {}
 
         void reset(int iteration) {
