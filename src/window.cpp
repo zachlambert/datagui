@@ -2,7 +2,6 @@
 
 #include <unordered_map>
 #include <stack>
-#include <iostream>
 
 
 namespace datagui {
@@ -123,6 +122,31 @@ void Window::text(
     }
 }
 
+bool Window::button(
+    const std::string& key,
+    const std::string& text,
+    float max_width,
+    const element::Button::Props& props)
+{
+    int node = visit_node(key, Element::Button, false);
+    if (nodes[node].element_index == -1) {
+        nodes[node].element_index = elements.button.emplace(text, max_width, props);
+    }
+    return nodes[node].clicked;
+}
+
+bool Window::checkbox(
+    const std::string& key,
+    const element::Checkbox::Props& props)
+{
+    auto& node = nodes[visit_node(key, Element::Checkbox, false)];
+    if (node.element_index == -1) {
+        node.element_index = elements.checkbox.emplace(props);
+    }
+    const auto& element = elements.checkbox[node.element_index];
+    return element.checked;
+}
+
 #if 0
 void Window::poll_events() {
     glfwPollEvents();
@@ -209,8 +233,6 @@ int Window::visit_node(const std::string& key, Element element, bool enter) {
         return root_node;
     }
 
-    std::cout << "New node: " << key << std::endl;
-
     int node = nodes.emplace(key, element, parent, iteration);
     if (nodes.size() == 1) {
         root_node = node;
@@ -241,7 +263,6 @@ void Window::remove_node(int root_node) {
         int node_index = stack.top();
         const auto& node = nodes[node_index];
         if (node.first_child == -1) {
-            std::cout << "Remove node: " << node.key << std::endl;
             stack.pop();
             if (node.prev != -1) {
                 nodes[node.prev].next = node.next;
@@ -262,6 +283,12 @@ void Window::remove_node(int root_node) {
                 break;
             case Element::Text:
                 elements.text.pop(node.element_index);
+                break;
+            case Element::Button:
+                elements.button.pop(node.element_index);
+                break;
+            case Element::Checkbox:
+                elements.checkbox.pop(node.element_index);
                 break;
             }
             nodes.pop(node_index);
@@ -408,6 +435,23 @@ void Window::calculate_sizes_up() {
                     element.props.line_height_factor);
             }
             break;
+        case Element::Button:
+            {
+                const auto& element = elements.button[node.element_index];
+
+                node.fixed_size = text_renderer.text_size(
+                    element.text,
+                    element.max_width,
+                    element.props.line_height_factor);
+                node.fixed_size += Vecf::Constant((element.props.border_width + element.props.padding) * 2);
+            }
+            break;
+        case Element::Checkbox:
+            {
+                const auto& element = elements.checkbox[node.element_index];
+                node.fixed_size = Vecf::Constant(text_renderer.get_font_size() * element.props.size_factor);
+            }
+            break;
         };
     }
 }
@@ -461,9 +505,6 @@ void Window::calculate_sizes_down() {
             child_node.origin = parent.origin + offset;
 
             switch (parent.element) {
-            case Element::Text:
-                throw std::runtime_error("Text element shouldn't have children");
-                break;
             case Element::VerticalLayout:
                 {
                     const auto& element = elements.vertical_layout[parent.element_index];
@@ -475,6 +516,9 @@ void Window::calculate_sizes_down() {
                     const auto& element = elements.horizontal_layout[parent.element_index];
                     offset.x += child_node.size.x + element.props.padding;
                 }
+                break;
+            default:
+                throw std::runtime_error("A non-layout element shouldn't have children");
                 break;
             }
 
@@ -496,7 +540,7 @@ void Window::render_tree() {
         {}
     };
     std::stack<State> stack;
-    stack.emplace(root_node, events.mouse_up, 0);
+    stack.emplace(root_node, events.mouse_up || events.mouse_down, 0);
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
@@ -507,9 +551,27 @@ void Window::render_tree() {
 
     while (!stack.empty()) {
         State state = stack.top();
-        const auto& node = nodes[state.node];
-        bool clicked = state.parent_clicked && Boxf(node.origin, node.origin+node.size).contains(mouse_pos);
+        auto& node = nodes[state.node];
 
+        // Handle element-specific click events
+        if (node.clicked) {
+            switch (node.element) {
+                case Element::Checkbox:
+                    {
+                        auto& element = elements.checkbox[node.element_index];
+                        element.checked = !element.checked;
+                    }
+                    break;
+                default:
+                    // Nothing required
+                    break;
+            }
+        }
+        node.clicked = false;
+
+        // Determine the lowest depth node that is clicked, this updates node.clicked
+        // after the whole tree is traversed
+        bool clicked = state.parent_clicked && Boxf(node.origin, node.origin+node.size).contains(mouse_pos);
         if (clicked && state.depth >= node_clicked_depth) {
             node_clicked = state.node;
             node_clicked_depth = state.depth;
@@ -520,27 +582,6 @@ void Window::render_tree() {
         stack.pop();
 
         switch (node.element) {
-        case Element::Text:
-            {
-                const auto& element = elements.text[node.element_index];
-                geometry_renderer.queue_box(
-                    normalized_depth,
-                    Boxf(node.origin, node.origin+node.size),
-                    element.props.bg_color,
-                    0,
-                    Color::Black(),
-                    0
-                );
-                text_renderer.queue_text(
-                    element.text,
-                    element.max_width,
-                    element.props.line_height_factor,
-                    node.origin,
-                    normalized_depth,
-                    element.props.text_color
-                );
-            }
-            break;
         case Element::VerticalLayout:
             {
                 const auto& element = elements.vertical_layout[node.element_index];
@@ -567,6 +608,80 @@ void Window::render_tree() {
                 );
             }
             break;
+        case Element::Text:
+            {
+                const auto& element = elements.text[node.element_index];
+                geometry_renderer.queue_box(
+                    normalized_depth,
+                    Boxf(node.origin, node.origin+node.size),
+                    element.props.bg_color,
+                    0,
+                    Color::Black(),
+                    0
+                );
+                text_renderer.queue_text(
+                    element.text,
+                    element.max_width,
+                    element.props.line_height_factor,
+                    node.origin,
+                    normalized_depth,
+                    element.props.text_color
+                );
+            }
+            break;
+        case Element::Button:
+            {
+                const auto& element = elements.button[node.element_index];
+                Color bg_color = element.props.bg_color;
+                if (node_pressed == state.node) {
+                    bg_color.r *= 0.5; // TODO: Class member variable
+                    bg_color.g *= 0.5;
+                    bg_color.b *= 0.5;
+                }
+                geometry_renderer.queue_box(
+                    normalized_depth,
+                    Boxf(node.origin, node.origin+node.size),
+                    bg_color,
+                    element.props.border_width,
+                    element.props.border_color
+                );
+                text_renderer.queue_text(
+                    element.text,
+                    element.max_width,
+                    element.props.line_height_factor,
+                    node.origin + Vecf::Constant(element.props.border_width + element.props.padding),
+                    normalized_depth,
+                    element.props.text_color
+                );
+            }
+            break;
+        case Element::Checkbox:
+            {
+                const auto& element = elements.checkbox[node.element_index];
+                geometry_renderer.queue_box(
+                    normalized_depth,
+                    Boxf(node.origin, node.origin+node.size),
+                    element.props.bg_color,
+                    element.props.border_width,
+                    element.props.border_color,
+                    0
+                );
+                if (element.checked) {
+                    float offset = element.props.border_width + 2;
+                    geometry_renderer.queue_box(
+                        normalized_depth,
+                        Boxf(
+                            node.origin + Vecf::Constant(offset),
+                            node.origin + node.size - Vecf::Constant(offset)
+                        ),
+                        element.props.icon_color,
+                        0,
+                        Color::Black(),
+                        0
+                    );
+                }
+            }
+            break;
         }
 
         if (node.first_child == -1) {
@@ -580,7 +695,14 @@ void Window::render_tree() {
     }
 
     if (node_clicked != -1) {
-        std::cout << "Clicked: " << nodes[node_clicked].key << std::endl;
+        if (events.mouse_down) {
+            node_pressed = node_clicked;
+        } else if (events.mouse_up) {
+            if (node_clicked == node_pressed) {
+                nodes[node_clicked].clicked = true;
+            }
+            node_pressed = -1;
+        }
     }
 
     int display_w, display_h;

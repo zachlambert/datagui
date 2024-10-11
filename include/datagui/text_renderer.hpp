@@ -17,6 +17,7 @@ public:
     Vecf text_size(const std::string& text, float max_width, float line_height_factor);
 
     void render(const Vecf& viewport_size);
+    int get_font_size() const { return font_size; }
 
 private:
     void draw_font_bitmap(int width, int height, Font font, int font_size);

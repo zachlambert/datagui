@@ -143,13 +143,60 @@ struct Text {
     {}
 };
 
+struct Button {
+    struct Props {
+        float padding = 6;
+        float border_width = 4;
+        float line_height_factor = 1;
+        Color bg_color = Color::White();
+        Color text_color = Color::Black();
+        Color border_color = Color::Black();
+    };
+
+    std::string text;
+    float max_width;
+    Props props;
+    Button(
+        const std::string& text,
+        float max_width,
+        const Props& props
+    ):
+        text(text),
+        max_width(max_width),
+        props(props)
+    {}
+};
+
+struct Checkbox {
+    struct Props {
+        float size_factor = 1;
+        float border_width = 4;
+        Color border_color = Color::Black();
+        Color bg_color = Color::Gray(0.5);
+        Color icon_color = Color(0, 1, 1);
+    };
+
+    Props props;
+    bool checked;
+
+    Checkbox(
+        const Props& props,
+        bool default_checked = false
+    ):
+        props(props),
+        checked(default_checked)
+    {}
+};
+
 } // namespace element
 
 class Window {
     enum class Element {
         VerticalLayout,
         HorizontalLayout,
-        Text
+        Text,
+        Button,
+        Checkbox
     };
 
 public:
@@ -191,7 +238,8 @@ public:
         window(nullptr),
         root_node(-1),
         max_depth(0),
-        iteration(0)
+        iteration(0),
+        node_pressed(-1)
     {
         if (open_now) {
             open();
@@ -232,6 +280,16 @@ public:
         float max_width = 0,
         const element::Text::Props& props = element::Text::Props());
 
+    bool button(
+        const std::string& key,
+        const std::string& text,
+        float max_width = 0,
+        const element::Button::Props& props = element::Button::Props());
+
+    bool checkbox(
+        const std::string& key,
+        const element::Checkbox::Props& props = element::Checkbox::Props());
+
 private:
     // Returns true if a new node is created
     int visit_node(const std::string& key, Element element, bool enter);
@@ -264,6 +322,8 @@ private:
         VectorMap<element::VerticalLayout> vertical_layout;
         VectorMap<element::HorizontalLayout> horizontal_layout;
         VectorMap<element::Text> text;
+        VectorMap<element::Button> button;
+        VectorMap<element::Checkbox> checkbox;
     } elements;
 
     struct Node {
@@ -328,6 +388,8 @@ private:
     std::stack<int> active_nodes;
     int max_depth;
     int iteration;
+
+    int node_pressed;
 };
 
 } // namespace datagui
