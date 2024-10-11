@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <stack>
 #include <unordered_map>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -41,6 +42,46 @@ struct WindowInput {
     WindowInput():
         valid(false)
     {}
+};
+
+// TODO:
+// Currently requires everything is default-constructable and assumes
+// that the memory cost for retaining popped nodes (until overwritten) is
+// unimportant.
+template <typename T>
+class VectorMap {
+public:
+    const T& operator[](std::size_t i) const {
+        return data[i];
+    }
+    T& operator[](std::size_t i) {
+        return data[i];
+    }
+    template <typename ...Args>
+    int emplace(Args&&... args) {
+        int index = 0;
+        if (free.empty()) {
+            index = data.size();
+            data.emplace_back(std::forward<Args>(args)...);
+        } else {
+            index = free.back();
+            free.pop_back();
+            data[index] = T(std::forward<Args>(args)...);
+        }
+        return index;
+    }
+
+    void pop(int index) {
+        free.push_back(index);
+    }
+
+    std::size_t size() const {
+        return data.size() - free.size();
+    }
+
+private:
+    std::vector<T> data;
+    std::vector<int> free;
 };
 
 class Window;
@@ -148,11 +189,9 @@ public:
         title(title),
         config(config),
         window(nullptr),
-        active_node(-1),
-        active_prior_prev(-1),
-        active_prior_new(-1),
-        depth(0),
-        max_depth(0)
+        root_node(-1),
+        max_depth(0),
+        iteration(0)
     {
         if (open_now) {
             open();
@@ -175,11 +214,13 @@ public:
     void close();
 
     void vertical_layout(
+        const std::string& key,
         float width=0,
         float height=0,
         const element::VerticalLayout::Props& props = element::VerticalLayout::Props());
 
     void horizontal_layout(
+        const std::string& key,
         float width=0,
         float height=0,
         const element::HorizontalLayout::Props& props = element::HorizontalLayout::Props());
@@ -187,51 +228,69 @@ public:
     void layout_end();
 
     void text(
+        const std::string& key,
         const std::string& text,
         float max_width = 0,
         const element::Text::Props& props = element::Text::Props());
 
 private:
-    int create_node(Element element, int parent);
+    // Returns true if a new node is created
+    int visit_node(const std::string& key, Element element, bool enter);
+    void remove_node(int node);
+
     void calculate_sizes_up();
     void calculate_sizes_down();
     void render_tree();
 
     struct {
-        std::vector<element::VerticalLayout> vertical_layout;
-        std::vector<element::HorizontalLayout> horizontal_layout;
-        std::vector<element::Text> text;
+        VectorMap<element::VerticalLayout> vertical_layout;
+        VectorMap<element::HorizontalLayout> horizontal_layout;
+        VectorMap<element::Text> text;
     } elements;
 
     struct Node {
         // Definition
-        const Element element;
+        std::string key;
+        Element element;
         int element_index;
 
         // Connectivity
-        const int parent;
+        int parent;
+        int prev;
         int next;
         int first_child;
         int last_child;
 
         // Layout calculation
+        int iteration;
         Vecf fixed_size;
         Vecf dynamic_size;
         Vecf origin;
         Vecf size;
 
-        Node(Element element, int parent):
+        Node(const std::string& key, Element element, int parent, int iteration):
+            key(key),
             element(element),
             element_index(-1),
             parent(parent),
+            prev(-1),
             next(-1),
             first_child(-1),
             last_child(-1),
+            iteration(iteration),
             fixed_size(Vecf::Zero()),
             dynamic_size(Vecf::Zero()),
             origin(Vecf::Zero()),
             size(Vecf::Zero())
         {}
+
+        void reset(int iteration) {
+            this->iteration = iteration;
+            fixed_size = Vecf::Zero();
+            dynamic_size = Vecf::Zero();
+            origin = Vecf::Zero();
+            size = Vecf::Zero();
+        }
     };
 
     const std::string title;
@@ -242,13 +301,11 @@ private:
     GeometryRenderer geometry_renderer;
     TextRenderer text_renderer;
 
-    std::vector<Node> prev_nodes;
-    std::vector<Node> nodes;
-    int active_node;
-    int active_prior_prev;
-    int active_prior_new;
-    int depth;
+    VectorMap<Node> nodes;
+    int root_node;
+    std::stack<int> active_nodes;
     int max_depth;
+    int iteration;
 };
 
 } // namespace datagui

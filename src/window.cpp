@@ -56,67 +56,57 @@ void Window::close() {
 }
 
 void Window::vertical_layout(
+    const std::string& key,
     float width,
     float height,
     const element::VerticalLayout::Props& props)
 {
-    int node = create_node(Element::VerticalLayout, active_node);
+    int node = visit_node(key, Element::VerticalLayout, true);
     if (nodes[node].element_index == -1) {
-        nodes[node].element_index = elements.vertical_layout.size();
-        elements.vertical_layout.emplace_back(Vecf(width, height), props);
-    } else {
-        auto& element = elements.vertical_layout[nodes[node].element_index];
-        element.input_size = Vecf(width, height);
-        element.props = props;
+        nodes[node].element_index = elements.vertical_layout.emplace(Vecf(width, height), props);
     }
-
-    active_node = node;
-    depth++;
-    max_depth = std::max(max_depth, depth);
 }
 
 void Window::horizontal_layout(
+    const std::string& key,
     float width,
     float height,
     const element::HorizontalLayout::Props& props)
 {
-    int node = create_node(Element::HorizontalLayout, active_node);
+    int node = visit_node(key, Element::HorizontalLayout, true);
     if (nodes[node].element_index == -1) {
-        nodes[node].element_index = elements.horizontal_layout.size();
-        elements.horizontal_layout.emplace_back(Vecf(width, height), props);
-    } else {
-        auto& element = elements.horizontal_layout[nodes[node].element_index];
-        element.input_size = Vecf(width, height);
-        element.props = props;
+        nodes[node].element_index = elements.horizontal_layout.emplace(Vecf(width, height), props);
     }
-
-    active_node = node;
-    depth++;
-    max_depth = std::max(max_depth, depth);
 }
 
 void Window::layout_end() {
-    if (active_node == -1) {
+    if (active_nodes.empty()) {
         throw std::runtime_error("Called end too many times");
     }
-    active_node = nodes[active_node].parent;
-    depth--;
+
+    // Remove nodes that weren't visited this iteration
+
+    int iter = nodes[active_nodes.top()].first_child;
+    while (iter != -1) {
+        int next = nodes[iter].next;
+        if (nodes[iter].iteration != iteration) {
+            remove_node(iter);
+        }
+        iter = next;
+    }
+
+    active_nodes.pop();
 }
 
 void Window::text(
+    const std::string& key,
     const std::string& text,
     float max_width,
     const element::Text::Props& props)
 {
-    int node = create_node(Element::Text, active_node);
+    int node = visit_node(key, Element::Text, false);
     if (nodes[node].element_index == -1) {
-        nodes[node].element_index = elements.text.size();
-        elements.text.emplace_back(text, max_width, props);
-    } else {
-        auto& element = elements.text[nodes[node].element_index];
-        element.text = text;
-        element.max_width = max_width;
-        element.props = props;
+        nodes[node].element_index = elements.text.emplace(text, max_width, props);
     }
 }
 
@@ -155,12 +145,12 @@ void Window::render_begin() {
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
 
-    vertical_layout(display_w, display_h);
+    vertical_layout("root", display_w, display_h);
 }
 
 void Window::render_end() {
     layout_end();
-    if (active_node != -1) {
+    if (!active_nodes.empty()) {
         throw std::runtime_error("Didn't call layout_... and layout_end the same number of times");
     }
 
@@ -170,27 +160,101 @@ void Window::render_end() {
 
     glfwSwapBuffers(window);
 
-    prev_nodes = std::move(nodes);
-    // elements.vertical_layout.clear();
-    // elements.horizontal_layout.clear();
-    // elements.text.clear();
     max_depth = 0;
-    depth = 0;
+    iteration++;
 }
 
-int Window::create_node(Element element, int parent) {
-    int node_index = nodes.size();
+int Window::visit_node(const std::string& key, Element element, bool enter) {
+    int parent = active_nodes.empty() ? -1 : active_nodes.top();
+
     if (parent != -1) {
-        if (nodes[parent].first_child == -1) {
-            nodes[parent].first_child = node_index;
-        } else {
-            nodes[nodes[parent].last_child].next = node_index;
+        int iter = nodes[parent].first_child;
+        while (iter != -1) {
+            if (nodes[iter].key == key) {
+                if (nodes[iter].iteration == iteration) {
+                    throw std::runtime_error("Visited the same node twice during the same iteration");
+                }
+                nodes[iter].reset(iteration);
+                if (enter) {
+                    active_nodes.push(iter);
+                    max_depth = std::max<int>(max_depth, active_nodes.size());
+                }
+                return iter;
+            }
+            iter = nodes[iter].next;
         }
-        nodes[parent].last_child = node_index;
+    } else if (root_node != -1) {
+        if (enter) {
+            active_nodes.push(root_node);
+            max_depth = std::max<int>(max_depth, active_nodes.size());
+        }
+        return root_node;
     }
 
-    nodes.emplace_back(element, parent);
-    return node_index;
+    std::cout << "New node: " << key << std::endl;
+
+    int node = nodes.emplace(key, element, parent, iteration);
+    if (nodes.size() == 1) {
+        root_node = node;
+    }
+
+    if (parent != -1) {
+        nodes[node].prev = nodes[parent].last_child;
+        if (nodes[parent].first_child == -1) {
+            nodes[parent].first_child = node;
+        } else {
+            nodes[nodes[parent].last_child].next = node;
+        }
+        nodes[parent].last_child = node;
+    }
+
+    if (enter) {
+        active_nodes.push(node);
+        max_depth = std::max<int>(max_depth, active_nodes.size());
+    }
+
+    return node;
+}
+
+void Window::remove_node(int root_node) {
+    std::stack<int> stack;
+    stack.push(root_node);
+    while (!stack.empty()) {
+        int node_index = stack.top();
+        const auto& node = nodes[node_index];
+        if (node.first_child == -1) {
+            std::cout << "Remove node: " << node.key << std::endl;
+            stack.pop();
+            if (node.prev != -1) {
+                nodes[node.prev].next = node.next;
+            } else if (node.parent != -1) {
+                nodes[node.parent].first_child = node.next;
+            }
+            if (node.next != -1) {
+                nodes[node.next].prev = node.prev;
+            } else if (node.parent != -1) {
+                nodes[node.parent].last_child = node.prev;
+            }
+            switch (node.element) {
+            case Element::VerticalLayout:
+                elements.vertical_layout.pop(node.element_index);
+                break;
+            case Element::HorizontalLayout:
+                elements.horizontal_layout.pop(node.element_index);
+                break;
+            case Element::Text:
+                elements.text.pop(node.element_index);
+                break;
+            }
+            nodes.pop(node_index);
+            continue;
+        }
+        int iter = node.first_child;
+        while (iter != -1) {
+            stack.push(iter);
+            iter = nodes[iter].next;
+        }
+    }
 }
 
 void Window::calculate_sizes_up() {
