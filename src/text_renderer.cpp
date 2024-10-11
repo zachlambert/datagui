@@ -41,12 +41,12 @@ const static std::string texture_fs = R"(
 in vec2 fs_uv;
 
 uniform sampler2D tex;
-uniform vec3 text_color;
+uniform vec4 text_color;
 
 out vec4 color;
 
 void main(){
-    color = vec4(text_color, texture(tex, fs_uv).x);
+    color = vec4(text_color.xyz, texture(tex, fs_uv).x * text_color[3]);
 }
 )";
 
@@ -193,7 +193,7 @@ void TextRenderer::render(const Vecf& viewport_size) {
     Color text_color = Color::Black();
 
     glUseProgram(gl_data.program_id);
-    glUniform3f(gl_data.uniform_text_color, text_color.r, text_color.g, text_color.b);
+    glUniform4f(gl_data.uniform_text_color, text_color.r, text_color.g, text_color.b, text_color.a);
     glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
     glBindTexture(GL_TEXTURE_2D, gl_data.font_texture);
 
@@ -286,7 +286,7 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
 
         glUseProgram(gl_data.program_id);
         glUniform2f(gl_data.uniform_viewport_size, width, height);
-        glUniform3f(gl_data.uniform_text_color, 1, 1, 1);
+        glUniform4f(gl_data.uniform_text_color, 1, 1, 1, 1);
         glBindVertexArray(gl_data.VAO);
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 

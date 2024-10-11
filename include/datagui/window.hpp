@@ -91,7 +91,7 @@ namespace element {
 struct VerticalLayout {
     struct Props {
         float padding = 0;
-        Color bg_color = Color::White();
+        Color bg_color = Color::Clear();
     };
 
     Vecf input_size;
@@ -108,7 +108,7 @@ struct VerticalLayout {
 struct HorizontalLayout {
     struct Props {
         float padding = 0;
-        Color bg_color = Color::White();
+        Color bg_color = Color::Clear();
     };
 
     Vecf input_size;
@@ -125,7 +125,7 @@ struct HorizontalLayout {
 struct Text {
     struct Props {
         float line_height_factor = 1;
-        Color bg_color = Color::White();
+        Color bg_color = Color::Clear();
         Color text_color = Color::Black();
     };
 

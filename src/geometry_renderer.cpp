@@ -18,8 +18,8 @@ layout(location = 2) in vec2 size;
 layout(location = 3) in float depth;
 layout(location = 4) in float radius;
 layout(location = 5) in float border_width;
-layout(location = 6) in vec3 bg_color;
-layout(location = 7) in vec3 border_color;
+layout(location = 6) in vec4 bg_color;
+layout(location = 7) in vec4 border_color;
 
 uniform vec2 viewport_size;
 
@@ -28,8 +28,8 @@ out vec2 fs_box_lower;
 out vec2 fs_box_upper;
 out float fs_radius;
 out float fs_border_width;
-out vec3 fs_bg_color;
-out vec3 fs_border_color;
+out vec4 fs_bg_color;
+out vec4 fs_border_color;
 
 void main(){
     fs_pos = offset + vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
@@ -52,8 +52,8 @@ in vec2 fs_box_lower;
 in vec2 fs_box_upper;
 in float fs_radius;
 in float fs_border_width;
-in vec3 fs_bg_color;
-in vec3 fs_border_color;
+in vec4 fs_bg_color;
+in vec4 fs_border_color;
 
 uniform vec2 viewport_size;
 
@@ -74,9 +74,9 @@ void main(){
     if (dist < 0) {
         color = vec4(0, 0, 0, 0);
     } else if (dist >= fs_border_width) {
-        color = vec4(fs_bg_color, 1);
+        color = fs_bg_color;
     } else {
-        color = vec4(fs_border_color, 1);
+        color = fs_border_color;
     }
 }
 )";
@@ -166,7 +166,7 @@ void GeometryRenderer::init() {
     index++;
 
     glVertexAttribPointer(
-        index, 3, GL_FLOAT, GL_FALSE, sizeof(Element),
+        index, 4, GL_FLOAT, GL_FALSE, sizeof(Element),
         (void*)offsetof(Element, bg_color)
     );
     glVertexAttribDivisor(index, 1);
@@ -174,7 +174,7 @@ void GeometryRenderer::init() {
     index++;
 
     glVertexAttribPointer(
-        index, 3, GL_FLOAT, GL_FALSE, sizeof(Element),
+        index, 4, GL_FLOAT, GL_FALSE, sizeof(Element),
         (void*)offsetof(Element, border_color)
     );
     glVertexAttribDivisor(index, 1);
