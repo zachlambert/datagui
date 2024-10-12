@@ -128,7 +128,7 @@ void TextRenderer::queue_text(
     offset.y += line_height;
 
     for (char c_char: text) {
-        int c_index = int(c_char) - 33;
+        int c_index = int(c_char) - char_first;
         if (c_index >= characters.size()) {
             continue;
         }
@@ -149,32 +149,6 @@ void TextRenderer::queue_text(
         vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
 
         offset.x += c.advance;
-    }
-}
-
-Vecf TextRenderer::text_size(const std::string& text, float max_width, float line_height_factor) {
-    bool has_max_width = max_width > 0;
-    float line_height = font_size * line_height_factor;
-    Vecf offset = Vecf::Zero();
-    offset.y += line_height;
-
-    for (char c_char: text) {
-        int c_index = int(c_char) - 33;
-        if (c_index >= characters.size()) {
-            continue;
-        }
-        const Character& c = characters[c_index];
-        if (has_max_width && offset.x + c.advance > max_width) {
-            offset.x = 0;
-            offset.y += line_height;
-        }
-        offset.x += c.advance;
-    }
-
-    if (has_max_width) {
-        return Vecf(max_width, offset.y);
-    } else {
-        return offset;
     }
 }
 
@@ -226,7 +200,7 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
     int font_pos_x = 0;
     int font_pos_y = 0;
     int font_row_height = 0;
-    for (int i = 33; i < 127; i++) {
+    for (int i = char_first; i <= char_last; i++) {
         if (FT_Load_Char(ft_face, char(i), FT_LOAD_RENDER) != 0) {
             throw std::runtime_error("Failed to load character: " + std::to_string(char(i)));
         }
@@ -311,6 +285,76 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
 
     FT_Done_Face(ft_face);
     FT_Done_FreeType(ft_library);
+}
+
+Vecf TextRenderer::text_size(const std::string& text, float max_width, float line_height_factor) {
+    bool has_max_width = max_width > 0;
+    float line_height = font_size * line_height_factor;
+    Vecf offset = Vecf::Zero();
+    offset.y += line_height;
+
+    for (char c_char: text) {
+        int c_index = int(c_char) - char_first;
+        if (c_index >= characters.size()) {
+            continue;
+        }
+        const Character& c = characters[c_index];
+        if (has_max_width && offset.x + c.advance > max_width) {
+            offset.x = 0;
+            offset.y += line_height;
+        }
+        offset.x += c.advance;
+    }
+
+    if (has_max_width) {
+        return Vecf(max_width, offset.y);
+    } else {
+        return offset;
+    }
+}
+
+Vecf TextRenderer::cursor_offset(
+    const Vecf& origin,
+    const std::string& text,
+    float width,
+    float line_height_factor,
+    const Vecf& mouse_pos)
+{
+    float line_height = font_size * line_height_factor;
+    Vecf offset = Vecf::Zero();
+
+    Vecf result = offset;
+
+    for (char c_char: text) {
+        int c_index = int(c_char) - char_first;
+        if (c_index >= characters.size()) {
+            continue;
+        }
+        const Character& c = characters[c_index];
+        if (offset.x + c.advance > width) {
+            offset.x = 0;
+            offset.y += line_height;
+        }
+
+        Vecf pos = origin + offset;
+        if (mouse_pos.x >= pos.x) {
+            result = pos;
+            if (mouse_pos.x >= pos.x + float(c.advance)/2) {
+                result.x += c.advance;
+            }
+        }
+        if (mouse_pos.x < pos.x + c.advance && mouse_pos.y < pos.y + line_height) {
+            result = pos;
+            if (mouse_pos.x >= pos.x + float(c.advance)/2) {
+                result.x += c.advance;
+            }
+            return result;
+        }
+
+        offset.x += c.advance;
+    }
+
+    return result;
 }
 
 

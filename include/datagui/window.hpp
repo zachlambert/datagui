@@ -188,6 +188,46 @@ struct Checkbox {
     {}
 };
 
+struct TextInput {
+    struct Props {
+        float padding = 0;
+        float line_height_factor = 1;
+        int cursor_width = 2;
+        float cursor_blink_period = 0.5;
+        float border_width = 4;
+        Color bg_color = Color::White();
+        Color text_color = Color::Black();
+        Color border_color = Color::Black();
+        Color highlight_color = Color::Gray(0.75);
+        Color cursor_color = Color::Gray(0.25);
+        Color focus_color = Color(0, 1, 1);
+    };
+
+    float max_width;
+    int num_lines;
+    Props props;
+
+    std::string text;
+    bool changed;
+    Vecf cursor_begin;
+    Vecf cursor_end;
+
+    TextInput(
+        const std::string& default_text,
+        float max_width,
+        int num_lines,
+        const Props& props
+    ):
+        max_width(max_width),
+        num_lines(num_lines),
+        props(props),
+        text(default_text),
+        changed(false),
+        cursor_begin(Vecf::Zero()),
+        cursor_end(Vecf::Zero())
+    {}
+};
+
 } // namespace element
 
 class Window {
@@ -196,7 +236,8 @@ class Window {
         HorizontalLayout,
         Text,
         Button,
-        Checkbox
+        Checkbox,
+        TextInput
     };
 
 public:
@@ -290,6 +331,13 @@ public:
         const std::string& key,
         const element::Checkbox::Props& props = element::Checkbox::Props());
 
+    bool text_input(
+        const std::string& key,
+        const std::string& default_text = "",
+        float max_width = -1,
+        int num_lines = 1,
+        const element::TextInput::Props& props = element::TextInput::Props());
+
 private:
     // Returns true if a new node is created
     int visit_node(const std::string& key, Element element, bool enter);
@@ -324,6 +372,7 @@ private:
         VectorMap<element::Text> text;
         VectorMap<element::Button> button;
         VectorMap<element::Checkbox> checkbox;
+        VectorMap<element::TextInput> text_input;
     } elements;
 
     struct Node {
@@ -390,6 +439,7 @@ private:
     int iteration;
 
     int node_pressed;
+    int node_focused;
 };
 
 } // namespace datagui

@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <stack>
+#include <iostream>
 
 
 namespace datagui {
@@ -147,6 +148,26 @@ bool Window::checkbox(
     return element.checked;
 }
 
+bool Window::text_input(
+    const std::string& key,
+    const std::string& default_text,
+    float max_width,
+    int num_lines,
+    const element::TextInput::Props& props)
+{
+    auto& node = nodes[visit_node(key, Element::TextInput, false)];
+    if (node.element_index == -1) {
+        node.element_index = elements.text_input.emplace(
+            default_text,
+            max_width,
+            num_lines,
+            props
+        );
+    }
+    const auto& element = elements.text_input[node.element_index];
+    return element.changed;
+}
+
 #if 0
 void Window::poll_events() {
     glfwPollEvents();
@@ -289,6 +310,9 @@ void Window::remove_node(int root_node) {
                 break;
             case Element::Checkbox:
                 elements.checkbox.pop(node.element_index);
+                break;
+            case Element::TextInput:
+                elements.text_input.pop(node.element_index);
                 break;
             }
             nodes.pop(node_index);
@@ -450,6 +474,18 @@ void Window::calculate_sizes_up() {
             {
                 const auto& element = elements.checkbox[node.element_index];
                 node.fixed_size = Vecf::Constant(text_renderer.get_font_size() * element.props.size_factor);
+            }
+            break;
+        case Element::TextInput:
+            {
+                const auto& element = elements.text_input[node.element_index];
+
+                node.fixed_size = text_renderer.text_size(
+                    element.text,
+                    element.max_width,
+                    element.props.line_height_factor);
+                node.fixed_size += Vecf::Constant(
+                    2 * (element.props.border_width + element.props.padding));
             }
             break;
         };
@@ -682,6 +718,84 @@ void Window::render_tree() {
                 }
             }
             break;
+        case Element::TextInput:
+            {
+                const auto& element = elements.text_input[node.element_index];
+                geometry_renderer.queue_box(
+                    normalized_depth,
+                    Boxf(node.origin, node.origin+node.size),
+                    element.props.bg_color,
+                    element.props.border_width,
+                    state.node == node_focused
+                        ? element.props.focus_color
+                        : element.props.border_color,
+                    0
+                );
+                Vecf text_origin =
+                    node.origin
+                    + Vecf::Constant(
+                        element.props.border_width + element.props.padding);
+
+                if (state.node == node_focused) {
+                    float line_height = text_renderer.get_font_size() * element.props.line_height_factor;
+
+                    if (element.cursor_begin == element.cursor_end) {
+                        // TODO: Blink
+                        geometry_renderer.queue_box(
+                            normalized_depth,
+                            Boxf(element.cursor_begin-Vecf(float(element.props.cursor_width)/2, 0), element.cursor_begin + Vecf(element.props.cursor_width, line_height)),
+                            element.props.cursor_color,
+                            0,
+                            Color::Black(),
+                            0
+                        );
+                    } else {
+                        Vecf from, to;
+                        if (element.cursor_begin.y < element.cursor_end.y || element.cursor_begin.y == element.cursor_end.y && element.cursor_begin.x <= element.cursor_end.x) {
+                            from = element.cursor_begin;
+                            to = element.cursor_end;
+                        } else {
+                            from = element.cursor_end;
+                            to = element.cursor_begin;
+                        }
+
+                        while (true) {
+                            Vecf line_to;
+                            if (from.y == to.y) {
+                                line_to = to;
+                            } else {
+                                line_to.x = text_origin.x + node.size.x - 2*(element.props.border_width + element.props.padding);
+                                line_to.y = from.y;
+                            }
+
+                            geometry_renderer.queue_box(
+                                normalized_depth,
+                                Boxf(from, line_to + Vecf(0, line_height)),
+                                element.props.highlight_color,
+                                0,
+                                Color::Black(),
+                                0
+                            );
+
+                            if (from.y >= to.y) {
+                                break;
+                            }
+                            from.y += line_height;
+                            from.x = text_origin.x;
+                        }
+                    }
+
+                }
+                text_renderer.queue_text(
+                    element.text,
+                    element.max_width,
+                    element.props.line_height_factor,
+                    text_origin,
+                    normalized_depth,
+                    element.props.text_color
+                );
+            }
+            break;
         }
 
         if (node.first_child == -1) {
@@ -697,11 +811,50 @@ void Window::render_tree() {
     if (node_clicked != -1) {
         if (events.mouse_down) {
             node_pressed = node_clicked;
+            node_focused = node_clicked;
+            const auto& node = nodes[node_clicked];
+            switch (node.element) {
+                case Element::TextInput:
+                    {
+                        auto& element = elements.text_input[node.element_index];
+                        element.cursor_begin = text_renderer.cursor_offset(
+                            node.origin + Vecf::Constant(
+                                element.props.border_width + element.props.padding),
+                            element.text,
+                            node.size.x - (element.props.border_width + element.props.padding),
+                            element.props.line_height_factor,
+                            mouse_pos
+                        );
+                        element.cursor_end = element.cursor_begin;
+                    }
+                    break;
+                default:
+                    break;
+            }
         } else if (events.mouse_up) {
             if (node_clicked == node_pressed) {
                 nodes[node_clicked].clicked = true;
             }
             node_pressed = -1;
+        }
+    } else if (node_pressed != -1) {
+        const auto& node = nodes[node_pressed];
+        switch (node.element) {
+            case Element::TextInput:
+                {
+                    auto& element = elements.text_input[node.element_index];
+                    element.cursor_end = text_renderer.cursor_offset(
+                        node.origin + Vecf::Constant(
+                            element.props.border_width + element.props.padding),
+                        element.text,
+                        node.size.x - (element.props.border_width + element.props.padding),
+                        element.props.line_height_factor,
+                        mouse_pos
+                    );
+                }
+                break;
+            default:
+                break;
         }
     }
 
