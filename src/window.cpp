@@ -884,40 +884,98 @@ void Window::render_tree() {
                 {
                     auto& element = elements.text_input[node.element_index];
                     if (events.key_down) {
-                        if (cursor_begin.index == cursor_end.index) {
-                            if (events.key == GLFW_KEY_LEFT) {
-                                cursor_begin = text_renderer.move_cursor(element.text, cursor_text, cursor_begin, -1);
-                                cursor_end = cursor_begin;
-                            }
-                            else if (events.key == GLFW_KEY_RIGHT) {
-                                cursor_begin = text_renderer.move_cursor(element.text, cursor_text, cursor_begin, 1);
-                                cursor_end = cursor_begin;
-                            }
-                        }
-                        std::cout << "---\n";
-#if 0
-                        if (events.key == GLFW_KEY_BACKSPACE) {
-                            int from = element.cursor_begin.first;
-                            int to = element.cursor_end.first;
-                            if (from > to) {
-                                std::swap(from, to);
-                            }
-                            if (from != -1 && to != -1) {
-                                if (from != to) {
-                                    std::cout << from << "->" << to << std::endl;
-                                    element.text.erase(element.text.begin() + from, element.text.begin() + to);
-                                    // TODO: Update cursor
-                                } else if (from > 0) {
-                                    std::cout << (from-1) << std::endl;
-                                    element.text.erase(element.text.begin() + (from-1));
-                                    // TODO: Update cursor
+                        if (events.key == GLFW_KEY_LEFT || events.key == GLFW_KEY_RIGHT) {
+                            if (cursor_begin.index != cursor_end.index && events.mods != 1) {
+                                if (events.key == GLFW_KEY_LEFT && cursor_begin.index <= cursor_end.index
+                                    || events.key == GLFW_KEY_RIGHT && cursor_end.index <= cursor_begin.index)
+                                {
+                                    cursor_end = cursor_begin;
+                                } else {
+                                    cursor_begin = cursor_end;
+                                }
+                            } else {
+                                std::size_t pos = cursor_end.index;
+                                if (events.key == GLFW_KEY_LEFT && pos != 0) {
+                                    cursor_end.index = pos-1;
+                                    cursor_end.offset = text_renderer.find_cursor_offset(
+                                        element.text, cursor_text, cursor_end.index);
+                                    if (events.mods != 1) {
+                                        cursor_begin = cursor_end;
+                                    }
+                                } else if (pos != element.text.size()) {
+                                    cursor_end.index = pos+1;
+                                    cursor_end.offset = text_renderer.find_cursor_offset(
+                                        element.text, cursor_text, cursor_end.index);
+                                    if (events.mods != 1) {
+                                        cursor_begin = cursor_end;
+                                    }
                                 }
                             }
                         }
-#endif
-                        std::cout << "key: " << events.key << std::endl;
-                        std::cout << "mods: " << events.mods << std::endl;
-                        std::cout << "char: " << char(events.key) << std::endl;
+                        else if (events.key == GLFW_KEY_BACKSPACE) {
+                            if (cursor_begin.index != cursor_end.index) {
+                                std::size_t from = cursor_begin.index;
+                                std::size_t to = cursor_end.index;
+                                if (from > to) {
+                                    std::swap(from, to);
+                                }
+                                element.text.erase(element.text.begin() + from, element.text.begin() + to);
+                                if (cursor_begin.index <= cursor_end.index) {
+                                    cursor_end = cursor_begin;
+                                } else {
+                                    cursor_begin = cursor_end;
+                                }
+                                cursor_text = text_renderer.calculate_text_structure(
+                                    element.text,
+                                    node.size.x - (element.props.border_width + element.props.padding),
+                                    element.props.line_height_factor);
+                            } else if (cursor_begin.index > 0) {
+                                element.text.erase(element.text.begin() + (cursor_begin.index-1));
+                                cursor_text = text_renderer.calculate_text_structure(
+                                    element.text,
+                                    node.size.x - (element.props.border_width + element.props.padding),
+                                    element.props.line_height_factor);
+                                cursor_begin.index--;
+                                cursor_begin.offset = text_renderer.find_cursor_offset(
+                                    element.text, cursor_text, cursor_begin.index);
+                                cursor_end = cursor_begin;
+                            }
+                        }
+                        else if (events.key >= GLFW_KEY_A && events.key <= GLFW_KEY_Z) {
+                            char new_c;
+                            if (events.mods == 1) {
+                                new_c = 'A' + (events.key - GLFW_KEY_A);
+                            } else {
+                                new_c = 'a' + (events.key - GLFW_KEY_A);
+                            }
+                            if (cursor_begin.index != cursor_end.index) {
+                                std::size_t from = cursor_begin.index;
+                                std::size_t to = cursor_end.index;
+                                if (from > to) {
+                                    std::swap(from, to);
+                                }
+                                element.text.erase(element.text.begin() + from, element.text.begin() + to);
+                                element.text.insert(element.text.begin() + from, new_c);
+                                cursor_begin.index++;
+                                cursor_text = text_renderer.calculate_text_structure(
+                                    element.text,
+                                    node.size.x - (element.props.border_width + element.props.padding),
+                                    element.props.line_height_factor);
+                                cursor_begin.offset = text_renderer.find_cursor_offset(
+                                    element.text, cursor_text, cursor_begin.index);
+                                cursor_end = cursor_begin;
+                            } else {
+                                element.text.insert(element.text.begin() + cursor_begin.index, new_c);
+                                cursor_begin.index++;
+                                cursor_text = text_renderer.calculate_text_structure(
+                                    element.text,
+                                    node.size.x - (element.props.border_width + element.props.padding),
+                                    element.props.line_height_factor);
+                                cursor_begin.offset = text_renderer.find_cursor_offset(
+                                    element.text, cursor_text, cursor_begin.index);
+                                cursor_end = cursor_begin;
+                            }
+                        }
                     }
                 }
                 break;

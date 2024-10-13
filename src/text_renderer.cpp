@@ -381,46 +381,36 @@ CursorPos TextRenderer::find_cursor(
     return CursorPos{0, Vecf::Zero()};
 }
 
-CursorPos TextRenderer::move_cursor(
+Vecf TextRenderer::find_cursor_offset(
     const std::string& text,
     const TextStructure& structure,
-    CursorPos cursor,
-    int delta)
+    std::size_t index)
 {
     if (structure.lines.empty()) {
-        return cursor;
+        return Vecf::Zero();
     }
 
-    if (delta < 0 && int(cursor.index) + delta < 0) {
-        return {0, Vecf::Zero()};
-    } else if (delta > 0 && cursor.index + delta > text.size()) {
-        return {
-            text.size(),
-                Vecf(
-                    structure.lines.back().width,
-                    (structure.lines.size()-1) * structure.line_height
-                )
-        };
+    if (index > text.size()) {
+        throw std::runtime_error("Invalid cursor index");
     }
 
-    cursor.index += delta;
     for (std::size_t line_i = 0; line_i < structure.lines.size(); line_i++) {
         const auto& line = structure.lines[line_i];
-        if (cursor.index < line.end || line_i == structure.lines.size()-1) {
-            cursor.offset.y = line_i * structure.line_height;
-            cursor.offset.x = 0;
-            for (std::size_t i = line.begin; i < cursor.index; i++) {
-                int c_index = int(text[i]) - char_first;
-                if (c_index < 0 || c_index >= characters.size()) {
-                    continue;
-                }
-                cursor.offset.x += characters[c_index].advance;
-            }
-            return cursor;
+        if (index >= line.end && line_i != structure.lines.size()-1) {
+            continue;
         }
+        float x = 0;
+        for (std::size_t i = line.begin; i < index; i++) {
+            int c_index = int(text[i]) - char_first;
+            if (c_index < 0 || c_index >= characters.size()) {
+                continue;
+            }
+            x += characters[c_index].advance;
+        }
+        return Vecf{x, line_i * structure.line_height};
     }
     throw std::runtime_error("Invalid cursor");
-    return CursorPos{0, Vecf::Zero()};
+    return Vecf::Zero();
 }
 
 } // namespace datagui

@@ -48,11 +48,10 @@ public:
         const Vecf& origin,
         const Vecf& mouse_pos);
 
-    CursorPos move_cursor(
+    Vecf find_cursor_offset(
         const std::string& text,
         const TextStructure& structure,
-        CursorPos cursor,
-        int delta);
+        std::size_t index);
 
 private:
     void draw_font_bitmap(int width, int height, Font font, int font_size);
