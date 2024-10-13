@@ -209,8 +209,8 @@ struct TextInput {
 
     std::string text;
     bool changed;
-    Vecf cursor_begin;
-    Vecf cursor_end;
+    std::pair<int, Vecf> cursor_begin;
+    std::pair<int, Vecf> cursor_end;
 
     TextInput(
         const std::string& default_text,
@@ -223,8 +223,8 @@ struct TextInput {
         props(props),
         text(default_text),
         changed(false),
-        cursor_begin(Vecf::Zero()),
-        cursor_end(Vecf::Zero())
+        cursor_begin(std::make_pair(-1, Vecf::Zero())),
+        cursor_end(std::make_pair(-1, Vecf::Zero()))
     {}
 };
 
@@ -280,7 +280,8 @@ public:
         root_node(-1),
         max_depth(0),
         iteration(0),
-        node_pressed(-1)
+        node_pressed(-1),
+        node_focused(-1)
     {
         if (open_now) {
             open();
@@ -348,20 +349,34 @@ private:
     void render_tree();
 
     void mouse_button_callback(int button, int action, int mods);
-    static void glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods);
+    void key_callback(int key, int scancode, int action, int mods);
 
     static std::vector<std::pair<GLFWwindow*, Window*>> active_windows;
+    static void glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods);
+    static void glfw_key_callback(GLFWwindow* callback_window, int key, int scancode, int action, int mods);
 
     struct Events {
         bool mouse_down;
         bool mouse_up;
+        bool key_down;
+        bool key_up;
+        int key;
+        int mods;
         Events():
             mouse_down(false),
-            mouse_up(false)
+            mouse_up(false),
+            key_down(false),
+            key_up(false),
+            key(-1),
+            mods(0)
         {}
         void clear() {
             mouse_down = false;
             mouse_up = false;
+            key_down = false;
+            key_up = false;
+            key = -1;
+            mods = 0;
         }
     };
     Events events;

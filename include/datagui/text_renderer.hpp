@@ -6,6 +6,7 @@
 #include "datagui/color.hpp"
 #include "datagui/font.hpp"
 
+
 namespace datagui {
 
 class TextRenderer {
@@ -19,7 +20,7 @@ public:
 
     int get_font_size() const { return font_size; }
     Vecf text_size(const std::string& text, float max_width, float line_height_factor);
-    Vecf cursor_offset(
+    std::pair<int, Vecf> cursor_offset(
         const Vecf& origin,
         const std::string& text,
         float width,

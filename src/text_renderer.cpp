@@ -313,7 +313,7 @@ Vecf TextRenderer::text_size(const std::string& text, float max_width, float lin
     }
 }
 
-Vecf TextRenderer::cursor_offset(
+std::pair<int, Vecf> TextRenderer::cursor_offset(
     const Vecf& origin,
     const std::string& text,
     float width,
@@ -324,10 +324,12 @@ Vecf TextRenderer::cursor_offset(
     Vecf offset = Vecf::Zero();
 
     Vecf result = offset;
+    int index = 0;
 
     for (char c_char: text) {
         int c_index = int(c_char) - char_first;
         if (c_index >= characters.size()) {
+            index++;
             continue;
         }
         const Character& c = characters[c_index];
@@ -348,13 +350,14 @@ Vecf TextRenderer::cursor_offset(
             if (mouse_pos.x >= pos.x + float(c.advance)/2) {
                 result.x += c.advance;
             }
-            return result;
+            return std::make_pair(index, result);
         }
 
         offset.x += c.advance;
+        index++;
     }
 
-    return result;
+    return std::make_pair(index, result);
 }
 
 

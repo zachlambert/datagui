@@ -17,6 +17,14 @@ void Window::glfw_mouse_button_callback(GLFWwindow* callback_window, int button,
     }
 }
 
+void Window::glfw_key_callback(GLFWwindow* callback_window, int key, int scancode, int action, int mods) {
+    for (auto [glfw_window, datagui_window]: active_windows) {
+        if (glfw_window == callback_window) {
+            datagui_window->key_callback(key, scancode, action, mods);
+        }
+    }
+}
+
 void Window::open() {
     if (!glfwInit()) {
         throw Error("Failed to initialize glfw");
@@ -55,6 +63,7 @@ void Window::open() {
 
     active_windows.emplace_back(window, this);
     glfwSetMouseButtonCallback(window, Window::glfw_mouse_button_callback);
+    glfwSetKeyCallback(window, Window::glfw_key_callback);
 }
 
 void Window::close() {
@@ -743,7 +752,7 @@ void Window::render_tree() {
                         // TODO: Blink
                         geometry_renderer.queue_box(
                             normalized_depth,
-                            Boxf(element.cursor_begin-Vecf(float(element.props.cursor_width)/2, 0), element.cursor_begin + Vecf(element.props.cursor_width, line_height)),
+                            Boxf(element.cursor_begin.second-Vecf(float(element.props.cursor_width)/2, 0), element.cursor_begin.second + Vecf(element.props.cursor_width, line_height)),
                             element.props.cursor_color,
                             0,
                             Color::Black(),
@@ -751,12 +760,12 @@ void Window::render_tree() {
                         );
                     } else {
                         Vecf from, to;
-                        if (element.cursor_begin.y < element.cursor_end.y || element.cursor_begin.y == element.cursor_end.y && element.cursor_begin.x <= element.cursor_end.x) {
-                            from = element.cursor_begin;
-                            to = element.cursor_end;
+                        if (element.cursor_begin.second.y < element.cursor_end.second.y || element.cursor_begin.second.y == element.cursor_end.second.y && element.cursor_begin.second.x <= element.cursor_end.second.x) {
+                            from = element.cursor_begin.second;
+                            to = element.cursor_end.second;
                         } else {
-                            from = element.cursor_end;
-                            to = element.cursor_begin;
+                            from = element.cursor_end.second;
+                            to = element.cursor_begin.second;
                         }
 
                         while (true) {
@@ -858,6 +867,43 @@ void Window::render_tree() {
         }
     }
 
+    if (node_focused != -1) {
+        const auto& node = nodes[node_focused];
+        switch (node.element) {
+            case Element::TextInput:
+                {
+                    auto& element = elements.text_input[node.element_index];
+                    if (events.key_down) {
+                        std::cout << "---\n";
+                        if (events.key == GLFW_KEY_BACKSPACE) {
+                            int from = element.cursor_begin.first;
+                            int to = element.cursor_end.first;
+                            if (from > to) {
+                                std::swap(from, to);
+                            }
+                            if (from != -1 && to != -1) {
+                                if (from != to) {
+                                    std::cout << from << "->" << to << std::endl;
+                                    element.text.erase(element.text.begin() + from, element.text.begin() + to);
+                                    // TODO: Update cursor
+                                } else if (from > 0) {
+                                    std::cout << (from-1) << std::endl;
+                                    element.text.erase(element.text.begin() + (from-1));
+                                    // TODO: Update cursor
+                                }
+                            }
+                        }
+                        std::cout << "key: " << events.key << std::endl;
+                        std::cout << "mods: " << events.mods << std::endl;
+                        std::cout << "char: " << char(events.key) << std::endl;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     Vecf viewport_size(display_w, display_h);
@@ -875,6 +921,17 @@ void Window::mouse_button_callback(int button, int action, int mods) {
             events.mouse_up = true;
         }
     }
+}
+
+void Window::key_callback(int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        events.key_down = true;
+    }
+    if (action == GLFW_RELEASE) {
+        events.key_up = true;
+    }
+    events.key = key;
+    events.mods = mods;
 }
 
 } // namespace datagui
