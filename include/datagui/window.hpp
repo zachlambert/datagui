@@ -209,8 +209,6 @@ struct TextInput {
 
     std::string text;
     bool changed;
-    std::pair<int, Vecf> cursor_begin;
-    std::pair<int, Vecf> cursor_end;
 
     TextInput(
         const std::string& default_text,
@@ -222,9 +220,7 @@ struct TextInput {
         num_lines(num_lines),
         props(props),
         text(default_text),
-        changed(false),
-        cursor_begin(std::make_pair(-1, Vecf::Zero())),
-        cursor_end(std::make_pair(-1, Vecf::Zero()))
+        changed(false)
     {}
 };
 
@@ -455,6 +451,10 @@ private:
 
     int node_pressed;
     int node_focused;
+
+    TextStructure cursor_text;
+    CursorPos cursor_begin;
+    CursorPos cursor_end;
 };
 
 } // namespace datagui

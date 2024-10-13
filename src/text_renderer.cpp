@@ -129,7 +129,7 @@ void TextRenderer::queue_text(
 
     for (char c_char: text) {
         int c_index = int(c_char) - char_first;
-        if (c_index >= characters.size()) {
+        if (c_index < 0 || c_index >= characters.size()) {
             continue;
         }
         const Character& c = characters[c_index];
@@ -295,7 +295,7 @@ Vecf TextRenderer::text_size(const std::string& text, float max_width, float lin
 
     for (char c_char: text) {
         int c_index = int(c_char) - char_first;
-        if (c_index >= characters.size()) {
+        if (c_index < 0 || c_index >= characters.size()) {
             continue;
         }
         const Character& c = characters[c_index];
@@ -313,52 +313,114 @@ Vecf TextRenderer::text_size(const std::string& text, float max_width, float lin
     }
 }
 
-std::pair<int, Vecf> TextRenderer::cursor_offset(
-    const Vecf& origin,
+TextStructure TextRenderer::calculate_text_structure(
     const std::string& text,
     float width,
-    float line_height_factor,
-    const Vecf& mouse_pos)
+    float line_height_factor)
 {
-    float line_height = font_size * line_height_factor;
-    Vecf offset = Vecf::Zero();
+    TextStructure structure;
+    structure.line_height = font_size * line_height_factor;
 
-    Vecf result = offset;
-    int index = 0;
+    float line_width = 0;
+    std::size_t line_begin = 0;
 
-    for (char c_char: text) {
-        int c_index = int(c_char) - char_first;
-        if (c_index >= characters.size()) {
-            index++;
+    for (std::size_t i = 0; i < text.size(); i++) {
+        int c_index = int(text[i]) - char_first;
+        if (c_index < 0 || c_index >= characters.size()) {
             continue;
         }
         const Character& c = characters[c_index];
-        if (offset.x + c.advance > width) {
-            offset.x = 0;
-            offset.y += line_height;
+        if (line_width + c.advance > width) {
+            std::size_t line_end = i;
+            structure.lines.push_back(LineStructure{line_begin, line_end, line_width});
+            line_begin = line_end;
+            line_width = 0;
         }
-
-        Vecf pos = origin + offset;
-        if (mouse_pos.x >= pos.x) {
-            result = pos;
-            if (mouse_pos.x >= pos.x + float(c.advance)/2) {
-                result.x += c.advance;
-            }
-        }
-        if (mouse_pos.x < pos.x + c.advance && mouse_pos.y < pos.y + line_height) {
-            result = pos;
-            if (mouse_pos.x >= pos.x + float(c.advance)/2) {
-                result.x += c.advance;
-            }
-            return std::make_pair(index, result);
-        }
-
-        offset.x += c.advance;
-        index++;
+        line_width += c.advance;
     }
+    structure.lines.push_back(LineStructure{line_begin, text.size(), line_width});
 
-    return std::make_pair(index, result);
+    return structure;
 }
 
+CursorPos TextRenderer::find_cursor(
+    const std::string& text,
+    const TextStructure& structure,
+    const Vecf& origin,
+    const Vecf& mouse_pos)
+{
+    if (structure.lines.empty()) {
+        return CursorPos{0, Vecf::Zero()};
+    }
+
+    Vecf pos = mouse_pos - origin;
+    float y = 0;
+    for (std::size_t line_i = 0; line_i < structure.lines.size(); line_i++) {
+        const auto& line = structure.lines[line_i];
+        if (pos.y >= y + structure.line_height && line_i != structure.lines.size()-1) {
+            y += structure.line_height;
+            continue;
+        }
+
+        float x = 0;
+        for (std::size_t char_i = line.begin; char_i < line.end; char_i++) {
+            int c_index = int(text[char_i]) - char_first;
+            if (c_index < 0 || c_index >= characters.size()) {
+                continue;
+            }
+            const Character& c = characters[c_index];
+            if (pos.x < x + float(c.advance)/2) {
+                return CursorPos{char_i, Vecf(x, y)};
+            }
+            x += c.advance;
+        }
+        return CursorPos{line.end, Vecf(x, y)};
+    }
+    // Unreachable
+    throw std::runtime_error("Unreachable code reached");
+    return CursorPos{0, Vecf::Zero()};
+}
+
+CursorPos TextRenderer::move_cursor(
+    const std::string& text,
+    const TextStructure& structure,
+    CursorPos cursor,
+    int delta)
+{
+    if (structure.lines.empty()) {
+        return cursor;
+    }
+
+    if (delta < 0 && int(cursor.index) + delta < 0) {
+        return {0, Vecf::Zero()};
+    } else if (delta > 0 && cursor.index + delta > text.size()) {
+        return {
+            text.size(),
+                Vecf(
+                    structure.lines.back().width,
+                    (structure.lines.size()-1) * structure.line_height
+                )
+        };
+    }
+
+    cursor.index += delta;
+    for (std::size_t line_i = 0; line_i < structure.lines.size(); line_i++) {
+        const auto& line = structure.lines[line_i];
+        if (cursor.index < line.end || line_i == structure.lines.size()-1) {
+            cursor.offset.y = line_i * structure.line_height;
+            cursor.offset.x = 0;
+            for (std::size_t i = line.begin; i < cursor.index; i++) {
+                int c_index = int(text[i]) - char_first;
+                if (c_index < 0 || c_index >= characters.size()) {
+                    continue;
+                }
+                cursor.offset.x += characters[c_index].advance;
+            }
+            return cursor;
+        }
+    }
+    throw std::runtime_error("Invalid cursor");
+    return CursorPos{0, Vecf::Zero()};
+}
 
 } // namespace datagui

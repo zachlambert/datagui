@@ -9,6 +9,22 @@
 
 namespace datagui {
 
+struct LineStructure {
+    std::size_t begin;
+    std::size_t end;
+    float width;
+};
+
+struct TextStructure {
+    float line_height;
+    std::vector<LineStructure> lines;
+};
+
+struct CursorPos {
+    std::size_t index;
+    Vecf offset;
+};
+
 class TextRenderer {
 public:
     TextRenderer();
@@ -20,12 +36,23 @@ public:
 
     int get_font_size() const { return font_size; }
     Vecf text_size(const std::string& text, float max_width, float line_height_factor);
-    std::pair<int, Vecf> cursor_offset(
-        const Vecf& origin,
+
+    TextStructure calculate_text_structure(
         const std::string& text,
         float width,
-        float line_height_factor,
+        float line_height_factor);
+
+    CursorPos find_cursor(
+        const std::string& text,
+        const TextStructure& structure,
+        const Vecf& origin,
         const Vecf& mouse_pos);
+
+    CursorPos move_cursor(
+        const std::string& text,
+        const TextStructure& structure,
+        CursorPos cursor,
+        int delta);
 
 private:
     void draw_font_bitmap(int width, int height, Font font, int font_size);

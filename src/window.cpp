@@ -746,51 +746,58 @@ void Window::render_tree() {
                         element.props.border_width + element.props.padding);
 
                 if (state.node == node_focused) {
-                    float line_height = text_renderer.get_font_size() * element.props.line_height_factor;
-
-                    if (element.cursor_begin == element.cursor_end) {
+                    if (cursor_begin.index == cursor_end.index) {
                         // TODO: Blink
                         geometry_renderer.queue_box(
                             normalized_depth,
-                            Boxf(element.cursor_begin.second-Vecf(float(element.props.cursor_width)/2, 0), element.cursor_begin.second + Vecf(element.props.cursor_width, line_height)),
+                            Boxf(
+                                text_origin+cursor_begin.offset-Vecf(float(element.props.cursor_width)/2, 0),
+                                text_origin+cursor_begin.offset + Vecf(element.props.cursor_width, cursor_text.line_height)),
                             element.props.cursor_color,
                             0,
                             Color::Black(),
                             0
                         );
                     } else {
-                        Vecf from, to;
-                        if (element.cursor_begin.second.y < element.cursor_end.second.y || element.cursor_begin.second.y == element.cursor_end.second.y && element.cursor_begin.second.x <= element.cursor_end.second.x) {
-                            from = element.cursor_begin.second;
-                            to = element.cursor_end.second;
+                        CursorPos from, to;
+                        if (cursor_begin.index <= cursor_end.index) {
+                            from = cursor_begin;
+                            to = cursor_end;
                         } else {
-                            from = element.cursor_end.second;
-                            to = element.cursor_begin.second;
+                            from = cursor_end;
+                            to = cursor_begin;
                         }
 
-                        while (true) {
-                            Vecf line_to;
-                            if (from.y == to.y) {
-                                line_to = to;
-                            } else {
-                                line_to.x = text_origin.x + node.size.x - 2*(element.props.border_width + element.props.padding);
-                                line_to.y = from.y;
+                        for (std::size_t line_i = 0; line_i < cursor_text.lines.size(); line_i++) {
+                            const auto& line = cursor_text.lines[line_i];
+                            if (from.index >= line.end) {
+                                continue;
                             }
-
+                            CursorPos line_to;
+                            if (to.index > line.end) {
+                                line_to = CursorPos{line.end, Vecf(line.width, line_i * cursor_text.line_height)};
+                            } else {
+                                line_to = to;
+                            }
                             geometry_renderer.queue_box(
                                 normalized_depth,
-                                Boxf(from, line_to + Vecf(0, line_height)),
+                                Boxf(
+                                    text_origin + from.offset,
+                                    text_origin + line_to.offset + Vecf(0, cursor_text.line_height)
+                                ),
                                 element.props.highlight_color,
                                 0,
                                 Color::Black(),
                                 0
                             );
-
-                            if (from.y >= to.y) {
+                            if (line_i != cursor_text.lines.size()-1) {
+                                const auto& next_line = cursor_text.lines[line_i+1];
+                                from.index = next_line.begin;
+                                from.offset = Vecf(0, (line_i+1) * cursor_text.line_height);
+                            }
+                            if (to.index <= line.end) {
                                 break;
                             }
-                            from.y += line_height;
-                            from.x = text_origin.x;
                         }
                     }
 
@@ -826,15 +833,19 @@ void Window::render_tree() {
                 case Element::TextInput:
                     {
                         auto& element = elements.text_input[node.element_index];
-                        element.cursor_begin = text_renderer.cursor_offset(
-                            node.origin + Vecf::Constant(
-                                element.props.border_width + element.props.padding),
+                        cursor_text = text_renderer.calculate_text_structure(
                             element.text,
                             node.size.x - (element.props.border_width + element.props.padding),
-                            element.props.line_height_factor,
+                            element.props.line_height_factor
+                        );
+                        cursor_begin = text_renderer.find_cursor(
+                            element.text,
+                            cursor_text,
+                            node.origin + Vecf::Constant(
+                                element.props.border_width + element.props.padding),
                             mouse_pos
                         );
-                        element.cursor_end = element.cursor_begin;
+                        cursor_end = cursor_begin;
                     }
                     break;
                 default:
@@ -852,12 +863,11 @@ void Window::render_tree() {
             case Element::TextInput:
                 {
                     auto& element = elements.text_input[node.element_index];
-                    element.cursor_end = text_renderer.cursor_offset(
+                    cursor_end = text_renderer.find_cursor(
+                        element.text,
+                        cursor_text,
                         node.origin + Vecf::Constant(
                             element.props.border_width + element.props.padding),
-                        element.text,
-                        node.size.x - (element.props.border_width + element.props.padding),
-                        element.props.line_height_factor,
                         mouse_pos
                     );
                 }
@@ -874,7 +884,18 @@ void Window::render_tree() {
                 {
                     auto& element = elements.text_input[node.element_index];
                     if (events.key_down) {
+                        if (cursor_begin.index == cursor_end.index) {
+                            if (events.key == GLFW_KEY_LEFT) {
+                                cursor_begin = text_renderer.move_cursor(element.text, cursor_text, cursor_begin, -1);
+                                cursor_end = cursor_begin;
+                            }
+                            else if (events.key == GLFW_KEY_RIGHT) {
+                                cursor_begin = text_renderer.move_cursor(element.text, cursor_text, cursor_begin, 1);
+                                cursor_end = cursor_begin;
+                            }
+                        }
                         std::cout << "---\n";
+#if 0
                         if (events.key == GLFW_KEY_BACKSPACE) {
                             int from = element.cursor_begin.first;
                             int to = element.cursor_end.first;
@@ -893,6 +914,7 @@ void Window::render_tree() {
                                 }
                             }
                         }
+#endif
                         std::cout << "key: " << events.key << std::endl;
                         std::cout << "mods: " << events.mods << std::endl;
                         std::cout << "char: " << char(events.key) << std::endl;
