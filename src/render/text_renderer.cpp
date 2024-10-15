@@ -332,7 +332,11 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
     FT_Done_FreeType(ft_library);
 }
 
-Vecf TextRenderer::text_size(const std::string& text, float max_width, float line_height_factor) {
+Vecf TextRenderer::text_size(
+    const std::string& text,
+    float max_width,
+    float line_height_factor) const
+{
     bool has_max_width = max_width > 0;
     float line_height = style.font_size * line_height_factor;
     Vecf offset = Vecf::Zero();
@@ -361,7 +365,7 @@ Vecf TextRenderer::text_size(const std::string& text, float max_width, float lin
 TextStructure TextRenderer::calculate_text_structure(
     const std::string& text,
     float width,
-    float line_height_factor)
+    float line_height_factor) const
 {
     TextStructure structure;
     structure.line_height = style.font_size * line_height_factor;
@@ -392,7 +396,7 @@ CursorPos TextRenderer::find_cursor(
     const std::string& text,
     const TextStructure& structure,
     const Vecf& origin,
-    const Vecf& mouse_pos)
+    const Vecf& mouse_pos) const
 {
     if (structure.lines.empty()) {
         return CursorPos{0, Vecf::Zero()};
@@ -429,7 +433,7 @@ CursorPos TextRenderer::find_cursor(
 Vecf TextRenderer::find_cursor_offset(
     const std::string& text,
     const TextStructure& structure,
-    std::size_t index)
+    std::size_t index) const
 {
     if (structure.lines.empty()) {
         return Vecf::Zero();

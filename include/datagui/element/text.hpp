@@ -1,10 +1,12 @@
 #pragma once
 
 #include <string>
-#include "datagui/color.hpp"
-#include "datagui/geometry.hpp"
+#include "datagui/element.hpp"
+#include "datagui/style.hpp"
 
 namespace datagui {
+
+class TextRenderer;
 
 struct Text {
     std::string text;
@@ -18,5 +20,12 @@ struct Text {
         max_width(max_width)
     {}
 };
+
+void calculate_size_components(
+    const Tree& tree,
+    const Style& style,
+    const TextRenderer& text_renderer,
+    Node& node,
+    const Text& element);
 
 } // namespace datagui

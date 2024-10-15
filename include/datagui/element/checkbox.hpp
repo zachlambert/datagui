@@ -1,7 +1,7 @@
 #pragma once
 
-#include "datagui/color.hpp"
-#include "datagui/geometry.hpp"
+#include "datagui/element.hpp"
+#include "datagui/style.hpp"
 
 namespace datagui {
 
@@ -12,5 +12,11 @@ struct Checkbox {
         checked(default_checked)
     {}
 };
+
+void calculate_size_components(
+    const Tree& tree,
+    const Style& style,
+    Node& node,
+    const Checkbox& element);
 
 } // namespace datagui

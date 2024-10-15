@@ -34,23 +34,26 @@ public:
     void render(const Vecf& viewport_size);
 
     int get_font_size() const { return style.font_size; }
-    Vecf text_size(const std::string& text, float max_width, float line_height_factor);
+    Vecf text_size(
+        const std::string& text,
+        float max_width,
+        float line_height_factor) const;
 
     TextStructure calculate_text_structure(
         const std::string& text,
         float width,
-        float line_height_factor);
+        float line_height_factor) const;
 
     CursorPos find_cursor(
         const std::string& text,
         const TextStructure& structure,
         const Vecf& origin,
-        const Vecf& mouse_pos);
+        const Vecf& mouse_pos) const;
 
     Vecf find_cursor_offset(
         const std::string& text,
         const TextStructure& structure,
-        std::size_t index);
+        std::size_t index) const;
 
 private:
     void draw_font_bitmap(int width, int height, Font font, int font_size);

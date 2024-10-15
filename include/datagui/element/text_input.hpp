@@ -1,10 +1,12 @@
 #pragma once
 
-#include "datagui/color.hpp"
-#include "datagui/geometry.hpp"
+#include "datagui/element.hpp"
+#include "datagui/style.hpp"
 #include <string>
 
 namespace datagui {
+
+class TextRenderer;
 
 struct TextInput {
     float max_width;
@@ -20,5 +22,12 @@ struct TextInput {
         changed(false)
     {}
 };
+
+void calculate_size_components(
+    const Tree& tree,
+    const Style& style,
+    const TextRenderer& text_renderer,
+    Node& node,
+    const TextInput& element);
 
 } // namespace datagui

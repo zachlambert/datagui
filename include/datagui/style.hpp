@@ -21,7 +21,7 @@ struct Style {
 
     struct Element {
         Color bg_color = Color::White();
-        float padding;
+        float padding = 4;
         float border_width = 4;
         Color border_color = Color::Black();
         Color focus_color = Color(0, 1, 1);
@@ -42,7 +42,7 @@ struct Style {
         Color check_color = Color(0, 1, 1);
     };
 
-    Color bg_color = Color::Gray(0.5);
+    Color bg_color = Color::Gray(0.8);
     Text text;
     Element element;
     TextInput text_input;

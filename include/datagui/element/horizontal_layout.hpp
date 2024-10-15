@@ -1,7 +1,7 @@
 #pragma once
 
-#include "datagui/color.hpp"
-#include "datagui/geometry.hpp"
+#include "datagui/element.hpp"
+#include "datagui/style.hpp"
 
 namespace datagui {
 
@@ -12,5 +12,17 @@ struct HorizontalLayout {
         input_size(input_size)
     {}
 };
+
+void calculate_size_components(
+    const Tree& tree,
+    const Style& style,
+    Node& node,
+    const HorizontalLayout& element);
+
+void calculate_child_sizes(
+    Tree& tree,
+    const Style& style,
+    const Node& node,
+    const HorizontalLayout& element);
 
 } // namespace datagui

@@ -1,6 +1,7 @@
 #include "datagui/window.hpp"
 
 #include <stack>
+#include <iostream>
 #include "datagui/exception.hpp"
 
 
@@ -195,7 +196,7 @@ bool Window::text_input(
 }
 
 void Window::render_begin() {
-    glClearColor(0.5, 0.5, 0.5, 1);
+    glClearColor(style.bg_color.r, style.bg_color.g, style.bg_color.b, 1);
     glClearDepth(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -262,202 +263,75 @@ void Window::calculate_sizes_up() {
         stack.pop();
 
         switch (node.element) {
-        case Element::VerticalLayout:
-            {
-                const auto& element = elements.vertical_layout[node.element_index];
-
-                // X direction
-                if (element.input_size.x == 0) {
-                    int child = node.first_child;
-                    int count = 0;
-                    while (child != -1) {
-                        count++;
-                        node.fixed_size.x = std::max(node.fixed_size.x, tree[child].fixed_size.x);
-                        node.dynamic_size.x = std::max(node.dynamic_size.x, tree[child].dynamic_size.x);
-                        child = tree[child].next;
-                    }
-                    node.fixed_size.x += 2 * style.element.padding;
-
-                } else if (element.input_size.x > 0) {
-                    node.fixed_size.x = element.input_size.x;
-                } else {
-                    node.dynamic_size.x = -element.input_size.x;
-                }
-
-                // Y direction
-                if (element.input_size.y == 0) {
-                    int child = node.first_child;
-                    int count = 0;
-                    while (child != -1) {
-                        count++;
-                        node.fixed_size.y += tree[child].fixed_size.y;
-                        node.dynamic_size.y += tree[child].dynamic_size.y;
-                        child = tree[child].next;
-                    }
-                    node.fixed_size.y += 2 * style.element.padding;
-                    node.fixed_size.y += (count - 1) * style.element.padding;
-
-                } else if (element.input_size.y > 0) {
-                    node.fixed_size.y = element.input_size.y;
-                } else {
-                    node.dynamic_size.y = -element.input_size.y;
-                }
-            }
-            break;
-        case Element::HorizontalLayout:
-            {
-                const auto& element = elements.horizontal_layout[node.element_index];
-
-                // X direction
-                if (element.input_size.x == 0) {
-                    int child = node.first_child;
-                    int count = 0;
-                    while (child != -1) {
-                        count++;
-                        node.fixed_size.x += tree[child].fixed_size.x;
-                        node.dynamic_size.x += tree[child].dynamic_size.x;
-                        child = tree[child].next;
-                    }
-                    node.fixed_size.x += 2 * style.element.padding;
-                    node.fixed_size.x += (count - 1) * style.element.padding;
-
-                } else if (element.input_size.x > 0) {
-                    node.fixed_size.x = element.input_size.x;
-                } else {
-                    node.dynamic_size.x = -element.input_size.x;
-                }
-
-                // Y direction
-                if (element.input_size.y == 0) {
-                    int child = node.first_child;
-                    int count = 0;
-                    while (child != -1) {
-                        count++;
-                        node.fixed_size.y = std::max(node.fixed_size.y, tree[child].fixed_size.y);
-                        node.dynamic_size.y = std::max(node.dynamic_size.y, tree[child].dynamic_size.y);
-                        child = tree[child].next;
-                    }
-                    node.fixed_size.y += 2 * style.element.padding;
-                    node.fixed_size.y += (count - 1) * style.element.padding;
-
-                } else if (element.input_size.y > 0) {
-                    node.fixed_size.y = element.input_size.y;
-                } else {
-                    node.dynamic_size.y = -element.input_size.y;
-                }
-            }
-            break;
-        case Element::Text:
-            {
-                const auto& element = elements.text[node.element_index];
-
-                node.fixed_size = text_renderer.text_size(
-                    element.text,
-                    element.max_width,
-                    style.text.line_height);
-            }
-            break;
-        case Element::Button:
-            {
-                const auto& element = elements.button[node.element_index];
-
-                node.fixed_size = text_renderer.text_size(
-                    element.text,
-                    element.max_width,
-                    style.text.line_height);
-                node.fixed_size += Vecf::Constant((style.element.border_width + style.element.padding) * 2);
-            }
-            break;
-        case Element::Checkbox:
-            {
-                const auto& element = elements.checkbox[node.element_index];
-                node.fixed_size = Vecf::Constant(text_renderer.get_font_size() * style.checkbox.size);
-            }
-            break;
-        case Element::TextInput:
-            {
-                const auto& element = elements.text_input[node.element_index];
-
-                node.fixed_size = text_renderer.text_size(
-                    element.text,
-                    element.max_width,
-                    style.text.line_height);
-                node.fixed_size += Vecf::Constant(
-                    2 * (style.element.border_width + style.element.padding));
-            }
-            break;
-        };
+            case Element::VerticalLayout:
+                calculate_size_components(
+                    tree, style,
+                    node, elements.vertical_layout[node.element_index]);
+                break;
+            case Element::HorizontalLayout:
+                calculate_size_components(
+                    tree, style,
+                    node, elements.horizontal_layout[node.element_index]);
+                break;
+            case Element::Text:
+                calculate_size_components(
+                    tree, style, text_renderer,
+                    node, elements.text[node.element_index]);
+                break;
+            case Element::Button:
+                calculate_size_components(
+                    tree, style, text_renderer,
+                    node, elements.button[node.element_index]);
+                break;
+            case Element::Checkbox:
+                calculate_size_components(
+                    tree, style,
+                    node, elements.checkbox[node.element_index]);
+                break;
+            case Element::TextInput:
+                calculate_size_components(
+                    tree, style, text_renderer,
+                    node, elements.text_input[node.element_index]);
+                break;
+        }
     }
 }
 
 void Window::calculate_sizes_down() {
     std::stack<int> stack;
-    stack.push(0);
+    stack.push(tree.root_node());
 
-    tree[0].size = tree[0].fixed_size;
-    tree[0].origin = Vecf::Zero();
+    tree[tree.root_node()].size = tree[0].fixed_size;
+    tree[tree.root_node()].origin = Vecf::Zero();
 
     while (!stack.empty()) {
-        const auto& parent = tree[stack.top()];
+        const auto& node = tree[stack.top()];
         stack.pop();
-        if (parent.first_child == -1) {
+
+        if (node.first_child == -1) {
             continue;
         }
 
-        Vecf available = parent.size - parent.fixed_size;
-        Vecf offset = Vecf::Zero();
-
-        switch (parent.element) {
+        switch (node.element) {
             case Element::VerticalLayout:
-                {
-                    const auto& element = elements.vertical_layout[parent.element_index];
-                    offset.x += style.element.padding;
-                    offset.y += style.element.padding;
-                }
+                calculate_child_sizes(
+                    tree, style,
+                    node, elements.vertical_layout[node.element_index]);
                 break;
             case Element::HorizontalLayout:
-                {
-                    const auto& element = elements.horizontal_layout[parent.element_index];
-                    offset.x += style.element.padding;
-                    offset.y += style.element.padding;
-                }
+                calculate_child_sizes(
+                    tree, style,
+                    node, elements.horizontal_layout[node.element_index]);
                 break;
             default:
+                throw WindowError("A non-layout element shouldn't have children");
                 break;
         }
 
-        int child = parent.first_child;
+        int child = node.first_child;
         while (child != -1) {
-            auto& child_node = tree[child];
-            child_node.size = child_node.fixed_size;
-            if (parent.dynamic_size.x > 0){
-                child_node.size.x += child_node.dynamic_size.x / parent.dynamic_size.x;
-            }
-            if (parent.dynamic_size.y > 0){
-                child_node.size.y += child_node.dynamic_size.y / parent.dynamic_size.y;
-            }
-            child_node.origin = parent.origin + offset;
-
-            switch (parent.element) {
-            case Element::VerticalLayout:
-                {
-                    const auto& element = elements.vertical_layout[parent.element_index];
-                    offset.y += child_node.size.y + style.element.padding;
-                }
-                break;
-            case Element::HorizontalLayout:
-                {
-                    const auto& element = elements.horizontal_layout[parent.element_index];
-                    offset.x += child_node.size.x + style.element.padding;
-                }
-                break;
-            default:
-                throw std::runtime_error("A non-layout element shouldn't have children");
-                break;
-            }
-
             stack.push(child);
-            child = child_node.next;
+            child = tree[child].next;
         }
     }
 }
@@ -483,9 +357,13 @@ void Window::render_tree() {
     int node_clicked = -1;
     int node_clicked_depth = -1;
 
+    std::cout << "Render tree" << std::endl;
     while (!stack.empty()) {
         State state = stack.top();
         auto& node = tree[state.node];
+        std::cout << "Node: " << state.node << std::endl;
+        std::cout << "- origin: " << node.origin.x << ", " << node.origin.y << std::endl;
+        std::cout << "- size: " << node.size.x << ", " << node.size.y << std::endl;
 
         // Handle element-specific click events
         if (node.clicked) {
@@ -548,7 +426,7 @@ void Window::render_tree() {
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
-                    style.element.bg_color,
+                    Color::Clear(),
                     0,
                     Color::Black(),
                     0
@@ -568,8 +446,8 @@ void Window::render_tree() {
                 const auto& element = elements.button[node.element_index];
                 const Color& bg_color =
                     (node_pressed == state.node)
-                        ? style.element.bg_color
-                        :style.element.pressed_bg_color;
+                        ? style.element.pressed_bg_color
+                        :style.element.bg_color;
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),

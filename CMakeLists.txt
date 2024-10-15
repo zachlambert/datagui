@@ -19,6 +19,12 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
+    src/element/button.cpp
+    src/element/checkbox.cpp
+    src/element/horizontal_layout.cpp
+    src/element/text.cpp
+    src/element/text_input.cpp
+    src/element/vertical_layout.cpp
     src/render/geometry_renderer.cpp
     src/render/text_renderer.cpp
     src/render/shader.cpp
