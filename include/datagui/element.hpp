@@ -38,9 +38,6 @@ struct Node {
     Vecf origin;
     Vecf size;
 
-    // State
-    bool clicked;
-
     Node(const std::string& key, Element element, int parent, int iteration):
         key(key),
         element(element),
@@ -54,8 +51,7 @@ struct Node {
         fixed_size(Vecf::Zero()),
         dynamic_size(Vecf::Zero()),
         origin(Vecf::Zero()),
-        size(Vecf::Zero()),
-        clicked(false)
+        size(Vecf::Zero())
     {}
 
     void reset(int iteration) {

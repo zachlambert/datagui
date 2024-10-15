@@ -85,23 +85,18 @@ private:
     void close();
 
     void delete_element(Element element, int index);
-
-    // Returns true if a new node is created
-#if 0
-    int visit_node(const std::string& key, Element element, bool enter);
-    void remove_node(int node);
-#endif
-
     void calculate_sizes_up();
     void calculate_sizes_down();
-    void render_tree();
 
     void mouse_button_callback(int button, int action, int mods);
     void key_callback(int key, int scancode, int action, int mods);
+    void event_handling();
 
     static std::vector<std::pair<GLFWwindow*, Window*>> active_windows;
     static void glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods);
     static void glfw_key_callback(GLFWwindow* callback_window, int key, int scancode, int action, int mods);
+
+    void render_tree();
 
     struct Events {
         bool mouse_down;
@@ -146,9 +141,11 @@ private:
     TextRenderer text_renderer;
 
     Tree tree;
+    Vecf window_size;
 
     int node_pressed;
     int node_focused;
+    int node_clicked;
 
     TextStructure cursor_text;
     CursorPos cursor_begin;

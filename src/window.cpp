@@ -1,6 +1,7 @@
 #include "datagui/window.hpp"
 
 #include <stack>
+#include <iostream>
 #include "datagui/exception.hpp"
 
 
@@ -30,7 +31,8 @@ Window::Window(const Config& config, const Style& style):
     window(nullptr),
     tree(std::bind(&Window::delete_element, this, std::placeholders::_1, std::placeholders::_2)),
     node_pressed(-1),
-    node_focused(-1)
+    node_focused(-1),
+    node_clicked(-1)
 {
     open();
 }
@@ -170,7 +172,7 @@ bool Window::button(
         return elements.button.emplace(text, max_width);
     });
     tree.up();
-    return tree[node].clicked;
+    return node == node_clicked;
 }
 
 bool Window::checkbox(const std::string& key) {
@@ -202,6 +204,7 @@ void Window::render_begin() {
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
+    window_size = Vecf(display_w, display_h);
 
     vertical_layout("root", 0, 0);
 }
@@ -211,19 +214,20 @@ void Window::render_end() {
     if (tree.depth() != 0) {
         throw WindowError("Didn't call layout_... and layout_end the same number of times");
     }
-
-    glfwPollEvents();
+    if (tree.root_node() == -1) {
+        throw WindowError("Root node not defined");
+    }
 
     calculate_sizes_up();
     calculate_sizes_down();
+    event_handling();
     render_tree();
-
-    glfwSwapBuffers(window);
 
     const auto& root_node = tree[tree.root_node()];
     glfwSetWindowSizeLimits(window, root_node.fixed_size.x, root_node.fixed_size.y, -1, -1);
 
-    events.clear();
+    glfwSwapBuffers(window);
+
     tree.reset();
 }
 
@@ -304,13 +308,9 @@ void Window::calculate_sizes_up() {
 
 void Window::calculate_sizes_down() {
     std::stack<int> stack;
-    stack.push(tree.root_node());
 
-    {
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        tree[tree.root_node()].size = Vecf(display_w, display_h);
-    }
+    stack.push(tree.root_node());
+    tree[tree.root_node()].size = window_size;
 
     while (!stack.empty()) {
         const auto& node = tree[stack.top()];
@@ -344,33 +344,88 @@ void Window::calculate_sizes_down() {
     }
 }
 
-void Window::render_tree() {
-    struct State {
-        int node;
-        bool parent_clicked;
-        int depth;
-        State(int node, bool parent_clicked, int depth):
-            node(node),
-            parent_clicked(parent_clicked),
-            depth(depth)
-        {}
-    };
-    std::stack<State> stack;
-    stack.emplace(tree.root_node(), events.mouse_up || events.mouse_down, 0);
+void Window::mouse_button_callback(int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            events.mouse_down = true;
+        }
+        if (action == GLFW_RELEASE){
+            events.mouse_up = true;
+        }
+    }
+}
+
+void Window::key_callback(int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        events.key_down = true;
+    }
+    if (action == GLFW_RELEASE) {
+        events.key_up = true;
+    }
+    events.key = key;
+    events.mods = mods;
+}
+
+void Window::event_handling() {
+    glfwPollEvents();
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
     Vecf mouse_pos(mx, my);
 
-    int node_clicked = -1;
-    int node_clicked_depth = -1;
+    node_clicked = -1;
 
-    while (!stack.empty()) {
-        State state = stack.top();
-        auto& node = tree[state.node];
+    if (events.mouse_down) {
+        int clicked = tree.root_node();
+        while (true) {
+            const auto& node = tree[clicked];
+            int child_index = node.first_child;
+            while (child_index != -1) {
+                const auto& child = tree[child_index];
+                if (Boxf(child.origin, child.origin+child.size).contains(mouse_pos)) {
+                    clicked = child_index;
+                    break;
+                }
+                child_index = child.next;
+            }
+            if (child_index == -1) {
+                break;
+            }
+        }
 
-        // Handle element-specific click events
-        if (node.clicked) {
+        node_pressed = clicked;
+        node_focused = clicked;
+
+        const auto& node = tree[clicked];
+        switch (tree[clicked].element) {
+            case Element::TextInput:
+                {
+                    auto& element = elements.text_input[node.element_index];
+                    cursor_text = text_renderer.calculate_text_structure(
+                        element.text,
+                        node.size.x - (style.element.border_width + style.element.padding),
+                        style.text.line_height
+                    );
+                    cursor_begin = text_renderer.find_cursor(
+                        element.text,
+                        cursor_text,
+                        node.origin + Vecf::Constant(
+                            style.element.border_width + style.element.padding),
+                        mouse_pos
+                    );
+                    cursor_end = cursor_begin;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (events.mouse_up && node_pressed != -1) {
+        const auto& node = tree[node_pressed];
+        if (Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
+            node_clicked = node_pressed;
+            // Handle click release
             switch (node.element) {
                 case Element::Checkbox:
                     {
@@ -379,22 +434,158 @@ void Window::render_tree() {
                     }
                     break;
                 default:
-                    // Nothing required
                     break;
             }
         }
-        node.clicked = false;
+        node_pressed = -1;
+    }
 
-        // Determine the lowest depth node that is clicked, this updates node.clicked
-        // after the whole tree is traversed
-        bool clicked = state.parent_clicked && Boxf(node.origin, node.origin+node.size).contains(mouse_pos);
-        if (clicked && state.depth >= node_clicked_depth) {
-            node_clicked = state.node;
-            node_clicked_depth = state.depth;
+    if (node_pressed != -1) {
+        const auto& node = tree[node_pressed];
+        switch (node.element) {
+            case Element::TextInput:
+                {
+                    auto& element = elements.text_input[node.element_index];
+                    cursor_end = text_renderer.find_cursor(
+                        element.text,
+                        cursor_text,
+                        node.origin + Vecf::Constant(
+                            style.element.border_width + style.element.padding),
+                        mouse_pos
+                    );
+                }
+                break;
+            default:
+                break;
         }
+    }
+
+    if (node_pressed != -1 && events.key_down) {
+        const auto& node = tree[node_focused];
+        switch (node.element) {
+            case Element::TextInput:
+                {
+                    auto& element = elements.text_input[node.element_index];
+                    if (events.key == GLFW_KEY_LEFT || events.key == GLFW_KEY_RIGHT) {
+                        if (cursor_begin.index != cursor_end.index && events.mods != 1) {
+                            if (events.key == GLFW_KEY_LEFT && cursor_begin.index <= cursor_end.index
+                                || events.key == GLFW_KEY_RIGHT && cursor_end.index <= cursor_begin.index)
+                            {
+                                cursor_end = cursor_begin;
+                            } else {
+                                cursor_begin = cursor_end;
+                            }
+                        } else {
+                            std::size_t pos = cursor_end.index;
+                            if (events.key == GLFW_KEY_LEFT && pos != 0) {
+                                cursor_end.index = pos-1;
+                                cursor_end.offset = text_renderer.find_cursor_offset(
+                                    element.text, cursor_text, cursor_end.index);
+                                if (events.mods != 1) {
+                                    cursor_begin = cursor_end;
+                                }
+                            } else if (pos != element.text.size()) {
+                                cursor_end.index = pos+1;
+                                cursor_end.offset = text_renderer.find_cursor_offset(
+                                    element.text, cursor_text, cursor_end.index);
+                                if (events.mods != 1) {
+                                    cursor_begin = cursor_end;
+                                }
+                            }
+                        }
+                    }
+                    else if (events.key == GLFW_KEY_BACKSPACE) {
+                        if (cursor_begin.index != cursor_end.index) {
+                            std::size_t from = cursor_begin.index;
+                            std::size_t to = cursor_end.index;
+                            if (from > to) {
+                                std::swap(from, to);
+                            }
+                            element.text.erase(element.text.begin() + from, element.text.begin() + to);
+                            if (cursor_begin.index <= cursor_end.index) {
+                                cursor_end = cursor_begin;
+                            } else {
+                                cursor_begin = cursor_end;
+                            }
+                            cursor_text = text_renderer.calculate_text_structure(
+                                element.text,
+                                node.size.x - (style.element.border_width + style.element.padding),
+                                style.text.line_height);
+                        } else if (cursor_begin.index > 0) {
+                            element.text.erase(element.text.begin() + (cursor_begin.index-1));
+                            cursor_text = text_renderer.calculate_text_structure(
+                                element.text,
+                                node.size.x - (style.element.border_width + style.element.padding),
+                                style.text.line_height);
+                            cursor_begin.index--;
+                            cursor_begin.offset = text_renderer.find_cursor_offset(
+                                element.text, cursor_text, cursor_begin.index);
+                            cursor_end = cursor_begin;
+                        }
+                    }
+                    else if (events.key >= GLFW_KEY_A && events.key <= GLFW_KEY_Z) {
+                        char new_c;
+                        if (events.mods == 1) {
+                            new_c = 'A' + (events.key - GLFW_KEY_A);
+                        } else {
+                            new_c = 'a' + (events.key - GLFW_KEY_A);
+                        }
+                        if (cursor_begin.index != cursor_end.index) {
+                            std::size_t from = cursor_begin.index;
+                            std::size_t to = cursor_end.index;
+                            if (from > to) {
+                                std::swap(from, to);
+                            }
+                            element.text.erase(element.text.begin() + from, element.text.begin() + to);
+                            element.text.insert(element.text.begin() + from, new_c);
+                            cursor_begin.index++;
+                            cursor_text = text_renderer.calculate_text_structure(
+                                element.text,
+                                node.size.x - (style.element.border_width + style.element.padding),
+                                style.text.line_height);
+                            cursor_begin.offset = text_renderer.find_cursor_offset(
+                                element.text, cursor_text, cursor_begin.index);
+                            cursor_end = cursor_begin;
+                        } else {
+                            element.text.insert(element.text.begin() + cursor_begin.index, new_c);
+                            cursor_begin.index++;
+                            cursor_text = text_renderer.calculate_text_structure(
+                                element.text,
+                                node.size.x - (style.element.border_width + style.element.padding),
+                                style.text.line_height);
+                            cursor_begin.offset = text_renderer.find_cursor_offset(
+                                element.text, cursor_text, cursor_begin.index);
+                            cursor_end = cursor_begin;
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    events.clear();
+}
+
+void Window::render_tree() {
+    struct State {
+        int node;
+        int depth;
+        State(int node, int depth):
+            node(node),
+            depth(depth)
+        {}
+    };
+
+    std::stack<State> stack;
+    stack.emplace(tree.root_node(), 0);
+
+    while (!stack.empty()) {
+        State state = stack.top();
+        auto& node = tree[state.node];
 
         float normalized_depth = float(state.depth) / (tree.max_depth() + 1);
-
         stack.pop();
 
         switch (node.element) {
@@ -472,14 +663,20 @@ void Window::render_tree() {
         case Element::Checkbox:
             {
                 const auto& element = elements.checkbox[node.element_index];
+                const Color& bg_color =
+                    (node_pressed == state.node)
+                    ? style.element.pressed_bg_color
+                    : style.element.bg_color;
+
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
-                    style.element.bg_color,
+                    bg_color,
                     style.element.border_width,
                     style.element.border_color,
                     0
                 );
+
                 if (element.checked) {
                     float offset = style.element.border_width + style.checkbox.check_padding;
                     geometry_renderer.queue_box(
@@ -587,199 +784,13 @@ void Window::render_tree() {
         }
         int child = node.first_child;
         while (child != -1) {
-            stack.emplace(child, clicked, state.depth + 1);
+            stack.emplace(child, state.depth + 1);
             child = tree[child].next;
         }
     }
 
-    if (node_clicked != -1) {
-        if (events.mouse_down) {
-            node_pressed = node_clicked;
-            node_focused = node_clicked;
-            const auto& node = tree[node_clicked];
-            switch (node.element) {
-                case Element::TextInput:
-                    {
-                        auto& element = elements.text_input[node.element_index];
-                        cursor_text = text_renderer.calculate_text_structure(
-                            element.text,
-                            node.size.x - (style.element.border_width + style.element.padding),
-                            style.text.line_height
-                        );
-                        cursor_begin = text_renderer.find_cursor(
-                            element.text,
-                            cursor_text,
-                            node.origin + Vecf::Constant(
-                                style.element.border_width + style.element.padding),
-                            mouse_pos
-                        );
-                        cursor_end = cursor_begin;
-                    }
-                    break;
-                default:
-                    break;
-            }
-        } else if (events.mouse_up) {
-            if (node_clicked == node_pressed) {
-                tree[node_clicked].clicked = true;
-            }
-            node_pressed = -1;
-        }
-    } else if (node_pressed != -1) {
-        const auto& node = tree[node_pressed];
-        switch (node.element) {
-            case Element::TextInput:
-                {
-                    auto& element = elements.text_input[node.element_index];
-                    cursor_end = text_renderer.find_cursor(
-                        element.text,
-                        cursor_text,
-                        node.origin + Vecf::Constant(
-                            style.element.border_width + style.element.padding),
-                        mouse_pos
-                    );
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    if (node_focused != -1) {
-        const auto& node = tree[node_focused];
-        switch (node.element) {
-            case Element::TextInput:
-                {
-                    auto& element = elements.text_input[node.element_index];
-                    if (events.key_down) {
-                        if (events.key == GLFW_KEY_LEFT || events.key == GLFW_KEY_RIGHT) {
-                            if (cursor_begin.index != cursor_end.index && events.mods != 1) {
-                                if (events.key == GLFW_KEY_LEFT && cursor_begin.index <= cursor_end.index
-                                    || events.key == GLFW_KEY_RIGHT && cursor_end.index <= cursor_begin.index)
-                                {
-                                    cursor_end = cursor_begin;
-                                } else {
-                                    cursor_begin = cursor_end;
-                                }
-                            } else {
-                                std::size_t pos = cursor_end.index;
-                                if (events.key == GLFW_KEY_LEFT && pos != 0) {
-                                    cursor_end.index = pos-1;
-                                    cursor_end.offset = text_renderer.find_cursor_offset(
-                                        element.text, cursor_text, cursor_end.index);
-                                    if (events.mods != 1) {
-                                        cursor_begin = cursor_end;
-                                    }
-                                } else if (pos != element.text.size()) {
-                                    cursor_end.index = pos+1;
-                                    cursor_end.offset = text_renderer.find_cursor_offset(
-                                        element.text, cursor_text, cursor_end.index);
-                                    if (events.mods != 1) {
-                                        cursor_begin = cursor_end;
-                                    }
-                                }
-                            }
-                        }
-                        else if (events.key == GLFW_KEY_BACKSPACE) {
-                            if (cursor_begin.index != cursor_end.index) {
-                                std::size_t from = cursor_begin.index;
-                                std::size_t to = cursor_end.index;
-                                if (from > to) {
-                                    std::swap(from, to);
-                                }
-                                element.text.erase(element.text.begin() + from, element.text.begin() + to);
-                                if (cursor_begin.index <= cursor_end.index) {
-                                    cursor_end = cursor_begin;
-                                } else {
-                                    cursor_begin = cursor_end;
-                                }
-                                cursor_text = text_renderer.calculate_text_structure(
-                                    element.text,
-                                    node.size.x - (style.element.border_width + style.element.padding),
-                                    style.text.line_height);
-                            } else if (cursor_begin.index > 0) {
-                                element.text.erase(element.text.begin() + (cursor_begin.index-1));
-                                cursor_text = text_renderer.calculate_text_structure(
-                                    element.text,
-                                    node.size.x - (style.element.border_width + style.element.padding),
-                                    style.text.line_height);
-                                cursor_begin.index--;
-                                cursor_begin.offset = text_renderer.find_cursor_offset(
-                                    element.text, cursor_text, cursor_begin.index);
-                                cursor_end = cursor_begin;
-                            }
-                        }
-                        else if (events.key >= GLFW_KEY_A && events.key <= GLFW_KEY_Z) {
-                            char new_c;
-                            if (events.mods == 1) {
-                                new_c = 'A' + (events.key - GLFW_KEY_A);
-                            } else {
-                                new_c = 'a' + (events.key - GLFW_KEY_A);
-                            }
-                            if (cursor_begin.index != cursor_end.index) {
-                                std::size_t from = cursor_begin.index;
-                                std::size_t to = cursor_end.index;
-                                if (from > to) {
-                                    std::swap(from, to);
-                                }
-                                element.text.erase(element.text.begin() + from, element.text.begin() + to);
-                                element.text.insert(element.text.begin() + from, new_c);
-                                cursor_begin.index++;
-                                cursor_text = text_renderer.calculate_text_structure(
-                                    element.text,
-                                    node.size.x - (style.element.border_width + style.element.padding),
-                                    style.text.line_height);
-                                cursor_begin.offset = text_renderer.find_cursor_offset(
-                                    element.text, cursor_text, cursor_begin.index);
-                                cursor_end = cursor_begin;
-                            } else {
-                                element.text.insert(element.text.begin() + cursor_begin.index, new_c);
-                                cursor_begin.index++;
-                                cursor_text = text_renderer.calculate_text_structure(
-                                    element.text,
-                                    node.size.x - (style.element.border_width + style.element.padding),
-                                    style.text.line_height);
-                                cursor_begin.offset = text_renderer.find_cursor_offset(
-                                    element.text, cursor_text, cursor_begin.index);
-                                cursor_end = cursor_begin;
-                            }
-                        }
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    int display_w, display_h;
-    glfwGetFramebufferSize(window, &display_w, &display_h);
-    Vecf viewport_size(display_w, display_h);
-
-    geometry_renderer.render(viewport_size);
-    text_renderer.render(viewport_size);
-}
-
-void Window::mouse_button_callback(int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        if (action == GLFW_PRESS) {
-            events.mouse_down = true;
-        }
-        if (action == GLFW_RELEASE){
-            events.mouse_up = true;
-        }
-    }
-}
-
-void Window::key_callback(int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
-        events.key_down = true;
-    }
-    if (action == GLFW_RELEASE) {
-        events.key_up = true;
-    }
-    events.key = key;
-    events.mods = mods;
+    geometry_renderer.render(window_size);
+    text_renderer.render(window_size);
 }
 
 } // namespace datagui
