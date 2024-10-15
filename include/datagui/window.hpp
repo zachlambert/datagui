@@ -8,221 +8,24 @@
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 #include <variant>
-#include "datagui/font.hpp"
+
+#include "datagui/style.hpp"
 #include "datagui/geometry.hpp"
-#include "datagui/render/geometry_renderer.hpp"
-#include "datagui/render/text_renderer.hpp"
+#include "datagui/internal/vector_map.hpp"
+#include "datagui/internal/geometry_renderer.hpp"
+#include "datagui/internal/text_renderer.hpp"
+
+#include "datagui/element/button.hpp"
+#include "datagui/element/checkbox.hpp"
+#include "datagui/element/horizontal_layout.hpp"
+#include "datagui/element/text.hpp"
+#include "datagui/element/text_input.hpp"
+#include "datagui/element/vertical_layout.hpp"
 
 
 namespace datagui {
 
-
-struct WindowInput {
-    enum class Axis {
-        LEFT_X,
-        LEFT_Y,
-        RIGHT_X,
-        RIGHT_Y,
-        COUNT
-    };
-    enum class Button {
-        A,
-        B,
-        X,
-        Y,
-        LB,
-        RB,
-        COUNT
-    };
-
-    bool valid;
-    std::array<double, (std::size_t)Axis::COUNT> axes;
-    std::array<bool, (std::size_t)Button::COUNT> buttons;
-
-    WindowInput():
-        valid(false)
-    {}
-};
-
-// TODO:
-// Currently requires everything is default-constructable and assumes
-// that the memory cost for retaining popped nodes (until overwritten) is
-// unimportant.
-template <typename T>
-class VectorMap {
-public:
-    const T& operator[](std::size_t i) const {
-        return data[i];
-    }
-    T& operator[](std::size_t i) {
-        return data[i];
-    }
-    template <typename ...Args>
-    int emplace(Args&&... args) {
-        int index = 0;
-        if (free.empty()) {
-            index = data.size();
-            data.emplace_back(std::forward<Args>(args)...);
-        } else {
-            index = free.back();
-            free.pop_back();
-            data[index] = T(std::forward<Args>(args)...);
-        }
-        return index;
-    }
-
-    void pop(int index) {
-        free.push_back(index);
-    }
-
-    std::size_t size() const {
-        return data.size() - free.size();
-    }
-
-private:
-    std::vector<T> data;
-    std::vector<int> free;
-};
-
-class Window;
-
 namespace element {
-
-struct VerticalLayout {
-    struct Props {
-        float padding = 0;
-        Color bg_color = Color::Clear();
-    };
-
-    Vecf input_size;
-    Props props;
-    VerticalLayout(
-        const Vecf& input_size,
-        const Props& props
-    ):
-        input_size(input_size),
-        props(props)
-    {}
-};
-
-struct HorizontalLayout {
-    struct Props {
-        float padding = 0;
-        Color bg_color = Color::Clear();
-    };
-
-    Vecf input_size;
-    Props props;
-    HorizontalLayout(
-        const Vecf& input_size,
-        const Props& props
-    ):
-        input_size(input_size),
-        props(props)
-    {}
-};
-
-struct Text {
-    struct Props {
-        float line_height_factor = 1;
-        Color bg_color = Color::Clear();
-        Color text_color = Color::Black();
-    };
-
-    std::string text;
-    float max_width;
-    Props props;
-    Text(
-        const std::string& text,
-        float max_width,
-        const Props& props
-    ):
-        text(text),
-        max_width(max_width),
-        props(props)
-    {}
-};
-
-struct Button {
-    struct Props {
-        float padding = 6;
-        float border_width = 4;
-        float line_height_factor = 1;
-        Color bg_color = Color::White();
-        Color text_color = Color::Black();
-        Color border_color = Color::Black();
-    };
-
-    std::string text;
-    float max_width;
-    Props props;
-    Button(
-        const std::string& text,
-        float max_width,
-        const Props& props
-    ):
-        text(text),
-        max_width(max_width),
-        props(props)
-    {}
-};
-
-struct Checkbox {
-    struct Props {
-        float size_factor = 1;
-        float border_width = 4;
-        Color border_color = Color::Black();
-        Color bg_color = Color::Gray(0.5);
-        Color icon_color = Color(0, 1, 1);
-    };
-
-    Props props;
-    bool checked;
-
-    Checkbox(
-        const Props& props,
-        bool default_checked = false
-    ):
-        props(props),
-        checked(default_checked)
-    {}
-};
-
-struct TextInput {
-    struct Props {
-        float padding = 0;
-        float line_height_factor = 1;
-        int cursor_width = 2;
-        float cursor_blink_period = 0.5;
-        float border_width = 4;
-        Color bg_color = Color::White();
-        Color text_color = Color::Black();
-        Color border_color = Color::Black();
-        Color highlight_color = Color::Gray(0.75);
-        Color cursor_color = Color::Gray(0.25);
-        Color focus_color = Color(0, 1, 1);
-    };
-
-    float max_width;
-    int num_lines;
-    Props props;
-
-    std::string text;
-    bool changed;
-
-    TextInput(
-        const std::string& default_text,
-        float max_width,
-        int num_lines,
-        const Props& props
-    ):
-        max_width(max_width),
-        num_lines(num_lines),
-        props(props),
-        text(default_text),
-        changed(false)
-    {}
-};
 
 } // namespace element
 
@@ -237,52 +40,31 @@ class Window {
     };
 
 public:
-    class Error: public std::runtime_error {
-    public:
-        Error(const std::string& message):
-            std::runtime_error(message)
-        {}
-    };
-
     struct Config {
-        Font font;
-        int font_size;
+        std::string title;
         int width;
         int height;
         bool vsync;
-
+        bool resizable;
         Config():
-            font(Font::DejaVuSans),
-            font_size(0),
-            width(0),
-            height(0),
-            vsync(false)
+            title("datagui"),
+            width(900),
+            height(600),
+            vsync(true),
+            resizable(true)
         {}
-        static Config defaults() {
-            Config config;
-            config.font = Font::DejaVuSans;
-            config.font_size = 28;
-            config.width = 900;
-            config.height = 600;
-            config.vsync = true;
-            return config;
-        }
     };
 
-    Window(const std::string& title, const Config& config = Config::defaults(), bool open_now = true):
-        title(title),
+    Window(const Config& config = Config(), const Style& style = Style()):
         config(config),
+        style(style),
         window(nullptr),
         root_node(-1),
         max_depth(0),
         iteration(0),
         node_pressed(-1),
         node_focused(-1)
-    {
-        if (open_now) {
-            open();
-        }
-    }
+    {}
     ~Window() {
         if (window) {
             close();
@@ -301,39 +83,32 @@ public:
     void vertical_layout(
         const std::string& key,
         float width=0,
-        float height=0,
-        const element::VerticalLayout::Props& props = element::VerticalLayout::Props());
+        float height=0);
 
     void horizontal_layout(
         const std::string& key,
         float width=0,
-        float height=0,
-        const element::HorizontalLayout::Props& props = element::HorizontalLayout::Props());
+        float height=0);
 
     void layout_end();
 
     void text(
         const std::string& key,
         const std::string& text,
-        float max_width = 0,
-        const element::Text::Props& props = element::Text::Props());
+        float max_width = 0);
 
     bool button(
         const std::string& key,
         const std::string& text,
-        float max_width = 0,
-        const element::Button::Props& props = element::Button::Props());
+        float max_width = 0);
 
     bool checkbox(
-        const std::string& key,
-        const element::Checkbox::Props& props = element::Checkbox::Props());
+        const std::string& key);
 
     bool text_input(
         const std::string& key,
         const std::string& default_text = "",
-        float max_width = -1,
-        int num_lines = 1,
-        const element::TextInput::Props& props = element::TextInput::Props());
+        float max_width = -1);
 
 private:
     // Returns true if a new node is created
@@ -378,12 +153,12 @@ private:
     Events events;
 
     struct {
-        VectorMap<element::VerticalLayout> vertical_layout;
-        VectorMap<element::HorizontalLayout> horizontal_layout;
-        VectorMap<element::Text> text;
-        VectorMap<element::Button> button;
-        VectorMap<element::Checkbox> checkbox;
-        VectorMap<element::TextInput> text_input;
+        VectorMap<VerticalLayout> vertical_layout;
+        VectorMap<HorizontalLayout> horizontal_layout;
+        VectorMap<Text> text;
+        VectorMap<Button> button;
+        VectorMap<Checkbox> checkbox;
+        VectorMap<TextInput> text_input;
     } elements;
 
     struct Node {
@@ -435,10 +210,9 @@ private:
         }
     };
 
-    const std::string title;
     const Config config;
+    const Style style;
     GLFWwindow* window;
-    WindowInput input;
 
     GeometryRenderer geometry_renderer;
     TextRenderer text_renderer;

@@ -1,9 +1,13 @@
-#include "datagui/render/text_renderer.hpp"
+#include "datagui/internal/text_renderer.hpp"
 #include <string>
 #include <array>
+#include <filesystem>
+#include <unordered_map>
 #include <stdexcept>
+#include <algorithm>
 #include <GL/glew.h>
-#include "datagui/render/shader.hpp"
+#include <optional>
+#include "datagui/internal/shader.hpp"
 
 
 extern "C" {
@@ -50,12 +54,53 @@ void main(){
 }
 )";
 
-TextRenderer::TextRenderer():
-    font_size(0)
-{}
+std::optional<std::string> find_font_path(Font font) {
+    static const std::unordered_map<Font, std::string> names = {
+        { Font::DejaVuSans, "DejaVuSans" },
+        { Font::DejaVuSerif, "DejaVuSerif" },
+        { Font::DejaVuSansMono, "DejaVuSansMono" }
+    };
+    // Crash if the above list is missing an entry for a given font
+    std::string font_name = names.at(font);
 
-void TextRenderer::init(Font font, int font_size) {
-    this->font_size = font_size;
+    std::vector<std::filesystem::path> candidates;
+
+    std::vector<std::string> paths = {
+        "/usr/share/fonts"
+    };
+
+    for (const auto& path: paths) {
+        for (
+            auto iter = std::filesystem::recursive_directory_iterator(path);
+            iter != std::filesystem::recursive_directory_iterator();
+            ++iter)
+        {
+            if (iter->is_directory()) continue;
+            if (iter->path().extension() != ".ttf") continue;
+
+            std::string name = iter->path().stem();
+            if (name.find(font_name) == std::string::npos) continue;
+
+            candidates.push_back(iter->path());
+        }
+    }
+
+    if (candidates.empty()) {
+        return std::nullopt;
+    }
+
+    std::sort(candidates.begin(), candidates.end(),
+        // Return true if a.stem < b.stem
+        [](const std::filesystem::path& a, const std::filesystem::path& b) -> bool {
+            return a.stem().string().size() < b.stem().string().size();
+        }
+    );
+    return candidates.front();
+}
+
+
+void TextRenderer::init(const Style::Text& style) {
+    this->style = style;
 
     // Configure shader program and buffers
 
@@ -109,7 +154,7 @@ void TextRenderer::init(Font font, int font_size) {
 
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gl_data.font_texture, 0);
 
-    draw_font_bitmap(font_tex_width, font_tex_height, font, font_size);
+    draw_font_bitmap(font_tex_width, font_tex_height, style.font, style.font_size);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &temp_framebuffer);
 }
@@ -123,7 +168,7 @@ void TextRenderer::queue_text(
     const Color& text_color)
 {
     bool has_max_width = max_width > 0;
-    float line_height = font_size * line_height_factor;
+    float line_height = style.font_size * line_height_factor;
     Vecf offset = Vecf::Zero();
     offset.y += line_height;
 
@@ -289,7 +334,7 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
 
 Vecf TextRenderer::text_size(const std::string& text, float max_width, float line_height_factor) {
     bool has_max_width = max_width > 0;
-    float line_height = font_size * line_height_factor;
+    float line_height = style.font_size * line_height_factor;
     Vecf offset = Vecf::Zero();
     offset.y += line_height;
 
@@ -319,7 +364,7 @@ TextStructure TextRenderer::calculate_text_structure(
     float line_height_factor)
 {
     TextStructure structure;
-    structure.line_height = font_size * line_height_factor;
+    structure.line_height = style.font_size * line_height_factor;
 
     float line_width = 0;
     std::size_t line_begin = 0;

@@ -1,4 +1,4 @@
-#include "datagui/render/shader.hpp"
+#include "datagui/internal/shader.hpp"
 
 #include <fstream>
 #include <iostream>

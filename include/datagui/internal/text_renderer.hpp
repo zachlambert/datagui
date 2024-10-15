@@ -4,7 +4,7 @@
 #include <string>
 #include "datagui/geometry.hpp"
 #include "datagui/color.hpp"
-#include "datagui/font.hpp"
+#include "datagui/style.hpp"
 
 
 namespace datagui {
@@ -27,14 +27,13 @@ struct CursorPos {
 
 class TextRenderer {
 public:
-    TextRenderer();
-    void init(Font font, int font_size);
+    void init(const Style::Text& style);
 
     void queue_text(const std::string& text, float max_width, float line_height_factor, const Vecf& origin, float depth, const Color& text_color);
 
     void render(const Vecf& viewport_size);
 
-    int get_font_size() const { return font_size; }
+    int get_font_size() const { return style.font_size; }
     Vecf text_size(const std::string& text, float max_width, float line_height_factor);
 
     TextStructure calculate_text_structure(
@@ -56,7 +55,7 @@ public:
 private:
     void draw_font_bitmap(int width, int height, Font font, int font_size);
 
-    int font_size;
+    Style::Text style;
 
     struct Character {
         Boxf uv;

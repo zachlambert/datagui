@@ -1,8 +1,7 @@
 #include "datagui/window.hpp"
 
-#include <unordered_map>
 #include <stack>
-#include <iostream>
+#include "datagui/exception.hpp"
 
 
 namespace datagui {
@@ -27,7 +26,7 @@ void Window::glfw_key_callback(GLFWwindow* callback_window, int key, int scancod
 
 void Window::open() {
     if (!glfwInit()) {
-        throw Error("Failed to initialize glfw");
+        throw InitializationError("Failed to initialize glfw");
     }
 
     // GL 3.0 + GLSL 130
@@ -36,9 +35,15 @@ void Window::open() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     // Create window with graphics context
-    window = glfwCreateWindow(config.width, config.height, title.c_str(), nullptr, nullptr);
+    window = glfwCreateWindow(
+        config.width,
+        config.height,
+        config.title.c_str(),
+        nullptr,
+        nullptr);
+
     if (window == nullptr) {
-        throw Error("Failed to create window");
+        throw InitializationError("Failed to create window");
     }
 
     glfwMakeContextCurrent(window);
@@ -50,7 +55,7 @@ void Window::open() {
     }
 
     if (glewInit() != GLEW_OK) {
-        throw Error("Failed to initialise glew");
+        throw InitializationError("Failed to initialise glew");
     }
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -59,7 +64,7 @@ void Window::open() {
     glDepthFunc(GL_GEQUAL);
 
     geometry_renderer.init();
-    text_renderer.init(config.font, config.font_size);
+    text_renderer.init(style.text);
 
     active_windows.emplace_back(window, this);
     glfwSetMouseButtonCallback(window, Window::glfw_mouse_button_callback);
@@ -68,7 +73,7 @@ void Window::open() {
 
 void Window::close() {
     if (!window) {
-        throw Error("Window is already closed");
+        throw WindowError("Window is already closed");
     }
 
     glfwMakeContextCurrent(window);
@@ -80,24 +85,24 @@ void Window::close() {
 void Window::vertical_layout(
     const std::string& key,
     float width,
-    float height,
-    const element::VerticalLayout::Props& props)
+    float height)
 {
     int node = visit_node(key, Element::VerticalLayout, true);
     if (nodes[node].element_index == -1) {
-        nodes[node].element_index = elements.vertical_layout.emplace(Vecf(width, height), props);
+        nodes[node].element_index =
+            elements.vertical_layout.emplace(Vecf(width, height));
     }
 }
 
 void Window::horizontal_layout(
     const std::string& key,
     float width,
-    float height,
-    const element::HorizontalLayout::Props& props)
+    float height)
 {
     int node = visit_node(key, Element::HorizontalLayout, true);
     if (nodes[node].element_index == -1) {
-        nodes[node].element_index = elements.horizontal_layout.emplace(Vecf(width, height), props);
+        nodes[node].element_index =
+            elements.horizontal_layout.emplace(Vecf(width, height));
     }
 }
 
@@ -123,35 +128,31 @@ void Window::layout_end() {
 void Window::text(
     const std::string& key,
     const std::string& text,
-    float max_width,
-    const element::Text::Props& props)
+    float max_width)
 {
     int node = visit_node(key, Element::Text, false);
     if (nodes[node].element_index == -1) {
-        nodes[node].element_index = elements.text.emplace(text, max_width, props);
+        nodes[node].element_index = elements.text.emplace(text, max_width);
     }
 }
 
 bool Window::button(
     const std::string& key,
     const std::string& text,
-    float max_width,
-    const element::Button::Props& props)
+    float max_width)
 {
     int node = visit_node(key, Element::Button, false);
     if (nodes[node].element_index == -1) {
-        nodes[node].element_index = elements.button.emplace(text, max_width, props);
+        nodes[node].element_index =
+            elements.button.emplace(text, max_width);
     }
     return nodes[node].clicked;
 }
 
-bool Window::checkbox(
-    const std::string& key,
-    const element::Checkbox::Props& props)
-{
+bool Window::checkbox(const std::string& key) {
     auto& node = nodes[visit_node(key, Element::Checkbox, false)];
     if (node.element_index == -1) {
-        node.element_index = elements.checkbox.emplace(props);
+        node.element_index = elements.checkbox.emplace();
     }
     const auto& element = elements.checkbox[node.element_index];
     return element.checked;
@@ -160,50 +161,18 @@ bool Window::checkbox(
 bool Window::text_input(
     const std::string& key,
     const std::string& default_text,
-    float max_width,
-    int num_lines,
-    const element::TextInput::Props& props)
+    float max_width)
 {
     auto& node = nodes[visit_node(key, Element::TextInput, false)];
     if (node.element_index == -1) {
         node.element_index = elements.text_input.emplace(
             default_text,
-            max_width,
-            num_lines,
-            props
+            max_width
         );
     }
     const auto& element = elements.text_input[node.element_index];
     return element.changed;
 }
-
-#if 0
-void Window::poll_events() {
-    glfwPollEvents();
-
-    GLFWgamepadstate gamepad_state;
-    input.valid = glfwGetGamepadState(GLFW_JOYSTICK_1, &gamepad_state);
-    if (input.valid) {
-        auto threshold = [](double axis) -> double {
-            const double min = 0.2;
-            if (axis < -min) return (axis + min) / (1.0 - min);
-            if (axis > min) return (axis - min) / (1.0 - min);
-            return 0;
-        };
-        input.axes[(size_t)WindowInput::Axis::LEFT_X] = -threshold(gamepad_state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]);
-        input.axes[(size_t)WindowInput::Axis::LEFT_Y] = -threshold(gamepad_state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]);
-        input.axes[(size_t)WindowInput::Axis::RIGHT_X] = -threshold(gamepad_state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]);
-        input.axes[(size_t)WindowInput::Axis::RIGHT_Y] = -threshold(gamepad_state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]);
-
-        input.buttons[(size_t)WindowInput::Button::A] = gamepad_state.buttons[GLFW_GAMEPAD_BUTTON_A] == GLFW_PRESS;
-        input.buttons[(size_t)WindowInput::Button::B] = gamepad_state.buttons[GLFW_GAMEPAD_BUTTON_B] == GLFW_PRESS;
-        input.buttons[(size_t)WindowInput::Button::X] = gamepad_state.buttons[GLFW_GAMEPAD_BUTTON_X] == GLFW_PRESS;
-        input.buttons[(size_t)WindowInput::Button::Y] = gamepad_state.buttons[GLFW_GAMEPAD_BUTTON_Y] == GLFW_PRESS;
-        input.buttons[(size_t)WindowInput::Button::LB] = gamepad_state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER] == GLFW_PRESS;
-        input.buttons[(size_t)WindowInput::Button::RB] = gamepad_state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] == GLFW_PRESS;
-    }
-}
-#endif
 
 void Window::render_begin() {
     glClearColor(0.5, 0.5, 0.5, 1);
@@ -387,7 +356,7 @@ void Window::calculate_sizes_up() {
                         node.dynamic_size.x = std::max(node.dynamic_size.x, nodes[child].dynamic_size.x);
                         child = nodes[child].next;
                     }
-                    node.fixed_size.x += 2 * element.props.padding;
+                    node.fixed_size.x += 2 * style.element.padding;
 
                 } else if (element.input_size.x > 0) {
                     node.fixed_size.x = element.input_size.x;
@@ -405,8 +374,8 @@ void Window::calculate_sizes_up() {
                         node.dynamic_size.y += nodes[child].dynamic_size.y;
                         child = nodes[child].next;
                     }
-                    node.fixed_size.y += 2 * element.props.padding;
-                    node.fixed_size.y += (count - 1) * element.props.padding;
+                    node.fixed_size.y += 2 * style.element.padding;
+                    node.fixed_size.y += (count - 1) * style.element.padding;
 
                 } else if (element.input_size.y > 0) {
                     node.fixed_size.y = element.input_size.y;
@@ -429,8 +398,8 @@ void Window::calculate_sizes_up() {
                         node.dynamic_size.x += nodes[child].dynamic_size.x;
                         child = nodes[child].next;
                     }
-                    node.fixed_size.x += 2 * element.props.padding;
-                    node.fixed_size.x += (count - 1) * element.props.padding;
+                    node.fixed_size.x += 2 * style.element.padding;
+                    node.fixed_size.x += (count - 1) * style.element.padding;
 
                 } else if (element.input_size.x > 0) {
                     node.fixed_size.x = element.input_size.x;
@@ -448,8 +417,8 @@ void Window::calculate_sizes_up() {
                         node.dynamic_size.y = std::max(node.dynamic_size.y, nodes[child].dynamic_size.y);
                         child = nodes[child].next;
                     }
-                    node.fixed_size.y += 2 * element.props.padding;
-                    node.fixed_size.y += (count - 1) * element.props.padding;
+                    node.fixed_size.y += 2 * style.element.padding;
+                    node.fixed_size.y += (count - 1) * style.element.padding;
 
                 } else if (element.input_size.y > 0) {
                     node.fixed_size.y = element.input_size.y;
@@ -465,7 +434,7 @@ void Window::calculate_sizes_up() {
                 node.fixed_size = text_renderer.text_size(
                     element.text,
                     element.max_width,
-                    element.props.line_height_factor);
+                    style.text.line_height);
             }
             break;
         case Element::Button:
@@ -475,14 +444,14 @@ void Window::calculate_sizes_up() {
                 node.fixed_size = text_renderer.text_size(
                     element.text,
                     element.max_width,
-                    element.props.line_height_factor);
-                node.fixed_size += Vecf::Constant((element.props.border_width + element.props.padding) * 2);
+                    style.text.line_height);
+                node.fixed_size += Vecf::Constant((style.element.border_width + style.element.padding) * 2);
             }
             break;
         case Element::Checkbox:
             {
                 const auto& element = elements.checkbox[node.element_index];
-                node.fixed_size = Vecf::Constant(text_renderer.get_font_size() * element.props.size_factor);
+                node.fixed_size = Vecf::Constant(text_renderer.get_font_size() * style.checkbox.size);
             }
             break;
         case Element::TextInput:
@@ -492,9 +461,9 @@ void Window::calculate_sizes_up() {
                 node.fixed_size = text_renderer.text_size(
                     element.text,
                     element.max_width,
-                    element.props.line_height_factor);
+                    style.text.line_height);
                 node.fixed_size += Vecf::Constant(
-                    2 * (element.props.border_width + element.props.padding));
+                    2 * (style.element.border_width + style.element.padding));
             }
             break;
         };
@@ -522,15 +491,15 @@ void Window::calculate_sizes_down() {
             case Element::VerticalLayout:
                 {
                     const auto& element = elements.vertical_layout[parent.element_index];
-                    offset.x += element.props.padding;
-                    offset.y += element.props.padding;
+                    offset.x += style.element.padding;
+                    offset.y += style.element.padding;
                 }
                 break;
             case Element::HorizontalLayout:
                 {
                     const auto& element = elements.horizontal_layout[parent.element_index];
-                    offset.x += element.props.padding;
-                    offset.y += element.props.padding;
+                    offset.x += style.element.padding;
+                    offset.y += style.element.padding;
                 }
                 break;
             default:
@@ -553,13 +522,13 @@ void Window::calculate_sizes_down() {
             case Element::VerticalLayout:
                 {
                     const auto& element = elements.vertical_layout[parent.element_index];
-                    offset.y += child_node.size.y + element.props.padding;
+                    offset.y += child_node.size.y + style.element.padding;
                 }
                 break;
             case Element::HorizontalLayout:
                 {
                     const auto& element = elements.horizontal_layout[parent.element_index];
-                    offset.x += child_node.size.x + element.props.padding;
+                    offset.x += child_node.size.x + style.element.padding;
                 }
                 break;
             default:
@@ -633,9 +602,9 @@ void Window::render_tree() {
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
-                    element.props.bg_color,
-                    0,
-                    Color::Black(),
+                    Color::Clear(),
+                    style.element.border_width,
+                    style.element.border_color,
                     0
                 );
             }
@@ -646,9 +615,9 @@ void Window::render_tree() {
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
-                    element.props.bg_color,
-                    0,
-                    Color::Black(),
+                    Color::Clear(),
+                    style.element.border_width,
+                    style.element.border_color,
                     0
                 );
             }
@@ -659,7 +628,7 @@ void Window::render_tree() {
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
-                    element.props.bg_color,
+                    style.element.bg_color,
                     0,
                     Color::Black(),
                     0
@@ -667,36 +636,34 @@ void Window::render_tree() {
                 text_renderer.queue_text(
                     element.text,
                     element.max_width,
-                    element.props.line_height_factor,
+                    style.text.line_height,
                     node.origin,
                     normalized_depth,
-                    element.props.text_color
+                    style.text.font_color
                 );
             }
             break;
         case Element::Button:
             {
                 const auto& element = elements.button[node.element_index];
-                Color bg_color = element.props.bg_color;
-                if (node_pressed == state.node) {
-                    bg_color.r *= 0.5; // TODO: Class member variable
-                    bg_color.g *= 0.5;
-                    bg_color.b *= 0.5;
-                }
+                const Color& bg_color =
+                    (node_pressed == state.node)
+                        ? style.element.bg_color
+                        :style.element.pressed_bg_color;
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     bg_color,
-                    element.props.border_width,
-                    element.props.border_color
+                    style.element.border_width,
+                    style.element.border_color
                 );
                 text_renderer.queue_text(
                     element.text,
                     element.max_width,
-                    element.props.line_height_factor,
-                    node.origin + Vecf::Constant(element.props.border_width + element.props.padding),
+                    style.text.line_height,
+                    node.origin + Vecf::Constant(style.element.border_width + style.element.padding),
                     normalized_depth,
-                    element.props.text_color
+                    style.text.font_color
                 );
             }
             break;
@@ -706,20 +673,20 @@ void Window::render_tree() {
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
-                    element.props.bg_color,
-                    element.props.border_width,
-                    element.props.border_color,
+                    style.element.bg_color,
+                    style.element.border_width,
+                    style.element.border_color,
                     0
                 );
                 if (element.checked) {
-                    float offset = element.props.border_width + 2;
+                    float offset = style.element.border_width + style.checkbox.check_padding;
                     geometry_renderer.queue_box(
                         normalized_depth,
                         Boxf(
                             node.origin + Vecf::Constant(offset),
                             node.origin + node.size - Vecf::Constant(offset)
                         ),
-                        element.props.icon_color,
+                        style.checkbox.check_color,
                         0,
                         Color::Black(),
                         0
@@ -733,17 +700,16 @@ void Window::render_tree() {
                 geometry_renderer.queue_box(
                     normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
-                    element.props.bg_color,
-                    element.props.border_width,
+                    style.element.bg_color,
+                    style.element.border_width,
                     state.node == node_focused
-                        ? element.props.focus_color
-                        : element.props.border_color,
-                    0
+                        ? style.element.focus_color
+                        : style.element.border_color
                 );
                 Vecf text_origin =
                     node.origin
                     + Vecf::Constant(
-                        element.props.border_width + element.props.padding);
+                        style.element.border_width + style.element.padding);
 
                 if (state.node == node_focused) {
                     if (cursor_begin.index == cursor_end.index) {
@@ -751,9 +717,9 @@ void Window::render_tree() {
                         geometry_renderer.queue_box(
                             normalized_depth,
                             Boxf(
-                                text_origin+cursor_begin.offset-Vecf(float(element.props.cursor_width)/2, 0),
-                                text_origin+cursor_begin.offset + Vecf(element.props.cursor_width, cursor_text.line_height)),
-                            element.props.cursor_color,
+                                text_origin+cursor_begin.offset-Vecf(float(style.text_input.cursor_width)/2, 0),
+                                text_origin+cursor_begin.offset + Vecf(style.text_input.cursor_width, cursor_text.line_height)),
+                            style.text_input.cursor_color,
                             0,
                             Color::Black(),
                             0
@@ -785,7 +751,7 @@ void Window::render_tree() {
                                     text_origin + from.offset,
                                     text_origin + line_to.offset + Vecf(0, cursor_text.line_height)
                                 ),
-                                element.props.highlight_color,
+                                style.text_input.highlight_color,
                                 0,
                                 Color::Black(),
                                 0
@@ -805,10 +771,10 @@ void Window::render_tree() {
                 text_renderer.queue_text(
                     element.text,
                     element.max_width,
-                    element.props.line_height_factor,
+                    style.text.line_height,
                     text_origin,
                     normalized_depth,
-                    element.props.text_color
+                    style.text.font_color
                 );
             }
             break;
@@ -835,14 +801,14 @@ void Window::render_tree() {
                         auto& element = elements.text_input[node.element_index];
                         cursor_text = text_renderer.calculate_text_structure(
                             element.text,
-                            node.size.x - (element.props.border_width + element.props.padding),
-                            element.props.line_height_factor
+                            node.size.x - (style.element.border_width + style.element.padding),
+                            style.text.line_height
                         );
                         cursor_begin = text_renderer.find_cursor(
                             element.text,
                             cursor_text,
                             node.origin + Vecf::Constant(
-                                element.props.border_width + element.props.padding),
+                                style.element.border_width + style.element.padding),
                             mouse_pos
                         );
                         cursor_end = cursor_begin;
@@ -867,7 +833,7 @@ void Window::render_tree() {
                         element.text,
                         cursor_text,
                         node.origin + Vecf::Constant(
-                            element.props.border_width + element.props.padding),
+                            style.element.border_width + style.element.padding),
                         mouse_pos
                     );
                 }
@@ -927,14 +893,14 @@ void Window::render_tree() {
                                 }
                                 cursor_text = text_renderer.calculate_text_structure(
                                     element.text,
-                                    node.size.x - (element.props.border_width + element.props.padding),
-                                    element.props.line_height_factor);
+                                    node.size.x - (style.element.border_width + style.element.padding),
+                                    style.text.line_height);
                             } else if (cursor_begin.index > 0) {
                                 element.text.erase(element.text.begin() + (cursor_begin.index-1));
                                 cursor_text = text_renderer.calculate_text_structure(
                                     element.text,
-                                    node.size.x - (element.props.border_width + element.props.padding),
-                                    element.props.line_height_factor);
+                                    node.size.x - (style.element.border_width + style.element.padding),
+                                    style.text.line_height);
                                 cursor_begin.index--;
                                 cursor_begin.offset = text_renderer.find_cursor_offset(
                                     element.text, cursor_text, cursor_begin.index);
@@ -959,8 +925,8 @@ void Window::render_tree() {
                                 cursor_begin.index++;
                                 cursor_text = text_renderer.calculate_text_structure(
                                     element.text,
-                                    node.size.x - (element.props.border_width + element.props.padding),
-                                    element.props.line_height_factor);
+                                    node.size.x - (style.element.border_width + style.element.padding),
+                                    style.text.line_height);
                                 cursor_begin.offset = text_renderer.find_cursor_offset(
                                     element.text, cursor_text, cursor_begin.index);
                                 cursor_end = cursor_begin;
@@ -969,8 +935,8 @@ void Window::render_tree() {
                                 cursor_begin.index++;
                                 cursor_text = text_renderer.calculate_text_structure(
                                     element.text,
-                                    node.size.x - (element.props.border_width + element.props.padding),
-                                    element.props.line_height_factor);
+                                    node.size.x - (style.element.border_width + style.element.padding),
+                                    style.text.line_height);
                                 cursor_begin.offset = text_renderer.find_cursor_offset(
                                     element.text, cursor_text, cursor_begin.index);
                                 cursor_end = cursor_begin;

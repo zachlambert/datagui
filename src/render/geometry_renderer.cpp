@@ -1,9 +1,9 @@
-#include "datagui/render/geometry_renderer.hpp"
+#include "datagui/internal/geometry_renderer.hpp"
 #include <string>
 #include <array>
 #include <GL/glew.h>
 #include <iostream>
-#include "datagui/render/shader.hpp"
+#include "datagui/internal/shader.hpp"
 
 
 namespace datagui {
