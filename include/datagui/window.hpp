@@ -10,8 +10,8 @@
 #include <variant>
 #include "datagui/font.hpp"
 #include "datagui/geometry.hpp"
-#include "datagui/geometry_renderer.hpp"
-#include "datagui/text_renderer.hpp"
+#include "datagui/render/geometry_renderer.hpp"
+#include "datagui/render/text_renderer.hpp"
 
 
 namespace datagui {

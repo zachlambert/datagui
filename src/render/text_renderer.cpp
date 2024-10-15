@@ -1,9 +1,9 @@
-#include "datagui/text_renderer.hpp"
+#include "datagui/render/text_renderer.hpp"
 #include <string>
 #include <array>
-#include <GL/glew.h>
-#include "datagui/shader.hpp"
 #include <stdexcept>
+#include <GL/glew.h>
+#include "datagui/render/shader.hpp"
 
 
 extern "C" {

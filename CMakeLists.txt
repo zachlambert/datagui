@@ -19,10 +19,10 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
+    src/render/geometry_renderer.cpp
+    src/render/text_renderer.cpp
+    src/render/shader.cpp
     src/font.cpp
-    src/geometry_renderer.cpp
-    src/shader.cpp
-    src/text_renderer.cpp
     src/window.cpp
 )
 target_link_libraries(datagui
