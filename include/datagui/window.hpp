@@ -15,6 +15,7 @@
 #include "datagui/internal/geometry_renderer.hpp"
 #include "datagui/internal/text_renderer.hpp"
 
+#include "datagui/element.hpp"
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
 #include "datagui/element/horizontal_layout.hpp"
@@ -25,20 +26,7 @@
 
 namespace datagui {
 
-namespace element {
-
-} // namespace element
-
 class Window {
-    enum class Element {
-        VerticalLayout,
-        HorizontalLayout,
-        Text,
-        Button,
-        Checkbox,
-        TextInput
-    };
-
 public:
     struct Config {
         std::string title;
@@ -55,30 +43,12 @@ public:
         {}
     };
 
-    Window(const Config& config = Config(), const Style& style = Style()):
-        config(config),
-        style(style),
-        window(nullptr),
-        root_node(-1),
-        max_depth(0),
-        iteration(0),
-        node_pressed(-1),
-        node_focused(-1)
-    {}
-    ~Window() {
-        if (window) {
-            close();
-        }
-    }
+    Window(const Config& config = Config(), const Style& style = Style());
+    ~Window();
 
-    bool running() const {
-        return window && !glfwWindowShouldClose(window);
-    }
-
-    void open();
+    bool running() const;
     void render_begin();
     void render_end();
-    void close();
 
     void vertical_layout(
         const std::string& key,
@@ -111,9 +81,16 @@ public:
         float max_width = -1);
 
 private:
+    void open();
+    void close();
+
+    void delete_element(Element element, int index);
+
     // Returns true if a new node is created
+#if 0
     int visit_node(const std::string& key, Element element, bool enter);
     void remove_node(int node);
+#endif
 
     void calculate_sizes_up();
     void calculate_sizes_down();
@@ -161,55 +138,6 @@ private:
         VectorMap<TextInput> text_input;
     } elements;
 
-    struct Node {
-        // Definition
-        std::string key;
-        Element element;
-        int element_index;
-
-        // Connectivity
-        int parent;
-        int prev;
-        int next;
-        int first_child;
-        int last_child;
-
-        // Layout calculation
-        int iteration;
-        Vecf fixed_size;
-        Vecf dynamic_size;
-        Vecf origin;
-        Vecf size;
-
-        // State
-        bool clicked;
-
-        Node(const std::string& key, Element element, int parent, int iteration):
-            key(key),
-            element(element),
-            element_index(-1),
-            parent(parent),
-            prev(-1),
-            next(-1),
-            first_child(-1),
-            last_child(-1),
-            iteration(iteration),
-            fixed_size(Vecf::Zero()),
-            dynamic_size(Vecf::Zero()),
-            origin(Vecf::Zero()),
-            size(Vecf::Zero()),
-            clicked(false)
-        {}
-
-        void reset(int iteration) {
-            this->iteration = iteration;
-            fixed_size = Vecf::Zero();
-            dynamic_size = Vecf::Zero();
-            origin = Vecf::Zero();
-            size = Vecf::Zero();
-        }
-    };
-
     const Config config;
     const Style style;
     GLFWwindow* window;
@@ -217,11 +145,7 @@ private:
     GeometryRenderer geometry_renderer;
     TextRenderer text_renderer;
 
-    VectorMap<Node> nodes;
-    int root_node;
-    std::stack<int> active_nodes;
-    int max_depth;
-    int iteration;
+    Tree tree;
 
     int node_pressed;
     int node_focused;

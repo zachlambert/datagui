@@ -7,7 +7,6 @@ int main() {
     datagui::Style style;
 
     datagui::Window window(config, style);
-    window.open();
 
     while (window.running()) {
         window.render_begin();

@@ -22,6 +22,7 @@ add_library(datagui SHARED
     src/render/geometry_renderer.cpp
     src/render/text_renderer.cpp
     src/render/shader.cpp
+    src/element.cpp
     src/window.cpp
 )
 target_link_libraries(datagui

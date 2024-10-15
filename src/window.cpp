@@ -24,6 +24,27 @@ void Window::glfw_key_callback(GLFWwindow* callback_window, int key, int scancod
     }
 }
 
+Window::Window(const Config& config, const Style& style):
+    config(config),
+    style(style),
+    window(nullptr),
+    tree(std::bind(&Window::delete_element, this, std::placeholders::_1, std::placeholders::_2)),
+    node_pressed(-1),
+    node_focused(-1)
+{
+    open();
+}
+
+Window::~Window() {
+    if (window) {
+        close();
+    }
+}
+
+bool Window::running() const {
+    return window && !glfwWindowShouldClose(window);
+}
+
 void Window::open() {
     if (!glfwInit()) {
         throw InitializationError("Failed to initialize glfw");
@@ -82,16 +103,37 @@ void Window::close() {
     window = nullptr;
 }
 
+void Window::delete_element(Element element, int element_index) {
+    switch (element) {
+        case Element::VerticalLayout:
+            elements.vertical_layout.pop(element_index);
+            break;
+        case Element::HorizontalLayout:
+            elements.horizontal_layout.pop(element_index);
+            break;
+        case Element::Text:
+            elements.text.pop(element_index);
+            break;
+        case Element::Button:
+            elements.button.pop(element_index);
+            break;
+        case Element::Checkbox:
+            elements.checkbox.pop(element_index);
+            break;
+        case Element::TextInput:
+            elements.text_input.pop(element_index);
+            break;
+    }
+}
+
 void Window::vertical_layout(
     const std::string& key,
     float width,
     float height)
 {
-    int node = visit_node(key, Element::VerticalLayout, true);
-    if (nodes[node].element_index == -1) {
-        nodes[node].element_index =
-            elements.vertical_layout.emplace(Vecf(width, height));
-    }
+    tree.down(key, Element::VerticalLayout, [&]() {
+        return elements.vertical_layout.emplace(Vecf(width, height));
+    });
 }
 
 void Window::horizontal_layout(
@@ -99,30 +141,13 @@ void Window::horizontal_layout(
     float width,
     float height)
 {
-    int node = visit_node(key, Element::HorizontalLayout, true);
-    if (nodes[node].element_index == -1) {
-        nodes[node].element_index =
-            elements.horizontal_layout.emplace(Vecf(width, height));
-    }
+    tree.down(key, Element::HorizontalLayout, [&]() {
+        return elements.horizontal_layout.emplace(Vecf(width, height));
+    });
 }
 
 void Window::layout_end() {
-    if (active_nodes.empty()) {
-        throw std::runtime_error("Called end too many times");
-    }
-
-    // Remove nodes that weren't visited this iteration
-
-    int iter = nodes[active_nodes.top()].first_child;
-    while (iter != -1) {
-        int next = nodes[iter].next;
-        if (nodes[iter].iteration != iteration) {
-            remove_node(iter);
-        }
-        iter = next;
-    }
-
-    active_nodes.pop();
+    tree.up();
 }
 
 void Window::text(
@@ -130,10 +155,10 @@ void Window::text(
     const std::string& text,
     float max_width)
 {
-    int node = visit_node(key, Element::Text, false);
-    if (nodes[node].element_index == -1) {
-        nodes[node].element_index = elements.text.emplace(text, max_width);
-    }
+    tree.down(key, Element::Text, [&](){
+        return elements.text.emplace(text, max_width);
+    });
+    tree.up();
 }
 
 bool Window::button(
@@ -141,21 +166,19 @@ bool Window::button(
     const std::string& text,
     float max_width)
 {
-    int node = visit_node(key, Element::Button, false);
-    if (nodes[node].element_index == -1) {
-        nodes[node].element_index =
-            elements.button.emplace(text, max_width);
-    }
-    return nodes[node].clicked;
+    int node = tree.down(key, Element::Button, [&](){
+        return elements.button.emplace(text, max_width);
+    });
+    tree.up();
+    return tree[node].clicked;
 }
 
 bool Window::checkbox(const std::string& key) {
-    auto& node = nodes[visit_node(key, Element::Checkbox, false)];
-    if (node.element_index == -1) {
-        node.element_index = elements.checkbox.emplace();
-    }
-    const auto& element = elements.checkbox[node.element_index];
-    return element.checked;
+    int node = tree.down(key, Element::Checkbox, [&](){
+        return elements.checkbox.emplace();
+    });
+    tree.up();
+    return elements.checkbox[tree[node].element_index].checked;
 }
 
 bool Window::text_input(
@@ -163,15 +186,12 @@ bool Window::text_input(
     const std::string& default_text,
     float max_width)
 {
-    auto& node = nodes[visit_node(key, Element::TextInput, false)];
-    if (node.element_index == -1) {
-        node.element_index = elements.text_input.emplace(
-            default_text,
-            max_width
-        );
-    }
-    const auto& element = elements.text_input[node.element_index];
-    return element.changed;
+    int node = tree.down(key, Element::TextInput, [&](){
+        return elements.text_input.emplace(default_text, max_width);
+    });
+    tree.up();
+    // TODO: changed field isn't updated at the moment
+    return elements.text_input[tree[node].element_index].changed;
 }
 
 void Window::render_begin() {
@@ -188,8 +208,8 @@ void Window::render_begin() {
 
 void Window::render_end() {
     layout_end();
-    if (!active_nodes.empty()) {
-        throw std::runtime_error("Didn't call layout_... and layout_end the same number of times");
+    if (tree.depth() != 0) {
+        throw WindowError("Didn't call layout_... and layout_end the same number of times");
     }
 
     glfwPollEvents();
@@ -201,121 +221,21 @@ void Window::render_end() {
     glfwSwapBuffers(window);
 
     events.clear();
-    max_depth = 0;
-    iteration++;
-}
-
-int Window::visit_node(const std::string& key, Element element, bool enter) {
-    int parent = active_nodes.empty() ? -1 : active_nodes.top();
-
-    if (parent != -1) {
-        int iter = nodes[parent].first_child;
-        while (iter != -1) {
-            if (nodes[iter].key == key) {
-                if (nodes[iter].iteration == iteration) {
-                    throw std::runtime_error("Visited the same node twice during the same iteration");
-                }
-                nodes[iter].reset(iteration);
-                if (enter) {
-                    active_nodes.push(iter);
-                    max_depth = std::max<int>(max_depth, active_nodes.size());
-                }
-                return iter;
-            }
-            iter = nodes[iter].next;
-        }
-    } else if (root_node != -1) {
-        if (enter) {
-            active_nodes.push(root_node);
-            max_depth = std::max<int>(max_depth, active_nodes.size());
-        }
-        return root_node;
-    }
-
-    int node = nodes.emplace(key, element, parent, iteration);
-    if (nodes.size() == 1) {
-        root_node = node;
-    }
-
-    if (parent != -1) {
-        nodes[node].prev = nodes[parent].last_child;
-        if (nodes[parent].first_child == -1) {
-            nodes[parent].first_child = node;
-        } else {
-            nodes[nodes[parent].last_child].next = node;
-        }
-        nodes[parent].last_child = node;
-    }
-
-    if (enter) {
-        active_nodes.push(node);
-        max_depth = std::max<int>(max_depth, active_nodes.size());
-    }
-
-    return node;
-}
-
-void Window::remove_node(int root_node) {
-    std::stack<int> stack;
-    stack.push(root_node);
-    while (!stack.empty()) {
-        int node_index = stack.top();
-        const auto& node = nodes[node_index];
-        if (node.first_child == -1) {
-            stack.pop();
-            if (node.prev != -1) {
-                nodes[node.prev].next = node.next;
-            } else if (node.parent != -1) {
-                nodes[node.parent].first_child = node.next;
-            }
-            if (node.next != -1) {
-                nodes[node.next].prev = node.prev;
-            } else if (node.parent != -1) {
-                nodes[node.parent].last_child = node.prev;
-            }
-            switch (node.element) {
-            case Element::VerticalLayout:
-                elements.vertical_layout.pop(node.element_index);
-                break;
-            case Element::HorizontalLayout:
-                elements.horizontal_layout.pop(node.element_index);
-                break;
-            case Element::Text:
-                elements.text.pop(node.element_index);
-                break;
-            case Element::Button:
-                elements.button.pop(node.element_index);
-                break;
-            case Element::Checkbox:
-                elements.checkbox.pop(node.element_index);
-                break;
-            case Element::TextInput:
-                elements.text_input.pop(node.element_index);
-                break;
-            }
-            nodes.pop(node_index);
-            continue;
-        }
-        int iter = node.first_child;
-        while (iter != -1) {
-            stack.push(iter);
-            iter = nodes[iter].next;
-        }
-    }
+    tree.reset();
 }
 
 void Window::calculate_sizes_up() {
     /*
       - Traverse down the tree, where if non-leaf node is reached, all the
-         child nodes are processed first.
+         child tree are processed first.
       - Each node must calculate it's 'fixed_size' and 'dynamic_size', where:
-        - For leaf nodes, these are defined by the element and it's properties
-        - For branch nodes, these are defined by the element type, it's properties
+        - For leaf tree, these are defined by the element and it's properties
+        - For branch tree, these are defined by the element type, it's properties
           and the fixed_size/dynamic_size of the children
     */
 
     struct State {
-        int index;
+        std::size_t index;
         bool first_visit;
         State(int index):
             index(index),
@@ -327,7 +247,7 @@ void Window::calculate_sizes_up() {
 
     while (!stack.empty()) {
         State& state = stack.top();
-        Node& node = nodes[state.index];
+        Node& node = tree[state.index];
 
         // If the node has children, process these first
         if (node.first_child != -1 && state.first_visit) {
@@ -335,7 +255,7 @@ void Window::calculate_sizes_up() {
             int child = node.first_child;
             while (child != -1) {
                 stack.emplace(child);
-                child = nodes[child].next;
+                child = tree[child].next;
             }
             continue;
         }
@@ -352,9 +272,9 @@ void Window::calculate_sizes_up() {
                     int count = 0;
                     while (child != -1) {
                         count++;
-                        node.fixed_size.x = std::max(node.fixed_size.x, nodes[child].fixed_size.x);
-                        node.dynamic_size.x = std::max(node.dynamic_size.x, nodes[child].dynamic_size.x);
-                        child = nodes[child].next;
+                        node.fixed_size.x = std::max(node.fixed_size.x, tree[child].fixed_size.x);
+                        node.dynamic_size.x = std::max(node.dynamic_size.x, tree[child].dynamic_size.x);
+                        child = tree[child].next;
                     }
                     node.fixed_size.x += 2 * style.element.padding;
 
@@ -370,9 +290,9 @@ void Window::calculate_sizes_up() {
                     int count = 0;
                     while (child != -1) {
                         count++;
-                        node.fixed_size.y += nodes[child].fixed_size.y;
-                        node.dynamic_size.y += nodes[child].dynamic_size.y;
-                        child = nodes[child].next;
+                        node.fixed_size.y += tree[child].fixed_size.y;
+                        node.dynamic_size.y += tree[child].dynamic_size.y;
+                        child = tree[child].next;
                     }
                     node.fixed_size.y += 2 * style.element.padding;
                     node.fixed_size.y += (count - 1) * style.element.padding;
@@ -394,9 +314,9 @@ void Window::calculate_sizes_up() {
                     int count = 0;
                     while (child != -1) {
                         count++;
-                        node.fixed_size.x += nodes[child].fixed_size.x;
-                        node.dynamic_size.x += nodes[child].dynamic_size.x;
-                        child = nodes[child].next;
+                        node.fixed_size.x += tree[child].fixed_size.x;
+                        node.dynamic_size.x += tree[child].dynamic_size.x;
+                        child = tree[child].next;
                     }
                     node.fixed_size.x += 2 * style.element.padding;
                     node.fixed_size.x += (count - 1) * style.element.padding;
@@ -413,9 +333,9 @@ void Window::calculate_sizes_up() {
                     int count = 0;
                     while (child != -1) {
                         count++;
-                        node.fixed_size.y = std::max(node.fixed_size.y, nodes[child].fixed_size.y);
-                        node.dynamic_size.y = std::max(node.dynamic_size.y, nodes[child].dynamic_size.y);
-                        child = nodes[child].next;
+                        node.fixed_size.y = std::max(node.fixed_size.y, tree[child].fixed_size.y);
+                        node.dynamic_size.y = std::max(node.dynamic_size.y, tree[child].dynamic_size.y);
+                        child = tree[child].next;
                     }
                     node.fixed_size.y += 2 * style.element.padding;
                     node.fixed_size.y += (count - 1) * style.element.padding;
@@ -474,11 +394,11 @@ void Window::calculate_sizes_down() {
     std::stack<int> stack;
     stack.push(0);
 
-    nodes[0].size = nodes[0].fixed_size;
-    nodes[0].origin = Vecf::Zero();
+    tree[0].size = tree[0].fixed_size;
+    tree[0].origin = Vecf::Zero();
 
     while (!stack.empty()) {
-        const auto& parent = nodes[stack.top()];
+        const auto& parent = tree[stack.top()];
         stack.pop();
         if (parent.first_child == -1) {
             continue;
@@ -508,7 +428,7 @@ void Window::calculate_sizes_down() {
 
         int child = parent.first_child;
         while (child != -1) {
-            auto& child_node = nodes[child];
+            auto& child_node = tree[child];
             child_node.size = child_node.fixed_size;
             if (parent.dynamic_size.x > 0){
                 child_node.size.x += child_node.dynamic_size.x / parent.dynamic_size.x;
@@ -554,7 +474,7 @@ void Window::render_tree() {
         {}
     };
     std::stack<State> stack;
-    stack.emplace(root_node, events.mouse_up || events.mouse_down, 0);
+    stack.emplace(tree.root_node(), events.mouse_up || events.mouse_down, 0);
 
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
@@ -565,7 +485,7 @@ void Window::render_tree() {
 
     while (!stack.empty()) {
         State state = stack.top();
-        auto& node = nodes[state.node];
+        auto& node = tree[state.node];
 
         // Handle element-specific click events
         if (node.clicked) {
@@ -591,7 +511,7 @@ void Window::render_tree() {
             node_clicked_depth = state.depth;
         }
 
-        float normalized_depth = float(state.depth) / (max_depth + 1);
+        float normalized_depth = float(state.depth) / (tree.max_depth() + 1);
 
         stack.pop();
 
@@ -786,7 +706,7 @@ void Window::render_tree() {
         int child = node.first_child;
         while (child != -1) {
             stack.emplace(child, clicked, state.depth + 1);
-            child = nodes[child].next;
+            child = tree[child].next;
         }
     }
 
@@ -794,7 +714,7 @@ void Window::render_tree() {
         if (events.mouse_down) {
             node_pressed = node_clicked;
             node_focused = node_clicked;
-            const auto& node = nodes[node_clicked];
+            const auto& node = tree[node_clicked];
             switch (node.element) {
                 case Element::TextInput:
                     {
@@ -819,12 +739,12 @@ void Window::render_tree() {
             }
         } else if (events.mouse_up) {
             if (node_clicked == node_pressed) {
-                nodes[node_clicked].clicked = true;
+                tree[node_clicked].clicked = true;
             }
             node_pressed = -1;
         }
     } else if (node_pressed != -1) {
-        const auto& node = nodes[node_pressed];
+        const auto& node = tree[node_pressed];
         switch (node.element) {
             case Element::TextInput:
                 {
@@ -844,7 +764,7 @@ void Window::render_tree() {
     }
 
     if (node_focused != -1) {
-        const auto& node = nodes[node_focused];
+        const auto& node = tree[node_focused];
         switch (node.element) {
             case Element::TextInput:
                 {
