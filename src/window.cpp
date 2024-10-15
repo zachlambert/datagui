@@ -1,7 +1,6 @@
 #include "datagui/window.hpp"
 
 #include <stack>
-#include <iostream>
 #include "datagui/exception.hpp"
 
 
@@ -204,7 +203,7 @@ void Window::render_begin() {
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
 
-    vertical_layout("root", display_w, display_h);
+    vertical_layout("root", 0, 0);
 }
 
 void Window::render_end() {
@@ -220,6 +219,9 @@ void Window::render_end() {
     render_tree();
 
     glfwSwapBuffers(window);
+
+    const auto& root_node = tree[tree.root_node()];
+    glfwSetWindowSizeLimits(window, root_node.fixed_size.x, root_node.fixed_size.y, -1, -1);
 
     events.clear();
     tree.reset();
@@ -244,7 +246,7 @@ void Window::calculate_sizes_up() {
         {}
     };
     std::stack<State> stack;
-    stack.emplace(0);
+    stack.emplace(tree.root_node());
 
     while (!stack.empty()) {
         State& state = stack.top();
@@ -261,6 +263,9 @@ void Window::calculate_sizes_up() {
             continue;
         }
         stack.pop();
+
+        node.fixed_size = Vecf::Zero();
+        node.dynamic_size = Vecf::Zero();
 
         switch (node.element) {
             case Element::VerticalLayout:
@@ -301,8 +306,11 @@ void Window::calculate_sizes_down() {
     std::stack<int> stack;
     stack.push(tree.root_node());
 
-    tree[tree.root_node()].size = tree[0].fixed_size;
-    tree[tree.root_node()].origin = Vecf::Zero();
+    {
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        tree[tree.root_node()].size = Vecf(display_w, display_h);
+    }
 
     while (!stack.empty()) {
         const auto& node = tree[stack.top()];
@@ -314,12 +322,12 @@ void Window::calculate_sizes_down() {
 
         switch (node.element) {
             case Element::VerticalLayout:
-                calculate_child_sizes(
+                calculate_child_dimensions(
                     tree, style,
                     node, elements.vertical_layout[node.element_index]);
                 break;
             case Element::HorizontalLayout:
-                calculate_child_sizes(
+                calculate_child_dimensions(
                     tree, style,
                     node, elements.horizontal_layout[node.element_index]);
                 break;
@@ -357,13 +365,9 @@ void Window::render_tree() {
     int node_clicked = -1;
     int node_clicked_depth = -1;
 
-    std::cout << "Render tree" << std::endl;
     while (!stack.empty()) {
         State state = stack.top();
         auto& node = tree[state.node];
-        std::cout << "Node: " << state.node << std::endl;
-        std::cout << "- origin: " << node.origin.x << ", " << node.origin.y << std::endl;
-        std::cout << "- size: " << node.size.x << ", " << node.size.y << std::endl;
 
         // Handle element-specific click events
         if (node.clicked) {

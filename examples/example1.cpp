@@ -24,8 +24,9 @@ int main() {
             window.text("checkbox1_text", "Toggle me!");
             window.layout_end();
         }
-        window.text_input("input1", "hello");
-        window.text_input("input2", "a multi-line input?", 200);
+        window.text_input("input1", "min input", 0);
+        window.text_input("input2", "expand input", -1);
+        window.text_input("input3", "finite input", 200);
         window.layout_end();
         window.render_end();
     }

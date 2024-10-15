@@ -37,9 +37,9 @@ struct Style {
     };
 
     struct Checkbox {
-        float size = 1;
-        float check_padding = 2;
-        Color check_color = Color(0, 1, 1);
+        float size = 1.2;
+        float check_padding = 1;
+        Color check_color = Color::Black();
     };
 
     Color bg_color = Color::Gray(0.8);

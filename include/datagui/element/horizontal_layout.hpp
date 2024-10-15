@@ -19,7 +19,7 @@ void calculate_size_components(
     Node& node,
     const HorizontalLayout& element);
 
-void calculate_child_sizes(
+void calculate_child_dimensions(
     Tree& tree,
     const Style& style,
     const Node& node,

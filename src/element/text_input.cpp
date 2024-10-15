@@ -14,8 +14,13 @@ void calculate_size_components(
         element.text,
         element.max_width,
         style.text.line_height);
+
     node.fixed_size += Vecf::Constant(
         2 * (style.element.border_width + style.element.padding));
+
+    if (element.max_width < 0) {
+        node.dynamic_size.x = -element.max_width;
+    }
 }
 
 } // namespace datagui

@@ -47,7 +47,7 @@ void calculate_size_components(
         2 * (style.element.border_width + style.element.padding));
 }
 
-void calculate_child_sizes(
+void calculate_child_dimensions(
     Tree& tree,
     const Style& style,
     const Node& node,
@@ -62,11 +62,11 @@ void calculate_child_sizes(
         auto& child = tree[child_index];
 
         child.size = child.fixed_size;
-        if (node.dynamic_size.x > 0){
-            child.size.x += child.dynamic_size.x / node.dynamic_size.x;
+        if (child.dynamic_size.x > 0){
+            child.size.x += (child.dynamic_size.x / node.dynamic_size.x) * available.x;
         }
-        if (node.dynamic_size.y > 0){
-            child.size.y += child.dynamic_size.y / node.dynamic_size.y;
+        if (child.dynamic_size.y > 0){
+            child.size.y = node.size.y - 2 * (style.element.padding + style.element.border_width);
         }
         child.origin = node.origin + offset;
 

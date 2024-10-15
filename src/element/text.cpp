@@ -15,6 +15,9 @@ void calculate_size_components(
         element.max_width,
         style.text.line_height);
 
+    if (element.max_width < 0) {
+        node.dynamic_size.x = -element.max_width;
+    }
 }
 
 } // namespace datagui
