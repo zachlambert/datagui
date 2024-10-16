@@ -16,6 +16,7 @@ struct LineStructure {
 };
 
 struct TextStructure {
+    float width;
     float line_height;
     std::vector<LineStructure> lines;
 };
@@ -47,8 +48,7 @@ public:
     CursorPos find_cursor(
         const std::string& text,
         const TextStructure& structure,
-        const Vecf& origin,
-        const Vecf& mouse_pos) const;
+        const Vecf& point) const;
 
     Vecf find_cursor_offset(
         const std::string& text,

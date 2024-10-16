@@ -33,7 +33,7 @@ struct Style {
         int cursor_width = 2;
         float cursor_blink_period = 0.5;
         Color cursor_color = Color::Gray(0.25);
-        Color highlight_color = Color::Gray(0.75);
+        Color highlight_color = Color::Gray(0.7);
     };
 
     struct Checkbox {
@@ -42,7 +42,7 @@ struct Style {
         Color check_color = Color::Black();
     };
 
-    Color bg_color = Color::Gray(0.8);
+    Color bg_color = Color::Gray(0.9);
     Text text;
     Element element;
     TextInput text_input;

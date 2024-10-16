@@ -368,6 +368,7 @@ TextStructure TextRenderer::calculate_text_structure(
     float line_height_factor) const
 {
     TextStructure structure;
+    structure.width = width;
     structure.line_height = style.font_size * line_height_factor;
 
     float line_width = 0;
@@ -395,18 +396,16 @@ TextStructure TextRenderer::calculate_text_structure(
 CursorPos TextRenderer::find_cursor(
     const std::string& text,
     const TextStructure& structure,
-    const Vecf& origin,
-    const Vecf& mouse_pos) const
+    const Vecf& point) const
 {
     if (structure.lines.empty()) {
         return CursorPos{0, Vecf::Zero()};
     }
 
-    Vecf pos = mouse_pos - origin;
     float y = 0;
     for (std::size_t line_i = 0; line_i < structure.lines.size(); line_i++) {
         const auto& line = structure.lines[line_i];
-        if (pos.y >= y + structure.line_height && line_i != structure.lines.size()-1) {
+        if (point.y >= y + structure.line_height && line_i != structure.lines.size()-1) {
             y += structure.line_height;
             continue;
         }
@@ -418,7 +417,7 @@ CursorPos TextRenderer::find_cursor(
                 continue;
             }
             const Character& c = characters[c_index];
-            if (pos.x < x + float(c.advance)/2) {
+            if (point.x < x + float(c.advance)/2) {
                 return CursorPos{char_i, Vecf(x, y)};
             }
             x += c.advance;

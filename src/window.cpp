@@ -54,7 +54,12 @@ Window::Window(const Config& config, const Style& style):
     config(config),
     style(style),
     window(nullptr),
-    tree(std::bind(&Window::delete_element, this, std::placeholders::_1, std::placeholders::_2))
+    text_handler(text_renderer, this->style),
+    tree(std::bind(
+        &Window::delete_element,
+        this,
+        std::placeholders::_1,
+        std::placeholders::_2))
 {
     open();
 }
@@ -318,20 +323,25 @@ void Window::event_handling() {
         switch (node.element) {
             case Element::TextInput:
             {
-                auto& element = elements.text_input[node.element_index];
-                cursor_text = text_renderer.calculate_text_structure(
+                const auto& element = elements.text_input[node.element_index];
+                float offset = style.element.border_width + style.element.padding;
+                text_handler.select(
                     element.text,
-                    node.size.x - (style.element.border_width + style.element.padding),
-                    style.text.line_height
+                    node.size.x - 2 * offset,
+                    style.text.line_height,
+                    mouse_pos - (node.origin + Vecf::Constant(offset))
                 );
-                cursor_begin = text_renderer.find_cursor(
+                break;
+            }
+            case Element::Text:
+            {
+                const auto& element = elements.text[node.element_index];
+                text_handler.select(
                     element.text,
-                    cursor_text,
-                    node.origin + Vecf::Constant(
-                        style.element.border_width + style.element.padding),
-                    mouse_pos
+                    node.size.x,
+                    style.text.line_height,
+                    mouse_pos - node.origin
                 );
-                cursor_end = cursor_begin;
                 break;
             }
             default:
@@ -359,14 +369,16 @@ void Window::event_handling() {
         switch (node.element) {
             case Element::TextInput:
             {
-                auto& element = elements.text_input[node.element_index];
-                cursor_end = text_renderer.find_cursor(
-                    element.text,
-                    cursor_text,
-                    node.origin + Vecf::Constant(
-                        style.element.border_width + style.element.padding),
-                    mouse_pos
-                );
+                const auto& element = elements.text_input[node.element_index];
+                Vecf text_origin = node.origin + Vecf::Constant(
+                    style.element.border_width + style.element.padding);
+                text_handler.drag(element.text, mouse_pos - text_origin);
+                break;
+            }
+            case Element::Text:
+            {
+                const auto& element = elements.text[node.element_index];
+                text_handler.drag(element.text, mouse_pos - node.origin);
                 break;
             }
             default:
@@ -382,19 +394,14 @@ void Window::event_handling() {
                     switch (new_node.element) {
                         case Element::TextInput:
                         {
-                            auto& element = elements.text_input[new_node.element_index];
-                            cursor_text = text_renderer.calculate_text_structure(
+                            const auto& element = elements.text_input[new_node.element_index];
+                            float offset = style.element.border_width + style.element.padding;
+                            text_handler.select_index(
                                 element.text,
-                                new_node.size.x - (style.element.border_width + style.element.padding),
-                                style.text.line_height
+                                new_node.size.x - 2 * offset,
+                                style.text.line_height,
+                                0
                             );
-                            cursor_begin.index = 0;
-                            cursor_begin.offset = text_renderer.find_cursor_offset(
-                                element.text,
-                                cursor_text,
-                                cursor_begin.index
-                            );
-                            cursor_end = cursor_begin;
                             break;
                         }
                         default:
@@ -403,115 +410,69 @@ void Window::event_handling() {
                 }
                 break;
             case GLFW_KEY_ESCAPE:
-                tree.focus_escape();
+                if (tree.node_focused() != -1) {
+                    const auto& node = tree[tree.node_focused()];
+                    switch (node.element) {
+                        case Element::TextInput:
+                        {
+                            auto& element = elements.text_input[node.element_index];
+                            text_handler.revert(element.text);
+                            break;
+                        }
+                        default:
+                        break;
+                    }
+                    tree.focus_escape();
+                }
+                break;
+            case GLFW_KEY_ENTER:
+                if (tree.node_focused() != -1) {
+                    const auto& node = tree[tree.node_focused()];
+                    switch (node.element) {
+                        case Element::TextInput:
+                        {
+                            tree.focus_escape();
+                            break;
+                        }
+                        default:
+                        break;
+                    }
+                }
                 break;
         }
     }
 
-    if (tree.node_focused() != -1 && tree[tree.node_focused()].element == Element::TextInput) {
+    if (tree.node_focused() != -1 && (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT)) {
         const auto& node = tree[tree.node_focused()];
-        auto& element = elements.text_input[node.element_index];
-
-        if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
-            switch (events.key.key) {
-                case GLFW_KEY_LEFT:
-                {
-                    if (cursor_begin.index != cursor_end.index && events.key.mods != 1) {
-                        if (cursor_begin.index <= cursor_end.index) {
-                            cursor_end = cursor_begin;
-                        } else {
-                            cursor_begin = cursor_end;
-                        }
-                    } else if (cursor_end.index != 0) {
-                        cursor_end.index--;
-                        cursor_end.offset = text_renderer.find_cursor_offset(
-                            element.text, cursor_text, cursor_end.index);
-                        if (events.key.mods != 1) {
-                            cursor_begin = cursor_end;
-                        }
-                    }
-                    break;
-                }
-                case GLFW_KEY_RIGHT:
-                {
-                    if (cursor_begin.index != cursor_end.index && events.key.mods != 1) {
-                        if (cursor_begin.index <= cursor_end.index) {
-                            cursor_begin = cursor_end;
-                        } else {
-                            cursor_end = cursor_begin;
-                        }
-                    } else if (cursor_end.index != element.text.size()) {
-                        cursor_end.index++;
-                        cursor_end.offset = text_renderer.find_cursor_offset(
-                            element.text, cursor_text, cursor_end.index);
-                        if (events.key.mods != 1) {
-                            cursor_begin = cursor_end;
-                        }
-                    }
-                    break;
-                }
-                case GLFW_KEY_BACKSPACE:
-                {
-                    if (cursor_begin.index != cursor_end.index) {
-                        std::size_t from = cursor_begin.index;
-                        std::size_t to = cursor_end.index;
-                        if (from > to) {
-                            std::swap(from, to);
-                        }
-                        element.text.erase(element.text.begin() + from, element.text.begin() + to);
-                        if (cursor_begin.index <= cursor_end.index) {
-                            cursor_end = cursor_begin;
-                        } else {
-                            cursor_begin = cursor_end;
-                        }
-                        cursor_text = text_renderer.calculate_text_structure(
-                            element.text,
-                            node.size.x - (style.element.border_width + style.element.padding),
-                            style.text.line_height);
-                    } else if (cursor_begin.index > 0) {
-                        element.text.erase(element.text.begin() + (cursor_begin.index-1));
-                        cursor_text = text_renderer.calculate_text_structure(
-                            element.text,
-                            node.size.x - (style.element.border_width + style.element.padding),
-                            style.text.line_height);
-                        cursor_begin.index--;
-                        cursor_begin.offset = text_renderer.find_cursor_offset(
-                            element.text, cursor_text, cursor_begin.index);
-                        cursor_end = cursor_begin;
-                    }
-                    break;
-                }
+        switch (node.element) {
+            case Element::TextInput:
+            {
+                auto& element = elements.text_input[node.element_index];
+                text_handler.input_key(element.text, events.key.key, events.key.mods, true);
+                break;
             }
+            case Element::Text:
+            {
+                auto& element = elements.text_input[node.element_index];
+                text_handler.input_key(element.text, events.key.key, events.key.mods, false);
+                break;
+            }
+            default:
+                break;
         }
+    }
 
-        if (events.text.received) {
-            if (cursor_begin.index != cursor_end.index) {
-                std::size_t from = cursor_begin.index;
-                std::size_t to = cursor_end.index;
-                if (from > to) {
-                    std::swap(from, to);
-                }
-                element.text.erase(element.text.begin() + from, element.text.begin() + to);
-                element.text.insert(element.text.begin() + from, events.text.character);
-                cursor_begin.index++;
-                cursor_text = text_renderer.calculate_text_structure(
-                    element.text,
-                    node.size.x - (style.element.border_width + style.element.padding),
-                    style.text.line_height);
-                cursor_begin.offset = text_renderer.find_cursor_offset(
-                    element.text, cursor_text, cursor_begin.index);
-                cursor_end = cursor_begin;
-            } else {
-                element.text.insert(element.text.begin() + cursor_begin.index, events.text.character);
-                cursor_begin.index++;
-                cursor_text = text_renderer.calculate_text_structure(
-                    element.text,
-                    node.size.x - (style.element.border_width + style.element.padding),
-                    style.text.line_height);
-                cursor_begin.offset = text_renderer.find_cursor_offset(
-                    element.text, cursor_text, cursor_begin.index);
-                cursor_end = cursor_begin;
+    if (tree.node_focused() != -1 && events.text.received) {
+        const auto& node = tree[tree.node_focused()];
+        switch (node.element) {
+            case Element::TextInput:
+            {
+                auto& element = elements.text_input[node.element_index];
+                text_handler.input_char(element.text, events.text.character);
+                break;
             }
+            default:
+                break;
         }
     }
 
@@ -569,6 +530,11 @@ void Window::render_tree() {
                     Color::Black(),
                     0
                 );
+
+                if (node_index == tree.node_focused()) {
+                    text_handler.render(element.text, node.origin, false, normalized_depth, geometry_renderer);
+                }
+
                 text_renderer.queue_text(
                     element.text,
                     element.max_width,
@@ -654,62 +620,9 @@ void Window::render_tree() {
                         style.element.border_width + style.element.padding);
 
                 if (node_index == tree.node_focused()) {
-                    if (cursor_begin.index == cursor_end.index) {
-                        // TODO: Blink
-                        geometry_renderer.queue_box(
-                            normalized_depth,
-                            Boxf(
-                                text_origin+cursor_begin.offset-Vecf(float(style.text_input.cursor_width)/2, 0),
-                                text_origin+cursor_begin.offset + Vecf(style.text_input.cursor_width, cursor_text.line_height)),
-                            style.text_input.cursor_color,
-                            0,
-                            Color::Black(),
-                            0
-                        );
-                    } else {
-                        CursorPos from, to;
-                        if (cursor_begin.index <= cursor_end.index) {
-                            from = cursor_begin;
-                            to = cursor_end;
-                        } else {
-                            from = cursor_end;
-                            to = cursor_begin;
-                        }
-
-                        for (std::size_t line_i = 0; line_i < cursor_text.lines.size(); line_i++) {
-                            const auto& line = cursor_text.lines[line_i];
-                            if (from.index >= line.end) {
-                                continue;
-                            }
-                            CursorPos line_to;
-                            if (to.index > line.end) {
-                                line_to = CursorPos{line.end, Vecf(line.width, line_i * cursor_text.line_height)};
-                            } else {
-                                line_to = to;
-                            }
-                            geometry_renderer.queue_box(
-                                normalized_depth,
-                                Boxf(
-                                    text_origin + from.offset,
-                                    text_origin + line_to.offset + Vecf(0, cursor_text.line_height)
-                                ),
-                                style.text_input.highlight_color,
-                                0,
-                                Color::Black(),
-                                0
-                            );
-                            if (line_i != cursor_text.lines.size()-1) {
-                                const auto& next_line = cursor_text.lines[line_i+1];
-                                from.index = next_line.begin;
-                                from.offset = Vecf(0, (line_i+1) * cursor_text.line_height);
-                            }
-                            if (to.index <= line.end) {
-                                break;
-                            }
-                        }
-                    }
-
+                    text_handler.render(element.text, text_origin, true, normalized_depth, geometry_renderer);
                 }
+
                 text_renderer.queue_text(
                     element.text,
                     element.max_width,

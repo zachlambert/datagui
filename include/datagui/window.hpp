@@ -14,6 +14,7 @@
 #include "datagui/internal/vector_map.hpp"
 #include "datagui/internal/geometry_renderer.hpp"
 #include "datagui/internal/text_renderer.hpp"
+#include "datagui/internal/text_handler.hpp"
 
 #include "datagui/element.hpp"
 #include "datagui/element/button.hpp"
@@ -103,13 +104,16 @@ private:
 
     GeometryRenderer geometry_renderer;
     TextRenderer text_renderer;
+    TextHandler text_handler;
 
     Tree tree;
     Vecf window_size;
 
+#if 0
     TextStructure cursor_text;
     CursorPos cursor_begin;
     CursorPos cursor_end;
+#endif
 };
 
 } // namespace datagui
