@@ -1,5 +1,6 @@
 #include "datagui/window.hpp"
 
+#include <GLFW/glfw3.h>
 #include <stack>
 #include <iostream>
 #include <cstring>
@@ -8,31 +9,46 @@
 
 namespace datagui {
 
-std::vector<std::pair<GLFWwindow*, Window*>> Window::active_windows;
+struct Events {
+    struct {
+        int action = -1;
+        int button = 0;
+    } mouse;
+    struct {
+        int action = -1;
+        int key = 0;
+        int mods = 0;
+    } key;
+    struct {
+        bool received = false;
+        char character = 0;
+    } text;
 
-void Window::glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods) {
-    for (auto [glfw_window, datagui_window]: active_windows) {
-        if (glfw_window == callback_window) {
-            datagui_window->mouse_button_callback(button, action, mods);
-        }
+    void reset() {
+        mouse.action = -1;
+        key.action = -1;
+        text.received = false;
+    }
+} events;
+
+void glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods) {
+    events.mouse.action = action;
+    events.mouse.button = button;
+}
+
+void glfw_key_callback(GLFWwindow* callback_window, int key, int scancode, int action, int mods) {
+    events.key.action = action;
+    events.key.key = key;
+    events.key.mods = mods;
+}
+
+void glfw_char_callback(GLFWwindow* callback_window, unsigned int codepoint) {
+    if (codepoint < 256) {
+        events.text.received = true;
+        events.text.character = char(codepoint);
     }
 }
 
-void Window::glfw_key_callback(GLFWwindow* callback_window, int key, int scancode, int action, int mods) {
-    for (auto [glfw_window, datagui_window]: active_windows) {
-        if (glfw_window == callback_window) {
-            datagui_window->key_callback(key, scancode, action, mods);
-        }
-    }
-}
-
-void Window::glfw_char_callback(GLFWwindow* callback_window, unsigned int codepoint) {
-    for (auto [glfw_window, datagui_window]: active_windows) {
-        if (glfw_window == callback_window) {
-            datagui_window->char_callback(codepoint);
-        }
-    }
-}
 
 Window::Window(const Config& config, const Style& style):
     config(config),
@@ -95,10 +111,9 @@ void Window::open() {
     geometry_renderer.init();
     text_renderer.init(style.text);
 
-    active_windows.emplace_back(window, this);
-    glfwSetMouseButtonCallback(window, Window::glfw_mouse_button_callback);
-    glfwSetKeyCallback(window, Window::glfw_key_callback);
-    glfwSetCharCallback(window, Window::glfw_char_callback);
+    glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
+    glfwSetKeyCallback(window, glfw_key_callback);
+    glfwSetCharCallback(window, glfw_char_callback);
 }
 
 void Window::close() {
@@ -283,38 +298,6 @@ void Window::render_end() {
     glfwSwapBuffers(window);
 }
 
-void Window::mouse_button_callback(int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT) {
-        if (action == GLFW_PRESS) {
-            events.mouse_down = true;
-        }
-        if (action == GLFW_RELEASE){
-            events.mouse_up = true;
-        }
-    }
-}
-
-void Window::key_callback(int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
-        events.key_down = true;
-    }
-    if (action == GLFW_REPEAT) {
-        events.key_down = true;
-    }
-    if (action == GLFW_RELEASE) {
-        events.key_up = true;
-    }
-    events.key = key;
-    events.mods = mods;
-}
-
-void Window::char_callback(unsigned int codepoint) {
-    if (codepoint < 256) {
-        events.has_char = true;
-        events.char_value = char(codepoint);
-    }
-}
-
 void Window::event_handling() {
     glfwPollEvents();
 
@@ -323,10 +306,10 @@ void Window::event_handling() {
     Vecf mouse_pos(mx, my);
 
     tree.mouse_reset();
-    if (events.mouse_down) {
+    if (events.mouse.action == GLFW_PRESS) {
         tree.mouse_press(mouse_pos);
     }
-    if (events.mouse_up) {
+    if (events.mouse.action == GLFW_RELEASE) {
         tree.mouse_release(mouse_pos);
     }
 
@@ -334,25 +317,25 @@ void Window::event_handling() {
         const auto& node = tree[tree.node_pressed()];
         switch (node.element) {
             case Element::TextInput:
-                {
-                    auto& element = elements.text_input[node.element_index];
-                    cursor_text = text_renderer.calculate_text_structure(
-                        element.text,
-                        node.size.x - (style.element.border_width + style.element.padding),
-                        style.text.line_height
-                    );
-                    cursor_begin = text_renderer.find_cursor(
-                        element.text,
-                        cursor_text,
-                        node.origin + Vecf::Constant(
-                            style.element.border_width + style.element.padding),
-                        mouse_pos
-                    );
-                    cursor_end = cursor_begin;
-                }
+            {
+                auto& element = elements.text_input[node.element_index];
+                cursor_text = text_renderer.calculate_text_structure(
+                    element.text,
+                    node.size.x - (style.element.border_width + style.element.padding),
+                    style.text.line_height
+                );
+                cursor_begin = text_renderer.find_cursor(
+                    element.text,
+                    cursor_text,
+                    node.origin + Vecf::Constant(
+                        style.element.border_width + style.element.padding),
+                    mouse_pos
+                );
+                cursor_end = cursor_begin;
                 break;
+            }
             default:
-                break;
+                 break;
         }
     }
 
@@ -360,11 +343,11 @@ void Window::event_handling() {
         const auto& node = tree[tree.node_released()];
         switch (node.element) {
             case Element::Checkbox:
-                {
-                    auto& element = elements.checkbox[node.element_index];
-                    element.checked = !element.checked;
-                }
+            {
+                auto& element = elements.checkbox[node.element_index];
+                element.checked = !element.checked;
                 break;
+            }
             default:
                 break;
         }
@@ -375,45 +358,45 @@ void Window::event_handling() {
         const auto& node = tree[tree.node_held()];
         switch (node.element) {
             case Element::TextInput:
-                {
-                    auto& element = elements.text_input[node.element_index];
-                    cursor_end = text_renderer.find_cursor(
-                        element.text,
-                        cursor_text,
-                        node.origin + Vecf::Constant(
-                            style.element.border_width + style.element.padding),
-                        mouse_pos
-                    );
-                }
+            {
+                auto& element = elements.text_input[node.element_index];
+                cursor_end = text_renderer.find_cursor(
+                    element.text,
+                    cursor_text,
+                    node.origin + Vecf::Constant(
+                        style.element.border_width + style.element.padding),
+                    mouse_pos
+                );
                 break;
+            }
             default:
                 break;
         }
     }
 
-    if (events.key_down) {
-        switch (events.key) {
+    if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
+        switch (events.key.key) {
             case GLFW_KEY_TAB:
                 if (tree.focus_next()) {
                     const auto& new_node = tree[tree.node_focused()];
                     switch (new_node.element) {
                         case Element::TextInput:
-                            {
-                                auto& element = elements.text_input[new_node.element_index];
-                                cursor_text = text_renderer.calculate_text_structure(
-                                    element.text,
-                                    new_node.size.x - (style.element.border_width + style.element.padding),
-                                    style.text.line_height
-                                );
-                                cursor_begin.index = 0;
-                                cursor_begin.offset = text_renderer.find_cursor_offset(
-                                    element.text,
-                                    cursor_text,
-                                    cursor_begin.index
-                                );
-                                cursor_end = cursor_begin;
-                            }
+                        {
+                            auto& element = elements.text_input[new_node.element_index];
+                            cursor_text = text_renderer.calculate_text_structure(
+                                element.text,
+                                new_node.size.x - (style.element.border_width + style.element.padding),
+                                style.text.line_height
+                            );
+                            cursor_begin.index = 0;
+                            cursor_begin.offset = text_renderer.find_cursor_offset(
+                                element.text,
+                                cursor_text,
+                                cursor_begin.index
+                            );
+                            cursor_end = cursor_begin;
                             break;
+                        }
                         default:
                             break;
                     }
@@ -425,82 +408,50 @@ void Window::event_handling() {
         }
     }
 
-    // Handle element-specific logic for key events if a node is focused
-    if (tree.node_focused() != -1 && events.key_down) {
+    if (tree.node_focused() != -1 && tree[tree.node_focused()].element == Element::TextInput) {
         const auto& node = tree[tree.node_focused()];
-        switch (node.element) {
-            case Element::TextInput:
+        auto& element = elements.text_input[node.element_index];
+
+        if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
+            switch (events.key.key) {
+                case GLFW_KEY_LEFT:
                 {
-                    auto& element = elements.text_input[node.element_index];
-                    if (events.key == GLFW_KEY_LEFT || events.key == GLFW_KEY_RIGHT) {
-                        if (cursor_begin.index != cursor_end.index && events.mods != 1) {
-                            if (events.key == GLFW_KEY_LEFT && cursor_begin.index <= cursor_end.index
-                                || events.key == GLFW_KEY_RIGHT && cursor_end.index <= cursor_begin.index)
-                            {
-                                cursor_end = cursor_begin;
-                            } else {
-                                cursor_begin = cursor_end;
-                            }
+                    if (cursor_begin.index != cursor_end.index && events.key.mods != 1) {
+                        if (cursor_begin.index <= cursor_end.index) {
+                            cursor_end = cursor_begin;
                         } else {
-                            std::size_t pos = cursor_end.index;
-                            if (events.key == GLFW_KEY_LEFT && pos != 0) {
-                                cursor_end.index = pos-1;
-                                cursor_end.offset = text_renderer.find_cursor_offset(
-                                    element.text, cursor_text, cursor_end.index);
-                                if (events.mods != 1) {
-                                    cursor_begin = cursor_end;
-                                }
-                            } else if (pos != element.text.size()) {
-                                cursor_end.index = pos+1;
-                                cursor_end.offset = text_renderer.find_cursor_offset(
-                                    element.text, cursor_text, cursor_end.index);
-                                if (events.mods != 1) {
-                                    cursor_begin = cursor_end;
-                                }
-                            }
+                            cursor_begin = cursor_end;
+                        }
+                    } else if (cursor_end.index != 0) {
+                        cursor_end.index--;
+                        cursor_end.offset = text_renderer.find_cursor_offset(
+                            element.text, cursor_text, cursor_end.index);
+                        if (events.key.mods != 1) {
+                            cursor_begin = cursor_end;
                         }
                     }
-                    else if (events.key == GLFW_KEY_BACKSPACE) {
-                        if (cursor_begin.index != cursor_end.index) {
-                            std::size_t from = cursor_begin.index;
-                            std::size_t to = cursor_end.index;
-                            if (from > to) {
-                                std::swap(from, to);
-                            }
-                            element.text.erase(element.text.begin() + from, element.text.begin() + to);
-                            if (cursor_begin.index <= cursor_end.index) {
-                                cursor_end = cursor_begin;
-                            } else {
-                                cursor_begin = cursor_end;
-                            }
-                            cursor_text = text_renderer.calculate_text_structure(
-                                element.text,
-                                node.size.x - (style.element.border_width + style.element.padding),
-                                style.text.line_height);
-                        } else if (cursor_begin.index > 0) {
-                            element.text.erase(element.text.begin() + (cursor_begin.index-1));
-                            cursor_text = text_renderer.calculate_text_structure(
-                                element.text,
-                                node.size.x - (style.element.border_width + style.element.padding),
-                                style.text.line_height);
-                            cursor_begin.index--;
-                            cursor_begin.offset = text_renderer.find_cursor_offset(
-                                element.text, cursor_text, cursor_begin.index);
+                    break;
+                }
+                case GLFW_KEY_RIGHT:
+                {
+                    if (cursor_begin.index != cursor_end.index && events.key.mods != 1) {
+                        if (cursor_begin.index <= cursor_end.index) {
+                            cursor_begin = cursor_end;
+                        } else {
                             cursor_end = cursor_begin;
                         }
+                    } else if (cursor_end.index != element.text.size()) {
+                        cursor_end.index++;
+                        cursor_end.offset = text_renderer.find_cursor_offset(
+                            element.text, cursor_text, cursor_end.index);
+                        if (events.key.mods != 1) {
+                            cursor_begin = cursor_end;
+                        }
                     }
+                    break;
                 }
-                break;
-            default:
-                break;
-        }
-    }
-    if (tree.node_focused() != -1 && events.has_char) {
-        const auto& node = tree[tree.node_focused()];
-        switch (node.element) {
-            case Element::TextInput:
+                case GLFW_KEY_BACKSPACE:
                 {
-                    auto& element = elements.text_input[node.element_index];
                     if (cursor_begin.index != cursor_end.index) {
                         std::size_t from = cursor_begin.index;
                         std::size_t to = cursor_end.index;
@@ -508,34 +459,63 @@ void Window::event_handling() {
                             std::swap(from, to);
                         }
                         element.text.erase(element.text.begin() + from, element.text.begin() + to);
-                        element.text.insert(element.text.begin() + from, events.char_value);
-                        cursor_begin.index++;
+                        if (cursor_begin.index <= cursor_end.index) {
+                            cursor_end = cursor_begin;
+                        } else {
+                            cursor_begin = cursor_end;
+                        }
                         cursor_text = text_renderer.calculate_text_structure(
                             element.text,
                             node.size.x - (style.element.border_width + style.element.padding),
                             style.text.line_height);
-                        cursor_begin.offset = text_renderer.find_cursor_offset(
-                            element.text, cursor_text, cursor_begin.index);
-                        cursor_end = cursor_begin;
-                    } else {
-                        element.text.insert(element.text.begin() + cursor_begin.index, events.char_value);
-                        cursor_begin.index++;
+                    } else if (cursor_begin.index > 0) {
+                        element.text.erase(element.text.begin() + (cursor_begin.index-1));
                         cursor_text = text_renderer.calculate_text_structure(
                             element.text,
                             node.size.x - (style.element.border_width + style.element.padding),
                             style.text.line_height);
+                        cursor_begin.index--;
                         cursor_begin.offset = text_renderer.find_cursor_offset(
                             element.text, cursor_text, cursor_begin.index);
                         cursor_end = cursor_begin;
                     }
+                    break;
                 }
-                break;
-            default:
-                break;
+            }
+        }
+
+        if (events.text.received) {
+            if (cursor_begin.index != cursor_end.index) {
+                std::size_t from = cursor_begin.index;
+                std::size_t to = cursor_end.index;
+                if (from > to) {
+                    std::swap(from, to);
+                }
+                element.text.erase(element.text.begin() + from, element.text.begin() + to);
+                element.text.insert(element.text.begin() + from, events.text.character);
+                cursor_begin.index++;
+                cursor_text = text_renderer.calculate_text_structure(
+                    element.text,
+                    node.size.x - (style.element.border_width + style.element.padding),
+                    style.text.line_height);
+                cursor_begin.offset = text_renderer.find_cursor_offset(
+                    element.text, cursor_text, cursor_begin.index);
+                cursor_end = cursor_begin;
+            } else {
+                element.text.insert(element.text.begin() + cursor_begin.index, events.text.character);
+                cursor_begin.index++;
+                cursor_text = text_renderer.calculate_text_structure(
+                    element.text,
+                    node.size.x - (style.element.border_width + style.element.padding),
+                    style.text.line_height);
+                cursor_begin.offset = text_renderer.find_cursor_offset(
+                    element.text, cursor_text, cursor_begin.index);
+                cursor_end = cursor_begin;
+            }
         }
     }
 
-    events.clear();
+    events.reset();
 }
 
 void Window::render_tree() {
@@ -552,7 +532,7 @@ void Window::render_tree() {
         float normalized_depth = float(node.depth) / max_layer;
 
         switch (node.element) {
-        case Element::VerticalLayout:
+            case Element::VerticalLayout:
             {
                 const auto& element = elements.vertical_layout[node.element_index];
                 geometry_renderer.queue_box(
@@ -563,9 +543,9 @@ void Window::render_tree() {
                     style.element.border_color,
                     0
                 );
+                break;
             }
-            break;
-        case Element::HorizontalLayout:
+            case Element::HorizontalLayout:
             {
                 const auto& element = elements.horizontal_layout[node.element_index];
                 geometry_renderer.queue_box(
@@ -576,9 +556,9 @@ void Window::render_tree() {
                     style.element.border_color,
                     0
                 );
+                break;
             }
-            break;
-        case Element::Text:
+            case Element::Text:
             {
                 const auto& element = elements.text[node.element_index];
                 geometry_renderer.queue_box(
@@ -597,9 +577,9 @@ void Window::render_tree() {
                     normalized_depth,
                     style.text.font_color
                 );
+                break;
             }
-            break;
-        case Element::Button:
+            case Element::Button:
             {
                 const auto& element = elements.button[node.element_index];
                 const Color& bg_color =
@@ -621,9 +601,9 @@ void Window::render_tree() {
                     normalized_depth,
                     style.text.font_color
                 );
+                break;
             }
-            break;
-        case Element::Checkbox:
+            case Element::Checkbox:
             {
                 const auto& element = elements.checkbox[node.element_index];
                 const Color& bg_color =
@@ -654,9 +634,9 @@ void Window::render_tree() {
                         0
                     );
                 }
+                break;
             }
-            break;
-        case Element::TextInput:
+            case Element::TextInput:
             {
                 const auto& element = elements.text_input[node.element_index];
                 geometry_renderer.queue_box(
@@ -738,8 +718,8 @@ void Window::render_tree() {
                     normalized_depth,
                     style.text.font_color
                 );
+                break;
             }
-            break;
         }
 
         if (node.first_child == -1) {
