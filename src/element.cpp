@@ -3,6 +3,17 @@
 
 namespace datagui {
 
+Tree::Tree(const delete_element_t& delete_element):
+    delete_element(delete_element),
+    root_node_(-1),
+    max_depth_(0),
+    iteration(0),
+    node_pressed_(-1),
+    node_released_(-1),
+    node_held_(-1),
+    node_focused_(-1)
+{}
+
 int Tree::down(
     const std::string& key,
     Element type,
@@ -30,7 +41,9 @@ int Tree::down(
         return root_node_;
     }
 
-    int node = nodes.emplace(key, type, parent, iteration);
+    int depth = (parent == -1) ? 0 : nodes[parent].depth + 1;
+    int node = nodes.emplace(key, type, depth, parent, iteration);
+
     if (nodes.size() == 1) {
         root_node_ = node;
     }
@@ -92,6 +105,20 @@ void Tree::remove_node(int root_node) {
             }
             delete_element(node.element, node.element_index);
             nodes.pop(node_index);
+
+            if (node_pressed_ == node_index) {
+                node_pressed_ = -1;
+            }
+            if (node_released_ == node_index) {
+                node_released_ = -1;
+            }
+            if (node_held_ == node_index) {
+                node_held_ = -1;
+            }
+            if (node_focused_ == node_index) {
+                node_focused_ = -1;
+            }
+
             continue;
         }
         int iter = node.first_child;
@@ -105,6 +132,65 @@ void Tree::remove_node(int root_node) {
 void Tree::reset() {
     iteration++;
     max_depth_ = 0;
+}
+
+void Tree::mouse_reset() {
+    node_pressed_ = -1;
+    node_released_ = -1;
+}
+
+void Tree::mouse_press(const Vecf& pos) {
+    node_pressed_ = root_node_;
+
+    while (true) {
+        const auto& node = nodes[node_pressed_];
+        int child_index = node.first_child;
+        while (child_index != -1) {
+            const auto& child = nodes[child_index];
+            if (Boxf(child.origin, child.origin+child.size).contains(pos)) {
+                node_pressed_ = child_index;
+                break;
+            }
+            child_index = child.next;
+        }
+        if (child_index == -1) {
+            break;
+        }
+    }
+
+    node_held_ = node_pressed_;
+    node_focused_ = node_pressed_;
+}
+
+void Tree::mouse_release(const Vecf& pos) {
+    if (node_held_ == -1) {
+        return;
+    }
+    const auto& node = nodes[node_held_];
+    if (Boxf(node.origin, node.origin+node.size).contains(pos)) {
+        node_released_ = node_held_;
+    }
+    node_held_ = -1;
+}
+
+bool Tree::focus_next() {
+    if (node_focused_ == -1) {
+        return false;
+    }
+    const auto& node = nodes[node_focused_];
+    if (node.next != -1) {
+        node_focused_ = node.next;
+        return true;
+    } else if (node.parent != -1) {
+        node_focused_ = nodes[node.parent].first_child;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void Tree::focus_escape() {
+    node_focused_ = -1;
 }
 
 } // namespace datagui

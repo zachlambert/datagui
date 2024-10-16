@@ -2,6 +2,7 @@
 
 #include <stack>
 #include <iostream>
+#include <cstring>
 #include "datagui/exception.hpp"
 
 
@@ -25,14 +26,19 @@ void Window::glfw_key_callback(GLFWwindow* callback_window, int key, int scancod
     }
 }
 
+void Window::glfw_char_callback(GLFWwindow* callback_window, unsigned int codepoint) {
+    for (auto [glfw_window, datagui_window]: active_windows) {
+        if (glfw_window == callback_window) {
+            datagui_window->char_callback(codepoint);
+        }
+    }
+}
+
 Window::Window(const Config& config, const Style& style):
     config(config),
     style(style),
     window(nullptr),
-    tree(std::bind(&Window::delete_element, this, std::placeholders::_1, std::placeholders::_2)),
-    node_pressed(-1),
-    node_focused(-1),
-    node_clicked(-1)
+    tree(std::bind(&Window::delete_element, this, std::placeholders::_1, std::placeholders::_2))
 {
     open();
 }
@@ -92,6 +98,7 @@ void Window::open() {
     active_windows.emplace_back(window, this);
     glfwSetMouseButtonCallback(window, Window::glfw_mouse_button_callback);
     glfwSetKeyCallback(window, Window::glfw_key_callback);
+    glfwSetCharCallback(window, Window::glfw_char_callback);
 }
 
 void Window::close() {
@@ -172,7 +179,7 @@ bool Window::button(
         return elements.button.emplace(text, max_width);
     });
     tree.up();
-    return node == node_clicked;
+    return node == tree.node_released();
 }
 
 bool Window::checkbox(const std::string& key) {
@@ -359,11 +366,22 @@ void Window::key_callback(int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
         events.key_down = true;
     }
+    if (action == GLFW_REPEAT) {
+        events.key_down = true;
+    }
     if (action == GLFW_RELEASE) {
         events.key_up = true;
     }
     events.key = key;
     events.mods = mods;
+}
+
+void Window::char_callback(unsigned int codepoint) {
+    static int asdf = 0;
+    if (codepoint < 256) {
+        events.has_char = true;
+        events.char_value = char(codepoint);
+    }
 }
 
 void Window::event_handling() {
@@ -373,31 +391,17 @@ void Window::event_handling() {
     glfwGetCursorPos(window, &mx, &my);
     Vecf mouse_pos(mx, my);
 
-    node_clicked = -1;
-
+    tree.mouse_reset();
     if (events.mouse_down) {
-        int clicked = tree.root_node();
-        while (true) {
-            const auto& node = tree[clicked];
-            int child_index = node.first_child;
-            while (child_index != -1) {
-                const auto& child = tree[child_index];
-                if (Boxf(child.origin, child.origin+child.size).contains(mouse_pos)) {
-                    clicked = child_index;
-                    break;
-                }
-                child_index = child.next;
-            }
-            if (child_index == -1) {
-                break;
-            }
-        }
+        tree.mouse_press(mouse_pos);
+    }
+    if (events.mouse_up) {
+        tree.mouse_release(mouse_pos);
+    }
 
-        node_pressed = clicked;
-        node_focused = clicked;
-
-        const auto& node = tree[clicked];
-        switch (tree[clicked].element) {
+    if (tree.node_pressed() != -1) {
+        const auto& node = tree[tree.node_pressed()];
+        switch (node.element) {
             case Element::TextInput:
                 {
                     auto& element = elements.text_input[node.element_index];
@@ -421,27 +425,23 @@ void Window::event_handling() {
         }
     }
 
-    if (events.mouse_up && node_pressed != -1) {
-        const auto& node = tree[node_pressed];
-        if (Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
-            node_clicked = node_pressed;
-            // Handle click release
-            switch (node.element) {
-                case Element::Checkbox:
-                    {
-                        auto& element = elements.checkbox[node.element_index];
-                        element.checked = !element.checked;
-                    }
-                    break;
-                default:
-                    break;
-            }
+    if (tree.node_released()) {
+        const auto& node = tree[tree.node_released()];
+        switch (node.element) {
+            case Element::Checkbox:
+                {
+                    auto& element = elements.checkbox[node.element_index];
+                    element.checked = !element.checked;
+                }
+                break;
+            default:
+                break;
         }
-        node_pressed = -1;
     }
 
-    if (node_pressed != -1) {
-        const auto& node = tree[node_pressed];
+    // Handle element-specific logic while pressed down
+    if (tree.node_held() != -1) {
+        const auto& node = tree[tree.node_held()];
         switch (node.element) {
             case Element::TextInput:
                 {
@@ -460,8 +460,43 @@ void Window::event_handling() {
         }
     }
 
-    if (node_pressed != -1 && events.key_down) {
-        const auto& node = tree[node_focused];
+    if (events.key_down) {
+        switch (events.key) {
+            case GLFW_KEY_TAB:
+                if (tree.focus_next()) {
+                    const auto& new_node = tree[tree.node_focused()];
+                    switch (new_node.element) {
+                        case Element::TextInput:
+                            {
+                                auto& element = elements.text_input[new_node.element_index];
+                                cursor_text = text_renderer.calculate_text_structure(
+                                    element.text,
+                                    new_node.size.x - (style.element.border_width + style.element.padding),
+                                    style.text.line_height
+                                );
+                                cursor_begin.index = 0;
+                                cursor_begin.offset = text_renderer.find_cursor_offset(
+                                    element.text,
+                                    cursor_text,
+                                    cursor_begin.index
+                                );
+                                cursor_end = cursor_begin;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                break;
+            case GLFW_KEY_ESCAPE:
+                tree.focus_escape();
+                break;
+        }
+    }
+
+    // Handle element-specific logic for key events if a node is focused
+    if (tree.node_focused() != -1 && events.key_down) {
+        const auto& node = tree[tree.node_focused()];
         switch (node.element) {
             case Element::TextInput:
                 {
@@ -523,40 +558,44 @@ void Window::event_handling() {
                             cursor_end = cursor_begin;
                         }
                     }
-                    else if (events.key >= GLFW_KEY_A && events.key <= GLFW_KEY_Z) {
-                        char new_c;
-                        if (events.mods == 1) {
-                            new_c = 'A' + (events.key - GLFW_KEY_A);
-                        } else {
-                            new_c = 'a' + (events.key - GLFW_KEY_A);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    if (tree.node_focused() != -1 && events.has_char) {
+        const auto& node = tree[tree.node_focused()];
+        switch (node.element) {
+            case Element::TextInput:
+                {
+                    auto& element = elements.text_input[node.element_index];
+                    if (cursor_begin.index != cursor_end.index) {
+                        std::size_t from = cursor_begin.index;
+                        std::size_t to = cursor_end.index;
+                        if (from > to) {
+                            std::swap(from, to);
                         }
-                        if (cursor_begin.index != cursor_end.index) {
-                            std::size_t from = cursor_begin.index;
-                            std::size_t to = cursor_end.index;
-                            if (from > to) {
-                                std::swap(from, to);
-                            }
-                            element.text.erase(element.text.begin() + from, element.text.begin() + to);
-                            element.text.insert(element.text.begin() + from, new_c);
-                            cursor_begin.index++;
-                            cursor_text = text_renderer.calculate_text_structure(
-                                element.text,
-                                node.size.x - (style.element.border_width + style.element.padding),
-                                style.text.line_height);
-                            cursor_begin.offset = text_renderer.find_cursor_offset(
-                                element.text, cursor_text, cursor_begin.index);
-                            cursor_end = cursor_begin;
-                        } else {
-                            element.text.insert(element.text.begin() + cursor_begin.index, new_c);
-                            cursor_begin.index++;
-                            cursor_text = text_renderer.calculate_text_structure(
-                                element.text,
-                                node.size.x - (style.element.border_width + style.element.padding),
-                                style.text.line_height);
-                            cursor_begin.offset = text_renderer.find_cursor_offset(
-                                element.text, cursor_text, cursor_begin.index);
-                            cursor_end = cursor_begin;
-                        }
+                        element.text.erase(element.text.begin() + from, element.text.begin() + to);
+                        element.text.insert(element.text.begin() + from, events.char_value);
+                        cursor_begin.index++;
+                        cursor_text = text_renderer.calculate_text_structure(
+                            element.text,
+                            node.size.x - (style.element.border_width + style.element.padding),
+                            style.text.line_height);
+                        cursor_begin.offset = text_renderer.find_cursor_offset(
+                            element.text, cursor_text, cursor_begin.index);
+                        cursor_end = cursor_begin;
+                    } else {
+                        element.text.insert(element.text.begin() + cursor_begin.index, events.char_value);
+                        cursor_begin.index++;
+                        cursor_text = text_renderer.calculate_text_structure(
+                            element.text,
+                            node.size.x - (style.element.border_width + style.element.padding),
+                            style.text.line_height);
+                        cursor_begin.offset = text_renderer.find_cursor_offset(
+                            element.text, cursor_text, cursor_begin.index);
+                        cursor_end = cursor_begin;
                     }
                 }
                 break;
@@ -569,24 +608,17 @@ void Window::event_handling() {
 }
 
 void Window::render_tree() {
-    struct State {
-        int node;
-        int depth;
-        State(int node, int depth):
-            node(node),
-            depth(depth)
-        {}
-    };
+    std::stack<int> stack;
+    stack.push(tree.root_node());
 
-    std::stack<State> stack;
-    stack.emplace(tree.root_node(), 0);
+    int max_layer = tree.max_depth() + 1;
 
     while (!stack.empty()) {
-        State state = stack.top();
-        auto& node = tree[state.node];
-
-        float normalized_depth = float(state.depth) / (tree.max_depth() + 1);
+        int node_index = stack.top();
+        auto& node = tree[stack.top()];
         stack.pop();
+
+        float normalized_depth = float(node.depth) / max_layer;
 
         switch (node.element) {
         case Element::VerticalLayout:
@@ -640,7 +672,7 @@ void Window::render_tree() {
             {
                 const auto& element = elements.button[node.element_index];
                 const Color& bg_color =
-                    (node_pressed == state.node)
+                    (tree.node_held() == node_index)
                         ? style.element.pressed_bg_color
                         :style.element.bg_color;
                 geometry_renderer.queue_box(
@@ -664,7 +696,7 @@ void Window::render_tree() {
             {
                 const auto& element = elements.checkbox[node.element_index];
                 const Color& bg_color =
-                    (node_pressed == state.node)
+                    (tree.node_held() == node_index)
                     ? style.element.pressed_bg_color
                     : style.element.bg_color;
 
@@ -701,7 +733,7 @@ void Window::render_tree() {
                     Boxf(node.origin, node.origin+node.size),
                     style.element.bg_color,
                     style.element.border_width,
-                    state.node == node_focused
+                    node_index == tree.node_focused()
                         ? style.element.focus_color
                         : style.element.border_color
                 );
@@ -710,7 +742,7 @@ void Window::render_tree() {
                     + Vecf::Constant(
                         style.element.border_width + style.element.padding);
 
-                if (state.node == node_focused) {
+                if (node_index == tree.node_focused()) {
                     if (cursor_begin.index == cursor_end.index) {
                         // TODO: Blink
                         geometry_renderer.queue_box(
@@ -784,7 +816,7 @@ void Window::render_tree() {
         }
         int child = node.first_child;
         while (child != -1) {
-            stack.emplace(child, state.depth + 1);
+            stack.push(child);
             child = tree[child].next;
         }
     }

@@ -25,6 +25,7 @@ struct Node {
     int element_index;
 
     // Connectivity
+    int depth;
     int parent;
     int prev;
     int next;
@@ -38,10 +39,11 @@ struct Node {
     Vecf origin;
     Vecf size;
 
-    Node(const std::string& key, Element element, int parent, int iteration):
+    Node(const std::string& key, Element element, int depth, int parent, int iteration):
         key(key),
         element(element),
         element_index(-1),
+        depth(depth),
         parent(parent),
         prev(-1),
         next(-1),
@@ -68,12 +70,7 @@ public:
     using construct_element_t = std::function<int()>;
     using delete_element_t = std::function<void(Element, int)>;
 
-    Tree(const delete_element_t& delete_element):
-        delete_element(delete_element),
-        root_node_(-1),
-        max_depth_(0),
-        iteration(0)
-    {}
+    Tree(const delete_element_t& delete_element);
 
     // Define the tree
     int down(const std::string& key, Element element, const construct_element_t& construct_element);
@@ -91,6 +88,17 @@ public:
     std::size_t max_depth() const { return max_depth_; }
     int root_node() const { return root_node_; }
 
+    void mouse_reset();
+    void mouse_press(const Vecf& pos);
+    void mouse_release(const Vecf& pos);
+    bool focus_next();
+    void focus_escape();
+
+    int node_pressed() const { return node_pressed_; }
+    int node_released() const { return node_released_; }
+    int node_held() const { return node_held_; }
+    int node_focused() const { return node_focused_; }
+
 private:
     void remove_node(int root_node);
 
@@ -100,6 +108,11 @@ private:
     std::stack<int> active_nodes;
     std::size_t max_depth_;
     int iteration;
+
+    int node_pressed_;
+    int node_released_;
+    int node_held_;
+    int node_focused_;
 };
 
 } // namespace datagui

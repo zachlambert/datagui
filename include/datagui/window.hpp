@@ -38,7 +38,7 @@ public:
             title("datagui"),
             width(900),
             height(600),
-            vsync(true),
+            vsync(false),
             resizable(true)
         {}
     };
@@ -90,11 +90,13 @@ private:
 
     void mouse_button_callback(int button, int action, int mods);
     void key_callback(int key, int scancode, int action, int mods);
+    void char_callback(unsigned int codepoint);
     void event_handling();
 
     static std::vector<std::pair<GLFWwindow*, Window*>> active_windows;
     static void glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods);
     static void glfw_key_callback(GLFWwindow* callback_window, int key, int scancode, int action, int mods);
+    static void glfw_char_callback(GLFWwindow* callback_window, unsigned int codepoint);
 
     void render_tree();
 
@@ -105,13 +107,17 @@ private:
         bool key_up;
         int key;
         int mods;
+        bool has_char;
+        char char_value;
         Events():
             mouse_down(false),
             mouse_up(false),
             key_down(false),
             key_up(false),
             key(-1),
-            mods(0)
+            mods(0),
+            has_char(false),
+            char_value(0)
         {}
         void clear() {
             mouse_down = false;
@@ -120,6 +126,8 @@ private:
             key_up = false;
             key = -1;
             mods = 0;
+            has_char = false;
+            char_value = 0;
         }
     };
     Events events;
@@ -142,10 +150,6 @@ private:
 
     Tree tree;
     Vecf window_size;
-
-    int node_pressed;
-    int node_focused;
-    int node_clicked;
 
     TextStructure cursor_text;
     CursorPos cursor_begin;
