@@ -69,13 +69,22 @@ class Tree {
 public:
     using construct_element_t = std::function<int()>;
     using delete_element_t = std::function<void(Element, int)>;
+    using calculate_size_components_t = std::function<void(Node& node)>;
+    using calculate_child_dimensions_t = std::function<void(const Node& node)>;
 
     Tree(const delete_element_t& delete_element);
 
     // Define the tree
-    int down(const std::string& key, Element element, const construct_element_t& construct_element);
+    void begin();
+    int down(
+        const std::string& key,
+        Element element,
+        const construct_element_t& construct_element);
     void up();
-    void reset();
+    void end(
+        const Vecf& root_size,
+        const calculate_size_components_t& calculate_size_components,
+        const calculate_child_dimensions_t& calculate_child_dimensions);
 
     const Node& operator[](std::size_t i) const {
         return nodes[i];

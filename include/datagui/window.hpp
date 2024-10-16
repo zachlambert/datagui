@@ -85,8 +85,6 @@ private:
     void close();
 
     void delete_element(Element element, int index);
-    void calculate_sizes_up();
-    void calculate_sizes_down();
 
     void mouse_button_callback(int button, int action, int mods);
     void key_callback(int key, int scancode, int action, int mods);

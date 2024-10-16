@@ -14,6 +14,11 @@ Tree::Tree(const delete_element_t& delete_element):
     node_focused_(-1)
 {}
 
+void Tree::begin() {
+    iteration++;
+    max_depth_ = 0;
+}
+
 int Tree::down(
     const std::string& key,
     Element type,
@@ -129,9 +134,77 @@ void Tree::remove_node(int root_node) {
     }
 }
 
-void Tree::reset() {
-    iteration++;
-    max_depth_ = 0;
+void Tree::end(
+    const Vecf& root_size,
+    const calculate_size_components_t& calculate_size_components,
+    const calculate_child_dimensions_t& calculate_child_dimensions)
+{
+    if (depth() != 0) {
+        throw WindowError("Didn't call layout_... and layout_end the same number of times");
+    }
+    if (root_node_ == -1) {
+        throw WindowError("Root node not defined");
+    }
+
+    // Calculate size components
+    {
+        struct State {
+            std::size_t index;
+            bool first_visit;
+            State(int index):
+                index(index),
+                first_visit(true)
+            {}
+        };
+        std::stack<State> stack;
+        stack.emplace(root_node_);
+
+        while (!stack.empty()) {
+            State& state = stack.top();
+            Node& node = nodes[state.index];
+
+            // If the node has children, process these first
+            if (node.first_child != -1 && state.first_visit) {
+                state.first_visit = false;
+                int child = node.first_child;
+                while (child != -1) {
+                    stack.emplace(child);
+                    child = nodes[child].next;
+                }
+                continue;
+            }
+            stack.pop();
+
+            node.fixed_size = Vecf::Zero();
+            node.dynamic_size = Vecf::Zero();
+
+            calculate_size_components(node);
+        }
+    }
+
+    {
+        std::stack<int> stack;
+
+        stack.push(root_node_);
+        nodes[root_node_].size = root_size;
+
+        while (!stack.empty()) {
+            const auto& node = nodes[stack.top()];
+            stack.pop();
+
+            if (node.first_child == -1) {
+                continue;
+            }
+
+            calculate_child_dimensions(node);
+
+            int child = node.first_child;
+            while (child != -1) {
+                stack.push(child);
+                child = nodes[child].next;
+            }
+        }
+    }
 }
 
 void Tree::mouse_reset() {

@@ -213,20 +213,67 @@ void Window::render_begin() {
     glViewport(0, 0, display_w, display_h);
     window_size = Vecf(display_w, display_h);
 
+    tree.begin();
     vertical_layout("root", 0, 0);
 }
 
 void Window::render_end() {
     layout_end();
-    if (tree.depth() != 0) {
-        throw WindowError("Didn't call layout_... and layout_end the same number of times");
-    }
-    if (tree.root_node() == -1) {
-        throw WindowError("Root node not defined");
-    }
+    tree.end(
+        window_size,
+        [&](Node& node) {
+            switch (node.element) {
+                case Element::VerticalLayout:
+                    calculate_size_components(
+                        tree, style,
+                        node, elements.vertical_layout[node.element_index]);
+                    break;
+                case Element::HorizontalLayout:
+                    calculate_size_components(
+                        tree, style,
+                        node, elements.horizontal_layout[node.element_index]);
+                    break;
+                case Element::Text:
+                    calculate_size_components(
+                        tree, style, text_renderer,
+                        node, elements.text[node.element_index]);
+                    break;
+                case Element::Button:
+                    calculate_size_components(
+                        tree, style, text_renderer,
+                        node, elements.button[node.element_index]);
+                    break;
+                case Element::Checkbox:
+                    calculate_size_components(
+                        tree, style,
+                        node, elements.checkbox[node.element_index]);
+                    break;
+                case Element::TextInput:
+                    calculate_size_components(
+                        tree, style, text_renderer,
+                        node, elements.text_input[node.element_index]);
+                    break;
+            }
+        },
+        [&](const Node& node) {
+            switch (node.element) {
+                case Element::VerticalLayout:
+                    calculate_child_dimensions(
+                        tree, style,
+                        node, elements.vertical_layout[node.element_index]);
+                    break;
+                case Element::HorizontalLayout:
+                    calculate_child_dimensions(
+                        tree, style,
+                        node, elements.horizontal_layout[node.element_index]);
+                    break;
+                default:
+                    throw WindowError("A non-layout element shouldn't have children");
+                    break;
+            }
+        }
+    );
 
-    calculate_sizes_up();
-    calculate_sizes_down();
     event_handling();
     render_tree();
 
@@ -234,121 +281,6 @@ void Window::render_end() {
     glfwSetWindowSizeLimits(window, root_node.fixed_size.x, root_node.fixed_size.y, -1, -1);
 
     glfwSwapBuffers(window);
-
-    tree.reset();
-}
-
-void Window::calculate_sizes_up() {
-    /*
-      - Traverse down the tree, where if non-leaf node is reached, all the
-         child tree are processed first.
-      - Each node must calculate it's 'fixed_size' and 'dynamic_size', where:
-        - For leaf tree, these are defined by the element and it's properties
-        - For branch tree, these are defined by the element type, it's properties
-          and the fixed_size/dynamic_size of the children
-    */
-
-    struct State {
-        std::size_t index;
-        bool first_visit;
-        State(int index):
-            index(index),
-            first_visit(true)
-        {}
-    };
-    std::stack<State> stack;
-    stack.emplace(tree.root_node());
-
-    while (!stack.empty()) {
-        State& state = stack.top();
-        Node& node = tree[state.index];
-
-        // If the node has children, process these first
-        if (node.first_child != -1 && state.first_visit) {
-            state.first_visit = false;
-            int child = node.first_child;
-            while (child != -1) {
-                stack.emplace(child);
-                child = tree[child].next;
-            }
-            continue;
-        }
-        stack.pop();
-
-        node.fixed_size = Vecf::Zero();
-        node.dynamic_size = Vecf::Zero();
-
-        switch (node.element) {
-            case Element::VerticalLayout:
-                calculate_size_components(
-                    tree, style,
-                    node, elements.vertical_layout[node.element_index]);
-                break;
-            case Element::HorizontalLayout:
-                calculate_size_components(
-                    tree, style,
-                    node, elements.horizontal_layout[node.element_index]);
-                break;
-            case Element::Text:
-                calculate_size_components(
-                    tree, style, text_renderer,
-                    node, elements.text[node.element_index]);
-                break;
-            case Element::Button:
-                calculate_size_components(
-                    tree, style, text_renderer,
-                    node, elements.button[node.element_index]);
-                break;
-            case Element::Checkbox:
-                calculate_size_components(
-                    tree, style,
-                    node, elements.checkbox[node.element_index]);
-                break;
-            case Element::TextInput:
-                calculate_size_components(
-                    tree, style, text_renderer,
-                    node, elements.text_input[node.element_index]);
-                break;
-        }
-    }
-}
-
-void Window::calculate_sizes_down() {
-    std::stack<int> stack;
-
-    stack.push(tree.root_node());
-    tree[tree.root_node()].size = window_size;
-
-    while (!stack.empty()) {
-        const auto& node = tree[stack.top()];
-        stack.pop();
-
-        if (node.first_child == -1) {
-            continue;
-        }
-
-        switch (node.element) {
-            case Element::VerticalLayout:
-                calculate_child_dimensions(
-                    tree, style,
-                    node, elements.vertical_layout[node.element_index]);
-                break;
-            case Element::HorizontalLayout:
-                calculate_child_dimensions(
-                    tree, style,
-                    node, elements.horizontal_layout[node.element_index]);
-                break;
-            default:
-                throw WindowError("A non-layout element shouldn't have children");
-                break;
-        }
-
-        int child = node.first_child;
-        while (child != -1) {
-            stack.push(child);
-            child = tree[child].next;
-        }
-    }
 }
 
 void Window::mouse_button_callback(int button, int action, int mods) {
@@ -377,7 +309,6 @@ void Window::key_callback(int key, int scancode, int action, int mods) {
 }
 
 void Window::char_callback(unsigned int codepoint) {
-    static int asdf = 0;
     if (codepoint < 256) {
         events.has_char = true;
         events.char_value = char(codepoint);
