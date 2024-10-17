@@ -202,34 +202,33 @@ bool Window::button(
     return node == tree.node_released();
 }
 
-bool Window::checkbox(const std::string& key, bool* value) {
+const bool* Window::checkbox(const std::string& key) {
     int node = tree.down(key, Element::Checkbox, [&](){
         return elements.checkbox.emplace();
     });
     tree.up();
-    if (value) {
-        *value = elements.checkbox[tree[node].element_index].checked;
+    const auto& element = elements.checkbox[tree[node].element_index];
+    if (tree.node_released() == node) {
+        return &element.checked;
     }
-    return tree.node_released() == node;
+    return nullptr;
 }
 
-bool Window::text_input(
+const std::string* Window::text_input(
     const std::string& key,
     const std::string& default_text,
-    float max_width,
-    std::string* value)
+    float max_width)
 {
     int node = tree.down(key, Element::TextInput, [&](){
         return elements.text_input.emplace(default_text, max_width);
     });
     tree.up();
     auto& element = elements.text_input[tree[node].element_index];
-    if (value) {
-        *value = element.text;
+    if (element.changed) {
+        element.changed = false;
+        return &element.text;
     }
-    bool changed = element.changed;
-    element.changed = false;
-    return changed;
+    return nullptr;
 }
 
 void Window::render_begin() {

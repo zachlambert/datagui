@@ -18,16 +18,14 @@ int main() {
         }
         {
             window.horizontal_layout("checkbox_layout");
-            bool value;
-            if (window.checkbox("checkbox1", &value)) {
-                std::cout << "Toggle -> " << (value ? "on" : "off") << std::endl;
+            if (auto value = window.checkbox("checkbox1")) {
+                std::cout << "Toggle -> " << (*value ? "on" : "off") << std::endl;
             }
             window.text("checkbox1_text", "Toggle me!");
             window.layout_end();
         }
-        std::string input1;
-        if (window.text_input("input1", "min input", 0, &input1)) {
-            std::cout << "Input 1 changed -> " << input1 << std::endl;
+        if (auto value = window.text_input("input1", "min input", 0)) {
+            std::cout << "Input 1 changed -> " << *value << std::endl;
         }
         window.text_input("input2", "expand input", -1);
         window.text_input("input3", "finite input", 200);

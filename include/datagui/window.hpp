@@ -73,15 +73,13 @@ public:
         const std::string& text,
         float max_width = 0);
 
-    bool checkbox(
-        const std::string& key,
-        bool* value = nullptr);
+    const bool* checkbox(
+        const std::string& key);
 
-    bool text_input(
+    const std::string* text_input(
         const std::string& key,
         const std::string& default_text = "",
-        float max_width = -1,
-        std::string* value = nullptr);
+        float max_width = -1);
 
 private:
     void open();
