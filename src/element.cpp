@@ -147,7 +147,7 @@ void Tree::end(
         throw WindowError("Didn't call layout_... and layout_end the same number of times");
     }
     if (root_node_ == -1) {
-        throw WindowError("Root node not defined");
+        return;
     }
 
     // Calculate size components
@@ -218,6 +218,10 @@ void Tree::mouse_reset() {
 }
 
 void Tree::mouse_press(const Vecf& pos) {
+    if (root_node_ == -1) {
+        return;
+    }
+
     node_pressed_ = root_node_;
 
     while (true) {

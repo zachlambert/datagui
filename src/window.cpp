@@ -242,11 +242,9 @@ void Window::render_begin() {
     window_size = Vecf(display_w, display_h);
 
     tree.begin();
-    vertical_layout("root", 0, 0);
 }
 
 void Window::render_end() {
-    layout_end();
     tree.end(
         window_size,
         [&](Node& node) {
@@ -305,8 +303,10 @@ void Window::render_end() {
     event_handling();
     render_tree();
 
-    const auto& root_node = tree[tree.root_node()];
-    glfwSetWindowSizeLimits(window, root_node.fixed_size.x, root_node.fixed_size.y, -1, -1);
+    if (tree.root_node() != -1) {
+        const auto& root_node = tree[tree.root_node()];
+        glfwSetWindowSizeLimits(window, root_node.fixed_size.x, root_node.fixed_size.y, -1, -1);
+    }
 
     glfwSwapBuffers(window);
 }
@@ -358,7 +358,7 @@ void Window::event_handling() {
         }
     }
 
-    if (tree.node_released()) {
+    if (tree.node_released() != -1) {
         const auto& node = tree[tree.node_released()];
         switch (node.element) {
             case Element::Checkbox:
@@ -504,6 +504,9 @@ void Window::event_handling() {
 }
 
 void Window::render_tree() {
+    if (tree.root_node() == -1) {
+        return;
+    }
     std::stack<int> stack;
     stack.push(tree.root_node());
 

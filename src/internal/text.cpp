@@ -120,7 +120,7 @@ FontStructure load_font(Font font, int font_size) {
 
     float texture_row_width = 0;
     for (int i = structure.char_first(); i < structure.char_end(); i++) {
-        if (FT_Load_Char(ft_face, char(i), FT_LOAD_RENDER) != 0) {
+        if (FT_Load_Char(ft_face, char(i), 0) != 0) {
             throw InitializationError("Failed to load character: " + std::to_string(char(i)));
         }
 

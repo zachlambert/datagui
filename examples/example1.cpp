@@ -10,6 +10,7 @@ int main() {
 
     while (window.running()) {
         window.render_begin();
+#if 0
         window.vertical_layout("div1");
         window.text("text1", "Line 1");
         window.text("text2", "Line 2");
@@ -30,6 +31,7 @@ int main() {
         window.text_input("input2", "expand input", -1);
         window.text_input("input3", "finite input", 200);
         window.layout_end();
+#endif
         window.render_end();
     }
     return 0;
