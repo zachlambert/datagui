@@ -273,7 +273,7 @@ void Window::render_end() {
                     break;
                 case Element::Checkbox:
                     calculate_size_components(
-                        tree, style,
+                        tree, style, font,
                         node, elements.checkbox[node.element_index]);
                     break;
                 case Element::TextInput:
@@ -422,23 +422,24 @@ void Window::event_handling() {
                 }
                 break;
             case GLFW_KEY_ESCAPE:
-                tree.focus_escape(true);
-                break;
-            case GLFW_KEY_ENTER:
                 if (tree.node_focused() != -1) {
                     const auto& node = tree[tree.node_focused()];
                     switch (node.element) {
                         case Element::TextInput:
                         {
                             auto& element = elements.text_input[node.element_index];
-                            element.changed = true;
-                            element.initial_text = element.text;
                             tree.focus_escape(false);
+                            element.text = element.initial_text;
                             break;
                         }
                         default:
                         break;
                     }
+                }
+                break;
+            case GLFW_KEY_ENTER:
+                if (tree.node_focused() != -1) {
+                    tree.focus_escape(true);
                 }
                 break;
         }
@@ -450,7 +451,8 @@ void Window::event_handling() {
             case Element::TextInput:
             {
                 auto& element = elements.text_input[node.element_index];
-                element.text = element.initial_text;
+                element.initial_text = element.text;
+                element.changed = true;
                 break;
             }
             default:

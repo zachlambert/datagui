@@ -35,7 +35,6 @@ void calculate_size_components(
             node.dynamic_size.y = std::max(node.dynamic_size.y, tree[child].dynamic_size.y);
             child = tree[child].next;
         }
-        node.fixed_size.y += (count - 1) * style.element.padding;
 
     } else if (element.input_size.y > 0) {
         node.fixed_size.y = element.input_size.y;

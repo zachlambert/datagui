@@ -237,7 +237,7 @@ void Tree::mouse_press(const Vecf& pos) {
     }
 
     node_held_ = node_pressed_;
-    if (node_focused_ != -1) {
+    if (node_focused_ != -1 && node_pressed_ != node_focused_) {
         node_focus_released_ = node_focused_;
     }
     node_focused_ = node_pressed_;

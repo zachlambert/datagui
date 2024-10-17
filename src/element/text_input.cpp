@@ -10,11 +10,13 @@ void calculate_size_components(
     Node& node,
     const TextInput& element)
 {
-    node.fixed_size = text_size(font, element.text, element.max_width);
-    node.fixed_size += Vecf::Constant(
+    node.fixed_size = Vecf::Constant(
         2 * (style.element.border_width + style.element.padding));
 
-    if (element.max_width < 0) {
+    if (element.max_width >= 0) {
+        node.fixed_size += text_size(font, element.text, element.max_width);
+    } else {
+        node.fixed_size.y += font.line_height;
         node.dynamic_size.x = -element.max_width;
     }
 }

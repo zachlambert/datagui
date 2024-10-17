@@ -2,6 +2,7 @@
 
 #include "datagui/element.hpp"
 #include "datagui/style.hpp"
+#include "datagui/internal/text.hpp"
 
 namespace datagui {
 
@@ -16,6 +17,7 @@ struct Checkbox {
 void calculate_size_components(
     const Tree& tree,
     const Style& style,
+    const FontStructure& font,
     Node& node,
     const Checkbox& element);
 
