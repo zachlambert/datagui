@@ -12,13 +12,11 @@ public:
     void select(
         const std::string& text,
         float width,
-        float line_height,
         const Vecf& point);
 
     void select_index(
         const std::string& text,
         float width,
-        float line_height,
         std::size_t index);
 
     void drag(

@@ -28,22 +28,25 @@ struct CursorPos {
 
 class TextRenderer {
 public:
+    TextRenderer();
     void init(const Style::Text& style);
 
-    void queue_text(const std::string& text, float max_width, float line_height_factor, const Vecf& origin, float depth, const Color& text_color);
+    void queue_text(
+        const std::string& text,
+        float max_width,
+        const Vecf& origin,
+        float depth,
+        const Color& text_color);
 
     void render(const Vecf& viewport_size);
 
-    int get_font_size() const { return style.font_size; }
     Vecf text_size(
         const std::string& text,
-        float max_width,
-        float line_height_factor) const;
+        float max_width) const;
 
     TextStructure calculate_text_structure(
         const std::string& text,
-        float width,
-        float line_height_factor) const;
+        float width) const;
 
     CursorPos find_cursor(
         const std::string& text,
@@ -67,6 +70,9 @@ private:
         int advance;
     };
     std::vector<Character> characters;
+    float line_height;
+    float ascender;
+    float descender;
 
     struct Vertex {
         Vecf pos;

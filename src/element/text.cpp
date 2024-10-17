@@ -12,8 +12,7 @@ void calculate_size_components(
 {
     node.fixed_size = text_renderer.text_size(
         element.text,
-        element.max_width,
-        style.text.line_height);
+        element.max_width);
 
     if (element.max_width < 0) {
         node.dynamic_size.x = -element.max_width;

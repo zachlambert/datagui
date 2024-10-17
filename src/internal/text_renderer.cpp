@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <GL/glew.h>
 #include <optional>
+#include <iostream> // TEMP
 #include "datagui/internal/shader.hpp"
 
 
@@ -98,6 +99,10 @@ std::optional<std::string> find_font_path(Font font) {
     return candidates.front();
 }
 
+TextRenderer::TextRenderer():
+    ascender(0),
+    descender(0)
+{}
 
 void TextRenderer::init(const Style::Text& style) {
     this->style = style;
@@ -162,13 +167,11 @@ void TextRenderer::init(const Style::Text& style) {
 void TextRenderer::queue_text(
     const std::string& text,
     float max_width,
-    float line_height_factor,
     const Vecf& origin,
     float depth,
     const Color& text_color)
 {
     bool has_max_width = max_width > 0;
-    float line_height = style.font_size * line_height_factor;
     Vecf offset = Vecf::Zero();
     offset.y += line_height;
 
@@ -183,7 +186,9 @@ void TextRenderer::queue_text(
             offset.y += line_height;
         }
 
-        Boxf box(origin + offset + c.offset, origin + offset + c.offset + c.size);
+        Vecf pos = origin + offset + Vecf(0, -descender) + c.offset;
+
+        Boxf box(pos, pos + c.size);
         const Boxf& uv = c.uv;
 
         vertices.push_back(Vertex{box.bottom_left(), uv.top_left(), depth});
@@ -224,7 +229,12 @@ void TextRenderer::render(const Vecf& viewport_size) {
     vertices.clear();
 }
 
-void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_size) {
+void TextRenderer::draw_font_bitmap(
+    int width,
+    int height,
+    Font font,
+    int font_size)
+{
     glViewport(0, 0, width, height);
 
     FT_Library ft_library;
@@ -241,6 +251,9 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
         throw std::runtime_error("Failed to find font");
     }
     FT_Set_Pixel_Sizes(ft_face, 0, font_size);
+    ascender = float(ft_face->ascender) / 128;
+    descender = -float(ft_face->descender) / 128;
+    line_height = float(ft_face->height) / 128;
 
     int font_pos_x = 0;
     int font_pos_y = 0;
@@ -334,11 +347,9 @@ void TextRenderer::draw_font_bitmap(int width, int height, Font font, int font_s
 
 Vecf TextRenderer::text_size(
     const std::string& text,
-    float max_width,
-    float line_height_factor) const
+    float max_width) const
 {
     bool has_max_width = max_width > 0;
-    float line_height = style.font_size * line_height_factor;
     Vecf offset = Vecf::Zero();
     offset.y += line_height;
 
@@ -364,12 +375,11 @@ Vecf TextRenderer::text_size(
 
 TextStructure TextRenderer::calculate_text_structure(
     const std::string& text,
-    float width,
-    float line_height_factor) const
+    float width) const
 {
     TextStructure structure;
     structure.width = width;
-    structure.line_height = style.font_size * line_height_factor;
+    structure.line_height = line_height;
 
     float line_width = 0;
     std::size_t line_begin = 0;
@@ -405,8 +415,8 @@ CursorPos TextRenderer::find_cursor(
     float y = 0;
     for (std::size_t line_i = 0; line_i < structure.lines.size(); line_i++) {
         const auto& line = structure.lines[line_i];
-        if (point.y >= y + structure.line_height && line_i != structure.lines.size()-1) {
-            y += structure.line_height;
+        if (point.y >= y + line_height && line_i != structure.lines.size()-1) {
+            y += line_height;
             continue;
         }
 
@@ -455,7 +465,7 @@ Vecf TextRenderer::find_cursor_offset(
             }
             x += characters[c_index].advance;
         }
-        return Vecf{x, line_i * structure.line_height};
+        return Vecf{x, line_i * line_height};
     }
     throw std::runtime_error("Invalid cursor");
     return Vecf::Zero();

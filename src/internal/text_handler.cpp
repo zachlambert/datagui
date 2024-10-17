@@ -12,11 +12,10 @@ TextHandler::TextHandler(const TextRenderer& text_renderer, const Style& style):
 void TextHandler::select(
     const std::string& text,
     float width,
-    float line_height,
     const Vecf& point)
 {
     initial_text = text;
-    structure = text_renderer.calculate_text_structure(text, width, line_height);
+    structure = text_renderer.calculate_text_structure(text, width);
     cursor_begin = text_renderer.find_cursor(text, structure, point);
     cursor_end = cursor_begin;
 }
@@ -24,11 +23,10 @@ void TextHandler::select(
 void TextHandler::select_index(
     const std::string& text,
     float width,
-    float line_height,
     std::size_t index)
 {
     initial_text = text;
-    structure = text_renderer.calculate_text_structure(text, width, line_height);
+    structure = text_renderer.calculate_text_structure(text, width);
     cursor_begin.index = index;
     cursor_begin.offset = text_renderer.find_cursor_offset(text, structure, index);
     cursor_end = cursor_begin;
@@ -101,17 +99,11 @@ void TextHandler::input_key(std::string& text, int key, int mods, bool editable)
                 } else {
                     cursor_begin = cursor_end;
                 }
-                structure = text_renderer.calculate_text_structure(
-                    text,
-                    structure.width,
-                    style.text.line_height);
+                structure = text_renderer.calculate_text_structure(text, structure.width);
 
             } else if (cursor_begin.index > 0) {
                 text.erase(text.begin() + (cursor_begin.index-1));
-                structure = text_renderer.calculate_text_structure(
-                    text,
-                    structure.width,
-                    style.text.line_height);
+                structure = text_renderer.calculate_text_structure(text, structure.width);
                 cursor_begin.index--;
                 cursor_begin.offset = text_renderer.find_cursor_offset(
                     text, structure, cursor_begin.index);
@@ -135,10 +127,7 @@ void TextHandler::input_char(std::string& text, char character) {
 
     text.insert(text.begin() + cursor_begin.index, character);
     cursor_begin.index++;
-    structure = text_renderer.calculate_text_structure(
-        text,
-        structure.width,
-        style.text.line_height);
+    structure = text_renderer.calculate_text_structure(text, structure.width);
     cursor_begin.offset = text_renderer.find_cursor_offset(
         text, structure, cursor_begin.index);
     cursor_end = cursor_begin;

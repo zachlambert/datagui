@@ -328,7 +328,6 @@ void Window::event_handling() {
                 text_handler.select(
                     element.text,
                     node.size.x - 2 * offset,
-                    style.text.line_height,
                     mouse_pos - (node.origin + Vecf::Constant(offset))
                 );
                 break;
@@ -339,7 +338,6 @@ void Window::event_handling() {
                 text_handler.select(
                     element.text,
                     node.size.x,
-                    style.text.line_height,
                     mouse_pos - node.origin
                 );
                 break;
@@ -399,7 +397,6 @@ void Window::event_handling() {
                             text_handler.select_index(
                                 element.text,
                                 new_node.size.x - 2 * offset,
-                                style.text.line_height,
                                 0
                             );
                             break;
@@ -538,7 +535,6 @@ void Window::render_tree() {
                 text_renderer.queue_text(
                     element.text,
                     element.max_width,
-                    style.text.line_height,
                     node.origin,
                     normalized_depth,
                     style.text.font_color
@@ -562,7 +558,6 @@ void Window::render_tree() {
                 text_renderer.queue_text(
                     element.text,
                     element.max_width,
-                    style.text.line_height,
                     node.origin + Vecf::Constant(style.element.border_width + style.element.padding),
                     normalized_depth,
                     style.text.font_color
@@ -626,7 +621,6 @@ void Window::render_tree() {
                 text_renderer.queue_text(
                     element.text,
                     element.max_width,
-                    style.text.line_height,
                     text_origin,
                     normalized_depth,
                     style.text.font_color
