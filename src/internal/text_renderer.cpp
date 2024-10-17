@@ -14,7 +14,6 @@ const static std::string vertex_shader = R"(
 // Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 uv;
-layout(location = 2) in float depth;
 
 uniform vec2 viewport_size;
 out vec2 fs_uv;
@@ -23,7 +22,7 @@ void main(){
     gl_Position = vec4(
         -1.f + 2 * vertex_pos.x / viewport_size.x,
         1.f - 2 * vertex_pos.y / viewport_size.y,
-        depth,
+        0,
         1
     );
     fs_uv = uv;
@@ -71,12 +70,6 @@ void TextRenderer::init() {
     );
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(
-        2, 1, GL_FLOAT, GL_FALSE,
-        sizeof(Vertex), (void*)offsetof(Vertex, depth)
-    );
-    glEnableVertexAttribArray(2);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
@@ -86,8 +79,7 @@ void TextRenderer::queue_text(
     const Color& font_color,
     const std::string& text,
     float max_width,
-    const Vecf& origin,
-    float depth)
+    const Vecf& origin)
 {
     std::size_t command_i = 0;
     while (command_i < commands.size()) {
@@ -124,12 +116,12 @@ void TextRenderer::queue_text(
         Boxf box(pos, pos + c.size);
         const Boxf& uv = c.uv;
 
-        vertices.push_back(Vertex{box.bottom_left(), uv.top_left(), depth});
-        vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), depth});
-        vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
-        vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), depth});
-        vertices.push_back(Vertex{box.top_right(), uv.bottom_right(), depth});
-        vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), depth});
+        vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
+        vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
+        vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
+        vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
+        vertices.push_back(Vertex{box.top_right(), uv.bottom_right()});
+        vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
 
         offset.x += c.advance;
     }

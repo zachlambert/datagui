@@ -60,7 +60,6 @@ void render_selection(
     const std::string& text,
     float max_width,
     const Vecf& origin,
-    float depth,
     const TextSelection& selection,
     bool editable,
     GeometryRenderer& geometry_renderer);

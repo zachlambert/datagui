@@ -155,7 +155,6 @@ void render_selection(
     const std::string& text,
     float max_width,
     const Vecf& origin,
-    float depth,
     const TextSelection& selection,
     bool editable,
     GeometryRenderer& geometry_renderer)
@@ -168,7 +167,6 @@ void render_selection(
         }
         Vecf offset = cursor_offset(font, text, max_width, selection.begin);
         geometry_renderer.queue_box(
-            depth,
             Boxf(
                 origin+offset - Vecf(float(style.text_input.cursor_width)/2, 0),
                 origin+offset + Vecf(style.text_input.cursor_width, font.line_height)),
@@ -202,7 +200,6 @@ void render_selection(
             }
             to_offset.y += font.line_height;
             geometry_renderer.queue_box(
-                depth,
                 Boxf(origin+from_offset, origin+to_offset),
                 style.text_input.highlight_color,
                 0,
@@ -220,7 +217,6 @@ void render_selection(
 
     Vecf to_offset = offset + Vecf(0, font.line_height);
     geometry_renderer.queue_box(
-        depth,
         Boxf(origin+from_offset, origin+to_offset),
         style.text_input.highlight_color,
         0,

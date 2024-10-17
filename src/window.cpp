@@ -109,8 +109,6 @@ void Window::open() {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    // glEnable(GL_DEPTH_TEST);
-    // glDepthFunc(GL_GEQUAL);
 
     font = load_font(style.text.font, style.text.font_size);
     geometry_renderer.init();
@@ -510,21 +508,16 @@ void Window::render_tree() {
     std::stack<int> stack;
     stack.push(tree.root_node());
 
-    int max_layer = tree.max_depth() + 1;
-
     while (!stack.empty()) {
         int node_index = stack.top();
         auto& node = tree[stack.top()];
         stack.pop();
-
-        float normalized_depth = float(node.depth) / max_layer;
 
         switch (node.element) {
             case Element::VerticalLayout:
             {
                 const auto& element = elements.vertical_layout[node.element_index];
                 geometry_renderer.queue_box(
-                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     Color::Clear(),
                     style.element.border_width,
@@ -537,7 +530,6 @@ void Window::render_tree() {
             {
                 const auto& element = elements.horizontal_layout[node.element_index];
                 geometry_renderer.queue_box(
-                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     Color::Clear(),
                     style.element.border_width,
@@ -550,7 +542,6 @@ void Window::render_tree() {
             {
                 const auto& element = elements.text[node.element_index];
                 geometry_renderer.queue_box(
-                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     Color::Clear(),
                     0,
@@ -565,7 +556,6 @@ void Window::render_tree() {
                         element.text,
                         element.max_width,
                         node.origin,
-                        normalized_depth,
                         selection,
                         false,
                         geometry_renderer
@@ -577,8 +567,7 @@ void Window::render_tree() {
                     style.text.font_color,
                     element.text,
                     element.max_width,
-                    node.origin,
-                    normalized_depth
+                    node.origin
                 );
                 break;
             }
@@ -590,7 +579,6 @@ void Window::render_tree() {
                         ? style.element.pressed_bg_color
                         :style.element.bg_color;
                 geometry_renderer.queue_box(
-                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     bg_color,
                     style.element.border_width,
@@ -601,8 +589,8 @@ void Window::render_tree() {
                     style.text.font_color,
                     element.text,
                     element.max_width,
-                    node.origin + Vecf::Constant(style.element.border_width + style.element.padding),
-                    normalized_depth
+                    node.origin + Vecf::Constant(
+                        style.element.border_width + style.element.padding)
                 );
                 break;
             }
@@ -615,7 +603,6 @@ void Window::render_tree() {
                     : style.element.bg_color;
 
                 geometry_renderer.queue_box(
-                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     bg_color,
                     style.element.border_width,
@@ -626,7 +613,6 @@ void Window::render_tree() {
                 if (element.checked) {
                     float offset = style.element.border_width + style.checkbox.check_padding;
                     geometry_renderer.queue_box(
-                        normalized_depth,
                         Boxf(
                             node.origin + Vecf::Constant(offset),
                             node.origin + node.size - Vecf::Constant(offset)
@@ -643,7 +629,6 @@ void Window::render_tree() {
             {
                 const auto& element = elements.text_input[node.element_index];
                 geometry_renderer.queue_box(
-                    normalized_depth,
                     Boxf(node.origin, node.origin+node.size),
                     style.element.bg_color,
                     style.element.border_width,
@@ -663,7 +648,6 @@ void Window::render_tree() {
                         element.text,
                         element.max_width,
                         text_origin,
-                        normalized_depth,
                         selection,
                         true,
                         geometry_renderer);
@@ -674,8 +658,7 @@ void Window::render_tree() {
                     style.text.font_color,
                     element.text,
                     element.max_width,
-                    text_origin,
-                    normalized_depth
+                    text_origin
                 );
                 break;
             }

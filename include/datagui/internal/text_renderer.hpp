@@ -18,8 +18,7 @@ public:
         const Color& font_color,
         const std::string& text,
         float max_width,
-        const Vecf& origin,
-        float depth);
+        const Vecf& origin);
 
     void render(const Vecf& viewport_size);
 
@@ -27,7 +26,6 @@ private:
     struct Vertex {
         Vecf pos;
         Vecf uv;
-        float depth;
     };
 
     struct Command {
