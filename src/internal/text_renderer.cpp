@@ -45,9 +45,7 @@ void main(){
 )";
 
 
-void TextRenderer::init(const Style::Text& style) {
-    this->style = style;
-
+void TextRenderer::init() {
     // Configure shader program and buffers
 
     gl_data.program_id = create_program(vertex_shader, fragment_shader);

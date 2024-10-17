@@ -129,6 +129,10 @@ void selection_input_char(
     char character,
     bool editable)
 {
+    if (!editable) {
+        return;
+    }
+
     if (selection.span() > 0) {
         text.erase(
             text.begin() + selection.from(),

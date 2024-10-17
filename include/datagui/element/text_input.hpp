@@ -2,11 +2,10 @@
 
 #include "datagui/element.hpp"
 #include "datagui/style.hpp"
+#include "datagui/internal/text.hpp"
 #include <string>
 
 namespace datagui {
-
-class TextRenderer;
 
 struct TextInput {
     float max_width;
@@ -28,7 +27,7 @@ struct TextInput {
 void calculate_size_components(
     const Tree& tree,
     const Style& style,
-    const TextRenderer& text_renderer,
+    const FontStructure& font,
     Node& node,
     const TextInput& element);
 

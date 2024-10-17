@@ -3,10 +3,9 @@
 #include <string>
 #include "datagui/element.hpp"
 #include "datagui/style.hpp"
+#include "datagui/internal/text.hpp"
 
 namespace datagui {
-
-class TextRenderer;
 
 struct Text {
     std::string text;
@@ -24,7 +23,7 @@ struct Text {
 void calculate_size_components(
     const Tree& tree,
     const Style& style,
-    const TextRenderer& text_renderer,
+    const FontStructure& font,
     Node& node,
     const Text& element);
 

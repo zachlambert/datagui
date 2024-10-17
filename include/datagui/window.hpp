@@ -14,7 +14,7 @@
 #include "datagui/internal/vector_map.hpp"
 #include "datagui/internal/geometry_renderer.hpp"
 #include "datagui/internal/text_renderer.hpp"
-#include "datagui/internal/text_handler.hpp"
+#include "datagui/internal/selection.hpp"
 
 #include "datagui/element.hpp"
 #include "datagui/element/button.hpp"
@@ -102,9 +102,10 @@ private:
     const Style style;
     GLFWwindow* window;
 
+    FontStructure font;
     GeometryRenderer geometry_renderer;
     TextRenderer text_renderer;
-    TextHandler text_handler;
+    TextSelection selection;
 
     Tree tree;
     Vecf window_size;

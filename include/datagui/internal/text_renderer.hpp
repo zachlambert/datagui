@@ -4,7 +4,6 @@
 #include <string>
 #include "datagui/geometry.hpp"
 #include "datagui/color.hpp"
-#include "datagui/style.hpp"
 #include "datagui/internal/text.hpp"
 
 
@@ -12,7 +11,7 @@ namespace datagui {
 
 class TextRenderer {
 public:
-    void init(const Style::Text& style);
+    void init();
 
     void queue_text(
         const FontStructure& font,
@@ -25,8 +24,6 @@ public:
     void render(const Vecf& viewport_size);
 
 private:
-    Style::Text style;
-
     struct Vertex {
         Vecf pos;
         Vecf uv;

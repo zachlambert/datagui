@@ -54,7 +54,6 @@ Window::Window(const Config& config, const Style& style):
     config(config),
     style(style),
     window(nullptr),
-    text_handler(text_renderer, this->style),
     tree(std::bind(
         &Window::delete_element,
         this,
@@ -113,8 +112,9 @@ void Window::open() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_GEQUAL);
 
+    font = load_font(style.text.font, style.text.font_size);
     geometry_renderer.init();
-    text_renderer.init(style.text);
+    text_renderer.init();
 
     glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
     glfwSetKeyCallback(window, glfw_key_callback);
@@ -263,12 +263,12 @@ void Window::render_end() {
                     break;
                 case Element::Text:
                     calculate_size_components(
-                        tree, style, text_renderer,
+                        tree, style, font,
                         node, elements.text[node.element_index]);
                     break;
                 case Element::Button:
                     calculate_size_components(
-                        tree, style, text_renderer,
+                        tree, style, font,
                         node, elements.button[node.element_index]);
                     break;
                 case Element::Checkbox:
@@ -278,7 +278,7 @@ void Window::render_end() {
                     break;
                 case Element::TextInput:
                     calculate_size_components(
-                        tree, style, text_renderer,
+                        tree, style, font,
                         node, elements.text_input[node.element_index]);
                     break;
             }
@@ -332,20 +332,23 @@ void Window::event_handling() {
             case Element::TextInput:
             {
                 const auto& element = elements.text_input[node.element_index];
-                float offset = style.element.border_width + style.element.padding;
-                text_handler.select(
+                Vecf text_origin = node.origin + Vecf::Constant(
+                    style.element.border_width + style.element.padding);
+                selection.begin = find_cursor(
+                    font,
                     element.text,
-                    node.size.x - 2 * offset,
-                    mouse_pos - (node.origin + Vecf::Constant(offset))
+                    element.max_width,
+                    mouse_pos - text_origin
                 );
                 break;
             }
             case Element::Text:
             {
                 const auto& element = elements.text[node.element_index];
-                text_handler.select(
+                selection.begin = find_cursor(
+                    font,
                     element.text,
-                    node.size.x,
+                    element.max_width,
                     mouse_pos - node.origin
                 );
                 break;
@@ -378,13 +381,21 @@ void Window::event_handling() {
                 const auto& element = elements.text_input[node.element_index];
                 Vecf text_origin = node.origin + Vecf::Constant(
                     style.element.border_width + style.element.padding);
-                text_handler.drag(element.text, mouse_pos - text_origin);
+                selection.end = find_cursor(
+                    font,
+                    element.text,
+                    element.max_width,
+                    mouse_pos - text_origin);
                 break;
             }
             case Element::Text:
             {
                 const auto& element = elements.text[node.element_index];
-                text_handler.drag(element.text, mouse_pos - node.origin);
+                selection.end = find_cursor(
+                    font,
+                    element.text,
+                    element.max_width,
+                    mouse_pos - node.origin);
                 break;
             }
             default:
@@ -401,12 +412,7 @@ void Window::event_handling() {
                         case Element::TextInput:
                         {
                             const auto& element = elements.text_input[new_node.element_index];
-                            float offset = style.element.border_width + style.element.padding;
-                            text_handler.select_index(
-                                element.text,
-                                new_node.size.x - 2 * offset,
-                                0
-                            );
+                            selection.begin = 0;
                             break;
                         }
                         default:
@@ -457,13 +463,13 @@ void Window::event_handling() {
             case Element::TextInput:
             {
                 auto& element = elements.text_input[node.element_index];
-                text_handler.input_key(element.text, events.key.key, events.key.mods, true);
+                selection_input_key(element.text, selection, events.key.key, events.key.mods, true);
                 break;
             }
             case Element::Text:
             {
                 auto& element = elements.text_input[node.element_index];
-                text_handler.input_key(element.text, events.key.key, events.key.mods, false);
+                selection_input_key(element.text, selection, events.key.key, events.key.mods, false);
                 break;
             }
             default:
@@ -477,7 +483,13 @@ void Window::event_handling() {
             case Element::TextInput:
             {
                 auto& element = elements.text_input[node.element_index];
-                text_handler.input_char(element.text, events.text.character);
+                selection_input_char(element.text, selection, events.text.character, true);
+                break;
+            }
+            case Element::Text:
+            {
+                auto& element = elements.text_input[node.element_index];
+                selection_input_char(element.text, selection, events.text.character, false);
                 break;
             }
             default:
@@ -541,15 +553,26 @@ void Window::render_tree() {
                 );
 
                 if (node_index == tree.node_focused()) {
-                    text_handler.render(element.text, node.origin, false, normalized_depth, geometry_renderer);
+                    render_selection(
+                        style,
+                        font,
+                        element.text,
+                        element.max_width,
+                        node.origin,
+                        normalized_depth,
+                        selection,
+                        false,
+                        geometry_renderer
+                    );
                 }
 
                 text_renderer.queue_text(
+                    font,
+                    style.text.font_color,
                     element.text,
                     element.max_width,
                     node.origin,
-                    normalized_depth,
-                    style.text.font_color
+                    normalized_depth
                 );
                 break;
             }
@@ -568,11 +591,12 @@ void Window::render_tree() {
                     style.element.border_color
                 );
                 text_renderer.queue_text(
+                    font,
+                    style.text.font_color,
                     element.text,
                     element.max_width,
                     node.origin + Vecf::Constant(style.element.border_width + style.element.padding),
-                    normalized_depth,
-                    style.text.font_color
+                    normalized_depth
                 );
                 break;
             }
@@ -627,15 +651,25 @@ void Window::render_tree() {
                         style.element.border_width + style.element.padding);
 
                 if (node_index == tree.node_focused()) {
-                    text_handler.render(element.text, text_origin, true, normalized_depth, geometry_renderer);
+                    render_selection(
+                        style,
+                        font,
+                        element.text,
+                        element.max_width,
+                        text_origin,
+                        normalized_depth,
+                        selection,
+                        true,
+                        geometry_renderer);
                 }
 
                 text_renderer.queue_text(
+                    font,
+                    style.text.font_color,
                     element.text,
                     element.max_width,
                     text_origin,
-                    normalized_depth,
-                    style.text.font_color
+                    normalized_depth
                 );
                 break;
             }
