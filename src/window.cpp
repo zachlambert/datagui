@@ -202,25 +202,34 @@ bool Window::button(
     return node == tree.node_released();
 }
 
-bool Window::checkbox(const std::string& key) {
+bool Window::checkbox(const std::string& key, bool* value) {
     int node = tree.down(key, Element::Checkbox, [&](){
         return elements.checkbox.emplace();
     });
     tree.up();
-    return elements.checkbox[tree[node].element_index].checked;
+    if (value) {
+        *value = elements.checkbox[tree[node].element_index].checked;
+    }
+    return tree.node_released() == node;
 }
 
 bool Window::text_input(
     const std::string& key,
     const std::string& default_text,
-    float max_width)
+    float max_width,
+    std::string* value)
 {
     int node = tree.down(key, Element::TextInput, [&](){
         return elements.text_input.emplace(default_text, max_width);
     });
     tree.up();
-    // TODO: changed field isn't updated at the moment
-    return elements.text_input[tree[node].element_index].changed;
+    auto& element = elements.text_input[tree[node].element_index];
+    if (value) {
+        *value = element.text;
+    }
+    bool changed = element.changed;
+    element.changed = false;
+    return changed;
 }
 
 void Window::render_begin() {
@@ -407,20 +416,7 @@ void Window::event_handling() {
                 }
                 break;
             case GLFW_KEY_ESCAPE:
-                if (tree.node_focused() != -1) {
-                    const auto& node = tree[tree.node_focused()];
-                    switch (node.element) {
-                        case Element::TextInput:
-                        {
-                            auto& element = elements.text_input[node.element_index];
-                            text_handler.revert(element.text);
-                            break;
-                        }
-                        default:
-                        break;
-                    }
-                    tree.focus_escape();
-                }
+                tree.focus_escape(true);
                 break;
             case GLFW_KEY_ENTER:
                 if (tree.node_focused() != -1) {
@@ -428,13 +424,30 @@ void Window::event_handling() {
                     switch (node.element) {
                         case Element::TextInput:
                         {
-                            tree.focus_escape();
+                            auto& element = elements.text_input[node.element_index];
+                            element.changed = true;
+                            element.initial_text = element.text;
+                            tree.focus_escape(false);
                             break;
                         }
                         default:
                         break;
                     }
                 }
+                break;
+        }
+    }
+
+    if (tree.node_focus_released() != -1) {
+        const auto& node = tree[tree.node_focus_released()];
+        switch (node.element) {
+            case Element::TextInput:
+            {
+                auto& element = elements.text_input[node.element_index];
+                element.text = element.initial_text;
+                break;
+            }
+            default:
                 break;
         }
     }

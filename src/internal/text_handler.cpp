@@ -14,7 +14,6 @@ void TextHandler::select(
     float width,
     const Vecf& point)
 {
-    initial_text = text;
     structure = text_renderer.calculate_text_structure(text, width);
     cursor_begin = text_renderer.find_cursor(text, structure, point);
     cursor_end = cursor_begin;
@@ -25,7 +24,6 @@ void TextHandler::select_index(
     float width,
     std::size_t index)
 {
-    initial_text = text;
     structure = text_renderer.calculate_text_structure(text, width);
     cursor_begin.index = index;
     cursor_begin.offset = text_renderer.find_cursor_offset(text, structure, index);
@@ -38,10 +36,6 @@ void TextHandler::drag(const std::string& text, const Vecf& point) {
         structure,
         point
     );
-}
-
-void TextHandler::revert(std::string& text) {
-    text = initial_text;
 }
 
 void TextHandler::input_key(std::string& text, int key, int mods, bool editable) {

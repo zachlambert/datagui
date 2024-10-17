@@ -11,7 +11,8 @@ Tree::Tree(const delete_element_t& delete_element):
     node_pressed_(-1),
     node_released_(-1),
     node_held_(-1),
-    node_focused_(-1)
+    node_focused_(-1),
+    node_focus_released_(-1)
 {}
 
 void Tree::begin() {
@@ -123,6 +124,9 @@ void Tree::remove_node(int root_node) {
             if (node_focused_ == node_index) {
                 node_focused_ = -1;
             }
+            if (node_focus_released_ == node_index) {
+                node_focus_released_ = -1;
+            }
 
             continue;
         }
@@ -210,6 +214,7 @@ void Tree::end(
 void Tree::mouse_reset() {
     node_pressed_ = -1;
     node_released_ = -1;
+    node_focus_released_ = -1;
 }
 
 void Tree::mouse_press(const Vecf& pos) {
@@ -232,6 +237,9 @@ void Tree::mouse_press(const Vecf& pos) {
     }
 
     node_held_ = node_pressed_;
+    if (node_focused_ != -1) {
+        node_focus_released_ = node_focused_;
+    }
     node_focused_ = node_pressed_;
 }
 
@@ -252,17 +260,29 @@ bool Tree::focus_next() {
     }
     const auto& node = nodes[node_focused_];
     if (node.next != -1) {
+        node_focus_released_ = node_focused_;
         node_focused_ = node.next;
         return true;
     } else if (node.parent != -1) {
-        node_focused_ = nodes[node.parent].first_child;
-        return true;
+        int first_child = nodes[node.parent].first_child;
+        if (first_child != node_focused_) {
+            node_focus_released_ = node_focused_;
+            node_focused_ = first_child;
+            return true;
+        }
+        return false;
     } else {
         return false;
     }
 }
 
-void Tree::focus_escape() {
+void Tree::focus_escape(bool trigger_release) {
+    if (node_focused_ == -1) {
+        return;
+    }
+    if (trigger_release) {
+        node_focus_released_ = node_focused_;
+    }
     node_focused_ = -1;
 }
 

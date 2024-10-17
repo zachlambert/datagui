@@ -10,6 +10,7 @@ class TextRenderer;
 
 struct TextInput {
     float max_width;
+    std::string initial_text;
     std::string text;
     bool changed;
 
@@ -18,6 +19,7 @@ struct TextInput {
         float max_width
     ):
         max_width(max_width),
+        initial_text(default_text),
         text(default_text),
         changed(false)
     {}

@@ -23,8 +23,6 @@ public:
         const std::string& text,
         const Vecf& point);
 
-    void revert(std::string& text);
-
     void input_key(std::string& text, int key, int mods, bool editable);
     void input_char(std::string& text, char character);
 
@@ -39,7 +37,6 @@ private:
     const TextRenderer& text_renderer;
     const Style& style;
 
-    std::string initial_text;
     TextStructure structure;
     CursorPos cursor_begin;
     CursorPos cursor_end;

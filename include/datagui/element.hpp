@@ -101,12 +101,13 @@ public:
     void mouse_press(const Vecf& pos);
     void mouse_release(const Vecf& pos);
     bool focus_next();
-    void focus_escape();
+    void focus_escape(bool trigger_release);
 
     int node_pressed() const { return node_pressed_; }
     int node_released() const { return node_released_; }
     int node_held() const { return node_held_; }
     int node_focused() const { return node_focused_; }
+    int node_focus_released() const { return node_focus_released_; }
 
 private:
     void remove_node(int root_node);
@@ -122,6 +123,7 @@ private:
     int node_released_;
     int node_held_;
     int node_focused_;
+    int node_focus_released_;
 };
 
 } // namespace datagui
