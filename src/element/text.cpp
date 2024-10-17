@@ -10,9 +10,8 @@ void calculate_size_components(
     Node& node,
     const Text& element)
 {
-    if (element.max_width > 0) {
-        node.fixed_size = text_size(font, element.text, element.max_width);
-    } else {
+    node.fixed_size = text_size(font, element.text, element.max_width);
+    if (element.max_width < 0) {
         node.dynamic_size.x = -element.max_width;
     }
 }

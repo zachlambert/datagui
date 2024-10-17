@@ -1,5 +1,6 @@
 #include "datagui/internal/selection.hpp"
 #include <GLFW/glfw3.h>
+#include <iostream>
 
 
 namespace datagui {
@@ -40,8 +41,12 @@ std::size_t find_cursor(
             }
             pos.x = 0;
             pos.y += font.line_height;
+            column_found = false;
         }
         pos.x += c.advance;
+    }
+    if (!column_found) {
+        column = text.size();
     }
     return column;
 }
@@ -54,7 +59,6 @@ Vecf cursor_offset(
 {
     bool has_max_width = max_width > 0;
     Vecf offset = Vecf::Zero();
-    offset.y += font.line_height;
 
     for (std::size_t i = 0; i < cursor; i++) {
         if (!font.char_valid(text[i])) {
@@ -182,20 +186,24 @@ void render_selection(
 
     std::size_t from = selection.from();
     std::size_t to = selection.to();
-    Vecf offset = Vecf::Zero();
+    Vecf offset = cursor_offset(font, text, max_width, from);
     Vecf from_offset = offset;
 
     for (std::size_t i = from; i < to; i++) {
-        if (font.char_valid(text[i])) {
+        if (!font.char_valid(text[i])) {
             continue;
         }
         const auto& c = font.get(text[i]);
 
         if (has_max_width && offset.x + c.advance > max_width) {
-            Vecf to_offset = offset + Vecf(c.advance, font.line_height);
+            Vecf to_offset = offset;
+            if (from == text.size()) {
+                to_offset.x += c.advance;
+            }
+            to_offset.y += font.line_height;
             geometry_renderer.queue_box(
                 depth,
-                Boxf(from_offset, to_offset),
+                Boxf(origin+from_offset, origin+to_offset),
                 style.text_input.highlight_color,
                 0,
                 Color::Black(),
@@ -213,7 +221,7 @@ void render_selection(
     Vecf to_offset = offset + Vecf(0, font.line_height);
     geometry_renderer.queue_box(
         depth,
-        Boxf(from_offset, to_offset),
+        Boxf(origin+from_offset, origin+to_offset),
         style.text_input.highlight_color,
         0,
         Color::Black(),

@@ -43,7 +43,7 @@ uniform sampler2D char_texture;
 out vec4 color;
 
 void main(){
-    color = vec4(1, 1, 1, texture(tex, fs_uv).x);
+    color = vec4(1, 1, 1, texture(char_texture, fs_uv).x);
 }
 )";
 
