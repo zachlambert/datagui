@@ -70,21 +70,4 @@ Vecf text_size(
     const std::string& text,
     float max_width);
 
-struct TextSelection {
-    std::size_t begin;
-    std::size_t end;
-};
-
-std::size_t find_cursor(
-    const FontStructure& font,
-    const std::string& text,
-    float max_width,
-    const Vecf& point);
-
-Vecf cursor_offset(
-    const FontStructure& font,
-    const std::string& text,
-    float max_width,
-    std::size_t cursor);
-
 } // namespace datagui
