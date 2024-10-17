@@ -2,6 +2,7 @@
 #include <string>
 #include <array>
 #include <GL/glew.h>
+#include <iostream>
 #include "datagui/internal/shader.hpp"
 
 
@@ -11,7 +12,7 @@ const static std::string vertex_shader = R"(
 #version 330 core
 
 // Input vertex data: position and normal
-layout(location = 0) in vec3 vertex_pos;
+layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 uv;
 layout(location = 2) in float depth;
 
@@ -40,7 +41,7 @@ uniform vec4 text_color;
 out vec4 color;
 
 void main(){
-    color = vec4(text_color.xyz, texture(tex, fs_uv).x * text_color[3]);
+    color = vec4(text_color.xyz, texture(tex, fs_uv).x * text_color.a);
 }
 )";
 
@@ -116,7 +117,9 @@ void TextRenderer::queue_text(
             offset.y += font.line_height;
         }
 
-        Vecf pos = origin + offset + Vecf(0, -font.descender) + Vecf(c.offset.x, -c.offset.y);
+        Vecf pos = origin + offset;
+        pos.x += c.offset.x;
+        pos.y += (-font.descender - (c.offset.y + c.size.y));
 
         Boxf box(pos, pos + c.size);
         const Boxf& uv = c.uv;
@@ -136,7 +139,6 @@ void TextRenderer::render(const Vecf& viewport_size) {
     glUseProgram(gl_data.program_id);
     glBindVertexArray(gl_data.VAO);
     glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
-
     for (const auto& command: commands) {
         glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
         glBufferData(

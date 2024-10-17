@@ -109,8 +109,8 @@ void Window::open() {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_GEQUAL);
+    // glEnable(GL_DEPTH_TEST);
+    // glDepthFunc(GL_GEQUAL);
 
     font = load_font(style.text.font, style.text.font_size);
     geometry_renderer.init();
@@ -413,6 +413,7 @@ void Window::event_handling() {
                         {
                             const auto& element = elements.text_input[new_node.element_index];
                             selection.begin = 0;
+                            selection.end = 0;
                             break;
                         }
                         default:

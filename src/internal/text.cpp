@@ -23,7 +23,7 @@ const static std::string vertex_shader = R"(
 #version 330 core
 
 // Input vertex data: position and normal
-layout(location = 0) in vec3 vertex_pos;
+layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 uv;
 
 out vec2 fs_uv;
@@ -211,30 +211,36 @@ FontStructure load_font(Font font, int font_size) {
             char_y += structure.line_height;
         }
 
+        float x_lower = char_x + character.offset.x;
+        float x_upper = x_lower + ft_face->glyph->bitmap.width;
+        float y_lower = char_y + structure.descender + character.offset.y;
+        float y_upper = y_lower + ft_face->glyph->bitmap.rows;
+
         Vecf bottom_left(
-            (char_x + character.offset.x) / texture_width,
-            (char_y + structure.descender + character.offset.y) / texture_height
-        );
+            -1.f + 2 * x_lower / texture_width,
+            -1.f + 2 * y_lower / texture_height);
         Vecf top_right(
-            bottom_left.x + ft_face->glyph->bitmap.width,
-            bottom_left.y + ft_face->glyph->bitmap.rows
-        );
+            -1.f + 2 * x_upper / texture_width,
+            -1.f + 2 * y_upper / texture_height);
         Vecf bottom_right(top_right.x, bottom_left.y);
         Vecf top_left(bottom_left.x, top_right.y);
 
-        character.uv = Boxf(bottom_left, top_right);
+        character.uv = Boxf(
+            Vecf(x_lower / texture_width, y_lower / texture_height),
+            Vecf(x_upper / texture_width, y_upper / texture_height)
+        );
 
         char_x += character.advance;
 
         // Load the vertices
 
         std::vector<Vertex> vertices = {
-            Vertex{bottom_left, Vecf(0, 0)},
-            Vertex{bottom_right, Vecf(1, 0)},
-            Vertex{top_left, Vecf(0, 1)},
-            Vertex{bottom_right, Vecf(1, 0)},
-            Vertex{top_right, Vecf(1, 1)},
-            Vertex{top_left, Vecf(0, 1)}
+            Vertex{bottom_left, Vecf(0, 1)},
+            Vertex{bottom_right, Vecf(1, 1)},
+            Vertex{top_left, Vecf(0, 0)},
+            Vertex{bottom_right, Vecf(1, 1)},
+            Vertex{top_right, Vecf(1, 0)},
+            Vertex{top_left, Vecf(0, 0)}
         };
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
