@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <GL/glew.h>
 #include <optional>
-#include <iostream> // TEMP
 #include "datagui/internal/shader.hpp"
 
 
