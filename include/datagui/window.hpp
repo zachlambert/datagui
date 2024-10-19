@@ -20,10 +20,9 @@
 
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
-#include "datagui/element/horizontal_layout.hpp"
+#include "datagui/element/linear_layout.hpp"
 #include "datagui/element/text.hpp"
 #include "datagui/element/text_input.hpp"
-#include "datagui/element/vertical_layout.hpp"
 
 
 namespace datagui {
@@ -87,8 +86,8 @@ private:
     void close();
 
     void delete_element(Element element, int index);
-    const ElementInterface& get_element(const Node& node);
-    ElementInterface& get_mutable_element(const Node& node);
+    const ElementSystem& get_element(const Node& node);
+    ElementSystem& get_mutable_element(const Node& node);
 
     void event_handling();
     void render_tree();
@@ -105,13 +104,10 @@ private:
     Tree tree;
 
     ButtonSystem buttons;
-    struct {
-        VectorMap<VerticalLayout> vertical_layout;
-        VectorMap<HorizontalLayout> horizontal_layout;
-        VectorMap<Text> text;
-        VectorMap<Checkbox> checkbox;
-        VectorMap<TextInput> text_input;
-    } elements;
+    CheckboxSystem checkboxes;
+    LinearLayoutSystem linear_layouts;
+    TextSystem texts;
+    TextInputSystem text_inputs;
 };
 
 } // namespace datagui

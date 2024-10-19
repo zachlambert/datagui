@@ -10,6 +10,26 @@
 
 namespace datagui {
 
+class ElementSystem {
+public:
+    virtual void calculate_size_components(
+        Node& node,
+        const Tree& tree) const = 0;
+
+    virtual void calculate_child_dimensions(
+        const Node& node,
+        Tree& tree) const {}
+
+    virtual void render(
+        const Node& node,
+        const NodeState& state,
+        Renderers& renderers) const = 0;
+
+    virtual void pop(int index) = 0;
+};
+
+#if 0
+
 class ElementInterface {
 public:
     virtual void calculate_size_components(
@@ -53,5 +73,7 @@ public:
         const Vecf& mouse_pos) {}
 #endif
 };
+
+#endif
 
 } // namespace datagui

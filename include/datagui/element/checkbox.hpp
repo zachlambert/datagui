@@ -5,36 +5,45 @@
 
 namespace datagui {
 
-class Checkbox: public ElementInterface {
-public:
+struct Checkbox {
+    bool checked;
+
     Checkbox(bool default_checked):
-        checked_(default_checked)
+        checked(default_checked)
+    {}
+};
+
+class CheckboxSystem: public ElementSystem {
+public:
+    CheckboxSystem(
+        const Style& style,
+        const FontStructure& font
+    ):
+        style(style),
+        font(font)
     {}
 
     void calculate_size_components(
-        const Style& style,
-        const FontStructure& font,
         Node& node,
         const Tree& tree) const override;
 
     void render(
-        const Style& style,
-        const FontStructure& font,
         const Node& node,
         const NodeState& state,
-        const TextSelection& selection,
         Renderers& renderers) const override;
 
-    const bool& checked() const {
-        return checked_;
+    int create(bool default_checked) {
+        return elements.emplace(default_checked);
     }
 
-    void toggle() {
-        checked_ = !checked_;
+    void pop(int index) override {
+        elements.pop(index);
     }
 
 private:
-    bool checked_;
+    const Style& style;
+    const FontStructure& font;
+    VectorMap<Checkbox> elements;
 };
 
 } // namespace datagui

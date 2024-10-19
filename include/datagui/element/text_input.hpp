@@ -6,65 +6,52 @@
 
 namespace datagui {
 
-class TextInput: public ElementInterface {
-public:
-    TextInput(
-        const std::string& default_text,
-        float max_width
-    ):
+struct TextInput {
+    float max_width;
+    std::string initial_text;
+    std::string text;
+    bool changed;
+
+    TextInput(float max_width, const std::string& default_text):
         max_width(max_width),
         initial_text(default_text),
-        text_(default_text),
-        changed_(false)
+        text(default_text),
+        changed(false)
+    {}
+};
+
+class TextInputSystem: public ElementSystem {
+public:
+    TextInputSystem(
+        const Style& style,
+        const FontStructure& font
+    ):
+        style(style),
+        font(font)
     {}
 
     void calculate_size_components(
-        const Style& style,
-        const FontStructure& font,
         Node& node,
         const Tree& tree) const override;
 
     void render(
-        const Style& style,
-        const FontStructure& font,
         const Node& node,
         const NodeState& state,
-        const TextSelection& selection,
         Renderers& renderers) const override;
 
-    void revert() {
-        text_ = initial_text;
+    int create(float max_width, const std::string& default_text) {
+        return elements.emplace(max_width, default_text);
     }
 
-    void confirm() {
-        if (initial_text != text_) {
-            initial_text = text_;
-            changed_ = true;
-        }
+    void pop(int index) override {
+        elements.pop(index);
     }
 
-    bool changed() const {
-        return changed_;
-    }
-
-    const std::string& text() const {
-        return text_;
-    }
-
-    bool check_changed() {
-        if (changed_) {
-            changed_ = false;
-            return true;
-        }
-        return false;
-    }
-
-    // TODO: Move text handling logic to class
-public:
-    float max_width;
-    std::string initial_text;
-    std::string text_;
-    bool changed_;
+private:
+    const Style& style;
+    const FontStructure& font;
+    TextSelection text_selection;
+    VectorMap<TextInput> elements;
 };
 
 } // namespace datagui

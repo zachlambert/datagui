@@ -5,35 +5,47 @@
 
 namespace datagui {
 
-class Text: public ElementInterface {
+struct Text {
+    std::string text;
+    float max_width;
+
+    Text(const std::string& text, float max_width):
+        text(text), max_width(max_width)
+    {}
+};
+
+class TextSystem: public ElementSystem {
 public:
-    Text(
-        const std::string& text,
-        float max_width
+    TextSystem(
+        const Style& style,
+        const FontStructure& font
     ):
-        text(text),
-        max_width(max_width)
+        style(style),
+        font(font)
     {}
 
     void calculate_size_components(
-        const Style& style,
-        const FontStructure& font,
         Node& node,
         const Tree& tree) const override;
 
     void render(
-        const Style& style,
-        const FontStructure& font,
         const Node& node,
         const NodeState& state,
-        const TextSelection& selection,
         Renderers& renderers) const override;
 
-    // TODO: Move text handling code to class
-public:
-    std::string text;
-    float max_width;
+    int create(const std::string& text, float max_width) {
+        return elements.emplace(text, max_width);
+    }
 
+    void pop(int index) override {
+        elements.pop(index);
+    }
+
+private:
+    const Style& style;
+    const FontStructure& font;
+    TextSelection text_selection;
+    VectorMap<Text> elements;
 };
 
 } // namespace datagui

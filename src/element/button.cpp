@@ -15,7 +15,8 @@ void ButtonSystem::calculate_size_components(
 
 void ButtonSystem::render(
     const Node& node,
-    const NodeState& state) const
+    const NodeState& state,
+    Renderers& renderers) const
 {
     const auto& element = elements[node.element_index];
     const Color& bg_color =
@@ -23,13 +24,13 @@ void ButtonSystem::render(
             ? style.element.pressed_bg_color
             :style.element.bg_color;
 
-    geometry_renderer.queue_box(
+    renderers.geometry.queue_box(
         Boxf(node.origin, node.origin+node.size),
         bg_color,
         style.element.border_width,
         style.element.border_color
     );
-    text_renderer.queue_text(
+    renderers.text.queue_text(
         font,
         style.text.font_color,
         element.text,

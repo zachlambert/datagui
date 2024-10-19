@@ -10,11 +10,10 @@
 namespace datagui {
 
 enum class Element {
-    VerticalLayout,
-    HorizontalLayout,
-    Text,
     Button,
     Checkbox,
+    LinearLayout,
+    Text,
     TextInput
 };
 

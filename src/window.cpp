@@ -61,7 +61,11 @@ Window::Window(const Config& config, const Style& style):
         this,
         std::placeholders::_1,
         std::placeholders::_2)),
-    buttons(style, font, renderers.geometry, renderers.text)
+    buttons(style, font),
+    checkboxes(style, font),
+    linear_layouts(style),
+    texts(style, font),
+    text_inputs(style, font)
 {
     open();
 }
@@ -135,74 +139,68 @@ void Window::close() {
 
 void Window::delete_element(Element element, int element_index) {
     switch (element) {
-        case Element::VerticalLayout:
-            elements.vertical_layout.pop(element_index);
-            break;
-        case Element::HorizontalLayout:
-            elements.horizontal_layout.pop(element_index);
-            break;
-        case Element::Text:
-            elements.text.pop(element_index);
-            break;
         case Element::Button:
             buttons.pop(element_index);
             break;
         case Element::Checkbox:
-            elements.checkbox.pop(element_index);
+            checkboxes.pop(element_index);
+            break;
+        case Element::LinearLayout:
+            linear_layouts.pop(element_index);
+            break;
+        case Element::Text:
+            texts.pop(element_index);
             break;
         case Element::TextInput:
-            elements.text_input.pop(element_index);
+            text_inputs.pop(element_index);
             break;
     }
 }
 
-const ElementInterface& Window::get_element(const Node& node) {
+const ElementSystem& Window::get_element(const Node& node) {
     switch (node.element) {
         case Element::Button:
-            assert(false);
+            return buttons;
             break;
         case Element::Checkbox:
-            return elements.checkbox[node.element_index];
+            return checkboxes;
             break;
-        case Element::HorizontalLayout:
-            return elements.horizontal_layout[node.element_index];
+        case Element::LinearLayout:
+            return linear_layouts;
             break;
         case Element::Text:
-            return elements.text[node.element_index];
+            return texts;
             break;
         case Element::TextInput:
-            return elements.text_input[node.element_index];
-            break;
-        case Element::VerticalLayout:
-            return elements.vertical_layout[node.element_index];
+            return text_inputs;
             break;
     }
     assert(false);
     throw WindowError("Unreachable code");
-    return elements.checkbox[0];
+    return buttons;
 }
 
-ElementInterface& Window::get_mutable_element(const Node& node) {
-    return const_cast<ElementInterface&>(get_element(node));
+ElementSystem& Window::get_mutable_element(const Node& node) {
+    return const_cast<ElementSystem&>(get_element(node));
 }
 
 void Window::vertical_layout(
     const std::string& key,
-    float width,
-    float height)
+    float length,
+    float width)
 {
-    tree.down(key, Element::VerticalLayout, [&]() {
-        return elements.vertical_layout.emplace(Vecf(width, height));
+    tree.down(key, Element::LinearLayout, [&]() {
+        return linear_layouts.create(length, width, LayoutDirection::Vertical);
     });
 }
 
 void Window::horizontal_layout(
     const std::string& key,
-    float width,
-    float height)
+    float length,
+    float width)
 {
-    tree.down(key, Element::HorizontalLayout, [&]() {
-        return elements.horizontal_layout.emplace(Vecf(width, height));
+    tree.down(key, Element::LinearLayout, [&]() {
+        return linear_layouts.create(length, width, LayoutDirection::Horizontal);
     });
 }
 
@@ -216,7 +214,7 @@ void Window::text(
     float max_width)
 {
     tree.down(key, Element::Text, [&](){
-        return elements.text.emplace(text, max_width);
+        return texts.create(text, max_width);
     });
     tree.up();
 }
@@ -235,13 +233,16 @@ bool Window::button(
 
 const bool* Window::checkbox(const std::string& key) {
     int node = tree.down(key, Element::Checkbox, [&](){
-        return elements.checkbox.emplace(false);
+        return checkboxes.create(false);
     });
     tree.up();
+    // TODO
+#if 0
     const auto& element = elements.checkbox[tree[node].element_index];
     if (tree.node_released() == node) {
         return &element.checked();
     }
+#endif
     return nullptr;
 }
 
@@ -251,13 +252,16 @@ const std::string* Window::text_input(
     float max_width)
 {
     int node = tree.down(key, Element::TextInput, [&](){
-        return elements.text_input.emplace(default_text, max_width);
+        return text_inputs.create(max_width, default_text);
     });
     tree.up();
+    // TODO
+#if 0
     auto& element = elements.text_input[tree[node].element_index];
     if (element.check_changed()) {
         return &element.text();
     }
+#endif
     return nullptr;
 }
 
@@ -278,30 +282,19 @@ void Window::render_end() {
     tree.end(
         window_size,
         [&](Node& node) {
-            if (node.element == Element::Button) {
-                buttons.calculate_size_components(node, tree);
-                return;
-            }
-            get_element(node).calculate_size_components(style, font, node, tree);
+            get_element(node).calculate_size_components(node, tree);
         },
         [&](const Node& node) {
-            get_element(node).calculate_child_dimensions(style, node, tree);
+            get_element(node).calculate_child_dimensions(node, tree);
         }
     );
 
     event_handling();
 
     tree.render([&](const Node& node, const NodeState& state) {
-        if (node.element == Element::Button) {
-            buttons.render(node, state);
-            return;
-        }
         get_element(node).render(
-            style,
-            font,
             node,
             state,
-            selection,
             renderers);
     });
 
@@ -334,6 +327,9 @@ void Window::event_handling() {
         tree.mouse_release(mouse_pos);
     }
 
+// TODO
+
+#if 0
     if (tree.node_pressed() != -1) {
         const auto& node = tree[tree.node_pressed()];
         switch (node.element) {
@@ -506,6 +502,7 @@ void Window::event_handling() {
                 break;
         }
     }
+#endif
 
     events.reset();
 }

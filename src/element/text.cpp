@@ -3,27 +3,25 @@
 
 namespace datagui {
 
-void Text::calculate_size_components(
-    const Style& style,
-    const FontStructure& font,
+void TextSystem::calculate_size_components(
     Node& node,
     const Tree& tree) const
 {
-    if (max_width >= 0) {
-        node.fixed_size = text_size(font, text, max_width);
+    const auto& element = elements[node.element_index];
+    if (element.max_width >= 0) {
+        node.fixed_size = text_size(font, element.text, element.max_width);
     } else {
-        node.dynamic_size.x = -max_width;
+        node.dynamic_size.x = -element.max_width;
     }
 }
 
-void Text::render(
-    const Style& style,
-    const FontStructure& font,
+void TextSystem::render(
     const Node& node,
     const NodeState& state,
-    const TextSelection& text_selection,
     Renderers& renderers) const
 {
+    const auto& element = elements[node.element_index];
+
     renderers.geometry.queue_box(
         Boxf(node.origin, node.origin+node.size),
         Color::Clear(),
@@ -36,8 +34,8 @@ void Text::render(
         render_selection(
             style,
             font,
-            text,
-            max_width,
+            element.text,
+            element.max_width,
             node.origin,
             text_selection,
             false,
@@ -48,8 +46,8 @@ void Text::render(
     renderers.text.queue_text(
         font,
         style.text.font_color,
-        text,
-        max_width,
+        element.text,
+        element.max_width,
         node.origin
     );
 }

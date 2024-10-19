@@ -2,23 +2,19 @@
 
 namespace datagui {
 
-void Checkbox::calculate_size_components(
-    const Style& style,
-    const FontStructure& font,
+void CheckboxSystem::calculate_size_components(
     Node& node,
     const Tree& tree) const
 {
     node.fixed_size = Vecf::Constant(font.line_height * style.checkbox.size);
 }
 
-void Checkbox::render(
-    const Style& style,
-    const FontStructure& font,
+void CheckboxSystem::render(
     const Node& node,
     const NodeState& state,
-    const TextSelection& text_selection,
     Renderers& renderers) const
 {
+    const auto& element = elements[node.element_index];
     const Color& bg_color =
         state.held
         ? style.element.pressed_bg_color
@@ -32,7 +28,7 @@ void Checkbox::render(
         0
     );
 
-    if (!checked_) {
+    if (!element.checked) {
         return;
     }
 
