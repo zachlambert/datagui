@@ -16,6 +16,8 @@
 #include "datagui/internal/text_renderer.hpp"
 #include "datagui/internal/selection.hpp"
 #include "datagui/internal/tree.hpp"
+#include "datagui/internal/renderers.hpp"
+
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
 #include "datagui/element/horizontal_layout.hpp"
@@ -102,9 +104,8 @@ private:
     GLFWwindow* window;
 
     FontStructure font;
-    GeometryRenderer geometry_renderer;
-    TextRenderer text_renderer;
     TextSelection selection;
+    Renderers renderers;
 
     Tree tree;
     Vecf window_size;

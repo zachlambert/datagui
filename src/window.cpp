@@ -111,8 +111,8 @@ void Window::open() {
     glEnable(GL_BLEND);
 
     font = load_font(style.text.font, style.text.font_size);
-    geometry_renderer.init();
-    text_renderer.init();
+    renderers.geometry.init();
+    renderers.text.init();
 
     glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
     glfwSetKeyCallback(window, glfw_key_callback);
@@ -263,9 +263,8 @@ void Window::render_end() {
                         node, elements.text[node.element_index]);
                     break;
                 case Element::Button:
-                    calculate_size_components(
-                        tree, style, font,
-                        node, elements.button[node.element_index]);
+                    elements.button[node.element_index].calculate_size_components(
+                        style, font, node, tree);
                     break;
                 case Element::Checkbox:
                     calculate_size_components(
@@ -519,7 +518,7 @@ void Window::render_tree() {
             case Element::VerticalLayout:
             {
                 const auto& element = elements.vertical_layout[node.element_index];
-                geometry_renderer.queue_box(
+                renderers.geometry.queue_box(
                     Boxf(node.origin, node.origin+node.size),
                     Color::Clear(),
                     style.element.border_width,
@@ -531,7 +530,7 @@ void Window::render_tree() {
             case Element::HorizontalLayout:
             {
                 const auto& element = elements.horizontal_layout[node.element_index];
-                geometry_renderer.queue_box(
+                renderers.geometry.queue_box(
                     Boxf(node.origin, node.origin+node.size),
                     Color::Clear(),
                     style.element.border_width,
@@ -543,7 +542,7 @@ void Window::render_tree() {
             case Element::Text:
             {
                 const auto& element = elements.text[node.element_index];
-                geometry_renderer.queue_box(
+                renderers.geometry.queue_box(
                     Boxf(node.origin, node.origin+node.size),
                     Color::Clear(),
                     0,
@@ -560,11 +559,11 @@ void Window::render_tree() {
                         node.origin,
                         selection,
                         false,
-                        geometry_renderer
+                        renderers.geometry
                     );
                 }
 
-                text_renderer.queue_text(
+                renderers.text.queue_text(
                     font,
                     style.text.font_color,
                     element.text,
@@ -575,24 +574,12 @@ void Window::render_tree() {
             }
             case Element::Button:
             {
-                const auto& element = elements.button[node.element_index];
-                const Color& bg_color =
-                    (tree.node_held() == node_index)
-                        ? style.element.pressed_bg_color
-                        :style.element.bg_color;
-                geometry_renderer.queue_box(
-                    Boxf(node.origin, node.origin+node.size),
-                    bg_color,
-                    style.element.border_width,
-                    style.element.border_color
-                );
-                text_renderer.queue_text(
+                elements.button[node.element_index].render(
+                    style,
                     font,
-                    style.text.font_color,
-                    element.text,
-                    element.max_width,
-                    node.origin + Vecf::Constant(
-                        style.element.border_width + style.element.padding)
+                    node,
+                    tree.node_state(node_index),
+                    renderers
                 );
                 break;
             }
@@ -604,7 +591,7 @@ void Window::render_tree() {
                     ? style.element.pressed_bg_color
                     : style.element.bg_color;
 
-                geometry_renderer.queue_box(
+                renderers.geometry.queue_box(
                     Boxf(node.origin, node.origin+node.size),
                     bg_color,
                     style.element.border_width,
@@ -614,7 +601,7 @@ void Window::render_tree() {
 
                 if (element.checked) {
                     float offset = style.element.border_width + style.checkbox.check_padding;
-                    geometry_renderer.queue_box(
+                    renderers.geometry.queue_box(
                         Boxf(
                             node.origin + Vecf::Constant(offset),
                             node.origin + node.size - Vecf::Constant(offset)
@@ -630,7 +617,7 @@ void Window::render_tree() {
             case Element::TextInput:
             {
                 const auto& element = elements.text_input[node.element_index];
-                geometry_renderer.queue_box(
+                renderers.geometry.queue_box(
                     Boxf(node.origin, node.origin+node.size),
                     style.element.bg_color,
                     style.element.border_width,
@@ -652,10 +639,10 @@ void Window::render_tree() {
                         text_origin,
                         selection,
                         true,
-                        geometry_renderer);
+                        renderers.geometry);
                 }
 
-                text_renderer.queue_text(
+                renderers.text.queue_text(
                     font,
                     style.text.font_color,
                     element.text,
@@ -676,8 +663,8 @@ void Window::render_tree() {
         }
     }
 
-    geometry_renderer.render(window_size);
-    text_renderer.render(window_size);
+    renderers.geometry.render(window_size);
+    renderers.text.render(window_size);
 }
 
 } // namespace datagui

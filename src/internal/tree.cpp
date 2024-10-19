@@ -291,4 +291,14 @@ void Tree::focus_escape(bool trigger_release) {
     node_focused_ = -1;
 }
 
+NodeState Tree::node_state(int node) const {
+    NodeState state;
+    state.pressed = (node == node_focused_);
+    state.released = (node == node_released_);
+    state.held = (node == node_held_);
+    state.focused = (node == node_focused_);
+    state.focus_released = (node == node_focused_);
+    return state;
+}
+
 } // namespace datagui

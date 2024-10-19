@@ -1,16 +1,13 @@
 #pragma once
 
 #include <string>
-#include "datagui/style.hpp"
-#include "datagui/internal/tree.hpp"
-#include "datagui/internal/text.hpp"
+#include "datagui/element/element.hpp"
+
 
 namespace datagui {
 
-struct Button {
-    std::string text;
-    float max_width;
-
+class Button: public ElementInterface {
+public:
     Button(
         const std::string& text,
         float max_width
@@ -18,13 +15,23 @@ struct Button {
         text(text),
         max_width(max_width)
     {}
-};
 
-void calculate_size_components(
-    const Tree& tree,
-    const Style& style,
-    const FontStructure& font,
-    Node& node,
-    const Button& element);
+    void calculate_size_components(
+        const Style& style,
+        const FontStructure& font,
+        Node& node,
+        const Tree& tree) const override;
+
+    void render(
+        const Style& style,
+        const FontStructure& font,
+        const Node& node,
+        const NodeState& state,
+        Renderers& renderers) const override;
+
+private:
+    std::string text;
+    float max_width;
+};
 
 } // namespace datagui

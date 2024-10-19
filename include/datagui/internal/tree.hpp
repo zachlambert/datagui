@@ -18,6 +18,22 @@ enum class Element {
     TextInput
 };
 
+struct NodeState {
+    bool pressed;
+    bool released;
+    bool held;
+    bool focused;
+    bool focus_released;
+
+    NodeState():
+        pressed(false),
+        released(false),
+        held(false),
+        focused(false),
+        focus_released(false)
+    {}
+};
+
 struct Node {
     // Definition
     std::string key;
@@ -108,6 +124,7 @@ public:
     int node_held() const { return node_held_; }
     int node_focused() const { return node_focused_; }
     int node_focus_released() const { return node_focus_released_; }
+    NodeState node_state(int node) const;
 
 private:
     void remove_node(int root_node);

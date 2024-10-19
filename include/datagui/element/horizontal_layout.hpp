@@ -2,6 +2,7 @@
 
 #include "datagui/style.hpp"
 #include "datagui/internal/tree.hpp"
+#include "datagui/internal/renderers.hpp"
 
 namespace datagui {
 
@@ -24,5 +25,12 @@ void calculate_child_dimensions(
     const Style& style,
     const Node& node,
     const HorizontalLayout& element);
+
+void render_element(
+    const Node& node,
+    const HorizontalLayout& element,
+    const NodeState& state,
+    const Style& style,
+    Renderers& renderers);
 
 } // namespace datagui
