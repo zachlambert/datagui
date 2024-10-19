@@ -1,7 +1,7 @@
 #pragma once
 
-#include "datagui/element.hpp"
 #include "datagui/style.hpp"
+#include "datagui/internal/tree.hpp"
 
 
 namespace datagui {

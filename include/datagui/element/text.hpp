@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include "datagui/element.hpp"
 #include "datagui/style.hpp"
 #include "datagui/internal/text.hpp"
+#include "datagui/internal/tree.hpp"
 
 namespace datagui {
 

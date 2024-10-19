@@ -4,7 +4,7 @@
 
 namespace datagui {
 
-// TODO:
+// NOTE:
 // Currently requires everything is default-constructable and assumes
 // that the memory cost for retaining popped nodes (until overwritten) is
 // unimportant.

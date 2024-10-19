@@ -30,7 +30,7 @@ add_library(datagui SHARED
     src/internal/shader.cpp
     src/internal/text.cpp
     src/internal/text_renderer.cpp
-    src/element.cpp
+    src/internal/tree.cpp
     src/window.cpp
 )
 target_link_libraries(datagui

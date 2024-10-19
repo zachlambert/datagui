@@ -449,8 +449,10 @@ void Window::event_handling() {
             case Element::TextInput:
             {
                 auto& element = elements.text_input[node.element_index];
-                element.initial_text = element.text;
-                element.changed = true;
+                if (element.initial_text != element.text) {
+                    element.initial_text = element.text;
+                    element.changed = true;
+                }
                 break;
             }
             default:

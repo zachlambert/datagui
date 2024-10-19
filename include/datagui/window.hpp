@@ -15,8 +15,7 @@
 #include "datagui/internal/geometry_renderer.hpp"
 #include "datagui/internal/text_renderer.hpp"
 #include "datagui/internal/selection.hpp"
-
-#include "datagui/element.hpp"
+#include "datagui/internal/tree.hpp"
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
 #include "datagui/element/horizontal_layout.hpp"
