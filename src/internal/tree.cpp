@@ -180,9 +180,6 @@ void Tree::end(
             }
             stack.pop();
 
-            node.fixed_size = Vecf::Zero();
-            node.dynamic_size = Vecf::Zero();
-
             calculate_size_components(node);
         }
     }
@@ -208,6 +205,31 @@ void Tree::end(
                 stack.push(child);
                 child = nodes[child].next;
             }
+        }
+    }
+}
+
+void Tree::render(const render_element_t& render_element) {
+    if (root_node_ == -1) {
+        return;
+    }
+    std::stack<int> stack;
+    stack.push(root_node_);
+
+    while (!stack.empty()) {
+        int node_index = stack.top();
+        const auto& node = nodes[stack.top()];
+        stack.pop();
+
+        render_element(node, node_state(node_index));
+
+        if (node.first_child == -1) {
+            continue;
+        }
+        int child = node.first_child;
+        while (child != -1) {
+            stack.push(child);
+            child = nodes[child].next;
         }
     }
 }

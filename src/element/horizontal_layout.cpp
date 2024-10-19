@@ -8,6 +8,9 @@ void HorizontalLayout::calculate_size_components(
     Node& node,
     const Tree& tree) const
 {
+    node.fixed_size = Vecf::Zero();
+    node.dynamic_size = Vecf::Zero();
+
     if (input_size.x == 0) {
         int child = node.first_child;
         int count = 0;

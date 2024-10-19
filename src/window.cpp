@@ -280,7 +280,19 @@ void Window::render_end() {
     );
 
     event_handling();
-    render_tree();
+
+    tree.render([&](const Node& node, const NodeState& state) {
+        get_element(node).render(
+            style,
+            font,
+            node,
+            state,
+            selection,
+            renderers);
+    });
+
+    renderers.geometry.render(window_size);
+    renderers.text.render(window_size);
 
     if (tree.root_node() != -1) {
         const auto& root_node = tree[tree.root_node()];
@@ -482,40 +494,6 @@ void Window::event_handling() {
     }
 
     events.reset();
-}
-
-void Window::render_tree() {
-    if (tree.root_node() == -1) {
-        return;
-    }
-    std::stack<int> stack;
-    stack.push(tree.root_node());
-
-    while (!stack.empty()) {
-        int node_index = stack.top();
-        const auto& node = tree[stack.top()];
-        stack.pop();
-
-        get_element(node).render(
-            style,
-            font,
-            node,
-            tree.node_state(node_index),
-            selection,
-            renderers);
-
-        if (node.first_child == -1) {
-            continue;
-        }
-        int child = node.first_child;
-        while (child != -1) {
-            stack.push(child);
-            child = tree[child].next;
-        }
-    }
-
-    renderers.geometry.render(window_size);
-    renderers.text.render(window_size);
 }
 
 } // namespace datagui

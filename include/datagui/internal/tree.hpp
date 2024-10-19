@@ -87,6 +87,8 @@ public:
     using delete_element_t = std::function<void(Element, int)>;
     using calculate_size_components_t = std::function<void(Node& node)>;
     using calculate_child_dimensions_t = std::function<void(const Node& node)>;
+    using render_element_t = std::function<void(
+        const Node& node, const NodeState& state)>;
 
     Tree(const delete_element_t& delete_element);
 
@@ -101,6 +103,8 @@ public:
         const Vecf& root_size,
         const calculate_size_components_t& calculate_size_components,
         const calculate_child_dimensions_t& calculate_child_dimensions);
+
+    void render(const render_element_t& render_element);
 
     const Node& operator[](std::size_t i) const {
         return nodes[i];
