@@ -2,37 +2,67 @@
 
 #include <string>
 #include "datagui/internal/element.hpp"
+#include "datagui/internal/vector_map.hpp"
 
 
 namespace datagui {
 
-class Button: public ElementInterface {
+class ElementSystem {
 public:
-    Button(
-        const std::string& text,
-        float max_width
-    ):
-        text(text),
-        max_width(max_width)
-    {}
+    virtual void calculate_size_components(
+        Node& node,
+        const Tree& tree) const = 0;
 
-    void calculate_size_components(
+    virtual void render(
+        const Node& node,
+        const NodeState& state) const = 0;
+};
+
+struct Button {
+    std::string text;
+    float max_width;
+
+    Button(const std::string& text, float max_width):
+        text(text), max_width(max_width)
+    {}
+};
+
+class ButtonSystem: public ElementSystem {
+public:
+    ButtonSystem(
         const Style& style,
         const FontStructure& font,
+        GeometryRenderer& geometry_renderer,
+        TextRenderer& text_renderer
+    ):
+        style(style),
+        font(font),
+        geometry_renderer(geometry_renderer),
+        text_renderer(text_renderer)
+    {}
+
+    int create(const std::string& text, float max_width = 0) {
+        return elements.emplace(text, max_width);
+    }
+
+    void pop(int index) {
+        elements.pop(index);
+    }
+
+    void calculate_size_components(
         Node& node,
         const Tree& tree) const override;
 
     void render(
-        const Style& style,
-        const FontStructure& font,
         const Node& node,
-        const NodeState& state,
-        const TextSelection& selection,
-        Renderers& renderers) const override;
+        const NodeState& state) const override;
 
 private:
-    std::string text;
-    float max_width;
+    const Style& style;
+    const FontStructure& font;
+    GeometryRenderer& geometry_renderer;
+    TextRenderer& text_renderer;
+    VectorMap<Button> elements;
 };
 
 } // namespace datagui

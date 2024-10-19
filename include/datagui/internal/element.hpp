@@ -31,6 +31,27 @@ public:
         const NodeState& state,
         const TextSelection& selection,
         Renderers& renderers) const = 0;
+
+    // TODO
+#if 0
+    virtual void press(
+        const Style& style,
+        const FontStructure& font,
+        const Node& node,
+        const Vecf& mouse_pos) {}
+
+    virtual void release(
+        const Style& style,
+        const FontStructure& font,
+        const Node& node,
+        const Vecf& mouse_pos) {}
+
+    virtual void held(
+        const Style& style,
+        const FontStructure& font,
+        const Node& node,
+        const Vecf& mouse_pos) {}
+#endif
 };
 
 } // namespace datagui

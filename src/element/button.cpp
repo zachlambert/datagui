@@ -2,40 +2,38 @@
 #include "datagui/internal/text_renderer.hpp"
 
 namespace datagui {
-void Button::calculate_size_components(
-    const Style& style,
-    const FontStructure& font,
+
+void ButtonSystem::calculate_size_components(
     Node& node,
     const Tree& tree) const
 {
-    node.fixed_size = text_size(font, text, max_width);
+    const auto& element = elements[node.element_index];
+    node.fixed_size = text_size(font, element.text, element.max_width);
     node.fixed_size += Vecf::Constant(
         2 * (style.element.border_width + style.element.padding));
 }
 
-void Button::render(
-    const Style& style,
-    const FontStructure& font,
+void ButtonSystem::render(
     const Node& node,
-    const NodeState& state,
-    const TextSelection& text_selection,
-    Renderers& renderers) const
+    const NodeState& state) const
 {
+    const auto& element = elements[node.element_index];
     const Color& bg_color =
         state.held
             ? style.element.pressed_bg_color
             :style.element.bg_color;
-    renderers.geometry.queue_box(
+
+    geometry_renderer.queue_box(
         Boxf(node.origin, node.origin+node.size),
         bg_color,
         style.element.border_width,
         style.element.border_color
     );
-    renderers.text.queue_text(
+    text_renderer.queue_text(
         font,
         style.text.font_color,
-        text,
-        max_width,
+        element.text,
+        element.max_width,
         node.origin + Vecf::Constant(
             style.element.border_width + style.element.padding)
     );

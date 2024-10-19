@@ -55,11 +55,13 @@ Window::Window(const Config& config, const Style& style):
     config(config),
     style(style),
     window(nullptr),
+    window_size(Vecf::Zero()),
     tree(std::bind(
         &Window::delete_element,
         this,
         std::placeholders::_1,
-        std::placeholders::_2))
+        std::placeholders::_2)),
+    buttons(style, font, renderers.geometry, renderers.text)
 {
     open();
 }
@@ -143,7 +145,7 @@ void Window::delete_element(Element element, int element_index) {
             elements.text.pop(element_index);
             break;
         case Element::Button:
-            elements.button.pop(element_index);
+            buttons.pop(element_index);
             break;
         case Element::Checkbox:
             elements.checkbox.pop(element_index);
@@ -157,7 +159,7 @@ void Window::delete_element(Element element, int element_index) {
 const ElementInterface& Window::get_element(const Node& node) {
     switch (node.element) {
         case Element::Button:
-            return elements.button[node.element_index];
+            assert(false);
             break;
         case Element::Checkbox:
             return elements.checkbox[node.element_index];
@@ -177,7 +179,11 @@ const ElementInterface& Window::get_element(const Node& node) {
     }
     assert(false);
     throw WindowError("Unreachable code");
-    return elements.button[0];
+    return elements.checkbox[0];
+}
+
+ElementInterface& Window::get_mutable_element(const Node& node) {
+    return const_cast<ElementInterface&>(get_element(node));
 }
 
 void Window::vertical_layout(
@@ -221,7 +227,7 @@ bool Window::button(
     float max_width)
 {
     int node = tree.down(key, Element::Button, [&](){
-        return elements.button.emplace(text, max_width);
+        return buttons.create(text, max_width);
     });
     tree.up();
     return node == tree.node_released();
@@ -272,6 +278,10 @@ void Window::render_end() {
     tree.end(
         window_size,
         [&](Node& node) {
+            if (node.element == Element::Button) {
+                buttons.calculate_size_components(node, tree);
+                return;
+            }
             get_element(node).calculate_size_components(style, font, node, tree);
         },
         [&](const Node& node) {
@@ -282,6 +292,10 @@ void Window::render_end() {
     event_handling();
 
     tree.render([&](const Node& node, const NodeState& state) {
+        if (node.element == Element::Button) {
+            buttons.render(node, state);
+            return;
+        }
         get_element(node).render(
             style,
             font,

@@ -88,28 +88,30 @@ private:
 
     void delete_element(Element element, int index);
     const ElementInterface& get_element(const Node& node);
+    ElementInterface& get_mutable_element(const Node& node);
+
     void event_handling();
     void render_tree();
-
-    struct {
-        VectorMap<VerticalLayout> vertical_layout;
-        VectorMap<HorizontalLayout> horizontal_layout;
-        VectorMap<Text> text;
-        VectorMap<Button> button;
-        VectorMap<Checkbox> checkbox;
-        VectorMap<TextInput> text_input;
-    } elements;
 
     const Config config;
     const Style style;
     GLFWwindow* window;
+    Vecf window_size;
 
     FontStructure font;
     TextSelection selection;
     Renderers renderers;
 
     Tree tree;
-    Vecf window_size;
+
+    ButtonSystem buttons;
+    struct {
+        VectorMap<VerticalLayout> vertical_layout;
+        VectorMap<HorizontalLayout> horizontal_layout;
+        VectorMap<Text> text;
+        VectorMap<Checkbox> checkbox;
+        VectorMap<TextInput> text_input;
+    } elements;
 };
 
 } // namespace datagui
