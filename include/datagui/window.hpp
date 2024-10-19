@@ -87,6 +87,7 @@ private:
     void close();
 
     void delete_element(Element element, int index);
+    const ElementInterface& get_element(const Node& node);
     void event_handling();
     void render_tree();
 

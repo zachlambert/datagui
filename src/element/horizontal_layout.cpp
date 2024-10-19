@@ -2,13 +2,13 @@
 
 namespace datagui {
 
-void calculate_size_components(
-    const Tree& tree,
+void HorizontalLayout::calculate_size_components(
     const Style& style,
+    const FontStructure& font,
     Node& node,
-    const HorizontalLayout& element)
+    const Tree& tree) const
 {
-    if (element.input_size.x == 0) {
+    if (input_size.x == 0) {
         int child = node.first_child;
         int count = 0;
         while (child != -1) {
@@ -19,14 +19,14 @@ void calculate_size_components(
         }
         node.fixed_size.x += (count - 1) * style.element.padding;
 
-    } else if (element.input_size.x > 0) {
-        node.fixed_size.x = element.input_size.x;
+    } else if (input_size.x > 0) {
+        node.fixed_size.x = input_size.x;
     } else {
-        node.dynamic_size.x = -element.input_size.x;
+        node.dynamic_size.x = -input_size.x;
     }
 
     // Y direction
-    if (element.input_size.y == 0) {
+    if (input_size.y == 0) {
         int child = node.first_child;
         int count = 0;
         while (child != -1) {
@@ -36,21 +36,20 @@ void calculate_size_components(
             child = tree[child].next;
         }
 
-    } else if (element.input_size.y > 0) {
-        node.fixed_size.y = element.input_size.y;
+    } else if (input_size.y > 0) {
+        node.fixed_size.y = input_size.y;
     } else {
-        node.dynamic_size.y = -element.input_size.y;
+        node.dynamic_size.y = -input_size.y;
     }
 
     node.fixed_size += Vecf::Constant(
         2 * (style.element.border_width + style.element.padding));
 }
 
-void calculate_child_dimensions(
-    Tree& tree,
+void HorizontalLayout::calculate_child_dimensions(
     const Style& style,
     const Node& node,
-    const HorizontalLayout& element)
+    Tree& tree) const
 {
     Vecf available = node.size - node.fixed_size;
     Vecf offset = Vecf::Constant(
@@ -72,6 +71,23 @@ void calculate_child_dimensions(
         offset.x += child.size.x + style.element.padding;
         child_index = child.next;
     }
+}
+
+void HorizontalLayout::render(
+    const Style& style,
+    const FontStructure& font,
+    const Node& node,
+    const NodeState& state,
+    const TextSelection& text_selection,
+    Renderers& renderers) const
+{
+    renderers.geometry.queue_box(
+        Boxf(node.origin, node.origin+node.size),
+        Color::Clear(),
+        style.element.border_width,
+        style.element.border_color,
+        0
+    );
 }
 
 } // namespace datagui

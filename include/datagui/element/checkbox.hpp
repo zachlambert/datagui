@@ -1,34 +1,40 @@
 #pragma once
 
-#include "datagui/style.hpp"
-#include "datagui/internal/tree.hpp"
-#include "datagui/internal/text.hpp"
-#include "datagui/internal/renderers.hpp"
+#include "datagui/internal/element.hpp"
 
 
 namespace datagui {
 
-struct Checkbox {
-    bool checked;
-
-    Checkbox(bool default_checked = false):
-        checked(default_checked)
+class Checkbox: public ElementInterface {
+public:
+    Checkbox(bool default_checked):
+        checked_(default_checked)
     {}
+
+    void calculate_size_components(
+        const Style& style,
+        const FontStructure& font,
+        Node& node,
+        const Tree& tree) const override;
+
+    void render(
+        const Style& style,
+        const FontStructure& font,
+        const Node& node,
+        const NodeState& state,
+        const TextSelection& selection,
+        Renderers& renderers) const override;
+
+    const bool& checked() const {
+        return checked_;
+    }
+
+    void toggle() {
+        checked_ = !checked_;
+    }
+
+private:
+    bool checked_;
 };
-
-void calculate_size_components(
-    const Tree& tree,
-    const Style& style,
-    const FontStructure& font,
-    Node& node,
-    const Checkbox& element);
-
-void render_element(
-    const Node& node,
-    const Checkbox& element,
-    const NodeState& state,
-    const Style& style,
-    const FontStructure& font,
-    Renderers& renderers);
 
 } // namespace datagui

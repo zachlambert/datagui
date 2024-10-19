@@ -4,6 +4,7 @@
 #include <stack>
 #include <iostream>
 #include <cstring>
+#include <assert.h>
 #include "datagui/exception.hpp"
 
 
@@ -153,6 +154,32 @@ void Window::delete_element(Element element, int element_index) {
     }
 }
 
+const ElementInterface& Window::get_element(const Node& node) {
+    switch (node.element) {
+        case Element::Button:
+            return elements.button[node.element_index];
+            break;
+        case Element::Checkbox:
+            return elements.checkbox[node.element_index];
+            break;
+        case Element::HorizontalLayout:
+            return elements.horizontal_layout[node.element_index];
+            break;
+        case Element::Text:
+            return elements.text[node.element_index];
+            break;
+        case Element::TextInput:
+            return elements.text_input[node.element_index];
+            break;
+        case Element::VerticalLayout:
+            return elements.vertical_layout[node.element_index];
+            break;
+    }
+    assert(false);
+    throw WindowError("Unreachable code");
+    return elements.button[0];
+}
+
 void Window::vertical_layout(
     const std::string& key,
     float width,
@@ -202,12 +229,12 @@ bool Window::button(
 
 const bool* Window::checkbox(const std::string& key) {
     int node = tree.down(key, Element::Checkbox, [&](){
-        return elements.checkbox.emplace();
+        return elements.checkbox.emplace(false);
     });
     tree.up();
     const auto& element = elements.checkbox[tree[node].element_index];
     if (tree.node_released() == node) {
-        return &element.checked;
+        return &element.checked();
     }
     return nullptr;
 }
@@ -222,9 +249,8 @@ const std::string* Window::text_input(
     });
     tree.up();
     auto& element = elements.text_input[tree[node].element_index];
-    if (element.changed) {
-        element.changed = false;
-        return &element.text;
+    if (element.check_changed()) {
+        return &element.text();
     }
     return nullptr;
 }
@@ -246,54 +272,10 @@ void Window::render_end() {
     tree.end(
         window_size,
         [&](Node& node) {
-            switch (node.element) {
-                case Element::VerticalLayout:
-                    calculate_size_components(
-                        tree, style,
-                        node, elements.vertical_layout[node.element_index]);
-                    break;
-                case Element::HorizontalLayout:
-                    calculate_size_components(
-                        tree, style,
-                        node, elements.horizontal_layout[node.element_index]);
-                    break;
-                case Element::Text:
-                    calculate_size_components(
-                        tree, style, font,
-                        node, elements.text[node.element_index]);
-                    break;
-                case Element::Button:
-                    elements.button[node.element_index].calculate_size_components(
-                        style, font, node, tree);
-                    break;
-                case Element::Checkbox:
-                    calculate_size_components(
-                        tree, style, font,
-                        node, elements.checkbox[node.element_index]);
-                    break;
-                case Element::TextInput:
-                    calculate_size_components(
-                        tree, style, font,
-                        node, elements.text_input[node.element_index]);
-                    break;
-            }
+            get_element(node).calculate_size_components(style, font, node, tree);
         },
         [&](const Node& node) {
-            switch (node.element) {
-                case Element::VerticalLayout:
-                    calculate_child_dimensions(
-                        tree, style,
-                        node, elements.vertical_layout[node.element_index]);
-                    break;
-                case Element::HorizontalLayout:
-                    calculate_child_dimensions(
-                        tree, style,
-                        node, elements.horizontal_layout[node.element_index]);
-                    break;
-                default:
-                    throw WindowError("A non-layout element shouldn't have children");
-                    break;
-            }
+            get_element(node).calculate_child_dimensions(style, node, tree);
         }
     );
 
@@ -302,7 +284,10 @@ void Window::render_end() {
 
     if (tree.root_node() != -1) {
         const auto& root_node = tree[tree.root_node()];
-        glfwSetWindowSizeLimits(window, root_node.fixed_size.x, root_node.fixed_size.y, -1, -1);
+        glfwSetWindowSizeLimits(
+            window,
+            root_node.fixed_size.x, root_node.fixed_size.y,
+            -1, -1);
     }
 
     glfwSwapBuffers(window);
@@ -333,7 +318,7 @@ void Window::event_handling() {
                     style.element.border_width + style.element.padding);
                 selection.begin = find_cursor(
                     font,
-                    element.text,
+                    element.text(),
                     element.max_width,
                     mouse_pos - text_origin
                 );
@@ -361,7 +346,7 @@ void Window::event_handling() {
             case Element::Checkbox:
             {
                 auto& element = elements.checkbox[node.element_index];
-                element.checked = !element.checked;
+                element.toggle();
                 break;
             }
             default:
@@ -380,7 +365,7 @@ void Window::event_handling() {
                     style.element.border_width + style.element.padding);
                 selection.end = find_cursor(
                     font,
-                    element.text,
+                    element.text_,
                     element.max_width,
                     mouse_pos - text_origin);
                 break;
@@ -426,7 +411,7 @@ void Window::event_handling() {
                         {
                             auto& element = elements.text_input[node.element_index];
                             tree.focus_escape(false);
-                            element.text = element.initial_text;
+                            element.revert();
                             break;
                         }
                         default:
@@ -448,10 +433,7 @@ void Window::event_handling() {
             case Element::TextInput:
             {
                 auto& element = elements.text_input[node.element_index];
-                if (element.initial_text != element.text) {
-                    element.initial_text = element.text;
-                    element.changed = true;
-                }
+                element.confirm();
                 break;
             }
             default:
@@ -465,13 +447,13 @@ void Window::event_handling() {
             case Element::TextInput:
             {
                 auto& element = elements.text_input[node.element_index];
-                selection_input_key(element.text, selection, events.key.key, events.key.mods, true);
+                selection_input_key(element.text_, selection, events.key.key, events.key.mods, true);
                 break;
             }
             case Element::Text:
             {
                 auto& element = elements.text_input[node.element_index];
-                selection_input_key(element.text, selection, events.key.key, events.key.mods, false);
+                selection_input_key(element.text_, selection, events.key.key, events.key.mods, false);
                 break;
             }
             default:
@@ -485,13 +467,13 @@ void Window::event_handling() {
             case Element::TextInput:
             {
                 auto& element = elements.text_input[node.element_index];
-                selection_input_char(element.text, selection, events.text.character, true);
+                selection_input_char(element.text_, selection, events.text.character, true);
                 break;
             }
             case Element::Text:
             {
                 auto& element = elements.text_input[node.element_index];
-                selection_input_char(element.text, selection, events.text.character, false);
+                selection_input_char(element.text_, selection, events.text.character, false);
                 break;
             }
             default:
@@ -511,147 +493,16 @@ void Window::render_tree() {
 
     while (!stack.empty()) {
         int node_index = stack.top();
-        auto& node = tree[stack.top()];
+        const auto& node = tree[stack.top()];
         stack.pop();
 
-        switch (node.element) {
-            case Element::VerticalLayout:
-            {
-                const auto& element = elements.vertical_layout[node.element_index];
-                renderers.geometry.queue_box(
-                    Boxf(node.origin, node.origin+node.size),
-                    Color::Clear(),
-                    style.element.border_width,
-                    style.element.border_color,
-                    0
-                );
-                break;
-            }
-            case Element::HorizontalLayout:
-            {
-                const auto& element = elements.horizontal_layout[node.element_index];
-                renderers.geometry.queue_box(
-                    Boxf(node.origin, node.origin+node.size),
-                    Color::Clear(),
-                    style.element.border_width,
-                    style.element.border_color,
-                    0
-                );
-                break;
-            }
-            case Element::Text:
-            {
-                const auto& element = elements.text[node.element_index];
-                renderers.geometry.queue_box(
-                    Boxf(node.origin, node.origin+node.size),
-                    Color::Clear(),
-                    0,
-                    Color::Black(),
-                    0
-                );
-
-                if (node_index == tree.node_focused()) {
-                    render_selection(
-                        style,
-                        font,
-                        element.text,
-                        element.max_width,
-                        node.origin,
-                        selection,
-                        false,
-                        renderers.geometry
-                    );
-                }
-
-                renderers.text.queue_text(
-                    font,
-                    style.text.font_color,
-                    element.text,
-                    element.max_width,
-                    node.origin
-                );
-                break;
-            }
-            case Element::Button:
-            {
-                elements.button[node.element_index].render(
-                    style,
-                    font,
-                    node,
-                    tree.node_state(node_index),
-                    renderers
-                );
-                break;
-            }
-            case Element::Checkbox:
-            {
-                const auto& element = elements.checkbox[node.element_index];
-                const Color& bg_color =
-                    (tree.node_held() == node_index)
-                    ? style.element.pressed_bg_color
-                    : style.element.bg_color;
-
-                renderers.geometry.queue_box(
-                    Boxf(node.origin, node.origin+node.size),
-                    bg_color,
-                    style.element.border_width,
-                    style.element.border_color,
-                    0
-                );
-
-                if (element.checked) {
-                    float offset = style.element.border_width + style.checkbox.check_padding;
-                    renderers.geometry.queue_box(
-                        Boxf(
-                            node.origin + Vecf::Constant(offset),
-                            node.origin + node.size - Vecf::Constant(offset)
-                        ),
-                        style.checkbox.check_color,
-                        0,
-                        Color::Black(),
-                        0
-                    );
-                }
-                break;
-            }
-            case Element::TextInput:
-            {
-                const auto& element = elements.text_input[node.element_index];
-                renderers.geometry.queue_box(
-                    Boxf(node.origin, node.origin+node.size),
-                    style.element.bg_color,
-                    style.element.border_width,
-                    node_index == tree.node_focused()
-                        ? style.element.focus_color
-                        : style.element.border_color
-                );
-                Vecf text_origin =
-                    node.origin
-                    + Vecf::Constant(
-                        style.element.border_width + style.element.padding);
-
-                if (node_index == tree.node_focused()) {
-                    render_selection(
-                        style,
-                        font,
-                        element.text,
-                        element.max_width,
-                        text_origin,
-                        selection,
-                        true,
-                        renderers.geometry);
-                }
-
-                renderers.text.queue_text(
-                    font,
-                    style.text.font_color,
-                    element.text,
-                    element.max_width,
-                    text_origin
-                );
-                break;
-            }
-        }
+        get_element(node).render(
+            style,
+            font,
+            node,
+            tree.node_state(node_index),
+            selection,
+            renderers);
 
         if (node.first_child == -1) {
             continue;

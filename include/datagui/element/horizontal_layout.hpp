@@ -1,36 +1,37 @@
 #pragma once
 
-#include "datagui/style.hpp"
-#include "datagui/internal/tree.hpp"
-#include "datagui/internal/renderers.hpp"
+#include "datagui/internal/element.hpp"
 
 namespace datagui {
 
-struct HorizontalLayout {
-    Vecf input_size;
-
+class HorizontalLayout: public ElementInterface {
+public:
     HorizontalLayout(const Vecf& input_size):
         input_size(input_size)
     {}
+
+    virtual void calculate_size_components(
+        const Style& style,
+        const FontStructure& font,
+        Node& node,
+        const Tree& tree) const override;
+
+    // Container elements only
+    void calculate_child_dimensions(
+        const Style& style,
+        const Node& node,
+        Tree& tree) const override;
+
+    void render(
+        const Style& style,
+        const FontStructure& font,
+        const Node& node,
+        const NodeState& state,
+        const TextSelection& selection,
+        Renderers& renderers) const override;
+
+private:
+    Vecf input_size;
 };
-
-void calculate_size_components(
-    const Tree& tree,
-    const Style& style,
-    Node& node,
-    const HorizontalLayout& element);
-
-void calculate_child_dimensions(
-    Tree& tree,
-    const Style& style,
-    const Node& node,
-    const HorizontalLayout& element);
-
-void render_element(
-    const Node& node,
-    const HorizontalLayout& element,
-    const NodeState& state,
-    const Style& style,
-    Renderers& renderers);
 
 } // namespace datagui

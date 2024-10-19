@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "datagui/element/element.hpp"
+#include "datagui/internal/element.hpp"
 
 
 namespace datagui {
@@ -27,6 +27,7 @@ public:
         const FontStructure& font,
         const Node& node,
         const NodeState& state,
+        const TextSelection& selection,
         Renderers& renderers) const override;
 
 private:

@@ -18,6 +18,7 @@ void Button::render(
     const FontStructure& font,
     const Node& node,
     const NodeState& state,
+    const TextSelection& text_selection,
     Renderers& renderers) const
 {
     const Color& bg_color =
