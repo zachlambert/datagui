@@ -61,4 +61,28 @@ void TextInputSystem::render(
     );
 }
 
+void TextInputSystem::press(const Node& node, const Vecf& mouse_pos) {
+    const auto& element = elements[node.element_index];
+    Vecf text_origin = node.origin + Vecf::Constant(
+        2 * (style.element.border_width + style.element.padding));
+    text_selection.reset(find_cursor(
+        font,
+        element.text,
+        element.max_width,
+        mouse_pos - text_origin
+    ));
+}
+
+void TextInputSystem::held(const Node& node, const Vecf& mouse_pos) {
+    const auto& element = elements[node.element_index];
+    Vecf text_origin = node.origin + Vecf::Constant(
+        2 * (style.element.border_width + style.element.padding));
+    text_selection.end = find_cursor(
+        font,
+        element.text,
+        element.max_width,
+        mouse_pos - text_origin
+    );
+}
+
 } // namespace datagui

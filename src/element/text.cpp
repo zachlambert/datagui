@@ -52,4 +52,24 @@ void TextSystem::render(
     );
 }
 
+void TextSystem::press(const Node& node, const Vecf& mouse_pos) {
+    const auto& element = elements[node.element_index];
+    text_selection.reset(find_cursor(
+        font,
+        element.text,
+        element.max_width,
+        mouse_pos - node.origin
+    ));
+}
+
+void TextSystem::held(const Node& node, const Vecf& mouse_pos) {
+    const auto& element = elements[node.element_index];
+    text_selection.end = find_cursor(
+        font,
+        element.text,
+        element.max_width,
+        mouse_pos - node.origin
+    );
+}
+
 } // namespace datagui

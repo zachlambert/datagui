@@ -45,4 +45,10 @@ void CheckboxSystem::render(
     );
 }
 
+void CheckboxSystem::release(const Node& node, const Vecf& mouse_pos) {
+    auto& element = elements[node.element_index];
+    element.checked = !element.checked;
+    element.changed = true;
+}
+
 } // namespace datagui

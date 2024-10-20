@@ -228,7 +228,7 @@ bool Window::button(
         return buttons.create(text, max_width);
     });
     tree.up();
-    return node == tree.node_released();
+    return buttons.query(tree[node]);
 }
 
 const bool* Window::checkbox(const std::string& key) {
@@ -236,14 +236,7 @@ const bool* Window::checkbox(const std::string& key) {
         return checkboxes.create(false);
     });
     tree.up();
-    // TODO
-#if 0
-    const auto& element = elements.checkbox[tree[node].element_index];
-    if (tree.node_released() == node) {
-        return &element.checked();
-    }
-#endif
-    return nullptr;
+    return checkboxes.query(tree[node]);
 }
 
 const std::string* Window::text_input(
@@ -255,14 +248,7 @@ const std::string* Window::text_input(
         return text_inputs.create(max_width, default_text);
     });
     tree.up();
-    // TODO
-#if 0
-    auto& element = elements.text_input[tree[node].element_index];
-    if (element.check_changed()) {
-        return &element.text();
-    }
-#endif
-    return nullptr;
+    return text_inputs.query(tree[node]);
 }
 
 void Window::render_begin() {
@@ -327,6 +313,18 @@ void Window::event_handling() {
         tree.mouse_release(mouse_pos);
     }
 
+    if (tree.node_pressed() != -1) {
+        const auto& node = tree[tree.node_pressed()];
+        get_mutable_element(node).press(node, mouse_pos);
+    }
+    if (tree.node_released() != -1) {
+        const auto& node = tree[tree.node_released()];
+        get_mutable_element(node).release(node, mouse_pos);
+    }
+    if (tree.node_held() != -1) {
+        const auto& node = tree[tree.node_held()];
+        get_mutable_element(node).held(node, mouse_pos);
+    }
 // TODO
 
 #if 0

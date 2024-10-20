@@ -27,6 +27,14 @@ public:
         style(style)
     {}
 
+    int create(float length, float width, LayoutDirection direction) {
+        return elements.emplace(length, width, direction);
+    }
+
+    void pop(int index) override {
+        elements.pop(index);
+    }
+
     void calculate_size_components(
         Node& node,
         const Tree& tree) const override;
@@ -39,15 +47,6 @@ public:
         const Node& node,
         const NodeState& state,
         Renderers& renderers) const override;
-
-    int create(float length, float width, LayoutDirection direction) {
-        return elements.emplace(length, width, direction);
-    }
-
-    void pop(int index) override {
-        elements.pop(index);
-    }
-
 
 private:
     const Style& style;

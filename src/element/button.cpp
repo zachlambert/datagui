@@ -40,4 +40,9 @@ void ButtonSystem::render(
     );
 }
 
+void ButtonSystem::release(const Node& node, const Vecf& mouse_pos) {
+    auto& element = elements[node.element_index];
+    element.clicked = true;
+}
+
 } // namespace datagui
