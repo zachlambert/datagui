@@ -4,8 +4,11 @@
 
 namespace datagui {
 
-Tree::Tree(const delete_element_t& delete_element):
-    delete_element(delete_element),
+Tree::Tree(
+        const get_elements_t& get_elements,
+        const tick_focus_t& tick_focus):
+    get_elements(get_elements),
+    tick_focus(tick_focus),
     root_node_(-1),
     max_depth_(0),
     iteration(0),
@@ -110,7 +113,7 @@ void Tree::remove_node(int root_node) {
             } else if (node.parent != -1) {
                 nodes[node.parent].last_child = node.prev;
             }
-            delete_element(node.element, node.element_index);
+            get_elements(node).pop(node.element_index);
             nodes.pop(node_index);
 
             if (node_pressed_ == node_index) {
@@ -139,11 +142,7 @@ void Tree::remove_node(int root_node) {
     }
 }
 
-void Tree::end(
-    const Vecf& root_size,
-    const calculate_size_components_t& calculate_size_components,
-    const calculate_child_dimensions_t& calculate_child_dimensions)
-{
+void Tree::end(const Vecf& root_size) {
     if (depth() != 0) {
         throw WindowError("Didn't call layout_... and layout_end the same number of times");
     }
@@ -180,7 +179,7 @@ void Tree::end(
             }
             stack.pop();
 
-            calculate_size_components(node);
+            get_elements(node).calculate_size_components(node, *this);
         }
     }
 
@@ -198,7 +197,7 @@ void Tree::end(
                 continue;
             }
 
-            calculate_child_dimensions(node);
+            get_elements(node).calculate_child_dimensions(node, *this);
 
             int child = node.first_child;
             while (child != -1) {
@@ -209,7 +208,7 @@ void Tree::end(
     }
 }
 
-void Tree::render(const render_element_t& render_element) {
+void Tree::render(Renderers& renderers) {
     if (root_node_ == -1) {
         return;
     }
@@ -221,7 +220,7 @@ void Tree::render(const render_element_t& render_element) {
         const auto& node = nodes[stack.top()];
         stack.pop();
 
-        render_element(node, node_state(node_index));
+        get_elements(node).render(node, node_state(node_index), renderers);
 
         if (node.first_child == -1) {
             continue;
@@ -240,7 +239,7 @@ void Tree::mouse_reset() {
     node_focus_released_ = -1;
 }
 
-void Tree::mouse_press(const Vecf& pos) {
+void Tree::mouse_press(const Vecf& mouse_pos) {
     if (root_node_ == -1) {
         return;
     }
@@ -252,7 +251,7 @@ void Tree::mouse_press(const Vecf& pos) {
         int child_index = node.first_child;
         while (child_index != -1) {
             const auto& child = nodes[child_index];
-            if (Boxf(child.origin, child.origin+child.size).contains(pos)) {
+            if (Boxf(child.origin, child.origin+child.size).contains(mouse_pos)) {
                 node_pressed_ = child_index;
                 break;
             }
@@ -263,6 +262,10 @@ void Tree::mouse_press(const Vecf& pos) {
         }
     }
 
+    const auto& node = nodes[node_pressed_];
+    get_elements(node).press(node, mouse_pos);
+
+
     node_held_ = node_pressed_;
     if (node_focused_ != -1 && node_pressed_ != node_focused_) {
         node_focus_released_ = node_focused_;
@@ -270,47 +273,63 @@ void Tree::mouse_press(const Vecf& pos) {
     node_focused_ = node_pressed_;
 }
 
-void Tree::mouse_release(const Vecf& pos) {
+void Tree::mouse_release(const Vecf& mouse_pos) {
     if (node_held_ == -1) {
         return;
     }
     const auto& node = nodes[node_held_];
-    if (Boxf(node.origin, node.origin+node.size).contains(pos)) {
+    if (Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
         node_released_ = node_held_;
+        get_elements(node).release(node, mouse_pos);
     }
     node_held_ = -1;
+
 }
 
-bool Tree::focus_next() {
+void Tree::focus_next() {
     if (node_focused_ == -1) {
-        return false;
+        return;
     }
     const auto& node = nodes[node_focused_];
     if (node.next != -1) {
         node_focus_released_ = node_focused_;
         node_focused_ = node.next;
-        return true;
     } else if (node.parent != -1) {
         int first_child = nodes[node.parent].first_child;
         if (first_child != node_focused_) {
             node_focus_released_ = node_focused_;
             node_focused_ = first_child;
-            return true;
+        } else {
+            return;
         }
-        return false;
     } else {
-        return false;
+        return;
     }
+
+    const auto& new_node = nodes[node_focused_];
+
+    get_elements(node).focus_leave(node, true);
+    get_elements(node).focus_enter(new_node);
 }
 
-void Tree::focus_escape(bool trigger_release) {
+void Tree::focus_leave(bool success) {
     if (node_focused_ == -1) {
         return;
     }
-    if (trigger_release) {
-        node_focus_released_ = node_focused_;
-    }
+    const auto& node = nodes[node_focused_];
+    get_elements(node).focus_leave(node, success);
     node_focused_ = -1;
+}
+
+void Tree::tick(const Vecf& mouse_pos) {
+    if (node_held_ != -1) {
+        const auto& node = nodes[node_held_];
+        get_elements(node).held(node, mouse_pos);
+    }
+    if (node_focused_ != -1) {
+        const auto& node = nodes[node_focused_];
+        tick_focus(node);
+    }
 }
 
 NodeState Tree::node_state(int node) const {

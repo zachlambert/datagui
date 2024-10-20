@@ -29,6 +29,36 @@ struct TextSelection {
     }
 };
 
+enum class KeyValue {
+    Backspace,
+    LeftArrow,
+    RightArrow
+};
+
+struct KeyEvent {
+    bool is_text; // else is_char
+    KeyValue key_value;
+    bool key_shift;
+    bool key_ctrl;
+    char text_value;
+
+    static KeyEvent key(KeyValue key, bool shift, bool ctrl) {
+        KeyEvent event;
+        event.is_text = false;
+        event.key_value = key;
+        event.key_shift = shift;
+        event.key_ctrl = ctrl;
+        return event;
+    }
+    static KeyEvent text(char text) {
+        KeyEvent event;
+        event.is_text = true;
+        event.text_value = text;
+        return event;
+    }
+};
+
+
 std::size_t find_cursor(
     const FontStructure& font,
     const std::string& text,
@@ -41,18 +71,11 @@ Vecf cursor_offset(
     float max_width,
     std::size_t cursor);
 
-void selection_input_key(
+void selection_key_event(
     std::string& text,
     TextSelection& selection,
-    int key,
-    int mods,
-    bool editable);
-
-void selection_input_char(
-    std::string& text,
-    TextSelection& selection,
-    char character,
-    bool editable);
+    bool editable,
+    const KeyEvent& event);
 
 void render_selection(
     const Style& style,

@@ -10,6 +10,8 @@
 
 namespace datagui {
 
+using namespace std::placeholders;
+
 struct Events {
     struct {
         int action = -1;
@@ -56,11 +58,10 @@ Window::Window(const Config& config, const Style& style):
     style(style),
     window(nullptr),
     window_size(Vecf::Zero()),
-    tree(std::bind(
-        &Window::delete_element,
-        this,
-        std::placeholders::_1,
-        std::placeholders::_2)),
+    tree(
+        std::bind(&Window::get_elements, this, _1),
+        std::bind(&Window::tick_focus, this, _1)
+    ),
     buttons(style, font),
     checkboxes(style, font),
     linear_layouts(style),
@@ -157,7 +158,7 @@ void Window::delete_element(Element element, int element_index) {
     }
 }
 
-const ElementSystem& Window::get_element(const Node& node) {
+ElementSystem& Window::get_elements(const Node& node) {
     switch (node.element) {
         case Element::Button:
             return buttons;
@@ -178,10 +179,6 @@ const ElementSystem& Window::get_element(const Node& node) {
     assert(false);
     throw WindowError("Unreachable code");
     return buttons;
-}
-
-ElementSystem& Window::get_mutable_element(const Node& node) {
-    return const_cast<ElementSystem&>(get_element(node));
 }
 
 void Window::vertical_layout(
@@ -265,25 +262,11 @@ void Window::render_begin() {
 }
 
 void Window::render_end() {
-    tree.end(
-        window_size,
-        [&](Node& node) {
-            get_element(node).calculate_size_components(node, tree);
-        },
-        [&](const Node& node) {
-            get_element(node).calculate_child_dimensions(node, tree);
-        }
-    );
+    tree.end(window_size);
 
     event_handling();
 
-    tree.render([&](const Node& node, const NodeState& state) {
-        get_element(node).render(
-            node,
-            state,
-            renderers);
-    });
-
+    tree.render(renderers);
     renderers.geometry.render(window_size);
     renderers.text.render(window_size);
 
@@ -312,197 +295,48 @@ void Window::event_handling() {
     if (events.mouse.action == GLFW_RELEASE) {
         tree.mouse_release(mouse_pos);
     }
-
-    if (tree.node_pressed() != -1) {
-        const auto& node = tree[tree.node_pressed()];
-        get_mutable_element(node).press(node, mouse_pos);
-    }
-    if (tree.node_released() != -1) {
-        const auto& node = tree[tree.node_released()];
-        get_mutable_element(node).release(node, mouse_pos);
-    }
-    if (tree.node_held() != -1) {
-        const auto& node = tree[tree.node_held()];
-        get_mutable_element(node).held(node, mouse_pos);
-    }
-// TODO
-
-#if 0
-    if (tree.node_pressed() != -1) {
-        const auto& node = tree[tree.node_pressed()];
-        switch (node.element) {
-            case Element::TextInput:
-            {
-                const auto& element = elements.text_input[node.element_index];
-                Vecf text_origin = node.origin + Vecf::Constant(
-                    style.element.border_width + style.element.padding);
-                selection.begin = find_cursor(
-                    font,
-                    element.text(),
-                    element.max_width,
-                    mouse_pos - text_origin
-                );
-                break;
-            }
-            case Element::Text:
-            {
-                const auto& element = elements.text[node.element_index];
-                selection.begin = find_cursor(
-                    font,
-                    element.text,
-                    element.max_width,
-                    mouse_pos - node.origin
-                );
-                break;
-            }
-            default:
-                 break;
-        }
-    }
-
-    if (tree.node_released() != -1) {
-        const auto& node = tree[tree.node_released()];
-        switch (node.element) {
-            case Element::Checkbox:
-            {
-                auto& element = elements.checkbox[node.element_index];
-                element.toggle();
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    // Handle element-specific logic while pressed down
-    if (tree.node_held() != -1) {
-        const auto& node = tree[tree.node_held()];
-        switch (node.element) {
-            case Element::TextInput:
-            {
-                const auto& element = elements.text_input[node.element_index];
-                Vecf text_origin = node.origin + Vecf::Constant(
-                    style.element.border_width + style.element.padding);
-                selection.end = find_cursor(
-                    font,
-                    element.text_,
-                    element.max_width,
-                    mouse_pos - text_origin);
-                break;
-            }
-            case Element::Text:
-            {
-                const auto& element = elements.text[node.element_index];
-                selection.end = find_cursor(
-                    font,
-                    element.text,
-                    element.max_width,
-                    mouse_pos - node.origin);
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
-        switch (events.key.key) {
-            case GLFW_KEY_TAB:
-                if (tree.focus_next()) {
-                    const auto& new_node = tree[tree.node_focused()];
-                    switch (new_node.element) {
-                        case Element::TextInput:
-                        {
-                            const auto& element = elements.text_input[new_node.element_index];
-                            selection.begin = 0;
-                            selection.end = 0;
-                            break;
-                        }
-                        default:
-                            break;
-                    }
-                }
-                break;
-            case GLFW_KEY_ESCAPE:
-                if (tree.node_focused() != -1) {
-                    const auto& node = tree[tree.node_focused()];
-                    switch (node.element) {
-                        case Element::TextInput:
-                        {
-                            auto& element = elements.text_input[node.element_index];
-                            tree.focus_escape(false);
-                            element.revert();
-                            break;
-                        }
-                        default:
-                        break;
-                    }
-                }
-                break;
-            case GLFW_KEY_ENTER:
-                if (tree.node_focused() != -1) {
-                    tree.focus_escape(true);
-                }
-                break;
-        }
-    }
-
-    if (tree.node_focus_released() != -1) {
-        const auto& node = tree[tree.node_focus_released()];
-        switch (node.element) {
-            case Element::TextInput:
-            {
-                auto& element = elements.text_input[node.element_index];
-                element.confirm();
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    if (tree.node_focused() != -1 && (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT)) {
-        const auto& node = tree[tree.node_focused()];
-        switch (node.element) {
-            case Element::TextInput:
-            {
-                auto& element = elements.text_input[node.element_index];
-                selection_input_key(element.text_, selection, events.key.key, events.key.mods, true);
-                break;
-            }
-            case Element::Text:
-            {
-                auto& element = elements.text_input[node.element_index];
-                selection_input_key(element.text_, selection, events.key.key, events.key.mods, false);
-                break;
-            }
-            default:
-                break;
-        }
-    }
-
-    if (tree.node_focused() != -1 && events.text.received) {
-        const auto& node = tree[tree.node_focused()];
-        switch (node.element) {
-            case Element::TextInput:
-            {
-                auto& element = elements.text_input[node.element_index];
-                selection_input_char(element.text_, selection, events.text.character, true);
-                break;
-            }
-            case Element::Text:
-            {
-                auto& element = elements.text_input[node.element_index];
-                selection_input_char(element.text_, selection, events.text.character, false);
-                break;
-            }
-            default:
-                break;
-        }
-    }
-#endif
+    tree.tick(mouse_pos);
 
     events.reset();
+}
+
+void Window::tick_focus(const Node& node) {
+    if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
+        KeyValue key;
+
+        switch (events.key.key) {
+            case GLFW_KEY_TAB:
+                tree.focus_next();
+                return;
+            case GLFW_KEY_ESCAPE:
+                tree.focus_leave(false);
+                return;
+            case GLFW_KEY_ENTER:
+                tree.focus_leave(true);
+                return;
+            case GLFW_KEY_LEFT:
+                key = KeyValue::LeftArrow;
+                break;
+            case GLFW_KEY_RIGHT:
+                key = KeyValue::RightArrow;
+                break;
+            case GLFW_KEY_BACKSPACE:
+                key = KeyValue::Backspace;
+                break;
+            default:
+                return;
+        }
+
+        bool shift = events.key.mods & 1<<0;
+        bool ctrl = events.key.mods & 1<<1;
+
+        get_elements(node).key_event(node, KeyEvent::key(key, shift, ctrl));
+        return;
+    }
+
+    if (events.text.received) {
+        get_elements(node).key_event(node, KeyEvent::text(events.text.character));
+    }
 }
 
 } // namespace datagui

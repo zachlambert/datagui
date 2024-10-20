@@ -1,8 +1,11 @@
 #pragma once
 
-#include <string>
 #include "datagui/internal/element.hpp"
-
+#include "datagui/internal/vector_map.hpp"
+#include "datagui/style.hpp"
+#include "datagui/internal/text.hpp"
+#include "datagui/internal/selection.hpp"
+#include "datagui/internal/tree.hpp"
 
 namespace datagui {
 
@@ -63,6 +66,10 @@ public:
     void held(
         const Node& node,
         const Vecf& mouse_pos) override;
+
+    void focus_enter(const Node& node) override;
+    void focus_leave(const Node& node, bool success) override;
+    void key_event(const Node& node, const KeyEvent& event) override;
 
 private:
     const Style& style;

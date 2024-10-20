@@ -5,6 +5,8 @@
 #include <functional>
 #include "datagui/geometry.hpp"
 #include "datagui/internal/vector_map.hpp"
+#include "datagui/internal/renderers.hpp"
+#include "datagui/internal/element.hpp"
 
 
 namespace datagui {
@@ -83,13 +85,10 @@ struct Node {
 class Tree {
 public:
     using construct_element_t = std::function<int()>;
-    using delete_element_t = std::function<void(Element, int)>;
-    using calculate_size_components_t = std::function<void(Node& node)>;
-    using calculate_child_dimensions_t = std::function<void(const Node& node)>;
-    using render_element_t = std::function<void(
-        const Node& node, const NodeState& state)>;
+    using get_elements_t = std::function<ElementSystem&(const Node&)>;
+    using tick_focus_t = std::function<void(const Node&)>;
 
-    Tree(const delete_element_t& delete_element);
+    Tree(const get_elements_t& get_elements, const tick_focus_t& tick_focus);
 
     // Define the tree
     void begin();
@@ -98,12 +97,9 @@ public:
         Element element,
         const construct_element_t& construct_element);
     void up();
-    void end(
-        const Vecf& root_size,
-        const calculate_size_components_t& calculate_size_components,
-        const calculate_child_dimensions_t& calculate_child_dimensions);
+    void end(const Vecf& root_size);
 
-    void render(const render_element_t& render_element);
+    void render(Renderers& renderers);
 
     const Node& operator[](std::size_t i) const {
         return nodes[i];
@@ -119,20 +115,26 @@ public:
     void mouse_reset();
     void mouse_press(const Vecf& pos);
     void mouse_release(const Vecf& pos);
-    bool focus_next();
-    void focus_escape(bool trigger_release);
+    void tick(const Vecf& mouse_pos);
 
+    void focus_next();
+    void focus_leave(bool success);
+
+#if 0
     int node_pressed() const { return node_pressed_; }
     int node_released() const { return node_released_; }
     int node_held() const { return node_held_; }
     int node_focused() const { return node_focused_; }
     int node_focus_released() const { return node_focus_released_; }
-    NodeState node_state(int node) const;
+#endif
 
 private:
+    NodeState node_state(int node) const;
     void remove_node(int root_node);
 
-    delete_element_t delete_element;
+    get_elements_t get_elements;
+    tick_focus_t tick_focus;
+
     VectorMap<Node> nodes;
     int root_node_;
     std::stack<int> active_nodes;

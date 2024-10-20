@@ -72,4 +72,13 @@ void TextSystem::held(const Node& node, const Vecf& mouse_pos) {
     );
 }
 
+void TextSystem::focus_enter(const Node& node) {
+    text_selection.reset(0);
+}
+
+void TextSystem::key_event(const Node& node, const KeyEvent& event) {
+    auto& element = elements[node.element_index];
+    selection_key_event(element.text, text_selection, false, event);
+}
+
 } // namespace datagui

@@ -86,11 +86,10 @@ private:
     void close();
 
     void delete_element(Element element, int index);
-    const ElementSystem& get_element(const Node& node);
-    ElementSystem& get_mutable_element(const Node& node);
+    ElementSystem& get_elements(const Node& node);
 
+    void tick_focus(const Node& node);
     void event_handling();
-    void render_tree();
 
     const Config config;
     const Style style;

@@ -1,6 +1,10 @@
 #pragma once
 
 #include "datagui/internal/element.hpp"
+#include "datagui/internal/vector_map.hpp"
+#include "datagui/style.hpp"
+#include "datagui/internal/text.hpp"
+#include "datagui/internal/tree.hpp"
 
 
 namespace datagui {
@@ -10,7 +14,8 @@ struct Checkbox {
     bool changed;
 
     Checkbox(bool default_checked):
-        checked(default_checked)
+        checked(default_checked),
+        changed(false)
     {}
 };
 

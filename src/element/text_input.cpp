@@ -85,4 +85,23 @@ void TextInputSystem::held(const Node& node, const Vecf& mouse_pos) {
     );
 }
 
+void TextInputSystem::focus_enter(const Node& node) {
+    text_selection.reset(0);
+}
+
+void TextInputSystem::focus_leave(const Node& node, bool success) {
+    auto& element = elements[node.element_index];
+    if (success) {
+        element.initial_text = element.text;
+        element.changed = true;
+    } else {
+        element.text = element.initial_text;
+    }
+}
+
+void TextInputSystem::key_event(const Node& node, const KeyEvent& event) {
+    auto& element = elements[node.element_index];
+    selection_key_event(element.text, text_selection, true, event);
+}
+
 } // namespace datagui
