@@ -20,18 +20,12 @@ enum class Element {
 };
 
 struct NodeState {
-    bool pressed;
-    bool released;
     bool held;
     bool focused;
-    bool focus_released;
 
     NodeState():
-        pressed(false),
-        released(false),
         held(false),
-        focused(false),
-        focus_released(false)
+        focused(false)
     {}
 };
 
@@ -112,21 +106,11 @@ public:
     std::size_t max_depth() const { return max_depth_; }
     int root_node() const { return root_node_; }
 
-    void mouse_reset();
     void mouse_press(const Vecf& pos);
     void mouse_release(const Vecf& pos);
-    void tick(const Vecf& mouse_pos);
-
     void focus_next();
     void focus_leave(bool success);
-
-#if 0
-    int node_pressed() const { return node_pressed_; }
-    int node_released() const { return node_released_; }
-    int node_held() const { return node_held_; }
-    int node_focused() const { return node_focused_; }
-    int node_focus_released() const { return node_focus_released_; }
-#endif
+    void tick(const Vecf& mouse_pos);
 
 private:
     NodeState node_state(int node) const;
@@ -141,11 +125,8 @@ private:
     std::size_t max_depth_;
     int iteration;
 
-    int node_pressed_;
-    int node_released_;
-    int node_held_;
-    int node_focused_;
-    int node_focus_released_;
+    int node_held;
+    int node_focused;
 };
 
 } // namespace datagui

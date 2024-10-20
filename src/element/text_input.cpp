@@ -64,7 +64,7 @@ void TextInputSystem::render(
 void TextInputSystem::press(const Node& node, const Vecf& mouse_pos) {
     const auto& element = elements[node.element_index];
     Vecf text_origin = node.origin + Vecf::Constant(
-        2 * (style.element.border_width + style.element.padding));
+        style.element.border_width + style.element.padding);
     text_selection.reset(find_cursor(
         font,
         element.text,
@@ -76,7 +76,7 @@ void TextInputSystem::press(const Node& node, const Vecf& mouse_pos) {
 void TextInputSystem::held(const Node& node, const Vecf& mouse_pos) {
     const auto& element = elements[node.element_index];
     Vecf text_origin = node.origin + Vecf::Constant(
-        2 * (style.element.border_width + style.element.padding));
+        style.element.border_width + style.element.padding);
     text_selection.end = find_cursor(
         font,
         element.text,
@@ -91,17 +91,25 @@ void TextInputSystem::focus_enter(const Node& node) {
 
 void TextInputSystem::focus_leave(const Node& node, bool success) {
     auto& element = elements[node.element_index];
-    if (success) {
+    if (!success) {
+        element.text = element.initial_text;
+    } else if (element.initial_text != element.text) {
         element.initial_text = element.text;
         element.changed = true;
-    } else {
-        element.text = element.initial_text;
     }
 }
 
 void TextInputSystem::key_event(const Node& node, const KeyEvent& event) {
     auto& element = elements[node.element_index];
-    selection_key_event(element.text, text_selection, true, event);
+
+    if (!event.is_text && event.key_value == KeyValue::Enter) {
+        if (element.initial_text != element.text) {
+            element.initial_text = element.text;
+            element.changed = true;
+        }
+    } else {
+        selection_key_event(element.text, text_selection, true, event);
+    }
 }
 
 } // namespace datagui

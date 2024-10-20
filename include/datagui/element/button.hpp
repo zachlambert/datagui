@@ -62,6 +62,8 @@ public:
         const Node& node,
         const Vecf& mouse_pos) override;
 
+    void key_event(const Node& node, const KeyEvent& event) override;
+
 private:
     const Style& style;
     const FontStructure& font;

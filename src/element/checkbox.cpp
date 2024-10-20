@@ -51,4 +51,12 @@ void CheckboxSystem::release(const Node& node, const Vecf& mouse_pos) {
     element.changed = true;
 }
 
+void CheckboxSystem::key_event(const Node& node, const KeyEvent& event) {
+    auto& element = elements[node.element_index];
+    if (!event.is_text && event.key_value == KeyValue::Enter) {
+        element.checked = !element.checked;
+        element.changed = true;
+    }
+}
+
 } // namespace datagui

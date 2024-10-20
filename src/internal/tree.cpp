@@ -12,11 +12,8 @@ Tree::Tree(
     root_node_(-1),
     max_depth_(0),
     iteration(0),
-    node_pressed_(-1),
-    node_released_(-1),
-    node_held_(-1),
-    node_focused_(-1),
-    node_focus_released_(-1)
+    node_held(-1),
+    node_focused(-1)
 {}
 
 void Tree::begin() {
@@ -116,20 +113,11 @@ void Tree::remove_node(int root_node) {
             get_elements(node).pop(node.element_index);
             nodes.pop(node_index);
 
-            if (node_pressed_ == node_index) {
-                node_pressed_ = -1;
+            if (node_held == node_index) {
+                node_held = -1;
             }
-            if (node_released_ == node_index) {
-                node_released_ = -1;
-            }
-            if (node_held_ == node_index) {
-                node_held_ = -1;
-            }
-            if (node_focused_ == node_index) {
-                node_focused_ = -1;
-            }
-            if (node_focus_released_ == node_index) {
-                node_focus_released_ = -1;
+            if (node_focused == node_index) {
+                node_focused = -1;
             }
 
             continue;
@@ -221,6 +209,14 @@ void Tree::render(Renderers& renderers) {
         stack.pop();
 
         get_elements(node).render(node, node_state(node_index), renderers);
+        if (node_focused == node_index) {
+            renderers.geometry.queue_box(
+                Boxf(node.origin, node.origin+node.size),
+                Color(1, 0, 0, 0.2),
+                0,
+                Color::Black(),
+                0);
+        }
 
         if (node.first_child == -1) {
             continue;
@@ -233,26 +229,20 @@ void Tree::render(Renderers& renderers) {
     }
 }
 
-void Tree::mouse_reset() {
-    node_pressed_ = -1;
-    node_released_ = -1;
-    node_focus_released_ = -1;
-}
-
 void Tree::mouse_press(const Vecf& mouse_pos) {
     if (root_node_ == -1) {
         return;
     }
 
-    node_pressed_ = root_node_;
+    int node_pressed = root_node_;
 
     while (true) {
-        const auto& node = nodes[node_pressed_];
+        const auto& node = nodes[node_pressed];
         int child_index = node.first_child;
         while (child_index != -1) {
             const auto& child = nodes[child_index];
             if (Boxf(child.origin, child.origin+child.size).contains(mouse_pos)) {
-                node_pressed_ = child_index;
+                node_pressed = child_index;
                 break;
             }
             child_index = child.next;
@@ -262,83 +252,108 @@ void Tree::mouse_press(const Vecf& mouse_pos) {
         }
     }
 
-    const auto& node = nodes[node_pressed_];
+    const auto& node = nodes[node_pressed];
     get_elements(node).press(node, mouse_pos);
 
-
-    node_held_ = node_pressed_;
-    if (node_focused_ != -1 && node_pressed_ != node_focused_) {
-        node_focus_released_ = node_focused_;
+    node_held = node_pressed;
+    if (node_focused != -1 && node_pressed != node_focused) {
+        const auto& released = nodes[node_focused];
+        get_elements(released).focus_leave(released, true);
     }
-    node_focused_ = node_pressed_;
+    node_focused = node_pressed;
 }
 
 void Tree::mouse_release(const Vecf& mouse_pos) {
-    if (node_held_ == -1) {
+    if (node_held == -1) {
         return;
     }
-    const auto& node = nodes[node_held_];
+    const auto& node = nodes[node_held];
     if (Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
-        node_released_ = node_held_;
         get_elements(node).release(node, mouse_pos);
     }
-    node_held_ = -1;
-
+    node_held = -1;
 }
 
 void Tree::focus_next() {
-    if (node_focused_ == -1) {
+    if (node_focused == -1) {
         return;
     }
-    const auto& node = nodes[node_focused_];
-    if (node.next != -1) {
-        node_focus_released_ = node_focused_;
-        node_focused_ = node.next;
-    } else if (node.parent != -1) {
-        int first_child = nodes[node.parent].first_child;
-        if (first_child != node_focused_) {
-            node_focus_released_ = node_focused_;
-            node_focused_ = first_child;
-        } else {
+
+    int next = node_focused;
+    if (nodes[next].first_child != -1) {
+        // 1. If not focused on a leaf node, change to the first encountered
+        // leaf node (depth first)
+        while (nodes[next].first_child != -1) {
+            next = nodes[next].first_child;
+        }
+    } else if (nodes[next].next != -1) {
+        // 2. If there is an immediate neighbour, change to this
+        next = nodes[next].next;
+    } else {
+        // 3. No immediate neighbour, so two steps:
+        // - Move up the tree until reaching a node with a next, or reaching
+        //   the root node
+        // - Move down the tree to the first leaf node in that subtree
+        while (next != root_node_) {
+            next = nodes[next].parent;
+            if (nodes[next].next != -1) {
+                next = nodes[next].next;
+                break;
+            }
+        }
+        while (nodes[next].first_child != -1) {
+            next = nodes[next].first_child;
+        }
+    }
+
+#if 0
+    // TODO: Have this iterate through the leaf nodes, not just the neighbours
+    // of the current node
+    if (focused.next != -1) {
+        node_focused = focused.next;
+    } else if (focused.parent != -1) {
+        int first_child = nodes[focused.parent].first_child;
+        if (first_child == node_focused) {
             return;
         }
+        node_focused = first_child;
     } else {
         return;
     }
+#endif
 
-    const auto& new_node = nodes[node_focused_];
+    const auto& prev_focused = nodes[node_focused];
+    const auto& new_focused = nodes[next];
+    node_focused = next;
 
-    get_elements(node).focus_leave(node, true);
-    get_elements(node).focus_enter(new_node);
+    get_elements(prev_focused).focus_leave(prev_focused, true);
+    get_elements(new_focused).focus_enter(new_focused);
 }
 
 void Tree::focus_leave(bool success) {
-    if (node_focused_ == -1) {
+    if (node_focused == -1) {
         return;
     }
-    const auto& node = nodes[node_focused_];
+    const auto& node = nodes[node_focused];
     get_elements(node).focus_leave(node, success);
-    node_focused_ = -1;
+    node_focused = -1;
 }
 
 void Tree::tick(const Vecf& mouse_pos) {
-    if (node_held_ != -1) {
-        const auto& node = nodes[node_held_];
+    if (node_held != -1) {
+        const auto& node = nodes[node_held];
         get_elements(node).held(node, mouse_pos);
     }
-    if (node_focused_ != -1) {
-        const auto& node = nodes[node_focused_];
+    if (node_focused != -1) {
+        const auto& node = nodes[node_focused];
         tick_focus(node);
     }
 }
 
 NodeState Tree::node_state(int node) const {
     NodeState state;
-    state.pressed = (node == node_focused_);
-    state.released = (node == node_released_);
-    state.held = (node == node_held_);
-    state.focused = (node == node_focused_);
-    state.focus_released = (node == node_focused_);
+    state.held = (node == node_held);
+    state.focused = (node == node_focused);
     return state;
 }
 

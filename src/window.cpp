@@ -288,7 +288,6 @@ void Window::event_handling() {
     glfwGetCursorPos(window, &mx, &my);
     Vecf mouse_pos(mx, my);
 
-    tree.mouse_reset();
     if (events.mouse.action == GLFW_PRESS) {
         tree.mouse_press(mouse_pos);
     }
@@ -312,8 +311,8 @@ void Window::tick_focus(const Node& node) {
                 tree.focus_leave(false);
                 return;
             case GLFW_KEY_ENTER:
-                tree.focus_leave(true);
-                return;
+                key = KeyValue::Enter;
+                break;
             case GLFW_KEY_LEFT:
                 key = KeyValue::LeftArrow;
                 break;

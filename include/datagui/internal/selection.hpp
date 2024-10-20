@@ -32,7 +32,8 @@ struct TextSelection {
 enum class KeyValue {
     Backspace,
     LeftArrow,
-    RightArrow
+    RightArrow,
+    Enter
 };
 
 struct KeyEvent {
