@@ -80,9 +80,8 @@ class Tree {
 public:
     using construct_element_t = std::function<int()>;
     using get_elements_t = std::function<ElementSystem&(const Node&)>;
-    using tick_focus_t = std::function<void(const Node&)>;
 
-    Tree(const get_elements_t& get_elements, const tick_focus_t& tick_focus);
+    Tree(const get_elements_t& get_elements);
 
     // Define the tree
     void begin();
@@ -110,14 +109,15 @@ public:
     void mouse_release(const Vecf& pos);
     void focus_next();
     void focus_leave(bool success);
-    void tick(const Vecf& mouse_pos);
+
+    int node_held() const { return node_held_; }
+    int node_focused() const { return node_focused_; }
 
 private:
     NodeState node_state(int node) const;
     void remove_node(int root_node);
 
     get_elements_t get_elements;
-    tick_focus_t tick_focus;
 
     VectorMap<Node> nodes;
     int root_node_;
@@ -125,8 +125,8 @@ private:
     std::size_t max_depth_;
     int iteration;
 
-    int node_held;
-    int node_focused;
+    int node_held_;
+    int node_focused_;
 };
 
 } // namespace datagui

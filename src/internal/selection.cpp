@@ -84,7 +84,21 @@ void selection_key_event(
         switch (event.key_value) {
             case KeyValue::LeftArrow:
             {
-                if (selection.span() > 0 && !event.key_shift) {
+                if (event.key_ctrl) {
+                    if (selection.end == 0) {
+                        return;
+                    }
+                    selection.end--;
+                    while (selection.end != 0 && !std::isalnum(text[selection.end-1])) {
+                        selection.end--;
+                    }
+                    while (selection.end != 0 && std::isalnum(text[selection.end-1])) {
+                        selection.end--;
+                    }
+                    if (!event.key_shift) {
+                        selection.begin = selection.end;
+                    }
+                } else if (selection.span() > 0 && !event.key_shift) {
                     selection.reset(selection.from());
                 } else if (selection.end != 0) {
                     selection.end--;
@@ -96,7 +110,21 @@ void selection_key_event(
             }
             case KeyValue::RightArrow:
             {
-                if (selection.span() > 0 && !event.key_shift) {
+                if (event.key_ctrl) {
+                    if (selection.end == text.size()) {
+                        return;
+                    }
+                    selection.end++;
+                    while (selection.end != text.size() && !std::isalnum(text[selection.end])) {
+                        selection.end++;
+                    }
+                    while (selection.end != text.size() && std::isalnum(text[selection.end])) {
+                        selection.end++;
+                    }
+                    if (!event.key_shift) {
+                        selection.begin = selection.end;
+                    }
+                } else if (selection.span() > 0 && !event.key_shift) {
                     selection.reset(selection.to());
                 } else if (selection.end != text.size()) {
                     selection.end++;
@@ -118,9 +146,24 @@ void selection_key_event(
                     selection.reset(selection.from());
 
                 } else if (selection.begin > 0) {
-                    selection.begin--;
-                    text.erase(text.begin() + selection.begin);
-                    selection.end = selection.begin;
+                    if (event.key_ctrl) {
+                        int pos = selection.begin-1;
+                        while (pos != 0 && !std::isalnum(text[pos])) {
+                            pos--;
+                        }
+                        while (pos != 0 && std::isalnum(text[pos])) {
+                            pos--;
+                        }
+                        text.erase(pos, selection.begin - pos);
+                        selection.reset(pos);
+                    if (!event.key_shift) {
+                        selection.begin = selection.end;
+                    }
+                    } else {
+                        selection.begin--;
+                        text.erase(text.begin() + selection.begin);
+                        selection.end = selection.begin;
+                    }
                 }
                 break;
             }

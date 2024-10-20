@@ -87,8 +87,6 @@ private:
 
     void delete_element(Element element, int index);
     ElementSystem& get_elements(const Node& node);
-
-    void tick_focus(const Node& node);
     void event_handling();
 
     const Config config;

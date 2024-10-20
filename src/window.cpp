@@ -58,10 +58,7 @@ Window::Window(const Config& config, const Style& style):
     style(style),
     window(nullptr),
     window_size(Vecf::Zero()),
-    tree(
-        std::bind(&Window::get_elements, this, _1),
-        std::bind(&Window::tick_focus, this, _1)
-    ),
+    tree(std::bind(&Window::get_elements, this, _1)),
     buttons(style, font),
     checkboxes(style, font),
     linear_layouts(style),
@@ -294,48 +291,44 @@ void Window::event_handling() {
     if (events.mouse.action == GLFW_RELEASE) {
         tree.mouse_release(mouse_pos);
     }
-    tree.tick(mouse_pos);
-
-    events.reset();
-}
-
-void Window::tick_focus(const Node& node) {
-    if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
-        KeyValue key;
-
-        switch (events.key.key) {
-            case GLFW_KEY_TAB:
-                tree.focus_next();
-                return;
-            case GLFW_KEY_ESCAPE:
-                tree.focus_leave(false);
-                return;
-            case GLFW_KEY_ENTER:
-                key = KeyValue::Enter;
-                break;
-            case GLFW_KEY_LEFT:
-                key = KeyValue::LeftArrow;
-                break;
-            case GLFW_KEY_RIGHT:
-                key = KeyValue::RightArrow;
-                break;
-            case GLFW_KEY_BACKSPACE:
-                key = KeyValue::Backspace;
-                break;
-            default:
-                return;
+    if (tree.node_held() != -1) {
+        const auto& node = tree[tree.node_held()];
+        get_elements(node).held(node, mouse_pos);
+    }
+    if (events.key.action == GLFW_PRESS && events.key.key == GLFW_KEY_TAB) {
+        tree.focus_next();
+    }
+    if (tree.node_focused() != -1) {
+        const auto& node = tree[tree.node_focused()];
+        if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
+            bool shift = events.key.mods & 1<<0;
+            bool ctrl = events.key.mods & 1<<1;
+            switch (events.key.key) {
+                case GLFW_KEY_ESCAPE:
+                    tree.focus_leave(false);
+                    break;
+                case GLFW_KEY_ENTER:
+                    get_elements(node).key_event(node, KeyEvent::key(KeyValue::Enter, shift, ctrl));
+                    break;
+                case GLFW_KEY_LEFT:
+                    get_elements(node).key_event(node, KeyEvent::key(KeyValue::LeftArrow, shift, ctrl));
+                    break;
+                case GLFW_KEY_RIGHT:
+                    get_elements(node).key_event(node, KeyEvent::key(KeyValue::RightArrow, shift, ctrl));
+                    break;
+                case GLFW_KEY_BACKSPACE:
+                    get_elements(node).key_event(node, KeyEvent::key(KeyValue::Backspace, shift, ctrl));
+                    break;
+                default:
+                    break;
+            }
+        } else if (events.text.received) {
+            get_elements(node).key_event(node, KeyEvent::text(events.text.character));
         }
 
-        bool shift = events.key.mods & 1<<0;
-        bool ctrl = events.key.mods & 1<<1;
-
-        get_elements(node).key_event(node, KeyEvent::key(key, shift, ctrl));
-        return;
     }
 
-    if (events.text.received) {
-        get_elements(node).key_event(node, KeyEvent::text(events.text.character));
-    }
+    events.reset();
 }
 
 } // namespace datagui
