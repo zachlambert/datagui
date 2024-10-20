@@ -19,10 +19,17 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-    src/font.cpp
-    src/geometry_renderer.cpp
-    src/shader.cpp
-    src/text_renderer.cpp
+    src/element/button.cpp
+    src/element/checkbox.cpp
+    src/element/linear_layout.cpp
+    src/element/text.cpp
+    src/element/text_input.cpp
+    src/internal/geometry_renderer.cpp
+    src/internal/selection.cpp
+    src/internal/shader.cpp
+    src/internal/text.cpp
+    src/internal/text_renderer.cpp
+    src/internal/tree.cpp
     src/window.cpp
 )
 target_link_libraries(datagui

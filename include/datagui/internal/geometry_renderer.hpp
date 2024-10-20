@@ -12,13 +12,12 @@ public:
     GeometryRenderer();
     void init();
 
-    void queue_box(float depth, const Boxf& box, const Color& color, float border_width, Color border_color, float radius = 0.f);
+    void queue_box(const Boxf& box, const Color& color, float border_width, Color border_color, float radius = 0.f);
 
     void render(const Vecf& viewport_size);
 
 private:
     struct BoxCommand {
-        int depth;
         Boxi box;
         Color color;
     };
@@ -35,7 +34,6 @@ private:
     struct Element {
         Vecf offset;
         Vecf size;
-        float depth;
         float radius;
         float border_width;
         Color bg_color;

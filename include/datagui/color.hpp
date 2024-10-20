@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 namespace datagui {
 
 struct Color {
@@ -33,6 +35,15 @@ struct Color {
     }
     static Color Clear() {
         return Color(0, 0, 0, 0);
+    }
+
+    bool equals(const Color& other, float max_error = 1e-6) const {
+        float error = 1;
+        error = std::max(error, std::abs(r - other.r));
+        error = std::max(error, std::abs(g - other.g));
+        error = std::max(error, std::abs(b - other.b));
+        error = std::max(error, std::abs(a - other.a));
+        return error <= max_error;
     }
 };
 

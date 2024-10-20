@@ -1,9 +1,8 @@
-#include "datagui/geometry_renderer.hpp"
+#include "datagui/internal/geometry_renderer.hpp"
 #include <string>
 #include <array>
 #include <GL/glew.h>
-#include <iostream>
-#include "datagui/shader.hpp"
+#include "datagui/internal/shader.hpp"
 
 
 namespace datagui {
@@ -15,11 +14,10 @@ const static std::string rect_vs = R"(
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 offset;
 layout(location = 2) in vec2 size;
-layout(location = 3) in float depth;
-layout(location = 4) in float radius;
-layout(location = 5) in float border_width;
-layout(location = 6) in vec4 bg_color;
-layout(location = 7) in vec4 border_color;
+layout(location = 3) in float radius;
+layout(location = 4) in float border_width;
+layout(location = 5) in vec4 bg_color;
+layout(location = 6) in vec4 border_color;
 
 uniform vec2 viewport_size;
 
@@ -33,7 +31,11 @@ out vec4 fs_border_color;
 
 void main(){
     fs_pos = offset + vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
-    gl_Position = vec4(-1 + 2*fs_pos.x/viewport_size.x, 1 - 2*fs_pos.y/viewport_size.y, depth, 1);
+    gl_Position = vec4(
+        -1 + 2*fs_pos.x/viewport_size.x,
+        1 - 2*fs_pos.y/viewport_size.y,
+        0,
+        1);
 
     fs_box_lower = offset;
     fs_box_upper = offset + size;
@@ -143,14 +145,6 @@ void GeometryRenderer::init() {
 
     glVertexAttribPointer(
         index, 1, GL_FLOAT, GL_FALSE, sizeof(Element),
-        (void*)offsetof(Element, depth)
-    );
-    glVertexAttribDivisor(index, 1);
-    glEnableVertexAttribArray(index);
-    index++;
-
-    glVertexAttribPointer(
-        index, 1, GL_FLOAT, GL_FALSE, sizeof(Element),
         (void*)offsetof(Element, radius)
     );
     glVertexAttribDivisor(index, 1);
@@ -184,12 +178,11 @@ void GeometryRenderer::init() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void GeometryRenderer::queue_box(float depth, const Boxf& box, const Color& color, float border_width, Color border_color, float radius) {
+void GeometryRenderer::queue_box(const Boxf& box, const Color& color, float border_width, Color border_color, float radius) {
     Element element;
     element.offset = box.lower;
     element.size = box.size();
     element.radius = radius;
-    element.depth = depth;
     element.bg_color = color;
     element.border_width = border_width;
     element.border_color= border_color;
