@@ -102,7 +102,7 @@ public:
 
     void mouse_press(const Vecf& mouse_pos);
     void mouse_release(const Vecf& mouse_pos);
-    void focus_next();
+    void focus_next(bool reverse=false);
     void focus_leave(bool success);
 
     int node_held() const { return node_held_; }

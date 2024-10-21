@@ -52,36 +52,36 @@ public:
     void render_end();
 
     bool vertical_layout(
-        const std::string& key,
         float width=0,
-        float height=0);
+        float height=0,
+        const std::string& key = "");
 
     bool horizontal_layout(
-        const std::string& key,
         float width=0,
-        float height=0);
+        float height=0,
+        const std::string& key = "");
 
     void layout_end();
 
     void text(
-        const std::string& key,
         const std::string& text,
-        float max_width = 0);
+        float max_width = 0,
+        const std::string& key = "");
 
     bool button(
-        const std::string& key,
         const std::string& text,
-        float max_width = 0);
+        float max_width = 0,
+        const std::string& key = "");
 
     const bool* checkbox(
-        const std::string& key);
+        const std::string& key = "");
 
     const std::string* text_input(
-        const std::string& key,
         const std::string& default_text = "",
-        float max_width = -1);
+        float max_width = -1,
+        const std::string& key = "");
 
-    void hidden(const std::string& key);
+    void hidden(const std::string& key = "");
 
 private:
     void open();

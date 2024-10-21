@@ -79,7 +79,23 @@ void selection_key_event(
     bool editable,
     const KeyEvent& event)
 {
-    if (!event.is_text) {
+    if (event.is_text) {
+        if (!editable) {
+            return;
+        }
+
+        if (selection.span() > 0) {
+            text.erase(
+                text.begin() + selection.from(),
+                text.begin() + selection.to());
+            selection.reset(selection.from());
+        }
+
+        text.insert(text.begin() + selection.begin, event.text_value);
+        selection.begin++;
+        selection.end = selection.begin;
+
+    } else if (!event.key_release) {
         switch (event.key_value) {
             case KeyValue::LeftArrow:
             {
@@ -169,100 +185,8 @@ void selection_key_event(
             default:
                 break;
         }
-    } else {
-        if (!editable) {
-            return;
-        }
-
-        if (selection.span() > 0) {
-            text.erase(
-                text.begin() + selection.from(),
-                text.begin() + selection.to());
-            selection.reset(selection.from());
-        }
-
-        text.insert(text.begin() + selection.begin, event.text_value);
-        selection.begin++;
-        selection.end = selection.begin;
     }
 }
-
-#if 0
-void selection_input_key(
-    std::string& text,
-    TextSelection& selection,
-    int key,
-    int mods,
-    bool editable)
-{
-    switch (key) {
-        case GLFW_KEY_LEFT:
-        {
-            if (selection.span() > 0 && mods != 1) {
-                selection.reset(selection.from());
-            } else if (selection.end != 0) {
-                selection.end--;
-                if (mods != 1) {
-                    selection.begin = selection.end;
-                }
-            }
-            break;
-        }
-        case GLFW_KEY_RIGHT:
-        {
-            if (selection.span() > 0 && mods != 1) {
-                selection.reset(selection.to());
-            } else if (selection.end != text.size()) {
-                selection.end++;
-                if (mods != 1) {
-                    selection.begin = selection.end;
-                }
-            }
-            break;
-        }
-        case GLFW_KEY_BACKSPACE:
-        {
-            if (!editable) {
-                break;
-            }
-            if (selection.span() > 0) {
-                text.erase(
-                    text.begin() + selection.from(),
-                    text.begin() + selection.to());
-                selection.reset(selection.from());
-
-            } else if (selection.begin > 0) {
-                selection.begin--;
-                text.erase(text.begin() + selection.begin);
-                selection.end = selection.begin;
-            }
-            break;
-        }
-    }
-}
-
-void selection_input_char(
-    std::string& text,
-    TextSelection& selection,
-    char character,
-    bool editable)
-{
-    if (!editable) {
-        return;
-    }
-
-    if (selection.span() > 0) {
-        text.erase(
-            text.begin() + selection.from(),
-            text.begin() + selection.to());
-        selection.reset(selection.from());
-    }
-
-    text.insert(text.begin() + selection.begin, character);
-    selection.begin++;
-    selection.end = selection.begin;
-}
-#endif
 
 void render_selection(
     const Style& style,

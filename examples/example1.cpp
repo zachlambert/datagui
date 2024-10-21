@@ -12,37 +12,37 @@ int main() {
 
     while (window.running()) {
         window.render_begin();
-        if (window.vertical_layout("")) {
-            window.text("", "Line 1");
-            window.text("", "Line 2");
-            if (window.button("", "Click me!")) {
+        if (window.vertical_layout()) {
+            window.text("Line 1");
+            window.text("Line 2");
+            if (window.button("Click me!")) {
                 std::cout << "Clicked!" << std::endl;
             }
-            if (window.horizontal_layout("")) {
-                if (auto value = window.checkbox("")) {
+            if (window.horizontal_layout()) {
+                if (auto value = window.checkbox()) {
                     checkbox1 = *value;
                     std::cout << "Toggle -> " << (*value ? "on" : "off") << std::endl;
                 }
-                window.text("", "Toggle me!");
+                window.text("Toggle me!");
                 window.layout_end();
             }
             if (checkbox1) {
-                window.text("", "Hello");
+                window.text("Hello");
             } else {
                 window.hidden("");
             }
-            if (auto value = window.text_input("", "min input", 0)) {
+            if (auto value = window.text_input("min input", 0)) {
                 std::cout << "Input 1 changed -> " << *value << std::endl;
             }
-            if (auto value = window.text_input("", "expand input", -1)) {
+            if (auto value = window.text_input("expand input", -1)) {
                 std::cout << "Input 2 changed -> " << *value << std::endl;
             }
-            if (auto value = window.text_input("", "finite input", 200)) {
+            if (auto value = window.text_input("finite input", 200)) {
                 text3 = *value;
                 std::cout << "Input 3 changed -> " << *value << std::endl;
             }
             if (!text3.empty()) {
-                if (window.button(text3, text3)) {
+                if (window.button(text3, 0, text3)) {
                     std::cout << "Clicked another button" << std::endl;
                 }
             } else {

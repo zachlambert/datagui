@@ -178,9 +178,9 @@ ElementSystem& Window::get_elements(const Node& node) {
 }
 
 bool Window::vertical_layout(
-    const std::string& key,
     float length,
-    float width)
+    float width,
+    const std::string& key)
 {
     int node = tree.next(key, Element::LinearLayout, [&]() {
         return linear_layouts.create(length, width, LayoutDirection::Vertical);
@@ -193,9 +193,9 @@ bool Window::vertical_layout(
 }
 
 bool Window::horizontal_layout(
-    const std::string& key,
     float length,
-    float width)
+    float width,
+    const std::string& key)
 {
     int node = tree.next(key, Element::LinearLayout, [&]() {
         return linear_layouts.create(length, width, LayoutDirection::Horizontal);
@@ -212,9 +212,9 @@ void Window::layout_end() {
 }
 
 void Window::text(
-    const std::string& key,
     const std::string& text,
-    float max_width)
+    float max_width,
+    const std::string& key)
 {
     tree.next(key, Element::Text, [&](){
         return texts.create(text, max_width);
@@ -222,9 +222,9 @@ void Window::text(
 }
 
 bool Window::button(
-    const std::string& key,
     const std::string& text,
-    float max_width)
+    float max_width,
+    const std::string& key)
 {
     int node = tree.next(key, Element::Button, [&](){
         return buttons.create(text, max_width);
@@ -243,9 +243,9 @@ const bool* Window::checkbox(const std::string& key) {
 }
 
 const std::string* Window::text_input(
-    const std::string& key,
     const std::string& default_text,
-    float max_width)
+    float max_width,
+    const std::string& key)
 {
     int node = tree.next(key, Element::TextInput, [&](){
         return text_inputs.create(max_width, default_text);
@@ -313,13 +313,14 @@ void Window::event_handling() {
         }
     }
     if (events.key.action == GLFW_PRESS && events.key.key == GLFW_KEY_TAB) {
-        tree.focus_next();
+        tree.focus_next(events.key.mods & (1<<0));
     }
     if (tree.node_focused() != -1) {
         auto& node = tree[tree.node_focused()];
-        if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
+        if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT || events.key.action == GLFW_RELEASE) {
             bool shift = events.key.mods & 1<<0;
             bool ctrl = events.key.mods & 1<<1;
+            bool release = events.key.action == GLFW_RELEASE;
             bool changed = false;
             switch (events.key.key) {
                 case GLFW_KEY_ESCAPE:
@@ -328,22 +329,22 @@ void Window::event_handling() {
                 case GLFW_KEY_ENTER:
                     changed = get_elements(node).key_event(
                         node,
-                        KeyEvent::key(KeyValue::Enter, shift, ctrl));
+                        KeyEvent::key(KeyValue::Enter, release, shift, ctrl));
                     break;
                 case GLFW_KEY_LEFT:
                     changed = get_elements(node).key_event(
                         node,
-                        KeyEvent::key(KeyValue::LeftArrow, shift, ctrl));
+                        KeyEvent::key(KeyValue::LeftArrow, release, shift, ctrl));
                     break;
                 case GLFW_KEY_RIGHT:
                     changed = get_elements(node).key_event(
                         node,
-                        KeyEvent::key(KeyValue::RightArrow, shift, ctrl));
+                        KeyEvent::key(KeyValue::RightArrow, release, shift, ctrl));
                     break;
                 case GLFW_KEY_BACKSPACE:
                     changed = get_elements(node).key_event(
                         node,
-                        KeyEvent::key(KeyValue::Backspace, shift, ctrl));
+                        KeyEvent::key(KeyValue::Backspace, release, shift, ctrl));
                     break;
                 default:
                     break;

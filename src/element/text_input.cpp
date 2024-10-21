@@ -106,7 +106,7 @@ bool TextInputSystem::focus_leave(const Node& node, bool success) {
 bool TextInputSystem::key_event(const Node& node, const KeyEvent& event) {
     auto& element = elements[node.element_index];
 
-    if (!event.is_text && event.key_value == KeyValue::Enter) {
+    if (!event.is_text && !event.key_release && event.key_value == KeyValue::Enter) {
         if (element.initial_text != element.text) {
             element.initial_text = element.text;
             return true;

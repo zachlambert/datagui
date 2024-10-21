@@ -57,7 +57,7 @@ bool CheckboxSystem::release(const Node& node, const Vecf& mouse_pos) {
 
 bool CheckboxSystem::key_event(const Node& node, const KeyEvent& event) {
     auto& element = elements[node.element_index];
-    if (!event.is_text && event.key_value == KeyValue::Enter) {
+    if (!event.is_text && event.key_release && event.key_value == KeyValue::Enter) {
         element.checked = !element.checked;
         return true;
     }

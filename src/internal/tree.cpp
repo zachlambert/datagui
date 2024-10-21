@@ -323,40 +323,48 @@ void Tree::mouse_release(const Vecf& mouse_pos) {
     node_held_ = -1;
 }
 
-void Tree::focus_next() {
+void Tree::focus_next(bool reverse) {
+    if (root_node_ == -1) {
+        return;
+    }
     int next = node_focused_;
 
     do {
-        if (next == -1) {
-            next = root_node_;
-        } else if (nodes[next].first_child != -1) {
-            // 1. If not focused on a leaf node, change to the first encountered
-            // leaf node (depth first)
-            while (nodes[next].first_child != -1) {
+        if (!reverse) {
+            if (next == -1) {
+                next = root_node_;
+            } else if (nodes[next].first_child != -1) {
                 next = nodes[next].first_child;
-            }
-        } else if (nodes[next].next != -1) {
-            // 2. If there is an immediate neighbour, change to this
-            next = nodes[next].next;
-        } else {
-            // 3. No immediate neighbour, so two steps:
-            // - Move up the tree until reaching a node with a next, or reaching
-            //   the root node
-            // - Move down the tree to the first leaf node in that subtree
-            while (nodes[next].next == -1) {
-                next = nodes[next].parent;
-                if (next == -1) {
-                    break;
+            } else if (nodes[next].next != -1) {
+                next = nodes[next].next;
+            } else {
+                while (next != -1 && nodes[next].next == -1) {
+                    next = nodes[next].parent;
+                }
+                if (next != -1) {
+                    next = nodes[next].next;
                 }
             }
-            if (next != -1) {
-                next = nodes[next].next;
-                while (nodes[next].first_child != -1) {
-                    next = nodes[next].first_child;
+        } else {
+            if (next == -1) {
+                next = root_node_;
+                while (nodes[next].last_child != -1) {
+                    next = nodes[next].last_child;
+                }
+            } else if (nodes[next].prev == -1) {
+                next = nodes[next].parent;
+            } else {
+                next = nodes[next].prev;
+                while (nodes[next].last_child != -1) {
+                    next = nodes[next].last_child;
                 }
             }
         }
-    } while(next != -1 && nodes[next].hidden);
+    } while(next != -1 && next != root_node_ && nodes[next].hidden);
+
+    if (next == root_node_ && nodes[root_node_].hidden) {
+        next = -1;
+    }
 
     if (node_focused_ != -1) {
         auto& prev_focused = nodes[node_focused_];

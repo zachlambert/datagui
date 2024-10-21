@@ -39,14 +39,16 @@ enum class KeyValue {
 struct KeyEvent {
     bool is_text; // else is_char
     KeyValue key_value;
+    bool key_release; // else press
     bool key_shift;
     bool key_ctrl;
     char text_value;
 
-    static KeyEvent key(KeyValue key, bool shift, bool ctrl) {
+    static KeyEvent key(KeyValue key, bool release, bool shift, bool ctrl) {
         KeyEvent event;
         event.is_text = false;
         event.key_value = key;
+        event.key_release = release;
         event.key_shift = shift;
         event.key_ctrl = ctrl;
         return event;
