@@ -13,13 +13,11 @@ struct TextInput {
     float max_width;
     std::string initial_text;
     std::string text;
-    bool changed;
 
     TextInput(float max_width, const std::string& default_text):
         max_width(max_width),
         initial_text(default_text),
-        text(default_text),
-        changed(false)
+        text(default_text)
     {}
 };
 
@@ -41,13 +39,9 @@ public:
         elements.pop(index);
     }
 
-    const std::string* query(const Node& node) {
+    const std::string* value(const Node& node) {
         auto& element = elements[node.element_index];
-        if (element.changed) {
-            element.changed = false;
-            return &element.text;
-        }
-        return nullptr;
+        return &element.text;
     }
 
     void calculate_size_components(
@@ -59,17 +53,11 @@ public:
         const NodeState& state,
         Renderers& renderers) const override;
 
-    void press(
-        const Node& node,
-        const Vecf& mouse_pos) override;
-
-    void held(
-        const Node& node,
-        const Vecf& mouse_pos) override;
-
-    void focus_enter(const Node& node) override;
-    void focus_leave(const Node& node, bool success) override;
-    void key_event(const Node& node, const KeyEvent& event) override;
+    bool press(const Node& node, const Vecf& mouse_pos) override;
+    bool held(const Node& node, const Vecf& mouse_pos) override;
+    bool focus_enter(const Node& node) override;
+    bool focus_leave(const Node& node, bool success) override;
+    bool key_event(const Node& node, const KeyEvent& event) override;
 
 private:
     const Style& style;

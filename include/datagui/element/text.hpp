@@ -45,16 +45,10 @@ public:
         const NodeState& state,
         Renderers& renderers) const override;
 
-    void press(
-        const Node& node,
-        const Vecf& mouse_pos) override;
-
-    void held(
-        const Node& node,
-        const Vecf& mouse_pos) override;
-
-    void focus_enter(const Node& node) override;
-    void key_event(const Node& node, const KeyEvent& event) override;
+    bool press(const Node& node, const Vecf& mouse_pos) override;
+    bool held(const Node& node, const Vecf& mouse_pos) override;
+    bool focus_enter(const Node& node) override;
+    bool key_event(const Node& node, const KeyEvent& event) override;
 
 private:
     const Style& style;

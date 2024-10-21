@@ -11,11 +11,9 @@ namespace datagui {
 
 struct Checkbox {
     bool checked;
-    bool changed;
 
     Checkbox(bool default_checked):
-        checked(default_checked),
-        changed(false)
+        checked(default_checked)
     {}
 };
 
@@ -37,13 +35,9 @@ public:
         elements.pop(index);
     }
 
-    const bool* query(const Node& node) {
+    const bool* value(const Node& node) {
         auto& element = elements[node.element_index];
-        if (element.changed) {
-            element.changed = false;
-            return &element.checked;
-        }
-        return nullptr;
+        return &element.checked;
     }
 
     void calculate_size_components(
@@ -55,11 +49,8 @@ public:
         const NodeState& state,
         Renderers& renderers) const override;
 
-    void release(
-        const Node& node,
-        const Vecf& mouse_pos) override;
-
-    void key_event(const Node& node, const KeyEvent& event) override;
+    bool release(const Node& node, const Vecf& mouse_pos) override;
+    bool key_event(const Node& node, const KeyEvent& event) override;
 
 private:
     const Style& style;

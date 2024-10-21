@@ -41,6 +41,7 @@ int Tree::down(
             iter = nodes[iter].next;
         }
     } else if (root_node_ != -1) {
+        nodes[root_node_].reset(iteration);
         active_nodes.push(root_node_);
         max_depth_ = std::max<int>(max_depth_, active_nodes.size());
         return root_node_;
@@ -71,18 +72,26 @@ int Tree::down(
     return node;
 }
 
-void Tree::up() {
+void Tree::up(bool skipped) {
     if (active_nodes.empty()) {
         throw std::runtime_error("Called end too many times");
     }
 
+    if (skipped) {
+        active_nodes.pop();
+        return;
+    }
+
     // Remove nodes that weren't visited this iteration
 
-    int iter = nodes[active_nodes.top()].first_child;
+    auto& node = nodes[active_nodes.top()];
+    int iter = node.first_child;
     while (iter != -1) {
         int next = nodes[iter].next;
         if (nodes[iter].iteration != iteration) {
             remove_node(iter);
+        } else {
+            nodes[iter].changed = false;
         }
         iter = next;
     }
@@ -135,6 +144,7 @@ void Tree::end(const Vecf& root_size) {
     if (root_node_ == -1) {
         return;
     }
+    nodes[root_node_].changed = false;
 
     // Calculate size components
     {
@@ -207,14 +217,6 @@ void Tree::render(Renderers& renderers) {
         stack.pop();
 
         get_elements(node).render(node, node_state(node_index), renderers);
-        if (node_focused_ == node_index) {
-            renderers.geometry.queue_box(
-                Boxf(node.origin, node.origin+node.size),
-                Color(1, 0, 0, 0.2),
-                0,
-                Color::Black(),
-                0);
-        }
 
         if (node.first_child == -1) {
             continue;
@@ -250,13 +252,17 @@ void Tree::mouse_press(const Vecf& mouse_pos) {
         }
     }
 
-    const auto& node = nodes[node_pressed];
-    get_elements(node).press(node, mouse_pos);
+    auto& node = nodes[node_pressed];
+    if (get_elements(node).press(node, mouse_pos)) {
+        node_changed(node);
+    }
 
     node_held_ = node_pressed;
     if (node_focused_ != -1 && node_pressed != node_focused_) {
-        const auto& released = nodes[node_focused_];
-        get_elements(released).focus_leave(released, true);
+        auto& released = nodes[node_focused_];
+        if (get_elements(released).focus_leave(released, true)) {
+            node_changed(released);
+        }
     }
     node_focused_ = node_pressed;
 }
@@ -265,9 +271,11 @@ void Tree::mouse_release(const Vecf& mouse_pos) {
     if (node_held_ == -1) {
         return;
     }
-    const auto& node = nodes[node_held_];
+    auto& node = nodes[node_held_];
     if (Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
-        get_elements(node).release(node, mouse_pos);
+        if (get_elements(node).release(node, mouse_pos)) {
+            node_changed(node);
+        }
     }
     node_held_ = -1;
 }
@@ -306,12 +314,16 @@ void Tree::focus_next() {
     }
 
     if (node_focused_ != -1) {
-        const auto& prev_focused = nodes[node_focused_];
-        get_elements(prev_focused).focus_leave(prev_focused, true);
+        auto& prev_focused = nodes[node_focused_];
+        if (get_elements(prev_focused).focus_leave(prev_focused, true)) {
+            node_changed(prev_focused);
+        }
     }
     if (next != -1) {
-        const auto& new_focused = nodes[next];
-        get_elements(new_focused).focus_enter(new_focused);
+        auto& new_focused = nodes[next];
+        if (get_elements(new_focused).focus_enter(new_focused)) {
+            node_changed(new_focused);
+        }
     }
 
     node_focused_ = next;
@@ -321,8 +333,10 @@ void Tree::focus_leave(bool success) {
     if (node_focused_ == -1) {
         return;
     }
-    const auto& node = nodes[node_focused_];
-    get_elements(node).focus_leave(node, success);
+    auto& node = nodes[node_focused_];
+    if (get_elements(node).focus_leave(node, success)) {
+        node_changed(node);
+    }
     node_focused_ = -1;
 }
 
@@ -331,6 +345,15 @@ NodeState Tree::node_state(int node) const {
     state.held = (node == node_held_);
     state.focused = (node == node_focused_);
     return state;
+}
+
+void Tree::node_changed(Node& node) {
+    node.changed = true;
+    int iter = node.parent;
+    while (iter != -1) {
+        nodes[iter].changed = true;
+        iter = nodes[iter].parent;
+    }
 }
 
 } // namespace datagui

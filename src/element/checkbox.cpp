@@ -45,18 +45,19 @@ void CheckboxSystem::render(
     );
 }
 
-void CheckboxSystem::release(const Node& node, const Vecf& mouse_pos) {
+bool CheckboxSystem::release(const Node& node, const Vecf& mouse_pos) {
     auto& element = elements[node.element_index];
     element.checked = !element.checked;
-    element.changed = true;
+    return true;
 }
 
-void CheckboxSystem::key_event(const Node& node, const KeyEvent& event) {
+bool CheckboxSystem::key_event(const Node& node, const KeyEvent& event) {
     auto& element = elements[node.element_index];
     if (!event.is_text && event.key_value == KeyValue::Enter) {
         element.checked = !element.checked;
-        element.changed = true;
+        return true;
     }
+    return false;
 }
 
 } // namespace datagui

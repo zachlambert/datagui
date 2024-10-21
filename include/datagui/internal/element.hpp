@@ -28,21 +28,21 @@ public:
 
     virtual void pop(int index) = 0;
 
-    virtual void press(
+    virtual bool press(
         const Node& node,
-        const Vecf& mouse_pos) {}
+        const Vecf& mouse_pos) { return false; }
 
-    virtual void release(
+    virtual bool release(
         const Node& node,
-        const Vecf& mouse_pos) {}
+        const Vecf& mouse_pos) { return false; }
 
-    virtual void held(
+    virtual bool held(
         const Node& node,
-        const Vecf& mouse_pos) {}
+        const Vecf& mouse_pos) { return false; }
 
-    virtual void focus_enter(const Node& node) {};
-    virtual void focus_leave(const Node& node, bool success) {};
-    virtual void key_event(const Node& node, const KeyEvent& event) {};
+    virtual bool focus_enter(const Node& node) { return false; };
+    virtual bool focus_leave(const Node& node, bool success) { return false; };
+    virtual bool key_event(const Node& node, const KeyEvent& event) { return false; };
 };
 
 } // namespace datagui

@@ -52,7 +52,7 @@ void TextSystem::render(
     );
 }
 
-void TextSystem::press(const Node& node, const Vecf& mouse_pos) {
+bool TextSystem::press(const Node& node, const Vecf& mouse_pos) {
     const auto& element = elements[node.element_index];
     text_selection.reset(find_cursor(
         font,
@@ -60,9 +60,10 @@ void TextSystem::press(const Node& node, const Vecf& mouse_pos) {
         element.max_width,
         mouse_pos - node.origin
     ));
+    return false;
 }
 
-void TextSystem::held(const Node& node, const Vecf& mouse_pos) {
+bool TextSystem::held(const Node& node, const Vecf& mouse_pos) {
     const auto& element = elements[node.element_index];
     text_selection.end = find_cursor(
         font,
@@ -70,15 +71,18 @@ void TextSystem::held(const Node& node, const Vecf& mouse_pos) {
         element.max_width,
         mouse_pos - node.origin
     );
+    return false;
 }
 
-void TextSystem::focus_enter(const Node& node) {
+bool TextSystem::focus_enter(const Node& node) {
     text_selection.reset(0);
+    return false;
 }
 
-void TextSystem::key_event(const Node& node, const KeyEvent& event) {
+bool TextSystem::key_event(const Node& node, const KeyEvent& event) {
     auto& element = elements[node.element_index];
     selection_key_event(element.text, text_selection, false, event);
+    return false;
 }
 
 } // namespace datagui

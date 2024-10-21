@@ -178,28 +178,38 @@ ElementSystem& Window::get_elements(const Node& node) {
     return buttons;
 }
 
-void Window::vertical_layout(
+bool Window::vertical_layout(
     const std::string& key,
     float length,
     float width)
 {
-    tree.down(key, Element::LinearLayout, [&]() {
+    int node = tree.down(key, Element::LinearLayout, [&]() {
         return linear_layouts.create(length, width, LayoutDirection::Vertical);
     });
+    if (tree[node].changed) {
+        return true;
+    }
+    tree.up(true);
+    return false;
 }
 
-void Window::horizontal_layout(
+bool Window::horizontal_layout(
     const std::string& key,
     float length,
     float width)
 {
-    tree.down(key, Element::LinearLayout, [&]() {
+    int node = tree.down(key, Element::LinearLayout, [&]() {
         return linear_layouts.create(length, width, LayoutDirection::Horizontal);
     });
+    if (tree[node].changed) {
+        return true;
+    }
+    tree.up(true);
+    return false;
 }
 
 void Window::layout_end() {
-    tree.up();
+    tree.up(false);
 }
 
 void Window::text(
@@ -210,7 +220,7 @@ void Window::text(
     tree.down(key, Element::Text, [&](){
         return texts.create(text, max_width);
     });
-    tree.up();
+    tree.up(false);
 }
 
 bool Window::button(
@@ -221,16 +231,19 @@ bool Window::button(
     int node = tree.down(key, Element::Button, [&](){
         return buttons.create(text, max_width);
     });
-    tree.up();
-    return buttons.query(tree[node]);
+    tree.up(false);
+    return tree[node].changed;
 }
 
 const bool* Window::checkbox(const std::string& key) {
     int node = tree.down(key, Element::Checkbox, [&](){
         return checkboxes.create(false);
     });
-    tree.up();
-    return checkboxes.query(tree[node]);
+    tree.up(false);
+    if (tree[node].changed) {
+        return checkboxes.value(tree[node]);
+    }
+    return nullptr;
 }
 
 const std::string* Window::text_input(
@@ -241,8 +254,11 @@ const std::string* Window::text_input(
     int node = tree.down(key, Element::TextInput, [&](){
         return text_inputs.create(max_width, default_text);
     });
-    tree.up();
-    return text_inputs.query(tree[node]);
+    tree.up(false);
+    if (tree[node].changed) {
+        return text_inputs.value(tree[node]);
+    }
+    return nullptr;
 }
 
 void Window::render_begin() {
@@ -292,38 +308,57 @@ void Window::event_handling() {
         tree.mouse_release(mouse_pos);
     }
     if (tree.node_held() != -1) {
-        const auto& node = tree[tree.node_held()];
-        get_elements(node).held(node, mouse_pos);
+        auto& node = tree[tree.node_held()];
+        if (get_elements(node).held(node, mouse_pos)) {
+            tree.node_changed(node);
+        }
     }
     if (events.key.action == GLFW_PRESS && events.key.key == GLFW_KEY_TAB) {
         tree.focus_next();
     }
     if (tree.node_focused() != -1) {
-        const auto& node = tree[tree.node_focused()];
+        auto& node = tree[tree.node_focused()];
         if (events.key.action == GLFW_PRESS || events.key.action == GLFW_REPEAT) {
             bool shift = events.key.mods & 1<<0;
             bool ctrl = events.key.mods & 1<<1;
+            bool changed = false;
             switch (events.key.key) {
                 case GLFW_KEY_ESCAPE:
                     tree.focus_leave(false);
                     break;
                 case GLFW_KEY_ENTER:
-                    get_elements(node).key_event(node, KeyEvent::key(KeyValue::Enter, shift, ctrl));
+                    changed = get_elements(node).key_event(
+                        node,
+                        KeyEvent::key(KeyValue::Enter, shift, ctrl));
                     break;
                 case GLFW_KEY_LEFT:
-                    get_elements(node).key_event(node, KeyEvent::key(KeyValue::LeftArrow, shift, ctrl));
+                    changed = get_elements(node).key_event(
+                        node,
+                        KeyEvent::key(KeyValue::LeftArrow, shift, ctrl));
                     break;
                 case GLFW_KEY_RIGHT:
-                    get_elements(node).key_event(node, KeyEvent::key(KeyValue::RightArrow, shift, ctrl));
+                    changed = get_elements(node).key_event(
+                        node,
+                        KeyEvent::key(KeyValue::RightArrow, shift, ctrl));
                     break;
                 case GLFW_KEY_BACKSPACE:
-                    get_elements(node).key_event(node, KeyEvent::key(KeyValue::Backspace, shift, ctrl));
+                    changed = get_elements(node).key_event(
+                        node,
+                        KeyEvent::key(KeyValue::Backspace, shift, ctrl));
                     break;
                 default:
                     break;
             }
+            if (changed) {
+                tree.node_changed(node);
+            }
         } else if (events.text.received) {
-            get_elements(node).key_event(node, KeyEvent::text(events.text.character));
+            bool changed = get_elements(node).key_event(
+                node,
+                KeyEvent::text(events.text.character));
+            if (changed) {
+                tree.node_changed(node);
+            }
         }
 
     }

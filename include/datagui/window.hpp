@@ -51,12 +51,12 @@ public:
     void render_begin();
     void render_end();
 
-    void vertical_layout(
+    bool vertical_layout(
         const std::string& key,
         float width=0,
         float height=0);
 
-    void horizontal_layout(
+    bool horizontal_layout(
         const std::string& key,
         float width=0,
         float height=0);

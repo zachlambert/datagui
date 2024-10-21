@@ -13,12 +13,10 @@ namespace datagui {
 struct Button {
     std::string text;
     float max_width;
-    bool clicked;
 
     Button(const std::string& text, float max_width):
         text(text),
-        max_width(max_width),
-        clicked(false)
+        max_width(max_width)
     {}
 };
 
@@ -40,15 +38,6 @@ public:
         elements.pop(index);
     }
 
-    bool query(const Node& node) {
-        auto& element = elements[node.element_index];
-        if (element.clicked) {
-            element.clicked = false;
-            return true;
-        }
-        return false;
-    }
-
     void calculate_size_components(
         Node& node,
         const Tree& tree) const override;
@@ -58,11 +47,8 @@ public:
         const NodeState& state,
         Renderers& renderers) const override;
 
-    void release(
-        const Node& node,
-        const Vecf& mouse_pos) override;
-
-    void key_event(const Node& node, const KeyEvent& event) override;
+    bool release(const Node& node, const Vecf& mouse_pos) override;
+    bool key_event(const Node& node, const KeyEvent& event) override;
 
 private:
     const Style& style;

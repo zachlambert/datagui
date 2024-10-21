@@ -61,7 +61,7 @@ void TextInputSystem::render(
     );
 }
 
-void TextInputSystem::press(const Node& node, const Vecf& mouse_pos) {
+bool TextInputSystem::press(const Node& node, const Vecf& mouse_pos) {
     const auto& element = elements[node.element_index];
     Vecf text_origin = node.origin + Vecf::Constant(
         style.element.border_width + style.element.padding);
@@ -71,9 +71,10 @@ void TextInputSystem::press(const Node& node, const Vecf& mouse_pos) {
         element.max_width,
         mouse_pos - text_origin
     ));
+    return false;
 }
 
-void TextInputSystem::held(const Node& node, const Vecf& mouse_pos) {
+bool TextInputSystem::held(const Node& node, const Vecf& mouse_pos) {
     const auto& element = elements[node.element_index];
     Vecf text_origin = node.origin + Vecf::Constant(
         style.element.border_width + style.element.padding);
@@ -83,33 +84,37 @@ void TextInputSystem::held(const Node& node, const Vecf& mouse_pos) {
         element.max_width,
         mouse_pos - text_origin
     );
+    return false;
 }
 
-void TextInputSystem::focus_enter(const Node& node) {
+bool TextInputSystem::focus_enter(const Node& node) {
     text_selection.reset(0);
+    return false;
 }
 
-void TextInputSystem::focus_leave(const Node& node, bool success) {
+bool TextInputSystem::focus_leave(const Node& node, bool success) {
     auto& element = elements[node.element_index];
     if (!success) {
         element.text = element.initial_text;
     } else if (element.initial_text != element.text) {
         element.initial_text = element.text;
-        element.changed = true;
+        return true;
     }
+    return false;
 }
 
-void TextInputSystem::key_event(const Node& node, const KeyEvent& event) {
+bool TextInputSystem::key_event(const Node& node, const KeyEvent& event) {
     auto& element = elements[node.element_index];
 
     if (!event.is_text && event.key_value == KeyValue::Enter) {
         if (element.initial_text != element.text) {
             element.initial_text = element.text;
-            element.changed = true;
+            return true;
         }
     } else {
         selection_key_event(element.text, text_selection, true, event);
     }
+    return false;
 }
 
 } // namespace datagui

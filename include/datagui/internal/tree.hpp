@@ -50,6 +50,9 @@ struct Node {
     Vecf origin;
     Vecf size;
 
+    // State
+    bool changed;
+
     Node(const std::string& key, Element element, int depth, int parent, int iteration):
         key(key),
         element(element),
@@ -64,7 +67,8 @@ struct Node {
         fixed_size(Vecf::Zero()),
         dynamic_size(Vecf::Zero()),
         origin(Vecf::Zero()),
-        size(Vecf::Zero())
+        size(Vecf::Zero()),
+        changed(true)
     {}
 
     void reset(int iteration) {
@@ -89,7 +93,7 @@ public:
         const std::string& key,
         Element element,
         const construct_element_t& construct_element);
-    void up();
+    void up(bool skipped);
     void end(const Vecf& root_size);
 
     void render(Renderers& renderers);
@@ -105,13 +109,15 @@ public:
     std::size_t max_depth() const { return max_depth_; }
     int root_node() const { return root_node_; }
 
-    void mouse_press(const Vecf& pos);
-    void mouse_release(const Vecf& pos);
+    void mouse_press(const Vecf& mouse_pos);
+    void mouse_release(const Vecf& mouse_pos);
     void focus_next();
     void focus_leave(bool success);
 
     int node_held() const { return node_held_; }
     int node_focused() const { return node_focused_; }
+
+    void node_changed(Node& node);
 
 private:
     NodeState node_state(int node) const;

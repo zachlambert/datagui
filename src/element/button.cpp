@@ -40,16 +40,16 @@ void ButtonSystem::render(
     );
 }
 
-void ButtonSystem::release(const Node& node, const Vecf& mouse_pos) {
-    auto& element = elements[node.element_index];
-    element.clicked = true;
+bool ButtonSystem::release(const Node& node, const Vecf& mouse_pos) {
+    return true;
 }
 
-void ButtonSystem::key_event(const Node& node, const KeyEvent& event) {
+bool ButtonSystem::key_event(const Node& node, const KeyEvent& event) {
     auto& element = elements[node.element_index];
     if (!event.is_text && event.key_value == KeyValue::Enter) {
-        element.clicked = true;
+        return true;
     }
+    return false;
 }
 
 } // namespace datagui
