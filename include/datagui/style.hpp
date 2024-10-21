@@ -20,16 +20,17 @@ struct Style {
     };
 
     struct Element {
-        Color bg_color = Color::White();
+        Color bg_color = Color::Gray(0.8);
         float padding = 4;
         float border_width = 4;
         Color border_color = Color::Black();
         Color focus_color = Color(0, 1, 1);
-        Color hovered_bg_color = Color::Gray(0.75);
+        Color hovered_bg_color = Color::Gray(0.65);
         Color pressed_bg_color = Color::Gray(0.5);
     };
 
     struct TextInput {
+        Color bg_color = Color::White();
         int cursor_width = 2;
         float cursor_blink_period = 0.5;
         Color cursor_color = Color::Gray(0.25);

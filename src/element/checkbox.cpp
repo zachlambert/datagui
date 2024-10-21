@@ -19,12 +19,16 @@ void CheckboxSystem::render(
         state.held
         ? style.element.pressed_bg_color
         : style.element.bg_color;
+    const Color& border_color =
+        state.focused
+            ? style.element.focus_color
+            : style.element.border_color;
 
     renderers.geometry.queue_box(
         Boxf(node.origin, node.origin+node.size),
         bg_color,
         style.element.border_width,
-        style.element.border_color,
+        border_color,
         0
     );
 

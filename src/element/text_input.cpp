@@ -29,7 +29,7 @@ void TextInputSystem::render(
 
     renderers.geometry.queue_box(
         Boxf(node.origin, node.origin+node.size),
-        style.element.bg_color,
+        style.text_input.bg_color,
         style.element.border_width,
         state.focused
             ? style.element.focus_color

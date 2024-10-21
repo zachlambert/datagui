@@ -22,13 +22,23 @@ void TextSystem::render(
 {
     const auto& element = elements[node.element_index];
 
-    renderers.geometry.queue_box(
-        Boxf(node.origin, node.origin+node.size),
-        Color::Clear(),
-        0,
-        Color::Black(),
-        0
-    );
+    if (state.focused) {
+        renderers.geometry.queue_box(
+            Boxf(node.origin, node.origin+node.size),
+            Color::Clear(),
+            style.element.border_width,
+            style.element.focus_color,
+            0
+        );
+    } else {
+        renderers.geometry.queue_box(
+            Boxf(node.origin, node.origin+node.size),
+            Color::Clear(),
+            0,
+            Color::Black(),
+            0
+        );
+    }
 
     if (state.focused) {
         render_selection(

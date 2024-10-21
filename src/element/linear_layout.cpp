@@ -134,11 +134,16 @@ void LinearLayoutSystem::render(
     const NodeState& state,
     Renderers& renderers) const
 {
+    const Color& border_color =
+        state.focused
+            ? style.element.focus_color
+            : style.element.border_color;
+
     renderers.geometry.queue_box(
         Boxf(node.origin, node.origin+node.size),
         Color::Clear(),
         style.element.border_width,
-        style.element.border_color,
+        border_color,
         0
     );
 }

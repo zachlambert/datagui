@@ -326,35 +326,37 @@ void Tree::mouse_release(const Vecf& mouse_pos) {
 void Tree::focus_next() {
     int next = node_focused_;
 
-    if (next == -1) {
-        next = root_node_;
-    } else if (nodes[next].first_child != -1) {
-        // 1. If not focused on a leaf node, change to the first encountered
-        // leaf node (depth first)
-        while (nodes[next].first_child != -1) {
-            next = nodes[next].first_child;
-        }
-    } else if (nodes[next].next != -1) {
-        // 2. If there is an immediate neighbour, change to this
-        next = nodes[next].next;
-    } else {
-        // 3. No immediate neighbour, so two steps:
-        // - Move up the tree until reaching a node with a next, or reaching
-        //   the root node
-        // - Move down the tree to the first leaf node in that subtree
-        while (nodes[next].next == -1) {
-            next = nodes[next].parent;
-            if (next == -1) {
-                break;
-            }
-        }
-        if (next != -1) {
-            next = nodes[next].next;
+    do {
+        if (next == -1) {
+            next = root_node_;
+        } else if (nodes[next].first_child != -1) {
+            // 1. If not focused on a leaf node, change to the first encountered
+            // leaf node (depth first)
             while (nodes[next].first_child != -1) {
                 next = nodes[next].first_child;
             }
+        } else if (nodes[next].next != -1) {
+            // 2. If there is an immediate neighbour, change to this
+            next = nodes[next].next;
+        } else {
+            // 3. No immediate neighbour, so two steps:
+            // - Move up the tree until reaching a node with a next, or reaching
+            //   the root node
+            // - Move down the tree to the first leaf node in that subtree
+            while (nodes[next].next == -1) {
+                next = nodes[next].parent;
+                if (next == -1) {
+                    break;
+                }
+            }
+            if (next != -1) {
+                next = nodes[next].next;
+                while (nodes[next].first_child != -1) {
+                    next = nodes[next].first_child;
+                }
+            }
         }
-    }
+    } while(next != -1 && nodes[next].hidden);
 
     if (node_focused_ != -1) {
         auto& prev_focused = nodes[node_focused_];
