@@ -15,6 +15,7 @@ enum class Element {
     Button,
     Checkbox,
     LinearLayout,
+    Selection,
     Text,
     TextInput
 };

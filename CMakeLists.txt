@@ -22,6 +22,7 @@ add_library(datagui SHARED
     src/element/button.cpp
     src/element/checkbox.cpp
     src/element/linear_layout.cpp
+    src/element/selection.cpp
     src/element/text.cpp
     src/element/text_input.cpp
     src/internal/geometry_renderer.cpp

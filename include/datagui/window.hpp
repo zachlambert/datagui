@@ -20,6 +20,7 @@
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
 #include "datagui/element/linear_layout.hpp"
+#include "datagui/element/selection.hpp"
 #include "datagui/element/text.hpp"
 #include "datagui/element/text_input.hpp"
 
@@ -80,6 +81,12 @@ public:
         float max_width = -1,
         const std::string& key = "");
 
+    const int* selection(
+        const std::vector<std::string>& choices,
+        int default_choice = 0,
+        float max_width = -1,
+        const std::string& key = "");
+
     void hidden(const std::string& key = "");
 
 private:
@@ -102,6 +109,7 @@ private:
     ButtonSystem buttons;
     CheckboxSystem checkboxes;
     LinearLayoutSystem linear_layouts;
+    SelectionSystem selections;
     TextSystem texts;
     TextInputSystem text_inputs;
 };

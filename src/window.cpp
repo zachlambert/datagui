@@ -58,11 +58,12 @@ Window::Window(const Config& config, const Style& style):
     window(nullptr),
     window_size(Vecf::Zero()),
     tree(std::bind(&Window::get_elements, this, _1)),
-    buttons(style, font),
-    checkboxes(style, font),
-    linear_layouts(style),
-    texts(style, font),
-    text_inputs(style, font)
+    buttons(this->style, font),
+    checkboxes(this->style, font),
+    linear_layouts(this->style),
+    selections(this->style, font),
+    texts(this->style, font),
+    text_inputs(this->style, font)
 {
     open();
 }
@@ -145,6 +146,9 @@ void Window::delete_element(Element element, int element_index) {
         case Element::LinearLayout:
             linear_layouts.pop(element_index);
             break;
+        case Element::Selection:
+            selections.pop(element_index);
+            break;
         case Element::Text:
             texts.pop(element_index);
             break;
@@ -164,6 +168,9 @@ ElementSystem& Window::get_elements(const Node& node) {
             break;
         case Element::LinearLayout:
             return linear_layouts;
+            break;
+        case Element::Selection:
+            return selections;
             break;
         case Element::Text:
             return texts;
@@ -252,6 +259,21 @@ const std::string* Window::text_input(
     });
     if (tree[node].changed) {
         return text_inputs.value(tree[node]);
+    }
+    return nullptr;
+}
+
+const int* Window::selection(
+    const std::vector<std::string>& choices,
+    int default_choice,
+    float max_width,
+    const std::string& key)
+{
+    int node = tree.next(key, Element::Selection, [&](){
+        return selections.create(choices, default_choice, max_width);
+    });
+    if (tree[node].changed) {
+        return selections.value(tree[node]);
     }
     return nullptr;
 }

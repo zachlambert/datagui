@@ -48,6 +48,14 @@ int main() {
             } else {
                 window.checkbox("");
             }
+            static const std::vector<std::string> choices = {"red", "green", "blue"};
+            if (auto value = window.selection(choices)) {
+                if (*value == -1) {
+                    std::cout << "Selection -> <none>" << std::endl;
+                } else {
+                    std::cout << "Selection -> " << choices[*value] << std::endl;
+                }
+            }
             window.layout_end();
         }
         window.render_end();
