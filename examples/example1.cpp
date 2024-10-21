@@ -8,6 +8,7 @@ int main() {
 
     datagui::Window window(config, style);
     bool checkbox1 = false;
+    std::string text3;
 
     while (window.running()) {
         window.render_begin();
@@ -37,7 +38,15 @@ int main() {
                 std::cout << "Input 2 changed -> " << *value << std::endl;
             }
             if (auto value = window.text_input("", "finite input", 200)) {
+                text3 = *value;
                 std::cout << "Input 3 changed -> " << *value << std::endl;
+            }
+            if (!text3.empty()) {
+                if (window.button(text3, text3)) {
+                    std::cout << "Clicked another button" << std::endl;
+                }
+            } else {
+                window.checkbox("");
             }
             window.layout_end();
         }

@@ -208,7 +208,7 @@ bool Window::horizontal_layout(
 }
 
 void Window::layout_end() {
-    tree.up(false);
+    tree.up();
 }
 
 void Window::text(

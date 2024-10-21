@@ -43,9 +43,9 @@ struct Node {
     int last_child;
 
     // Layout calculation
-    int iteration;
     Vecf fixed_size;
     Vecf dynamic_size;
+    bool floating;
     Vecf origin;
     Vecf size;
 
@@ -53,7 +53,7 @@ struct Node {
     bool changed;
     bool hidden;
 
-    Node(const std::string& key, Element element, int parent, int iteration):
+    Node(const std::string& key, Element element, int parent):
         key(key),
         element(element),
         element_index(-1),
@@ -62,23 +62,14 @@ struct Node {
         next(-1),
         first_child(-1),
         last_child(-1),
-        iteration(iteration),
         fixed_size(Vecf::Zero()),
         dynamic_size(Vecf::Zero()),
+        floating(false),
         origin(Vecf::Zero()),
         size(Vecf::Zero()),
         changed(true),
         hidden(false)
     {}
-
-    void reset(int iteration) {
-        this->iteration = iteration;
-        fixed_size = Vecf::Zero();
-        dynamic_size = Vecf::Zero();
-        origin = Vecf::Zero();
-        size = Vecf::Zero();
-        hidden = false;
-    }
 };
 
 class Tree {
@@ -95,7 +86,7 @@ public:
         Element element,
         const construct_element_t& construct_element);
     void down();
-    void up(bool skipped);
+    void up();
     void end(const Vecf& root_size);
 
     void render(Renderers& renderers);
@@ -132,8 +123,8 @@ private:
 
     VectorMap<Node> nodes;
     int root_node_;
-    std::stack<int> active_nodes;
-    int iteration;
+    int parent;
+    int current;
 
     int node_held_;
     int node_focused_;

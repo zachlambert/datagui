@@ -1,6 +1,7 @@
 #include "datagui/internal/tree.hpp"
 #include "datagui/exception.hpp"
 #include <assert.h>
+#include <iostream>
 
 
 namespace datagui {
@@ -9,13 +10,15 @@ Tree::Tree(
         const get_elements_t& get_elements):
     get_elements(get_elements),
     root_node_(-1),
-    iteration(0),
+    parent(-1),
+    current(-1),
     node_held_(-1),
     node_focused_(-1)
 {}
 
 void Tree::begin() {
-    iteration++;
+    parent = -1;
+    current = -1;
 }
 
 int Tree::next(
@@ -23,88 +26,84 @@ int Tree::next(
     Element element,
     const construct_element_t& construct_element)
 {
-    if (active_nodes.empty()) {
+    if (parent == -1) {
         if (!key.empty()) {
             throw WindowError("Root node must be unnamed");
         }
-        if (root_node_ == -1) {
-            root_node_ = nodes.emplace(key, element, -1, iteration);
-            nodes[root_node_].element_index = construct_element();
-        }  else if (nodes[root_node_].iteration == iteration) {
-            throw WindowError(
-                "Visited the root node twice during the same iteration");
+        if (current != -1) {
+            throw WindowError("Root node was visited twice");
         }
-        return root_node_;
+        if (root_node_ == -1) {
+            root_node_ = nodes.emplace(key, element, -1);
+            nodes[root_node_].element_index = construct_element();
+        }
+        current = root_node_;
+        return current;
     }
 
-    int prev = active_nodes.top();
-    active_nodes.pop();
-    int parent = active_nodes.empty() ? root_node_ : active_nodes.top();
-    assert(parent != -1);
+    if (current != -1) {
+        nodes[current].changed = false;
+    }
+    int next = (current == -1) ? nodes[parent].first_child : nodes[current].next;
+    int iter = next;
 
-    int node = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
-
-    while (node != -1) {
-        if (key == nodes[node].key) {
-            // Either both are unnamed (empty key) or named with the same key
+    while (iter != -1) {
+        if (key == nodes[iter].key) {
             break;
         }
-        node = nodes[node].next;
+        iter = nodes[iter].next;
     }
 
-    if (node == -1) {
-        node = create_node(key, element, parent, prev);
+    if (iter == -1) {
+        current = create_node(key, element, parent, current);
         if (construct_element) {
-            nodes[node].element_index = construct_element();
+            nodes[current].element_index = construct_element();
         } else {
-            nodes[node].hidden = true;
+            nodes[current].hidden = true;
         }
     } else {
-        nodes[node].reset(iteration);
-        if (nodes[node].element_index == -1 && construct_element) {
-            nodes[node].element = element;
-            nodes[node].element_index = construct_element();
-        } else if (!construct_element) {
-            nodes[node].hidden = true;
+        current = iter;
+        iter = next;
+        while (iter != -1 && iter != current) {
+            int next = nodes[iter].next;
+            remove_node(iter);
+            iter = next;
+        }
+        if (nodes[current].element_index == -1 && construct_element) {
+            nodes[current].element = element;
+            nodes[current].element_index = construct_element();
+            nodes[current].hidden = false;
+        } else {
+            nodes[current].hidden = !construct_element;
         }
     }
 
-    if (nodes[node].element_index == -1) {
-        nodes[node].hidden = true;
-    }
-    active_nodes.push(node);
-
-    return node;
+    return current;
 }
 
 void Tree::down() {
-    active_nodes.push(-1);
+    parent = current;
+    current = -1;
 }
 
-void Tree::up(bool skipped) {
-    if (active_nodes.empty()) {
-        throw std::runtime_error("Called end too many times");
+void Tree::up() {
+    if (parent == -1) {
+        throw WindowError("Called end too many times");
     }
 
-    if (skipped) {
-        active_nodes.pop();
-        return;
+    if (current != -1) {
+        nodes[current].changed = false;
     }
-
-    // Remove nodes that weren't visited this iteration
-
-    active_nodes.pop();
-    int parent = active_nodes.empty() ? root_node_ : active_nodes.top();
-    int iter = nodes[parent].first_child;
+    int next = current == -1 ? nodes[parent].first_child : nodes[current].next;
+    int iter = next;
     while (iter != -1) {
         int next = nodes[iter].next;
-        if (nodes[iter].iteration != iteration) {
-            remove_node(iter);
-        } else {
-            nodes[iter].changed = false;
-        }
+        remove_node(iter);
         iter = next;
     }
+
+    current = parent;
+    parent = nodes[current].parent;
 }
 
 int Tree::create_node(
@@ -113,7 +112,7 @@ int Tree::create_node(
     int parent,
     int prev)
 {
-    int node = nodes.emplace(key, element, parent, iteration);
+    int node = nodes.emplace(key, element, parent);
 
     nodes[node].prev = prev;
     int next = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
@@ -135,6 +134,7 @@ int Tree::create_node(
 void Tree::remove_node(int root_node) {
     std::stack<int> stack;
     stack.push(root_node);
+
     while (!stack.empty()) {
         int node_index = stack.top();
         const auto& node = nodes[node_index];
@@ -171,7 +171,7 @@ void Tree::remove_node(int root_node) {
 }
 
 void Tree::end(const Vecf& root_size) {
-    if (!active_nodes.empty()) {
+    if (parent != -1) {
         throw WindowError("Didn't call layout_... and layout_end the same number of times");
     }
     if (root_node_ == -1) {
