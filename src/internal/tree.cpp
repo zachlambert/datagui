@@ -1,5 +1,6 @@
 #include "datagui/internal/tree.hpp"
 #include "datagui/exception.hpp"
+#include <assert.h>
 
 
 namespace datagui {
@@ -8,7 +9,6 @@ Tree::Tree(
         const get_elements_t& get_elements):
     get_elements(get_elements),
     root_node_(-1),
-    max_depth_(0),
     iteration(0),
     node_held_(-1),
     node_focused_(-1)
@@ -16,60 +16,102 @@ Tree::Tree(
 
 void Tree::begin() {
     iteration++;
-    max_depth_ = 0;
 }
 
-int Tree::down(
+int Tree::next(
     const std::string& key,
     Element type,
     const construct_element_t& construct_element)
 {
-    int parent = active_nodes.empty() ? -1 : active_nodes.top();
-
-    if (parent != -1) {
-        int iter = nodes[parent].first_child;
-        while (iter != -1) {
-            if (nodes[iter].key == key) {
-                if (nodes[iter].iteration == iteration) {
-                    throw WindowError("Visited the same node twice during the same iteration");
-                }
-                nodes[iter].reset(iteration);
-                active_nodes.push(iter);
-                max_depth_ = std::max<int>(max_depth_, active_nodes.size());
-                return iter;
-            }
-            iter = nodes[iter].next;
+    if (active_nodes.empty()) {
+        if (root_node_ == -1) {
+            root_node_ = nodes.emplace(key, type, 0, -1, iteration);
+            nodes[root_node_].element_index = construct_element();
+        }  else if (nodes[root_node_].iteration == iteration) {
+            throw WindowError(
+                "Visited the root node twice during the same iteration");
         }
-    } else if (root_node_ != -1) {
-        nodes[root_node_].reset(iteration);
-        active_nodes.push(root_node_);
-        max_depth_ = std::max<int>(max_depth_, active_nodes.size());
         return root_node_;
     }
 
-    int depth = (parent == -1) ? 0 : nodes[parent].depth + 1;
-    int node = nodes.emplace(key, type, depth, parent, iteration);
+    int prev = active_nodes.top();
+    active_nodes.pop();
+    int parent = active_nodes.empty() ? root_node_ : active_nodes.top();
+    assert(parent != -1);
 
-    if (nodes.size() == 1) {
-        root_node_ = node;
-    }
+    int node = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
 
-    if (parent != -1) {
-        nodes[node].prev = nodes[parent].last_child;
-        if (nodes[parent].first_child == -1) {
-            nodes[parent].first_child = node;
-        } else {
-            nodes[nodes[parent].last_child].next = node;
+    while (node != prev) {
+        if (node == -1) {
+            node = nodes[parent].first_child;
+            continue;
         }
-        nodes[parent].last_child = node;
+        if (nodes[node].key == key) {
+            if (nodes[node].iteration == iteration) {
+                throw WindowError(
+                    "Visited the same node twice during the same iteration");
+            }
+            nodes[node].reset(iteration);
+            break;
+        }
+        node = nodes[node].next;
     }
 
-    nodes[node].element_index = construct_element();
+    if (node == prev) {
+        node = nodes.emplace(key, type, active_nodes.size()+1, parent, iteration);
+        nodes[node].element_index = construct_element();
+        nodes[node].prev = prev;
+        int next = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
+        nodes[node].next = next;
+
+        if (prev != -1) {
+            nodes[prev].next = node;
+        } else {
+            nodes[parent].first_child = node;
+        }
+        if (next != -1) {
+            nodes[next].prev = node;
+        } else {
+            nodes[parent].last_child = node;
+        }
+    }
 
     active_nodes.push(node);
-    max_depth_ = std::max<int>(max_depth_, active_nodes.size());
 
     return node;
+}
+
+void Tree::down() {
+    active_nodes.push(-1);
+}
+
+void Tree::retain(const std::string& key) {
+    if (active_nodes.empty()) {
+        if (root_node_ == -1 || nodes[root_node_].key != key) {
+            return;
+        }
+        nodes[root_node_].reset(iteration);
+        nodes[root_node_].hidden = true;
+        return;
+    }
+    int prev = active_nodes.top();
+    active_nodes.pop();
+    int parent = active_nodes.empty() ? root_node_ : active_nodes.top();
+    int node = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
+    while (node != prev) {
+        if (node == -1) {
+            node = nodes[parent].first_child;
+            continue;
+        }
+        if (nodes[node].key == key) {
+            nodes[node].reset(iteration);
+            nodes[node].hidden = true;
+            active_nodes.push(node);
+            return;
+        }
+        node = nodes[node].next;
+    }
+    active_nodes.push(prev);
 }
 
 void Tree::up(bool skipped) {
@@ -84,8 +126,9 @@ void Tree::up(bool skipped) {
 
     // Remove nodes that weren't visited this iteration
 
-    auto& node = nodes[active_nodes.top()];
-    int iter = node.first_child;
+    active_nodes.pop();
+    int parent = active_nodes.empty() ? root_node_ : active_nodes.top();
+    int iter = nodes[parent].first_child;
     while (iter != -1) {
         int next = nodes[iter].next;
         if (nodes[iter].iteration != iteration) {
@@ -95,8 +138,6 @@ void Tree::up(bool skipped) {
         }
         iter = next;
     }
-
-    active_nodes.pop();
 }
 
 void Tree::remove_node(int root_node) {
@@ -138,7 +179,7 @@ void Tree::remove_node(int root_node) {
 }
 
 void Tree::end(const Vecf& root_size) {
-    if (depth() != 0) {
+    if (!active_nodes.empty()) {
         throw WindowError("Didn't call layout_... and layout_end the same number of times");
     }
     if (root_node_ == -1) {
@@ -216,7 +257,9 @@ void Tree::render(Renderers& renderers) {
         const auto& node = nodes[stack.top()];
         stack.pop();
 
-        get_elements(node).render(node, node_state(node_index), renderers);
+        if (!node.hidden) {
+            get_elements(node).render(node, node_state(node_index), renderers);
+        }
 
         if (node.first_child == -1) {
             continue;

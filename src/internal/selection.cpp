@@ -1,6 +1,5 @@
 #include "datagui/internal/selection.hpp"
 #include <GLFW/glfw3.h>
-#include <iostream>
 
 
 namespace datagui {

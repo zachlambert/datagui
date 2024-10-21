@@ -7,6 +7,7 @@ int main() {
     datagui::Style style;
 
     datagui::Window window(config, style);
+    bool checkbox1 = false;
 
     while (window.running()) {
         window.render_begin();
@@ -18,10 +19,16 @@ int main() {
             }
             if (window.horizontal_layout("checkbox_layout")) {
                 if (auto value = window.checkbox("checkbox1")) {
+                    checkbox1 = *value;
                     std::cout << "Toggle -> " << (*value ? "on" : "off") << std::endl;
                 }
                 window.text("checkbox1_text", "Toggle me!");
                 window.layout_end();
+            }
+            if (checkbox1) {
+                window.text("Checkbox text", "Hello");
+            } else {
+                window.hidden("Checkbox text");
             }
             if (auto value = window.text_input("input1", "min input", 0)) {
                 std::cout << "Input 1 changed -> " << *value << std::endl;

@@ -3,11 +3,7 @@
 #include <array>
 #include <filesystem>
 #include <unordered_map>
-#include <stdexcept>
-#include <algorithm>
 #include <GL/glew.h>
-#include <optional>
-#include <iostream> // TEMP
 #include "datagui/internal/shader.hpp"
 #include "datagui/exception.hpp"
 
@@ -99,7 +95,7 @@ FontStructure load_font(Font font, int font_size) {
 
     FT_Library ft_library;
     if (FT_Init_FreeType(&ft_library) != 0) {
-        throw std::runtime_error("Failed to initialize freetype library");
+        throw InitializationError("Failed to initialize freetype library");
     }
 
     FT_Face ft_face;

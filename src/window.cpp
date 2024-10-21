@@ -2,7 +2,6 @@
 
 #include <GLFW/glfw3.h>
 #include <stack>
-#include <iostream>
 #include <cstring>
 #include <assert.h>
 #include "datagui/exception.hpp"
@@ -183,13 +182,13 @@ bool Window::vertical_layout(
     float length,
     float width)
 {
-    int node = tree.down(key, Element::LinearLayout, [&]() {
+    int node = tree.next(key, Element::LinearLayout, [&]() {
         return linear_layouts.create(length, width, LayoutDirection::Vertical);
     });
     if (tree[node].changed) {
+        tree.down();
         return true;
     }
-    tree.up(true);
     return false;
 }
 
@@ -198,13 +197,13 @@ bool Window::horizontal_layout(
     float length,
     float width)
 {
-    int node = tree.down(key, Element::LinearLayout, [&]() {
+    int node = tree.next(key, Element::LinearLayout, [&]() {
         return linear_layouts.create(length, width, LayoutDirection::Horizontal);
     });
     if (tree[node].changed) {
+        tree.down();
         return true;
     }
-    tree.up(true);
     return false;
 }
 
@@ -217,10 +216,9 @@ void Window::text(
     const std::string& text,
     float max_width)
 {
-    tree.down(key, Element::Text, [&](){
+    tree.next(key, Element::Text, [&](){
         return texts.create(text, max_width);
     });
-    tree.up(false);
 }
 
 bool Window::button(
@@ -228,18 +226,16 @@ bool Window::button(
     const std::string& text,
     float max_width)
 {
-    int node = tree.down(key, Element::Button, [&](){
+    int node = tree.next(key, Element::Button, [&](){
         return buttons.create(text, max_width);
     });
-    tree.up(false);
     return tree[node].changed;
 }
 
 const bool* Window::checkbox(const std::string& key) {
-    int node = tree.down(key, Element::Checkbox, [&](){
+    int node = tree.next(key, Element::Checkbox, [&](){
         return checkboxes.create(false);
     });
-    tree.up(false);
     if (tree[node].changed) {
         return checkboxes.value(tree[node]);
     }
@@ -251,14 +247,17 @@ const std::string* Window::text_input(
     const std::string& default_text,
     float max_width)
 {
-    int node = tree.down(key, Element::TextInput, [&](){
+    int node = tree.next(key, Element::TextInput, [&](){
         return text_inputs.create(max_width, default_text);
     });
-    tree.up(false);
     if (tree[node].changed) {
         return text_inputs.value(tree[node]);
     }
     return nullptr;
+}
+
+void Window::hidden(const std::string& key) {
+    tree.retain(key);
 }
 
 void Window::render_begin() {

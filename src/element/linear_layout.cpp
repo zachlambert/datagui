@@ -27,6 +27,12 @@ void LinearLayoutSystem::calculate_size_components(
         int count = 0;
         while (child_index != -1) {
             const auto& child = tree[child_index];
+
+            if (child.hidden) {
+                child_index = child.next;
+                continue;
+            }
+
             float child_fixed_a = element.direction == LayoutDirection::Horizontal
                 ? child.fixed_size.x : child.fixed_size.y;
             float child_dynamic_a = element.direction == LayoutDirection::Horizontal
@@ -52,6 +58,11 @@ void LinearLayoutSystem::calculate_size_components(
         int child_index = node.first_child;
         while (child_index != -1) {
             const auto& child = tree[child_index];
+            if (child.hidden) {
+                child_index = child.next;
+                continue;
+            }
+
             float child_fixed_b = element.direction == LayoutDirection::Horizontal
                 ? child.fixed_size.y : child.fixed_size.x;
             float child_dynamic_b = element.direction == LayoutDirection::Horizontal
@@ -85,6 +96,10 @@ void LinearLayoutSystem::calculate_child_dimensions(
     int child_index = node.first_child;
     while (child_index != -1) {
         auto& child = tree[child_index];
+        if (child.hidden) {
+            child_index = child.next;
+            continue;
+        }
 
         child.size = child.fixed_size;
 

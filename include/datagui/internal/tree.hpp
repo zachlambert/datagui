@@ -52,6 +52,7 @@ struct Node {
 
     // State
     bool changed;
+    bool hidden;
 
     Node(const std::string& key, Element element, int depth, int parent, int iteration):
         key(key),
@@ -68,7 +69,8 @@ struct Node {
         dynamic_size(Vecf::Zero()),
         origin(Vecf::Zero()),
         size(Vecf::Zero()),
-        changed(true)
+        changed(true),
+        hidden(false)
     {}
 
     void reset(int iteration) {
@@ -77,6 +79,7 @@ struct Node {
         dynamic_size = Vecf::Zero();
         origin = Vecf::Zero();
         size = Vecf::Zero();
+        hidden = false;
     }
 };
 
@@ -89,10 +92,12 @@ public:
 
     // Define the tree
     void begin();
-    int down(
+    int next(
         const std::string& key,
         Element element,
         const construct_element_t& construct_element);
+    void retain(const std::string& key);
+    void down();
     void up(bool skipped);
     void end(const Vecf& root_size);
 
@@ -105,8 +110,6 @@ public:
         return nodes[i];
     }
 
-    std::size_t depth() const { return active_nodes.size(); }
-    std::size_t max_depth() const { return max_depth_; }
     int root_node() const { return root_node_; }
 
     void mouse_press(const Vecf& mouse_pos);
@@ -128,7 +131,6 @@ private:
     VectorMap<Node> nodes;
     int root_node_;
     std::stack<int> active_nodes;
-    std::size_t max_depth_;
     int iteration;
 
     int node_held_;

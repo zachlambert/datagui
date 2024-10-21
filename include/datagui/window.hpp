@@ -81,6 +81,8 @@ public:
         const std::string& default_text = "",
         float max_width = -1);
 
+    void hidden(const std::string& key);
+
 private:
     void open();
     void close();
@@ -99,7 +101,6 @@ private:
     Renderers renderers;
 
     Tree tree;
-
     ButtonSystem buttons;
     CheckboxSystem checkboxes;
     LinearLayoutSystem linear_layouts;

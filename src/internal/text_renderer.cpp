@@ -2,7 +2,6 @@
 #include <string>
 #include <array>
 #include <GL/glew.h>
-#include <iostream>
 #include "datagui/internal/shader.hpp"
 
 
