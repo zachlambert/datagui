@@ -36,7 +36,6 @@ struct Node {
     int element_index;
 
     // Connectivity
-    int depth;
     int parent;
     int prev;
     int next;
@@ -54,11 +53,10 @@ struct Node {
     bool changed;
     bool hidden;
 
-    Node(const std::string& key, Element element, int depth, int parent, int iteration):
+    Node(const std::string& key, Element element, int parent, int iteration):
         key(key),
         element(element),
         element_index(-1),
-        depth(depth),
         parent(parent),
         prev(-1),
         next(-1),
@@ -96,7 +94,6 @@ public:
         const std::string& key,
         Element element,
         const construct_element_t& construct_element);
-    void retain(const std::string& key);
     void down();
     void up(bool skipped);
     void end(const Vecf& root_size);
@@ -124,6 +121,11 @@ public:
 
 private:
     NodeState node_state(int node) const;
+    int create_node(
+        const std::string& key,
+        Element element,
+        int parent,
+        int prev);
     void remove_node(int root_node);
 
     get_elements_t get_elements;

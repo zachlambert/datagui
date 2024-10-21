@@ -20,12 +20,15 @@ void Tree::begin() {
 
 int Tree::next(
     const std::string& key,
-    Element type,
+    Element element,
     const construct_element_t& construct_element)
 {
     if (active_nodes.empty()) {
+        if (!key.empty()) {
+            throw WindowError("Root node must be unnamed");
+        }
         if (root_node_ == -1) {
-            root_node_ = nodes.emplace(key, type, 0, -1, iteration);
+            root_node_ = nodes.emplace(key, element, -1, iteration);
             nodes[root_node_].element_index = construct_element();
         }  else if (nodes[root_node_].iteration == iteration) {
             throw WindowError(
@@ -41,41 +44,34 @@ int Tree::next(
 
     int node = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
 
-    while (node != prev) {
-        if (node == -1) {
-            node = nodes[parent].first_child;
-            continue;
-        }
-        if (nodes[node].key == key) {
-            if (nodes[node].iteration == iteration) {
-                throw WindowError(
-                    "Visited the same node twice during the same iteration");
-            }
-            nodes[node].reset(iteration);
+    while (node != -1) {
+        if (key == nodes[node].key) {
+            // Either both are unnamed (empty key) or named with the same key
             break;
         }
         node = nodes[node].next;
     }
 
-    if (node == prev) {
-        node = nodes.emplace(key, type, active_nodes.size()+1, parent, iteration);
-        nodes[node].element_index = construct_element();
-        nodes[node].prev = prev;
-        int next = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
-        nodes[node].next = next;
-
-        if (prev != -1) {
-            nodes[prev].next = node;
+    if (node == -1) {
+        node = create_node(key, element, parent, prev);
+        if (construct_element) {
+            nodes[node].element_index = construct_element();
         } else {
-            nodes[parent].first_child = node;
+            nodes[node].hidden = true;
         }
-        if (next != -1) {
-            nodes[next].prev = node;
-        } else {
-            nodes[parent].last_child = node;
+    } else {
+        nodes[node].reset(iteration);
+        if (nodes[node].element_index == -1 && construct_element) {
+            nodes[node].element = element;
+            nodes[node].element_index = construct_element();
+        } else if (!construct_element) {
+            nodes[node].hidden = true;
         }
     }
 
+    if (nodes[node].element_index == -1) {
+        nodes[node].hidden = true;
+    }
     active_nodes.push(node);
 
     return node;
@@ -83,35 +79,6 @@ int Tree::next(
 
 void Tree::down() {
     active_nodes.push(-1);
-}
-
-void Tree::retain(const std::string& key) {
-    if (active_nodes.empty()) {
-        if (root_node_ == -1 || nodes[root_node_].key != key) {
-            return;
-        }
-        nodes[root_node_].reset(iteration);
-        nodes[root_node_].hidden = true;
-        return;
-    }
-    int prev = active_nodes.top();
-    active_nodes.pop();
-    int parent = active_nodes.empty() ? root_node_ : active_nodes.top();
-    int node = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
-    while (node != prev) {
-        if (node == -1) {
-            node = nodes[parent].first_child;
-            continue;
-        }
-        if (nodes[node].key == key) {
-            nodes[node].reset(iteration);
-            nodes[node].hidden = true;
-            active_nodes.push(node);
-            return;
-        }
-        node = nodes[node].next;
-    }
-    active_nodes.push(prev);
 }
 
 void Tree::up(bool skipped) {
@@ -138,6 +105,31 @@ void Tree::up(bool skipped) {
         }
         iter = next;
     }
+}
+
+int Tree::create_node(
+    const std::string& key,
+    Element element,
+    int parent,
+    int prev)
+{
+    int node = nodes.emplace(key, element, parent, iteration);
+
+    nodes[node].prev = prev;
+    int next = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
+    nodes[node].next = next;
+
+    if (prev != -1) {
+        nodes[prev].next = node;
+    } else {
+        nodes[parent].first_child = node;
+    }
+    if (next != -1) {
+        nodes[next].prev = node;
+    } else {
+        nodes[parent].last_child = node;
+    }
+    return node;
 }
 
 void Tree::remove_node(int root_node) {
@@ -204,6 +196,11 @@ void Tree::end(const Vecf& root_size) {
             State& state = stack.top();
             Node& node = nodes[state.index];
 
+            if (node.hidden) {
+                stack.pop();
+                continue;
+            }
+
             // If the node has children, process these first
             if (node.first_child != -1 && state.first_visit) {
                 state.first_visit = false;
@@ -230,7 +227,7 @@ void Tree::end(const Vecf& root_size) {
             const auto& node = nodes[stack.top()];
             stack.pop();
 
-            if (node.first_child == -1) {
+            if (node.hidden || node.first_child == -1) {
                 continue;
             }
 
@@ -257,10 +254,10 @@ void Tree::render(Renderers& renderers) {
         const auto& node = nodes[stack.top()];
         stack.pop();
 
-        if (!node.hidden) {
-            get_elements(node).render(node, node_state(node_index), renderers);
+        if (node.hidden) {
+            continue;
         }
-
+        get_elements(node).render(node, node_state(node_index), renderers);
         if (node.first_child == -1) {
             continue;
         }
@@ -281,6 +278,9 @@ void Tree::mouse_press(const Vecf& mouse_pos) {
 
     while (true) {
         const auto& node = nodes[node_pressed];
+        if (node.hidden) {
+            break;
+        }
         int child_index = node.first_child;
         while (child_index != -1) {
             const auto& child = nodes[child_index];
@@ -315,7 +315,7 @@ void Tree::mouse_release(const Vecf& mouse_pos) {
         return;
     }
     auto& node = nodes[node_held_];
-    if (Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
+    if (!node.hidden && Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
         if (get_elements(node).release(node, mouse_pos)) {
             node_changed(node);
         }

@@ -257,7 +257,7 @@ const std::string* Window::text_input(
 }
 
 void Window::hidden(const std::string& key) {
-    tree.retain(key);
+    tree.next(key, Element::Button, nullptr);
 }
 
 void Window::render_begin() {

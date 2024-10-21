@@ -11,32 +11,32 @@ int main() {
 
     while (window.running()) {
         window.render_begin();
-        if (window.vertical_layout("div1")) {
-            window.text("text1", "Line 1");
-            window.text("text2", "Line 2");
-            if (window.button("button1", "Click me!")) {
+        if (window.vertical_layout("")) {
+            window.text("", "Line 1");
+            window.text("", "Line 2");
+            if (window.button("", "Click me!")) {
                 std::cout << "Clicked!" << std::endl;
             }
-            if (window.horizontal_layout("checkbox_layout")) {
-                if (auto value = window.checkbox("checkbox1")) {
+            if (window.horizontal_layout("")) {
+                if (auto value = window.checkbox("")) {
                     checkbox1 = *value;
                     std::cout << "Toggle -> " << (*value ? "on" : "off") << std::endl;
                 }
-                window.text("checkbox1_text", "Toggle me!");
+                window.text("", "Toggle me!");
                 window.layout_end();
             }
             if (checkbox1) {
-                window.text("Checkbox text", "Hello");
+                window.text("", "Hello");
             } else {
-                window.hidden("Checkbox text");
+                window.hidden("");
             }
-            if (auto value = window.text_input("input1", "min input", 0)) {
+            if (auto value = window.text_input("", "min input", 0)) {
                 std::cout << "Input 1 changed -> " << *value << std::endl;
             }
-            if (auto value = window.text_input("input2", "expand input", -1)) {
+            if (auto value = window.text_input("", "expand input", -1)) {
                 std::cout << "Input 2 changed -> " << *value << std::endl;
             }
-            if (auto value = window.text_input("input3", "finite input", 200)) {
+            if (auto value = window.text_input("", "finite input", 200)) {
                 std::cout << "Input 3 changed -> " << *value << std::endl;
             }
             window.layout_end();
