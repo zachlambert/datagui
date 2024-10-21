@@ -14,7 +14,6 @@
 #include "datagui/internal/vector_map.hpp"
 #include "datagui/internal/geometry_renderer.hpp"
 #include "datagui/internal/text_renderer.hpp"
-#include "datagui/internal/selection.hpp"
 #include "datagui/internal/tree.hpp"
 #include "datagui/internal/renderers.hpp"
 
@@ -97,7 +96,6 @@ private:
     Vecf window_size;
 
     FontStructure font;
-    TextSelection selection;
     Renderers renderers;
 
     Tree tree;

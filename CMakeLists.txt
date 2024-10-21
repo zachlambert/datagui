@@ -25,7 +25,7 @@ add_library(datagui SHARED
     src/element/text.cpp
     src/element/text_input.cpp
     src/internal/geometry_renderer.cpp
-    src/internal/selection.cpp
+    src/internal/text_selection.cpp
     src/internal/shader.cpp
     src/internal/text.cpp
     src/internal/text_renderer.cpp

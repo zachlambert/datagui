@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/geometry.hpp"
-#include "datagui/internal/selection.hpp"
+#include "datagui/internal/text_selection.hpp"
 
 
 namespace datagui {

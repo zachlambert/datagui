@@ -1,4 +1,4 @@
-#include "datagui/internal/selection.hpp"
+#include "datagui/internal/text_selection.hpp"
 #include <GLFW/glfw3.h>
 
 
