@@ -57,7 +57,6 @@ Window::Window(const Config& config, const Style& style):
     style(style),
     window(nullptr),
     window_size(Vecf::Zero()),
-    tree(std::bind(&Window::get_elements, this, _1)),
     buttons(this->style, font),
     checkboxes(this->style, font),
     linear_layouts(this->style),
@@ -65,6 +64,12 @@ Window::Window(const Config& config, const Style& style):
     texts(this->style, font),
     text_inputs(this->style, font)
 {
+    tree.register_element(Element::Button, buttons);
+    tree.register_element(Element::Checkbox, checkboxes);
+    tree.register_element(Element::LinearLayout, linear_layouts);
+    tree.register_element(Element::Selection, selections);
+    tree.register_element(Element::Text, texts);
+    tree.register_element(Element::TextInput, text_inputs);
     open();
 }
 
@@ -133,55 +138,6 @@ void Window::close() {
     glfwDestroyWindow(window);
     glfwTerminate();
     window = nullptr;
-}
-
-void Window::delete_element(Element element, int element_index) {
-    switch (element) {
-        case Element::Button:
-            buttons.pop(element_index);
-            break;
-        case Element::Checkbox:
-            checkboxes.pop(element_index);
-            break;
-        case Element::LinearLayout:
-            linear_layouts.pop(element_index);
-            break;
-        case Element::Selection:
-            selections.pop(element_index);
-            break;
-        case Element::Text:
-            texts.pop(element_index);
-            break;
-        case Element::TextInput:
-            text_inputs.pop(element_index);
-            break;
-    }
-}
-
-ElementSystem& Window::get_elements(const Node& node) {
-    switch (node.element) {
-        case Element::Button:
-            return buttons;
-            break;
-        case Element::Checkbox:
-            return checkboxes;
-            break;
-        case Element::LinearLayout:
-            return linear_layouts;
-            break;
-        case Element::Selection:
-            return selections;
-            break;
-        case Element::Text:
-            return texts;
-            break;
-        case Element::TextInput:
-            return text_inputs;
-            break;
-    }
-    assert(false);
-    throw WindowError("Unreachable code");
-    return buttons;
 }
 
 bool Window::vertical_layout(
@@ -330,7 +286,7 @@ void Window::event_handling() {
     }
     if (tree.node_held() != -1) {
         auto& node = tree[tree.node_held()];
-        if (get_elements(node).held(node, mouse_pos)) {
+        if (tree.get_elements(node).held(node, mouse_pos)) {
             tree.node_changed(node);
         }
     }
@@ -349,22 +305,22 @@ void Window::event_handling() {
                     tree.focus_leave(false);
                     break;
                 case GLFW_KEY_ENTER:
-                    changed = get_elements(node).key_event(
+                    changed = tree.get_elements(node).key_event(
                         node,
                         KeyEvent::key(KeyValue::Enter, release, shift, ctrl));
                     break;
                 case GLFW_KEY_LEFT:
-                    changed = get_elements(node).key_event(
+                    changed = tree.get_elements(node).key_event(
                         node,
                         KeyEvent::key(KeyValue::LeftArrow, release, shift, ctrl));
                     break;
                 case GLFW_KEY_RIGHT:
-                    changed = get_elements(node).key_event(
+                    changed = tree.get_elements(node).key_event(
                         node,
                         KeyEvent::key(KeyValue::RightArrow, release, shift, ctrl));
                     break;
                 case GLFW_KEY_BACKSPACE:
-                    changed = get_elements(node).key_event(
+                    changed = tree.get_elements(node).key_event(
                         node,
                         KeyEvent::key(KeyValue::Backspace, release, shift, ctrl));
                     break;
@@ -375,7 +331,7 @@ void Window::event_handling() {
                 tree.node_changed(node);
             }
         } else if (events.text.received) {
-            bool changed = get_elements(node).key_event(
+            bool changed = tree.get_elements(node).key_event(
                 node,
                 KeyEvent::text(events.text.character));
             if (changed) {

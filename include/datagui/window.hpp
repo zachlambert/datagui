@@ -92,9 +92,6 @@ public:
 private:
     void open();
     void close();
-
-    void delete_element(Element element, int index);
-    ElementSystem& get_elements(const Node& node);
     void event_handling();
 
     const Config config;

@@ -6,15 +6,38 @@
 
 namespace datagui {
 
-Tree::Tree(
-        const get_elements_t& get_elements):
-    get_elements(get_elements),
+Tree::Tree():
     root_node_(-1),
     parent(-1),
     current(-1),
     node_held_(-1),
     node_focused_(-1)
 {}
+
+void Tree::register_element(Element element, ElementSystem& system) {
+    if (element == Element::Undefined) {
+        throw InitializationError("Cannot register undefined element");
+    }
+    int index = (int)element - 1;
+    assert(index >= 0);
+    while (element_systems.size() < index+1) {
+        element_systems.push_back(nullptr);
+    }
+    if (element_systems[index] != nullptr) {
+        throw InitializationError("Registered the same element twice");
+    }
+    element_systems[index] = &system;
+}
+
+ElementSystem& Tree::get_elements(const Node& node) {
+    int type_index = int(node.element) - 1;
+    assert(node.element != Element::Undefined);
+    assert(type_index >= 0 && type_index < element_systems.size());
+
+    auto elements = element_systems[type_index];
+    assert(elements);
+    return *elements;
+}
 
 void Tree::begin() {
     parent = -1;
@@ -150,7 +173,9 @@ void Tree::remove_node(int root_node) {
             } else if (node.parent != -1) {
                 nodes[node.parent].last_child = node.prev;
             }
-            get_elements(node).pop(node.element_index);
+            if (node.element != Element::Undefined) {
+                get_elements(node).pop(node.element_index);
+            }
             nodes.pop(node_index);
 
             if (node_held_ == node_index) {
@@ -196,7 +221,7 @@ void Tree::end(const Vecf& root_size) {
             State& state = stack.top();
             Node& node = nodes[state.index];
 
-            if (node.hidden) {
+            if (node.hidden || node.element == Element::Undefined) {
                 stack.pop();
                 continue;
             }
@@ -227,7 +252,10 @@ void Tree::end(const Vecf& root_size) {
             const auto& node = nodes[stack.top()];
             stack.pop();
 
-            if (node.hidden || node.first_child == -1) {
+            if (node.first_child == -1) {
+                continue;
+            }
+            if (node.hidden || node.element == Element::Undefined) {
                 continue;
             }
 
@@ -254,7 +282,7 @@ void Tree::render(Renderers& renderers) {
         const auto& node = nodes[stack.top()];
         stack.pop();
 
-        if (node.hidden) {
+        if (node.hidden || node.element == Element::Undefined) {
             continue;
         }
         get_elements(node).render(node, node_state(node_index), renderers);
@@ -278,7 +306,8 @@ void Tree::mouse_press(const Vecf& mouse_pos) {
 
     while (true) {
         const auto& node = nodes[node_pressed];
-        if (node.hidden) {
+        if (node.hidden || node.element == Element::Undefined) {
+            node_pressed = -1;
             break;
         }
         int child_index = node.first_child;
@@ -295,9 +324,11 @@ void Tree::mouse_press(const Vecf& mouse_pos) {
         }
     }
 
-    auto& node = nodes[node_pressed];
-    if (get_elements(node).press(node, mouse_pos)) {
-        node_changed(node);
+    if (node_pressed != -1) {
+        auto& node = nodes[node_pressed];
+        if (get_elements(node).press(node, mouse_pos)) {
+            node_changed(node);
+        }
     }
 
     node_held_ = node_pressed;
@@ -315,12 +346,17 @@ void Tree::mouse_release(const Vecf& mouse_pos) {
         return;
     }
     auto& node = nodes[node_held_];
-    if (!node.hidden && Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
-        if (get_elements(node).release(node, mouse_pos)) {
-            node_changed(node);
-        }
-    }
     node_held_ = -1;
+
+    if (node.hidden || node.element == Element::Undefined) {
+        return;
+    }
+    if (!Boxf(node.origin, node.origin+node.size).contains(mouse_pos)) {
+        return;
+    }
+    if (get_elements(node).release(node, mouse_pos)) {
+        node_changed(node);
+    }
 }
 
 void Tree::focus_next(bool reverse) {
@@ -360,9 +396,14 @@ void Tree::focus_next(bool reverse) {
                 }
             }
         }
-    } while(next != -1 && next != root_node_ && nodes[next].hidden);
+    } while(next != -1
+            && next != root_node_
+            && (nodes[next].hidden || nodes[next].element == Element::Undefined));
 
-    if (next == root_node_ && nodes[root_node_].hidden) {
+    if (next == root_node_
+        && (nodes[root_node_].hidden
+            || nodes[root_node_].element == Element::Undefined))
+    {
         next = -1;
     }
 

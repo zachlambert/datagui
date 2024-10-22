@@ -12,6 +12,7 @@
 namespace datagui {
 
 enum class Element {
+    Undefined,
     Button,
     Checkbox,
     LinearLayout,
@@ -76,9 +77,9 @@ struct Node {
 class Tree {
 public:
     using construct_element_t = std::function<int()>;
-    using get_elements_t = std::function<ElementSystem&(const Node&)>;
 
-    Tree(const get_elements_t& get_elements);
+    Tree();
+    void register_element(Element element, ElementSystem& system);
 
     // Define the tree
     void begin();
@@ -111,6 +112,8 @@ public:
 
     void node_changed(Node& node);
 
+    ElementSystem& get_elements(const Node& node);
+
 private:
     NodeState node_state(int node) const;
     int create_node(
@@ -120,7 +123,7 @@ private:
         int prev);
     void remove_node(int root_node);
 
-    get_elements_t get_elements;
+    std::vector<ElementSystem*> element_systems;
 
     VectorMap<Node> nodes;
     int root_node_;
