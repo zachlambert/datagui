@@ -6,8 +6,8 @@
 namespace datagui {
 
 struct Renderers {
-    GeometryRenderer geometry;
-    TextRenderer text;
+  GeometryRenderer geometry;
+  TextRenderer text;
 };
 
 } // namespace datagui

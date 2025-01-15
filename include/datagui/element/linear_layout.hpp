@@ -1,60 +1,43 @@
 #pragma once
 
 #include "datagui/internal/element.hpp"
+#include "datagui/internal/tree.hpp"
 #include "datagui/internal/vector_map.hpp"
 #include "datagui/style.hpp"
-#include "datagui/internal/text.hpp"
-#include "datagui/internal/tree.hpp"
 
 namespace datagui {
 
-enum class LayoutDirection {
-    Horizontal,
-    Vertical
-};
+enum class LayoutDirection { Horizontal, Vertical };
 
 struct LinearLayout {
-    float length;
-    float width;
-    LayoutDirection direction;
+  float length;
+  float width;
+  LayoutDirection direction;
 
-    LinearLayout(float length, float width, LayoutDirection direction):
-        length(length), width(width), direction(direction)
-    {}
+  LinearLayout(float length, float width, LayoutDirection direction)
+      : length(length), width(width), direction(direction) {}
 };
 
-class LinearLayoutSystem: public ElementSystem {
+class LinearLayoutSystem : public ElementSystem {
 public:
-    LinearLayoutSystem(
-        const Style& style
-    ):
-        style(style)
-    {}
+  LinearLayoutSystem(const Style &style) : style(style) {}
 
-    int create(float length, float width, LayoutDirection direction) {
-        return elements.emplace(length, width, direction);
-    }
+  int create(float length, float width, LayoutDirection direction) {
+    return elements.emplace(length, width, direction);
+  }
 
-    void pop(int index) override {
-        elements.pop(index);
-    }
+  void pop(int index) override { elements.pop(index); }
 
-    void calculate_size_components(
-        Node& node,
-        const Tree& tree) const override;
+  void calculate_size_components(Node &node, const Tree &tree) const override;
 
-    void calculate_child_dimensions(
-        const Node& node,
-        Tree& tree) const override;
+  void calculate_child_dimensions(const Node &node, Tree &tree) const override;
 
-    void render(
-        const Node& node,
-        const NodeState& state,
-        Renderers& renderers) const override;
+  void render(const Node &node, const NodeState &state,
+              Renderers &renderers) const override;
 
 private:
-    const Style& style;
-    VectorMap<LinearLayout> elements;
+  const Style &style;
+  VectorMap<LinearLayout> elements;
 };
 
 } // namespace datagui
