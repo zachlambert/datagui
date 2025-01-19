@@ -53,17 +53,21 @@ std::string find_font_path(Font font) {
 
   std::vector<std::string> paths = {"/usr/share/fonts"};
 
-  for (const auto &path : paths) {
+  for (const auto& path : paths) {
     for (auto iter = std::filesystem::recursive_directory_iterator(path);
-         iter != std::filesystem::recursive_directory_iterator(); ++iter) {
-      if (iter->is_directory())
+         iter != std::filesystem::recursive_directory_iterator();
+         ++iter) {
+      if (iter->is_directory()) {
         continue;
-      if (iter->path().extension() != ".ttf")
+      }
+      if (iter->path().extension() != ".ttf") {
         continue;
+      }
 
       std::string name = iter->path().stem();
-      if (name.find(font_name) == std::string::npos)
+      if (name.find(font_name) == std::string::npos) {
         continue;
+      }
 
       candidates.push_back(iter->path());
     }
@@ -73,12 +77,14 @@ std::string find_font_path(Font font) {
     throw InitializationError("Failed to find font");
   }
 
-  std::sort(candidates.begin(), candidates.end(),
-            // Return true if a.stem < b.stem
-            [](const std::filesystem::path &a,
-               const std::filesystem::path &b) -> bool {
-              return a.stem().string().size() < b.stem().string().size();
-            });
+  std::sort(
+      candidates.begin(),
+      candidates.end(),
+      // Return true if a.stem < b.stem
+      [](const std::filesystem::path& a,
+         const std::filesystem::path& b) -> bool {
+        return a.stem().string().size() < b.stem().string().size();
+      });
   return candidates.front();
 }
 
@@ -112,16 +118,16 @@ FontStructure load_font(Font font, int font_size) {
   float texture_row_width = 0;
   for (int i = structure.char_first(); i < structure.char_end(); i++) {
     if (FT_Load_Char(ft_face, char(i), 0) != 0) {
-      throw InitializationError("Failed to load character: " +
-                                std::to_string(char(i)));
+      throw InitializationError(
+          "Failed to load character: " + std::to_string(char(i)));
     }
 
-    auto &character = structure.get(i);
+    auto& character = structure.get(i);
     character.size =
         Vecf(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows);
-    character.offset =
-        Vecf(ft_face->glyph->bitmap_left,
-             float(ft_face->glyph->bitmap_top) - ft_face->glyph->bitmap.rows);
+    character.offset = Vecf(
+        ft_face->glyph->bitmap_left,
+        float(ft_face->glyph->bitmap_top) - ft_face->glyph->bitmap.rows);
     character.advance = float(ft_face->glyph->advance.x) / 64;
 
     if (texture_row_width + character.advance > texture_width) {
@@ -147,12 +153,22 @@ FontStructure load_font(Font font, int font_size) {
   glBindVertexArray(VAO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, pos));
+  glVertexAttribPointer(
+      0,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, pos));
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, uv));
+  glVertexAttribPointer(
+      1,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, uv));
   glEnableVertexAttribArray(1);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -162,8 +178,16 @@ FontStructure load_font(Font font, int font_size) {
 
   glGenTextures(1, &structure.font_texture);
   glBindTexture(GL_TEXTURE_2D, structure.font_texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture_width, texture_height, 0,
-               GL_RGB, GL_UNSIGNED_BYTE, 0);
+  glTexImage2D(
+      GL_TEXTURE_2D,
+      0,
+      GL_RGB,
+      texture_width,
+      texture_height,
+      0,
+      GL_RGB,
+      GL_UNSIGNED_BYTE,
+      0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -173,8 +197,11 @@ FontStructure load_font(Font font, int font_size) {
   unsigned int framebuffer;
   glGenFramebuffers(1, &framebuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                       structure.font_texture, 0);
+  glFramebufferTexture(
+      GL_FRAMEBUFFER,
+      GL_COLOR_ATTACHMENT0,
+      structure.font_texture,
+      0);
 
   // 2nd pass iterate through characters
   // -> Render to the font texture
@@ -188,11 +215,11 @@ FontStructure load_font(Font font, int font_size) {
   float char_y = 0;
   for (int i = structure.char_first(); i < structure.char_end(); i++) {
     if (FT_Load_Char(ft_face, char(i), FT_LOAD_RENDER) != 0) {
-      throw std::runtime_error("Failed to load character: " +
-                               std::to_string(char(i)));
+      throw std::runtime_error(
+          "Failed to load character: " + std::to_string(char(i)));
     }
 
-    auto &character = structure.get(i);
+    auto& character = structure.get(i);
 
     // Calculate where the character should be drawn on the texture
 
@@ -206,29 +233,37 @@ FontStructure load_font(Font font, int font_size) {
     float y_lower = char_y + structure.descender + character.offset.y;
     float y_upper = y_lower + ft_face->glyph->bitmap.rows;
 
-    Vecf bottom_left(-1.f + 2 * x_lower / texture_width,
-                     -1.f + 2 * y_lower / texture_height);
-    Vecf top_right(-1.f + 2 * x_upper / texture_width,
-                   -1.f + 2 * y_upper / texture_height);
+    Vecf bottom_left(
+        -1.f + 2 * x_lower / texture_width,
+        -1.f + 2 * y_lower / texture_height);
+    Vecf top_right(
+        -1.f + 2 * x_upper / texture_width,
+        -1.f + 2 * y_upper / texture_height);
     Vecf bottom_right(top_right.x, bottom_left.y);
     Vecf top_left(bottom_left.x, top_right.y);
 
-    character.uv =
-        Boxf(Vecf(x_lower / texture_width, y_lower / texture_height),
-             Vecf(x_upper / texture_width, y_upper / texture_height));
+    character.uv = Boxf(
+        Vecf(x_lower / texture_width, y_lower / texture_height),
+        Vecf(x_upper / texture_width, y_upper / texture_height));
 
     char_x += character.advance;
 
     // Load the vertices
 
     std::vector<Vertex> vertices = {
-        Vertex{bottom_left, Vecf(0, 1)}, Vertex{bottom_right, Vecf(1, 1)},
-        Vertex{top_left, Vecf(0, 0)},    Vertex{bottom_right, Vecf(1, 1)},
-        Vertex{top_right, Vecf(1, 0)},   Vertex{top_left, Vecf(0, 0)}};
+        Vertex{bottom_left, Vecf(0, 1)},
+        Vertex{bottom_right, Vecf(1, 1)},
+        Vertex{top_left, Vecf(0, 0)},
+        Vertex{bottom_right, Vecf(1, 1)},
+        Vertex{top_right, Vecf(1, 0)},
+        Vertex{top_left, Vecf(0, 0)}};
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
-                 vertices.data(), GL_STATIC_DRAW);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        vertices.size() * sizeof(Vertex),
+        vertices.data(),
+        GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Generate a texture for the character bitmap
@@ -236,9 +271,16 @@ FontStructure load_font(Font font, int font_size) {
     unsigned int char_texture;
     glGenTextures(1, &char_texture);
     glBindTexture(GL_TEXTURE_2D, char_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, ft_face->glyph->bitmap.width,
-                 ft_face->glyph->bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE,
-                 ft_face->glyph->bitmap.buffer);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RED,
+        ft_face->glyph->bitmap.width,
+        ft_face->glyph->bitmap.rows,
+        0,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        ft_face->glyph->bitmap.buffer);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -264,8 +306,10 @@ FontStructure load_font(Font font, int font_size) {
   return structure;
 }
 
-Vecf text_size(const FontStructure &font, const std::string &text,
-               float max_width) {
+Vecf text_size(
+    const FontStructure& font,
+    const std::string& text,
+    float max_width) {
   bool has_max_width = max_width > 0;
   Vecf pos = Vecf::Zero();
   pos.y += font.line_height;
@@ -274,7 +318,7 @@ Vecf text_size(const FontStructure &font, const std::string &text,
     if (!font.char_valid(c)) {
       continue;
     }
-    const auto &character = font.get(c);
+    const auto& character = font.get(c);
     if (has_max_width && pos.x + character.advance > max_width) {
       pos.x = 0;
       pos.y += font.line_height;

@@ -22,7 +22,7 @@ public:
   static Color Gray(float value) { return Color(value, value, value, 1); }
   static Color Clear() { return Color(0, 0, 0, 0); }
 
-  bool equals(const Color &other, float max_error = 1e-6) const {
+  bool equals(const Color& other, float max_error = 1e-6) const {
     float error = 1;
     error = std::max(error, std::abs(r - other.r));
     error = std::max(error, std::abs(g - other.g));

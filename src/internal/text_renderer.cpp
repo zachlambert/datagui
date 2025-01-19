@@ -56,24 +56,37 @@ void TextRenderer::init() {
   glBindVertexArray(gl_data.VAO);
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
 
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, pos));
+  glVertexAttribPointer(
+      0,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, pos));
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                        (void *)offsetof(Vertex, uv));
+  glVertexAttribPointer(
+      1,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, uv));
   glEnableVertexAttribArray(1);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 }
 
-void TextRenderer::queue_text(const FontStructure &font,
-                              const Color &font_color, const std::string &text,
-                              float max_width, const Vecf &origin) {
+void TextRenderer::queue_text(
+    const FontStructure& font,
+    const Color& font_color,
+    const std::string& text,
+    float max_width,
+    const Vecf& origin) {
   std::size_t command_i = 0;
   while (command_i < commands.size()) {
-    const auto &command = commands[command_i];
+    const auto& command = commands[command_i];
     if (command.font_texture == font.font_texture &&
         command.font_color.equals(font_color)) {
       break;
@@ -83,7 +96,7 @@ void TextRenderer::queue_text(const FontStructure &font,
   if (command_i == commands.size()) {
     commands.emplace_back(font.font_texture, font_color);
   }
-  auto &vertices = commands[command_i].vertices;
+  auto& vertices = commands[command_i].vertices;
 
   bool has_max_width = max_width > 0;
   Vecf offset = Vecf::Zero();
@@ -93,7 +106,7 @@ void TextRenderer::queue_text(const FontStructure &font,
     if (!font.char_valid(c_char)) {
       continue;
     }
-    const auto &c = font.get(c_char);
+    const auto& c = font.get(c_char);
 
     if (has_max_width && offset.x + c.advance > max_width) {
       offset.x = 0;
@@ -105,7 +118,7 @@ void TextRenderer::queue_text(const FontStructure &font,
     pos.y += (-font.descender - (c.offset.y + c.size.y));
 
     Boxf box(pos, pos + c.size);
-    const Boxf &uv = c.uv;
+    const Boxf& uv = c.uv;
 
     vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
     vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
@@ -118,19 +131,25 @@ void TextRenderer::queue_text(const FontStructure &font,
   }
 }
 
-void TextRenderer::render(const Vecf &viewport_size) {
+void TextRenderer::render(const Vecf& viewport_size) {
   glUseProgram(gl_data.program_id);
   glBindVertexArray(gl_data.VAO);
   glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
-  for (const auto &command : commands) {
+  for (const auto& command : commands) {
     glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
-    glBufferData(GL_ARRAY_BUFFER, command.vertices.size() * sizeof(Vertex),
-                 command.vertices.data(), GL_STATIC_DRAW);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        command.vertices.size() * sizeof(Vertex),
+        command.vertices.data(),
+        GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glUniform4f(gl_data.uniform_text_color, command.font_color.r,
-                command.font_color.g, command.font_color.b,
-                command.font_color.a);
+    glUniform4f(
+        gl_data.uniform_text_color,
+        command.font_color.r,
+        command.font_color.g,
+        command.font_color.b,
+        command.font_color.a);
 
     glBindTexture(GL_TEXTURE_2D, command.font_texture);
     glDrawArrays(GL_TRIANGLES, 0, command.vertices.size());

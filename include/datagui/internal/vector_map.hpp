@@ -10,9 +10,9 @@ namespace datagui {
 // unimportant.
 template <typename T> class VectorMap {
 public:
-  const T &operator[](std::size_t i) const { return data[i]; }
-  T &operator[](std::size_t i) { return data[i]; }
-  template <typename... Args> int emplace(Args &&...args) {
+  const T& operator[](std::size_t i) const { return data[i]; }
+  T& operator[](std::size_t i) { return data[i]; }
+  template <typename... Args> int emplace(Args&&... args) {
     int index = 0;
     if (free.empty()) {
       index = data.size();

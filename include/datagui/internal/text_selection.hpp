@@ -49,18 +49,32 @@ struct KeyEvent {
   }
 };
 
-std::size_t find_cursor(const FontStructure &font, const std::string &text,
-                        float max_width, const Vecf &point);
+std::size_t find_cursor(
+    const FontStructure& font,
+    const std::string& text,
+    float max_width,
+    const Vecf& point);
 
-Vecf cursor_offset(const FontStructure &font, const std::string &text,
-                   float max_width, std::size_t cursor);
+Vecf cursor_offset(
+    const FontStructure& font,
+    const std::string& text,
+    float max_width,
+    std::size_t cursor);
 
-void selection_key_event(std::string &text, TextSelection &selection,
-                         bool editable, const KeyEvent &event);
+void selection_key_event(
+    std::string& text,
+    TextSelection& selection,
+    bool editable,
+    const KeyEvent& event);
 
-void render_selection(const Style &style, const FontStructure &font,
-                      const std::string &text, float max_width,
-                      const Vecf &origin, const TextSelection &selection,
-                      bool editable, GeometryRenderer &geometry_renderer);
+void render_selection(
+    const Style& style,
+    const FontStructure& font,
+    const std::string& text,
+    float max_width,
+    const Vecf& origin,
+    const TextSelection& selection,
+    bool editable,
+    GeometryRenderer& geometry_renderer);
 
 } // namespace datagui

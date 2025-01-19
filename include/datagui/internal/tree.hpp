@@ -50,11 +50,22 @@ struct Node {
   bool changed;
   bool hidden;
 
-  Node(const std::string &key, Element element, int parent)
-      : key(key), element(element), element_index(-1), parent(parent), prev(-1),
-        next(-1), first_child(-1), last_child(-1), fixed_size(Vecf::Zero()),
-        dynamic_size(Vecf::Zero()), floating(false), origin(Vecf::Zero()),
-        size(Vecf::Zero()), changed(true), hidden(false) {}
+  Node(const std::string& key, Element element, int parent) :
+      key(key),
+      element(element),
+      element_index(-1),
+      parent(parent),
+      prev(-1),
+      next(-1),
+      first_child(-1),
+      last_child(-1),
+      fixed_size(Vecf::Zero()),
+      dynamic_size(Vecf::Zero()),
+      floating(false),
+      origin(Vecf::Zero()),
+      size(Vecf::Zero()),
+      changed(true),
+      hidden(false) {}
 };
 
 class Tree {
@@ -62,42 +73,47 @@ public:
   using construct_element_t = std::function<int()>;
 
   Tree();
-  void register_element(Element element, ElementSystem &system);
+  void register_element(Element element, ElementSystem& system);
 
   // Define the tree
   void begin();
-  int next(const std::string &key, Element element,
-           const construct_element_t &construct_element);
+  int next(
+      const std::string& key,
+      Element element,
+      const construct_element_t& construct_element);
   void down();
   void up();
-  void end(const Vecf &root_size);
+  void end(const Vecf& root_size);
 
-  void render(Renderers &renderers);
+  void render(Renderers& renderers);
 
-  const Node &operator[](std::size_t i) const { return nodes[i]; }
-  Node &operator[](std::size_t i) { return nodes[i]; }
+  const Node& operator[](std::size_t i) const { return nodes[i]; }
+  Node& operator[](std::size_t i) { return nodes[i]; }
 
   int root_node() const { return root_node_; }
 
-  void mouse_press(const Vecf &mouse_pos);
-  void mouse_release(const Vecf &mouse_pos);
+  void mouse_press(const Vecf& mouse_pos);
+  void mouse_release(const Vecf& mouse_pos);
   void focus_next(bool reverse = false);
   void focus_leave(bool success);
 
   int node_held() const { return node_held_; }
   int node_focused() const { return node_focused_; }
 
-  void node_changed(Node &node);
+  void node_changed(Node& node);
 
-  ElementSystem &get_elements(const Node &node);
+  ElementSystem& get_elements(const Node& node);
 
 private:
   NodeState node_state(int node) const;
-  int create_node(const std::string &key, Element element, int parent,
-                  int prev);
+  int create_node(
+      const std::string& key,
+      Element element,
+      int parent,
+      int prev);
   void remove_node(int root_node);
 
-  std::vector<ElementSystem *> element_systems;
+  std::vector<ElementSystem*> element_systems;
 
   VectorMap<Node> nodes;
   int root_node_;

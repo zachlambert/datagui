@@ -20,9 +20,13 @@ struct FontStructure {
   float descender;
   unsigned int font_texture;
 
-  FontStructure()
-      : line_height(0), ascender(0), descender(0), font_texture(0),
-        char_first_(0), char_end_(0) {}
+  FontStructure() :
+      line_height(0),
+      ascender(0),
+      descender(0),
+      font_texture(0),
+      char_first_(0),
+      char_end_(0) {}
 
   void resize(int char_first, int char_last) {
     char_first_ = char_first;
@@ -30,14 +34,14 @@ struct FontStructure {
     characters.resize(char_end_ - char_first_);
   }
 
-  Character &get(int character) {
+  Character& get(int character) {
     if (character < char_first_ || character >= char_end_) {
       throw std::range_error("Invalid character");
     }
     return characters[character - char_first_];
   }
 
-  const Character &get(int character) const {
+  const Character& get(int character) const {
     if (character < char_first_ || character >= char_end_) {
       throw std::range_error("Invalid character");
     }
@@ -58,7 +62,9 @@ private:
 
 FontStructure load_font(Font font, int font_size);
 
-Vecf text_size(const FontStructure &font, const std::string &text,
-               float max_width);
+Vecf text_size(
+    const FontStructure& font,
+    const std::string& text,
+    float max_width);
 
 } // namespace datagui

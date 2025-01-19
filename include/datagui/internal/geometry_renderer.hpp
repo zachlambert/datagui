@@ -11,10 +11,14 @@ public:
   GeometryRenderer();
   void init();
 
-  void queue_box(const Boxf &box, const Color &color, float border_width,
-                 Color border_color, float radius = 0.f);
+  void queue_box(
+      const Boxf& box,
+      const Color& color,
+      float border_width,
+      Color border_color,
+      float radius = 0.f);
 
-  void render(const Vecf &viewport_size);
+  void render(const Vecf& viewport_size);
 
 private:
   struct BoxCommand {

@@ -12,10 +12,14 @@ class TextRenderer {
 public:
   void init();
 
-  void queue_text(const FontStructure &font, const Color &font_color,
-                  const std::string &text, float max_width, const Vecf &origin);
+  void queue_text(
+      const FontStructure& font,
+      const Color& font_color,
+      const std::string& text,
+      float max_width,
+      const Vecf& origin);
 
-  void render(const Vecf &viewport_size);
+  void render(const Vecf& viewport_size);
 
 private:
   struct Vertex {
@@ -28,8 +32,8 @@ private:
     const Color font_color;
     std::vector<Vertex> vertices;
 
-    Command(unsigned int font_texture, const Color &font_color)
-        : font_texture(font_texture), font_color(font_color) {}
+    Command(unsigned int font_texture, const Color& font_color) :
+        font_texture(font_texture), font_color(font_color) {}
   };
 
   std::vector<Command> commands;

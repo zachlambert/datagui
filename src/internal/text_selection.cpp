@@ -3,8 +3,11 @@
 
 namespace datagui {
 
-std::size_t find_cursor(const FontStructure &font, const std::string &text,
-                        float max_width, const Vecf &point) {
+std::size_t find_cursor(
+    const FontStructure& font,
+    const std::string& text,
+    float max_width,
+    const Vecf& point) {
   bool has_max_width = max_width > 0;
   Vecf pos = Vecf::Zero();
   pos.y += font.line_height;
@@ -16,7 +19,7 @@ std::size_t find_cursor(const FontStructure &font, const std::string &text,
     if (!font.char_valid(text[i])) {
       continue;
     }
-    const auto &c = font.get(text[i]);
+    const auto& c = font.get(text[i]);
 
     if (!column_found && pos.x + c.advance / 2 > point.x) {
       column_found = true;
@@ -45,8 +48,11 @@ std::size_t find_cursor(const FontStructure &font, const std::string &text,
   return column;
 }
 
-Vecf cursor_offset(const FontStructure &font, const std::string &text,
-                   float max_width, std::size_t cursor) {
+Vecf cursor_offset(
+    const FontStructure& font,
+    const std::string& text,
+    float max_width,
+    std::size_t cursor) {
   bool has_max_width = max_width > 0;
   Vecf offset = Vecf::Zero();
 
@@ -54,7 +60,7 @@ Vecf cursor_offset(const FontStructure &font, const std::string &text,
     if (!font.char_valid(text[i])) {
       continue;
     }
-    const auto &c = font.get(text[i]);
+    const auto& c = font.get(text[i]);
     if (has_max_width && offset.x + c.advance > max_width) {
       offset.x = 0;
       offset.y += font.line_height;
@@ -64,16 +70,20 @@ Vecf cursor_offset(const FontStructure &font, const std::string &text,
   return offset;
 }
 
-void selection_key_event(std::string &text, TextSelection &selection,
-                         bool editable, const KeyEvent &event) {
+void selection_key_event(
+    std::string& text,
+    TextSelection& selection,
+    bool editable,
+    const KeyEvent& event) {
   if (event.is_text) {
     if (!editable) {
       return;
     }
 
     if (selection.span() > 0) {
-      text.erase(text.begin() + selection.from(),
-                 text.begin() + selection.to());
+      text.erase(
+          text.begin() + selection.from(),
+          text.begin() + selection.to());
       selection.reset(selection.from());
     }
 
@@ -140,8 +150,9 @@ void selection_key_event(std::string &text, TextSelection &selection,
         break;
       }
       if (selection.span() > 0) {
-        text.erase(text.begin() + selection.from(),
-                   text.begin() + selection.to());
+        text.erase(
+            text.begin() + selection.from(),
+            text.begin() + selection.to());
         selection.reset(selection.from());
 
       } else if (selection.begin > 0) {
@@ -172,10 +183,15 @@ void selection_key_event(std::string &text, TextSelection &selection,
   }
 }
 
-void render_selection(const Style &style, const FontStructure &font,
-                      const std::string &text, float max_width,
-                      const Vecf &origin, const TextSelection &selection,
-                      bool editable, GeometryRenderer &geometry_renderer) {
+void render_selection(
+    const Style& style,
+    const FontStructure& font,
+    const std::string& text,
+    float max_width,
+    const Vecf& origin,
+    const TextSelection& selection,
+    bool editable,
+    GeometryRenderer& geometry_renderer) {
   // Render cursor
 
   if (selection.span() == 0) {
@@ -184,11 +200,14 @@ void render_selection(const Style &style, const FontStructure &font,
     }
     Vecf offset = cursor_offset(font, text, max_width, selection.begin);
     geometry_renderer.queue_box(
-        Boxf(origin + offset -
-                 Vecf(float(style.text_input.cursor_width) / 2, 0),
-             origin + offset +
-                 Vecf(style.text_input.cursor_width, font.line_height)),
-        style.text_input.cursor_color, 0, Color::Black(), 0);
+        Boxf(
+            origin + offset - Vecf(float(style.text_input.cursor_width) / 2, 0),
+            origin + offset +
+                Vecf(style.text_input.cursor_width, font.line_height)),
+        style.text_input.cursor_color,
+        0,
+        Color::Black(),
+        0);
     return;
   }
 
@@ -205,7 +224,7 @@ void render_selection(const Style &style, const FontStructure &font,
     if (!font.char_valid(text[i])) {
       continue;
     }
-    const auto &c = font.get(text[i]);
+    const auto& c = font.get(text[i]);
 
     if (has_max_width && offset.x + c.advance > max_width) {
       Vecf to_offset = offset;
@@ -215,7 +234,10 @@ void render_selection(const Style &style, const FontStructure &font,
       to_offset.y += font.line_height;
       geometry_renderer.queue_box(
           Boxf(origin + from_offset, origin + to_offset),
-          style.text_input.highlight_color, 0, Color::Black(), 0);
+          style.text_input.highlight_color,
+          0,
+          Color::Black(),
+          0);
 
       from = i;
       offset.x = 0;
@@ -226,9 +248,12 @@ void render_selection(const Style &style, const FontStructure &font,
   }
 
   Vecf to_offset = offset + Vecf(0, font.line_height);
-  geometry_renderer.queue_box(Boxf(origin + from_offset, origin + to_offset),
-                              style.text_input.highlight_color, 0,
-                              Color::Black(), 0);
+  geometry_renderer.queue_box(
+      Boxf(origin + from_offset, origin + to_offset),
+      style.text_input.highlight_color,
+      0,
+      Color::Black(),
+      0);
 }
 
 } // namespace datagui

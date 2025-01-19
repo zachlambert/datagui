@@ -1,0 +1,15 @@
+---
+Language: Cpp
+PointerAlignment: Left
+ReferenceAlignment: Left
+PackConstructorInitializers: NextLine
+BreakConstructorInitializers: AfterColon
+AlignAfterOpenBracket: AlwaysBreak
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
+PenaltyReturnTypeOnItsOwnLine: 10000
+IndentRequires: false
+BreakBeforeConceptDeclarations: Always
+BreakTemplateDeclarations: Yes

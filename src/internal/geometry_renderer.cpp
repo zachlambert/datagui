@@ -83,8 +83,12 @@ void main(){
 )";
 
 static const std::array<Vecf, 6> quad_vertices = {
-    Vecf(0.f, 1.f), Vecf(1.f, 0.f), Vecf(0.f, 0.f),
-    Vecf(0.f, 1.f), Vecf(1.f, 0.f), Vecf(1.f, 1.f)};
+    Vecf(0.f, 1.f),
+    Vecf(1.f, 0.f),
+    Vecf(0.f, 0.f),
+    Vecf(0.f, 1.f),
+    Vecf(1.f, 0.f),
+    Vecf(1.f, 1.f)};
 
 GeometryRenderer::GeometryRenderer() {}
 
@@ -104,12 +108,15 @@ void GeometryRenderer::init() {
 
   // Bind and configure buffer for vertex attributes
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.static_VBO);
-  glBufferData(GL_ARRAY_BUFFER, quad_vertices.size() * sizeof(Vecf),
-               quad_vertices.data(), GL_STATIC_DRAW);
+  glBufferData(
+      GL_ARRAY_BUFFER,
+      quad_vertices.size() * sizeof(Vecf),
+      quad_vertices.data(),
+      GL_STATIC_DRAW);
 
   GLuint index = 0;
 
-  glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, sizeof(Vecf), (void *)0);
+  glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, sizeof(Vecf), (void*)0);
   glEnableVertexAttribArray(index);
   index++;
 
@@ -118,38 +125,68 @@ void GeometryRenderer::init() {
   // Bind and configure buffer for indices
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
 
-  glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, sizeof(Element),
-                        (void *)offsetof(Element, offset));
+  glVertexAttribPointer(
+      index,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, offset));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
 
-  glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, sizeof(Element),
-                        (void *)offsetof(Element, size));
+  glVertexAttribPointer(
+      index,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, size));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
 
-  glVertexAttribPointer(index, 1, GL_FLOAT, GL_FALSE, sizeof(Element),
-                        (void *)offsetof(Element, radius));
+  glVertexAttribPointer(
+      index,
+      1,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, radius));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
 
-  glVertexAttribPointer(index, 1, GL_FLOAT, GL_FALSE, sizeof(Element),
-                        (void *)offsetof(Element, border_width));
+  glVertexAttribPointer(
+      index,
+      1,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, border_width));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
 
-  glVertexAttribPointer(index, 4, GL_FLOAT, GL_FALSE, sizeof(Element),
-                        (void *)offsetof(Element, bg_color));
+  glVertexAttribPointer(
+      index,
+      4,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, bg_color));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
 
-  glVertexAttribPointer(index, 4, GL_FLOAT, GL_FALSE, sizeof(Element),
-                        (void *)offsetof(Element, border_color));
+  glVertexAttribPointer(
+      index,
+      4,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, border_color));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -157,9 +194,12 @@ void GeometryRenderer::init() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void GeometryRenderer::queue_box(const Boxf &box, const Color &color,
-                                 float border_width, Color border_color,
-                                 float radius) {
+void GeometryRenderer::queue_box(
+    const Boxf& box,
+    const Color& color,
+    float border_width,
+    Color border_color,
+    float radius) {
   Element element;
   element.offset = box.lower;
   element.size = box.size();
@@ -170,10 +210,13 @@ void GeometryRenderer::queue_box(const Boxf &box, const Color &color,
   elements.push_back(element);
 }
 
-void GeometryRenderer::render(const Vecf &viewport_size) {
+void GeometryRenderer::render(const Vecf& viewport_size) {
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
-  glBufferData(GL_ARRAY_BUFFER, elements.size() * sizeof(Element),
-               elements.data(), GL_STATIC_DRAW);
+  glBufferData(
+      GL_ARRAY_BUFFER,
+      elements.size() * sizeof(Element),
+      elements.data(),
+      GL_STATIC_DRAW);
 
   glUseProgram(gl_data.program_id);
   glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);

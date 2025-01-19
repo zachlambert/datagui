@@ -1,14 +1,18 @@
 #include "datagui/internal/tree.hpp"
 #include "datagui/exception.hpp"
 #include <assert.h>
+#include <stack>
 
 namespace datagui {
 
-Tree::Tree()
-    : root_node_(-1), parent(-1), current(-1), node_held_(-1),
-      node_focused_(-1) {}
+Tree::Tree() :
+    root_node_(-1),
+    parent(-1),
+    current(-1),
+    node_held_(-1),
+    node_focused_(-1) {}
 
-void Tree::register_element(Element element, ElementSystem &system) {
+void Tree::register_element(Element element, ElementSystem& system) {
   if (element == Element::Undefined) {
     throw InitializationError("Cannot register undefined element");
   }
@@ -23,7 +27,7 @@ void Tree::register_element(Element element, ElementSystem &system) {
   element_systems[index] = &system;
 }
 
-ElementSystem &Tree::get_elements(const Node &node) {
+ElementSystem& Tree::get_elements(const Node& node) {
   int type_index = int(node.element) - 1;
   assert(node.element != Element::Undefined);
   assert(type_index >= 0 && type_index < element_systems.size());
@@ -38,8 +42,10 @@ void Tree::begin() {
   current = -1;
 }
 
-int Tree::next(const std::string &key, Element element,
-               const construct_element_t &construct_element) {
+int Tree::next(
+    const std::string& key,
+    Element element,
+    const construct_element_t& construct_element) {
   if (parent == -1) {
     if (!key.empty()) {
       throw WindowError("Root node must be unnamed");
@@ -120,8 +126,11 @@ void Tree::up() {
   parent = nodes[current].parent;
 }
 
-int Tree::create_node(const std::string &key, Element element, int parent,
-                      int prev) {
+int Tree::create_node(
+    const std::string& key,
+    Element element,
+    int parent,
+    int prev) {
   int node = nodes.emplace(key, element, parent);
 
   nodes[node].prev = prev;
@@ -147,7 +156,7 @@ void Tree::remove_node(int root_node) {
 
   while (!stack.empty()) {
     int node_index = stack.top();
-    const auto &node = nodes[node_index];
+    const auto& node = nodes[node_index];
     if (node.first_child == -1) {
       stack.pop();
       if (node.prev != -1) {
@@ -182,7 +191,7 @@ void Tree::remove_node(int root_node) {
   }
 }
 
-void Tree::end(const Vecf &root_size) {
+void Tree::end(const Vecf& root_size) {
   if (parent != -1) {
     throw WindowError(
         "Didn't call layout_... and layout_end the same number of times");
@@ -203,8 +212,8 @@ void Tree::end(const Vecf &root_size) {
     stack.emplace(root_node_);
 
     while (!stack.empty()) {
-      State &state = stack.top();
-      Node &node = nodes[state.index];
+      State& state = stack.top();
+      Node& node = nodes[state.index];
 
       if (node.hidden || node.element == Element::Undefined) {
         stack.pop();
@@ -234,7 +243,7 @@ void Tree::end(const Vecf &root_size) {
     nodes[root_node_].size = root_size;
 
     while (!stack.empty()) {
-      const auto &node = nodes[stack.top()];
+      const auto& node = nodes[stack.top()];
       stack.pop();
 
       if (node.first_child == -1) {
@@ -255,7 +264,7 @@ void Tree::end(const Vecf &root_size) {
   }
 }
 
-void Tree::render(Renderers &renderers) {
+void Tree::render(Renderers& renderers) {
   if (root_node_ == -1) {
     return;
   }
@@ -264,7 +273,7 @@ void Tree::render(Renderers &renderers) {
 
   while (!stack.empty()) {
     int node_index = stack.top();
-    const auto &node = nodes[stack.top()];
+    const auto& node = nodes[stack.top()];
     stack.pop();
 
     if (node.hidden || node.element == Element::Undefined) {
@@ -282,7 +291,7 @@ void Tree::render(Renderers &renderers) {
   }
 }
 
-void Tree::mouse_press(const Vecf &mouse_pos) {
+void Tree::mouse_press(const Vecf& mouse_pos) {
   if (root_node_ == -1) {
     return;
   }
@@ -290,14 +299,14 @@ void Tree::mouse_press(const Vecf &mouse_pos) {
   int node_pressed = root_node_;
 
   while (true) {
-    const auto &node = nodes[node_pressed];
+    const auto& node = nodes[node_pressed];
     if (node.hidden || node.element == Element::Undefined) {
       node_pressed = -1;
       break;
     }
     int child_index = node.first_child;
     while (child_index != -1) {
-      const auto &child = nodes[child_index];
+      const auto& child = nodes[child_index];
       if (Boxf(child.origin, child.origin + child.size).contains(mouse_pos)) {
         node_pressed = child_index;
         break;
@@ -310,7 +319,7 @@ void Tree::mouse_press(const Vecf &mouse_pos) {
   }
 
   if (node_pressed != -1) {
-    auto &node = nodes[node_pressed];
+    auto& node = nodes[node_pressed];
     if (get_elements(node).press(node, mouse_pos)) {
       node_changed(node);
     }
@@ -318,7 +327,7 @@ void Tree::mouse_press(const Vecf &mouse_pos) {
 
   node_held_ = node_pressed;
   if (node_focused_ != -1 && node_pressed != node_focused_) {
-    auto &released = nodes[node_focused_];
+    auto& released = nodes[node_focused_];
     if (get_elements(released).focus_leave(released, true)) {
       node_changed(released);
     }
@@ -326,11 +335,11 @@ void Tree::mouse_press(const Vecf &mouse_pos) {
   node_focused_ = node_pressed;
 }
 
-void Tree::mouse_release(const Vecf &mouse_pos) {
+void Tree::mouse_release(const Vecf& mouse_pos) {
   if (node_held_ == -1) {
     return;
   }
-  auto &node = nodes[node_held_];
+  auto& node = nodes[node_held_];
   node_held_ = -1;
 
   if (node.hidden || node.element == Element::Undefined) {
@@ -390,13 +399,13 @@ void Tree::focus_next(bool reverse) {
   }
 
   if (node_focused_ != -1) {
-    auto &prev_focused = nodes[node_focused_];
+    auto& prev_focused = nodes[node_focused_];
     if (get_elements(prev_focused).focus_leave(prev_focused, true)) {
       node_changed(prev_focused);
     }
   }
   if (next != -1) {
-    auto &new_focused = nodes[next];
+    auto& new_focused = nodes[next];
     if (get_elements(new_focused).focus_enter(new_focused)) {
       node_changed(new_focused);
     }
@@ -409,7 +418,7 @@ void Tree::focus_leave(bool success) {
   if (node_focused_ == -1) {
     return;
   }
-  auto &node = nodes[node_focused_];
+  auto& node = nodes[node_focused_];
   if (get_elements(node).focus_leave(node, success)) {
     node_changed(node);
   }
@@ -423,7 +432,7 @@ NodeState Tree::node_state(int node) const {
   return state;
 }
 
-void Tree::node_changed(Node &node) {
+void Tree::node_changed(Node& node) {
   node.changed = true;
   int iter = node.parent;
   while (iter != -1) {
