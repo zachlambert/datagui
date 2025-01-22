@@ -13,3 +13,4 @@ PenaltyReturnTypeOnItsOwnLine: 10000
 IndentRequires: false
 BreakBeforeConceptDeclarations: Always
 BreakTemplateDeclarations: Yes
+ColumnLimit: 100

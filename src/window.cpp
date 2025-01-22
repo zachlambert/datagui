@@ -31,21 +31,12 @@ struct Events {
   }
 } events;
 
-void glfw_mouse_button_callback(
-    GLFWwindow* callback_window,
-    int button,
-    int action,
-    int mods) {
+void glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods) {
   events.mouse.action = action;
   events.mouse.button = button;
 }
 
-void glfw_key_callback(
-    GLFWwindow* callback_window,
-    int key,
-    int scancode,
-    int action,
-    int mods) {
+void glfw_key_callback(GLFWwindow* callback_window, int key, int scancode, int action, int mods) {
   events.key.action = action;
   events.key.key = key;
   events.key.mods = mods;
@@ -67,12 +58,14 @@ Window::Window(const Config& config, const Style& style) :
     checkboxes(this->style, font),
     linear_layouts(this->style),
     selections(this->style, font),
+    options(this->style, font),
     texts(this->style, font),
     text_inputs(this->style, font) {
   tree.register_element(Element::Button, buttons);
   tree.register_element(Element::Checkbox, checkboxes);
   tree.register_element(Element::LinearLayout, linear_layouts);
   tree.register_element(Element::Selection, selections);
+  tree.register_element(Element::Option, options);
   tree.register_element(Element::Text, texts);
   tree.register_element(Element::TextInput, text_inputs);
   open();
@@ -84,9 +77,7 @@ Window::~Window() {
   }
 }
 
-bool Window::running() const {
-  return window && !glfwWindowShouldClose(window);
-}
+bool Window::running() const { return window && !glfwWindowShouldClose(window); }
 
 void Window::open() {
   if (!glfwInit()) {
@@ -99,12 +90,7 @@ void Window::open() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
   // Create window with graphics context
-  window = glfwCreateWindow(
-      config.width,
-      config.height,
-      config.title.c_str(),
-      nullptr,
-      nullptr);
+  window = glfwCreateWindow(config.width, config.height, config.title.c_str(), nullptr, nullptr);
 
   if (window == nullptr) {
     throw InitializationError("Failed to create window");
@@ -145,10 +131,7 @@ void Window::close() {
   window = nullptr;
 }
 
-bool Window::vertical_layout(
-    float length,
-    float width,
-    const std::string& key) {
+bool Window::vertical_layout(float length, float width, const std::string& key) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Vertical);
   });
@@ -159,10 +142,7 @@ bool Window::vertical_layout(
   return false;
 }
 
-bool Window::horizontal_layout(
-    float length,
-    float width,
-    const std::string& key) {
+bool Window::horizontal_layout(float length, float width, const std::string& key) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Horizontal);
   });
@@ -175,29 +155,17 @@ bool Window::horizontal_layout(
 
 void Window::layout_end() { tree.up(); }
 
-void Window::text(
-    const std::string& text,
-    float max_width,
-    const std::string& key) {
-  tree.next(key, Element::Text, [&]() {
-    return texts.create(text, max_width);
-  });
+void Window::text(const std::string& text, float max_width, const std::string& key) {
+  tree.next(key, Element::Text, [&]() { return texts.create(text, max_width); });
 }
 
-bool Window::button(
-    const std::string& text,
-    float max_width,
-    const std::string& key) {
-  int node = tree.next(key, Element::Button, [&]() {
-    return buttons.create(text, max_width);
-  });
+bool Window::button(const std::string& text, float max_width, const std::string& key) {
+  int node = tree.next(key, Element::Button, [&]() { return buttons.create(text, max_width); });
   return tree[node].changed;
 }
 
 const bool* Window::checkbox(const std::string& key) {
-  int node = tree.next(key, Element::Checkbox, [&]() {
-    return checkboxes.create(false);
-  });
+  int node = tree.next(key, Element::Checkbox, [&]() { return checkboxes.create(false); });
   if (tree[node].changed) {
     return checkboxes.value(tree[node]);
   }
@@ -222,18 +190,31 @@ const int* Window::selection(
     int default_choice,
     float max_width,
     const std::string& key) {
+
   int node = tree.next(key, Element::Selection, [&]() {
     return selections.create(choices, default_choice, max_width);
   });
+
+  if (selections.open(tree[node])) {
+    tree.down();
+    for (const auto& choice : choices) {
+      tree.next(choice, Element::Option, [&]() { return options.create(choice, max_width); });
+    }
+    tree.up();
+  } else {
+    tree.down();
+    tree.up();
+  }
+
+#if 0
   if (tree[node].changed) {
     return selections.value(tree[node]);
   }
+#endif
   return nullptr;
 }
 
-void Window::hidden(const std::string& key) {
-  tree.next(key, Element::Button, nullptr);
-}
+void Window::hidden(const std::string& key) { tree.next(key, Element::Button, nullptr); }
 
 void Window::render_begin() {
   glClearColor(style.bg_color.r, style.bg_color.g, style.bg_color.b, 1);
@@ -253,18 +234,13 @@ void Window::render_end() {
 
   event_handling();
 
-  tree.render(renderers);
-  renderers.geometry.render(window_size);
-  renderers.text.render(window_size);
+  tree.render(renderers, window_size);
+  // renderers.geometry.render(window_size);
+  // renderers.text.render(window_size);
 
   if (tree.root_node() != -1) {
     const auto& root_node = tree[tree.root_node()];
-    glfwSetWindowSizeLimits(
-        window,
-        root_node.fixed_size.x,
-        root_node.fixed_size.y,
-        -1,
-        -1);
+    glfwSetWindowSizeLimits(window, root_node.fixed_size.x, root_node.fixed_size.y, -1, -1);
   }
 
   glfwSwapBuffers(window);
@@ -331,9 +307,7 @@ void Window::event_handling() {
         tree.node_changed(node);
       }
     } else if (events.text.received) {
-      bool changed = tree.get_elements(node).key_event(
-          node,
-          KeyEvent::text(events.text.character));
+      bool changed = tree.get_elements(node).key_event(node, KeyEvent::text(events.text.character));
       if (changed) {
         tree.node_changed(node);
       }

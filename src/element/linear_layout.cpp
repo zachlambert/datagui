@@ -2,23 +2,23 @@
 
 namespace datagui {
 
-void LinearLayoutSystem::calculate_size_components(Node &node,
-                                                   const Tree &tree) const {
-  const auto &element = elements[node.element_index];
+void LinearLayoutSystem::calculate_size_components(Node& node, const Tree& tree)
+    const {
+  const auto& element = elements[node.element_index];
 
   node.fixed_size = Vecf::Zero();
   node.dynamic_size = Vecf::Zero();
 
-  float &fixed_a = element.direction == LayoutDirection::Horizontal
+  float& fixed_a = element.direction == LayoutDirection::Horizontal
                        ? node.fixed_size.x
                        : node.fixed_size.y;
-  float &fixed_b = element.direction == LayoutDirection::Horizontal
+  float& fixed_b = element.direction == LayoutDirection::Horizontal
                        ? node.fixed_size.y
                        : node.fixed_size.x;
-  float &dynamic_a = element.direction == LayoutDirection::Horizontal
+  float& dynamic_a = element.direction == LayoutDirection::Horizontal
                          ? node.dynamic_size.x
                          : node.dynamic_size.y;
-  float &dynamic_b = element.direction == LayoutDirection::Horizontal
+  float& dynamic_b = element.direction == LayoutDirection::Horizontal
                          ? node.dynamic_size.y
                          : node.dynamic_size.x;
 
@@ -28,7 +28,7 @@ void LinearLayoutSystem::calculate_size_components(Node &node,
     int child_index = node.first_child;
     int count = 0;
     while (child_index != -1) {
-      const auto &child = tree[child_index];
+      const auto& child = tree[child_index];
 
       if (child.hidden) {
         child_index = child.next;
@@ -61,7 +61,7 @@ void LinearLayoutSystem::calculate_size_components(Node &node,
   if (element.width == 0) {
     int child_index = node.first_child;
     while (child_index != -1) {
-      const auto &child = tree[child_index];
+      const auto& child = tree[child_index];
       if (child.hidden) {
         child_index = child.next;
         continue;
@@ -90,16 +90,17 @@ void LinearLayoutSystem::calculate_size_components(Node &node,
       Vecf::Constant(2 * (style.element.border_width + style.element.padding));
 }
 
-void LinearLayoutSystem::calculate_child_dimensions(const Node &node,
-                                                    Tree &tree) const {
-  const auto &element = elements[node.element_index];
+void LinearLayoutSystem::calculate_child_dimensions(
+    const Node& node,
+    Tree& tree) const {
+  const auto& element = elements[node.element_index];
   Vecf available = node.size - node.fixed_size;
   Vecf offset =
       Vecf::Constant(style.element.padding + style.element.border_width);
 
   int child_index = node.first_child;
   while (child_index != -1) {
-    auto &child = tree[child_index];
+    auto& child = tree[child_index];
     if (child.hidden) {
       child_index = child.next;
       continue;
@@ -137,14 +138,19 @@ void LinearLayoutSystem::calculate_child_dimensions(const Node &node,
   }
 }
 
-void LinearLayoutSystem::render(const Node &node, const NodeState &state,
-                                Renderers &renderers) const {
-  const Color &border_color =
+void LinearLayoutSystem::render(
+    const Node& node,
+    const NodeState& state,
+    Renderers& renderers) const {
+  const Color& border_color =
       state.focused ? style.element.focus_color : style.element.border_color;
 
-  renderers.geometry.queue_box(Boxf(node.origin, node.origin + node.size),
-                               Color::Clear(), style.element.border_width,
-                               border_color, 0);
+  renderers.geometry.queue_box(
+      Boxf(node.origin, node.origin + node.size),
+      Color::Clear(),
+      style.element.border_width,
+      border_color,
+      0);
 }
 
 } // namespace datagui

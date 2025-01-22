@@ -56,6 +56,9 @@ int main() {
           std::cout << "Selection -> " << choices[*value] << std::endl;
         }
       }
+      window.text("some more");
+      window.text("text goes");
+      window.text("here okay");
       window.layout_end();
     }
     window.render_end();

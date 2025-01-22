@@ -1,16 +1,12 @@
 #include "datagui/internal/tree.hpp"
 #include "datagui/exception.hpp"
+#include <algorithm>
 #include <assert.h>
 #include <stack>
 
 namespace datagui {
 
-Tree::Tree() :
-    root_node_(-1),
-    parent(-1),
-    current(-1),
-    node_held_(-1),
-    node_focused_(-1) {}
+Tree::Tree() : root_node_(-1), parent(-1), current(-1), node_held_(-1), node_focused_(-1) {}
 
 void Tree::register_element(Element element, ElementSystem& system) {
   if (element == Element::Undefined) {
@@ -46,6 +42,7 @@ int Tree::next(
     const std::string& key,
     Element element,
     const construct_element_t& construct_element) {
+
   if (parent == -1) {
     if (!key.empty()) {
       throw WindowError("Root node must be unnamed");
@@ -126,11 +123,7 @@ void Tree::up() {
   parent = nodes[current].parent;
 }
 
-int Tree::create_node(
-    const std::string& key,
-    Element element,
-    int parent,
-    int prev) {
+int Tree::create_node(const std::string& key, Element element, int parent, int prev) {
   int node = nodes.emplace(key, element, parent);
 
   nodes[node].prev = prev;
@@ -193,8 +186,7 @@ void Tree::remove_node(int root_node) {
 
 void Tree::end(const Vecf& root_size) {
   if (parent != -1) {
-    throw WindowError(
-        "Didn't call layout_... and layout_end the same number of times");
+    throw WindowError("Didn't call layout_... and layout_end the same number of times");
   }
   if (root_node_ == -1) {
     return;
@@ -236,6 +228,7 @@ void Tree::end(const Vecf& root_size) {
     }
   }
 
+  floating_nodes.clear();
   {
     std::stack<int> stack;
 
@@ -243,9 +236,13 @@ void Tree::end(const Vecf& root_size) {
     nodes[root_node_].size = root_size;
 
     while (!stack.empty()) {
-      const auto& node = nodes[stack.top()];
+      int node_index = stack.top();
+      const auto& node = nodes[node_index];
       stack.pop();
 
+      if (node.floating) {
+        floating_nodes.push_back(node_index);
+      }
       if (node.first_child == -1) {
         continue;
       }
@@ -264,17 +261,24 @@ void Tree::end(const Vecf& root_size) {
   }
 }
 
-void Tree::render(Renderers& renderers) {
+void Tree::render(Renderers& renderers, const Vecf& window_size) {
   if (root_node_ == -1) {
     return;
   }
   std::stack<int> stack;
+  for (int i = floating_nodes.size() - 1; i >= 0; i--) {
+    stack.push(floating_nodes[i]);
+  }
   stack.push(root_node_);
 
   while (!stack.empty()) {
     int node_index = stack.top();
     const auto& node = nodes[stack.top()];
     stack.pop();
+    if (node.floating && node_index != root_node_) {
+      renderers.geometry.render(window_size);
+      renderers.text.render(window_size);
+    }
 
     if (node.hidden || node.element == Element::Undefined) {
       continue;
@@ -285,10 +289,14 @@ void Tree::render(Renderers& renderers) {
     }
     int child = node.first_child;
     while (child != -1) {
-      stack.push(child);
+      if (!nodes[child].floating) {
+        stack.push(child);
+      }
       child = nodes[child].next;
     }
   }
+  renderers.geometry.render(window_size);
+  renderers.text.render(window_size);
 }
 
 void Tree::mouse_press(const Vecf& mouse_pos) {
@@ -296,25 +304,40 @@ void Tree::mouse_press(const Vecf& mouse_pos) {
     return;
   }
 
-  int node_pressed = root_node_;
+  std::vector<int> root_nodes;
+  root_nodes.push_back(root_node_);
+  root_nodes.insert(root_nodes.end(), floating_nodes.begin(), floating_nodes.end());
 
-  while (true) {
-    const auto& node = nodes[node_pressed];
-    if (node.hidden || node.element == Element::Undefined) {
-      node_pressed = -1;
-      break;
+  int node_pressed = -1;
+
+  for (int current_root_node : root_nodes) {
+    const auto& current_root = nodes[current_root_node];
+    if (!Boxf(current_root.origin, current_root.origin + current_root.size).contains(mouse_pos)) {
+      continue;
     }
-    int child_index = node.first_child;
-    while (child_index != -1) {
-      const auto& child = nodes[child_index];
-      if (Boxf(child.origin, child.origin + child.size).contains(mouse_pos)) {
-        node_pressed = child_index;
+    int current_node_pressed = current_root_node;
+
+    while (true) {
+      const auto& node = nodes[current_node_pressed];
+      if (node.hidden || node.element == Element::Undefined) {
+        current_node_pressed = -1;
         break;
       }
-      child_index = child.next;
+      int child_index = node.first_child;
+      while (child_index != -1) {
+        const auto& child = nodes[child_index];
+        if (Boxf(child.origin, child.origin + child.size).contains(mouse_pos)) {
+          current_node_pressed = child_index;
+          break;
+        }
+        child_index = child.next;
+      }
+      if (child_index == -1) {
+        break;
+      }
     }
-    if (child_index == -1) {
-      break;
+    if (current_node_pressed != -1) {
+      node_pressed = current_node_pressed;
     }
   }
 
@@ -393,8 +416,8 @@ void Tree::focus_next(bool reverse) {
   } while (next != -1 && next != root_node_ &&
            (nodes[next].hidden || nodes[next].element == Element::Undefined));
 
-  if (next == root_node_ && (nodes[root_node_].hidden ||
-                             nodes[root_node_].element == Element::Undefined)) {
+  if (next == root_node_ &&
+      (nodes[root_node_].hidden || nodes[root_node_].element == Element::Undefined)) {
     next = -1;
   }
 
