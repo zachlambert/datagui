@@ -45,7 +45,7 @@ public:
 
   bool release(const Node& node, const Vecf& mouse_pos) override;
   bool focus_enter(const Node& node) override;
-  bool focus_leave(const Node& node, bool success) override;
+  bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override;
 
 private:
   const Style& style;
@@ -79,6 +79,7 @@ public:
   void render(const Node& node, const NodeState& state, Renderers& renderers) const override;
 
   bool release(const Node& node, const Vecf& mouse_pos) override;
+  bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override;
 
 private:
   const Style& style;

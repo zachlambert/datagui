@@ -351,7 +351,7 @@ void Tree::mouse_press(const Vecf& mouse_pos) {
   node_held_ = node_pressed;
   if (node_focused_ != -1 && node_pressed != node_focused_) {
     auto& released = nodes[node_focused_];
-    if (get_elements(released).focus_leave(released, true)) {
+    if (get_elements(released).focus_leave(*this, released, true, node_pressed)) {
       node_changed(released);
     }
   }
@@ -423,7 +423,7 @@ void Tree::focus_next(bool reverse) {
 
   if (node_focused_ != -1) {
     auto& prev_focused = nodes[node_focused_];
-    if (get_elements(prev_focused).focus_leave(prev_focused, true)) {
+    if (get_elements(prev_focused).focus_leave(*this, prev_focused, true, next)) {
       node_changed(prev_focused);
     }
   }
@@ -442,7 +442,7 @@ void Tree::focus_leave(bool success) {
     return;
   }
   auto& node = nodes[node_focused_];
-  if (get_elements(node).focus_leave(node, success)) {
+  if (get_elements(node).focus_leave(*this, node, success, -1)) {
     node_changed(node);
   }
   node_focused_ = -1;

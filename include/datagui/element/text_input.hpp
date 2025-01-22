@@ -20,8 +20,7 @@ struct TextInput {
 
 class TextInputSystem : public ElementSystem {
 public:
-  TextInputSystem(const Style& style, const FontStructure& font) :
-      style(style), font(font) {}
+  TextInputSystem(const Style& style, const FontStructure& font) : style(style), font(font) {}
 
   int create(float max_width, const std::string& default_text) {
     return elements.emplace(max_width, default_text);
@@ -36,13 +35,12 @@ public:
 
   void calculate_size_components(Node& node, const Tree& tree) const override;
 
-  void render(const Node& node, const NodeState& state, Renderers& renderers)
-      const override;
+  void render(const Node& node, const NodeState& state, Renderers& renderers) const override;
 
   bool press(const Node& node, const Vecf& mouse_pos) override;
   bool held(const Node& node, const Vecf& mouse_pos) override;
   bool focus_enter(const Node& node) override;
-  bool focus_leave(const Node& node, bool success) override;
+  bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override;
   bool key_event(const Node& node, const KeyEvent& event) override;
 
 private:

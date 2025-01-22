@@ -91,9 +91,16 @@ bool SelectionSystem::focus_enter(const Node& node) {
   return true;
 }
 
-bool SelectionSystem::focus_leave(const Node& node, bool success) {
-  // elements[node.element_index].open = false;
-  // TODO: If success, then commit the current selected option
+bool SelectionSystem::focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) {
+  int iter = node.first_child;
+  while (iter != -1) {
+    if (iter == new_focus) {
+      // Stay open
+      return true;
+    }
+    iter = tree[iter].next;
+  }
+  elements[node.element_index].open = false;
   return true;
 }
 
@@ -125,6 +132,24 @@ void OptionSystem::render(const Node& node, const NodeState& state, Renderers& r
 
 bool OptionSystem::release(const Node& node, const Vecf& mouse_pos) {
   elements[node.element_index].is_selected = true;
+  return true;
+}
+
+bool OptionSystem::focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) {
+  if (new_focus == node.parent) {
+    // Stay open
+    return true;
+  }
+  int iter = tree[node.parent].first_child;
+  while (iter != -1) {
+    if (iter == new_focus) {
+      // Stay open
+      return true;
+    }
+    iter = tree[iter].next;
+  }
+  // TODO: This won't work using the current method
+  // elements[tree[node.parent].element_index].open = false;
   return true;
 }
 
