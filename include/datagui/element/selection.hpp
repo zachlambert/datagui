@@ -13,10 +13,9 @@ struct Selection {
   std::vector<std::string> choices;
   int choice;
   float max_width;
-  bool open;
 
   Selection(const std::vector<std::string>& choices, int default_choice, float max_width) :
-      choices(choices), choice(default_choice), max_width(max_width), open(false) {}
+      choices(choices), choice(default_choice), max_width(max_width) {}
 };
 
 class SelectionSystem : public ElementSystem {
@@ -35,17 +34,18 @@ public:
 
   void pop(int index) override { elements.pop(index); }
 
-  bool open(const Node& node) const { return elements[node.element_index].open; }
-  // const int* value(const Node& node) { return &elements[node.element_index].choice; }
+  void set_choice(const Node& node, int choice);
 
   void calculate_size_components(Node& node, const Tree& tree) const override;
   void calculate_child_dimensions(const Node& node, Tree& tree) const override;
 
   void render(const Node& node, const NodeState& state, Renderers& renderers) const override;
 
-  bool release(const Node& node, const Vecf& mouse_pos) override;
-  bool focus_enter(const Node& node) override;
-  bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override;
+  bool release(const Node& node, const Vecf& mouse_pos) override { return true; }
+  bool focus_enter(const Node& node) override { return true; }
+  bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override {
+    return true;
+  }
 
 private:
   const Style& style;
@@ -56,10 +56,8 @@ private:
 struct Option {
   std::string choice;
   float max_width;
-  bool is_selected;
 
-  Option(const std::string& choice, float max_width) :
-      choice(choice), max_width(max_width), is_selected(false) {}
+  Option(const std::string& choice, float max_width) : choice(choice), max_width(max_width) {}
 };
 
 class OptionSystem : public ElementSystem {
@@ -72,14 +70,16 @@ public:
 
   void pop(int index) override { elements.pop(index); }
 
-  bool is_selected(const Node& node) { return elements[node.element_index].is_selected; }
-
   void calculate_size_components(Node& node, const Tree& tree) const override;
 
   void render(const Node& node, const NodeState& state, Renderers& renderers) const override;
 
-  bool release(const Node& node, const Vecf& mouse_pos) override;
-  bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override;
+  bool release(const Node& node, const Vecf& mouse_pos) override { return true; }
+  bool focus_enter(const Node& node) override { return true; }
+  bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override {
+    return true;
+  }
+  bool key_event(const Node& node, const KeyEvent& event) override { return true; }
 
 private:
   const Style& style;

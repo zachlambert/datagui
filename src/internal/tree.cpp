@@ -171,7 +171,7 @@ void Tree::remove_node(int root_node) {
         node_held_ = -1;
       }
       if (node_focused_ == node_index) {
-        node_focused_ = -1;
+        node_focused_ = nodes[node_focused_].parent;
       }
 
       continue;
@@ -355,7 +355,7 @@ void Tree::mouse_press(const Vecf& mouse_pos) {
       node_changed(released);
     }
   }
-  node_focused_ = node_pressed;
+  set_node_focused(node_pressed);
 }
 
 void Tree::mouse_release(const Vecf& mouse_pos) {
@@ -434,7 +434,7 @@ void Tree::focus_next(bool reverse) {
     }
   }
 
-  node_focused_ = next;
+  set_node_focused(next);
 }
 
 void Tree::focus_leave(bool success) {
@@ -452,6 +452,7 @@ NodeState Tree::node_state(int node) const {
   NodeState state;
   state.held = (node == node_held_);
   state.focused = (node == node_focused_);
+  state.in_focus_tree = nodes[node].in_focus_tree;
   return state;
 }
 
@@ -462,6 +463,22 @@ void Tree::node_changed(Node& node) {
     nodes[iter].changed = true;
     iter = nodes[iter].parent;
   }
+}
+
+void Tree::set_node_focused(int new_focused) {
+  int iter = node_focused_;
+  while (iter != -1) {
+    nodes[iter].in_focus_tree = false;
+    iter = nodes[iter].parent;
+  }
+
+  iter = new_focused;
+  while (iter != -1) {
+    nodes[iter].in_focus_tree = true;
+    iter = nodes[iter].parent;
+  }
+
+  node_focused_ = new_focused;
 }
 
 } // namespace datagui

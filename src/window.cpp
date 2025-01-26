@@ -195,10 +195,15 @@ const int* Window::selection(
     return selections.create(choices, default_choice, max_width);
   });
 
-  if (selections.open(tree[node])) {
+  if (tree.node_in_focus_tree(node)) {
     tree.down();
-    for (const auto& choice : choices) {
-      tree.next(choice, Element::Option, [&]() { return options.create(choice, max_width); });
+    for (int i = 0; i < choices.size(); i++) {
+      tree.next(choices[i], Element::Option, [&]() {
+        return options.create(choices[i], max_width);
+      });
+      if (tree.current_node_changed()) {
+        selections.set_choice(tree[node], i);
+      }
     }
     tree.up();
   } else {

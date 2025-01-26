@@ -63,8 +63,9 @@ enum class Element {
 struct NodeState {
   bool held;
   bool focused;
+  bool in_focus_tree;
 
-  NodeState() : held(false), focused(false) {}
+  NodeState() : held(false), focused(false), in_focus_tree(false) {}
 };
 
 // Stores all (common) data relevant to a node
@@ -80,6 +81,7 @@ struct Node {
   int next;
   int first_child;
   int last_child;
+  bool in_focus_tree;
 
   // Layout calculation
   Vecf fixed_size;
@@ -101,6 +103,7 @@ struct Node {
       next(-1),
       first_child(-1),
       last_child(-1),
+      in_focus_tree(false),
       fixed_size(Vecf::Zero()),
       dynamic_size(Vecf::Zero()),
       floating(false),
@@ -138,8 +141,18 @@ public:
 
   int node_held() const { return node_held_; }
   int node_focused() const { return node_focused_; }
+  bool node_in_focus_tree(int node) const { return nodes[node].in_focus_tree; }
+
+  // TODO: Clean this up
+  bool current_node_changed() const {
+    if (current == -1) {
+      return false;
+    }
+    return nodes[current].changed;
+  }
 
   void node_changed(Node& node);
+  void set_node_focused(int new_focused);
 
   ElementSystem& get_elements(const Node& node);
 

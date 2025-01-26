@@ -3,6 +3,10 @@
 
 namespace datagui {
 
+void SelectionSystem::set_choice(const Node& node, int choice) {
+  elements[node.element_index].choice = choice;
+}
+
 void SelectionSystem::calculate_size_components(Node& node, const Tree& tree) const {
   const auto& element = elements[node.element_index];
   node.fixed_size = Vecf::Constant(2 * (style.element.border_width + style.element.padding));
@@ -63,45 +67,6 @@ void SelectionSystem::render(const Node& node, const NodeState& state, Renderers
         element.max_width,
         node.origin + Vecf::Constant(style.element.border_width + style.element.padding));
   }
-#if 0
-  if (state.focused) {
-    float offset = node.size.y;
-    for (const auto &choice : element.choices) {
-      Vecf origin = node.origin + Vecf(0, offset);
-      offset += node.size.y;
-      renderers.geometry.queue_box(
-          Boxf(origin, origin + node.size), style.element.bg_color,
-          style.element.border_width, style.element.border_color);
-      renderers.text.queue_text(
-          font, style.text.font_color, choice, element.max_width,
-          origin + Vecf::Constant(style.element.border_width +
-                                  style.element.padding));
-    }
-  }
-#endif
-}
-
-bool SelectionSystem::release(const Node& node, const Vecf& mouse_pos) {
-  elements[node.element_index].open = true;
-  return true;
-}
-
-bool SelectionSystem::focus_enter(const Node& node) {
-  elements[node.element_index].open = true;
-  return true;
-}
-
-bool SelectionSystem::focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) {
-  int iter = node.first_child;
-  while (iter != -1) {
-    if (iter == new_focus) {
-      // Stay open
-      return true;
-    }
-    iter = tree[iter].next;
-  }
-  elements[node.element_index].open = false;
-  return true;
 }
 
 void OptionSystem::calculate_size_components(Node& node, const Tree& tree) const {
@@ -128,29 +93,6 @@ void OptionSystem::render(const Node& node, const NodeState& state, Renderers& r
       element.choice,
       element.max_width,
       node.origin + Vecf::Constant(style.element.border_width + style.element.padding));
-}
-
-bool OptionSystem::release(const Node& node, const Vecf& mouse_pos) {
-  elements[node.element_index].is_selected = true;
-  return true;
-}
-
-bool OptionSystem::focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) {
-  if (new_focus == node.parent) {
-    // Stay open
-    return true;
-  }
-  int iter = tree[node.parent].first_child;
-  while (iter != -1) {
-    if (iter == new_focus) {
-      // Stay open
-      return true;
-    }
-    iter = tree[iter].next;
-  }
-  // TODO: This won't work using the current method
-  // elements[tree[node.parent].element_index].open = false;
-  return true;
 }
 
 } // namespace datagui
