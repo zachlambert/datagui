@@ -35,6 +35,7 @@ public:
   void pop(int index) override { elements.pop(index); }
 
   void set_choice(const Node& node, int choice);
+  const int* choice(const Node& node) const { return &elements[node.element_index].choice; }
 
   void calculate_size_components(Node& node, const Tree& tree) const override;
   void calculate_child_dimensions(const Node& node, Tree& tree) const override;

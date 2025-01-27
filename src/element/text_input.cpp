@@ -23,7 +23,7 @@ void TextInputSystem::render(const Node& node, const NodeState& state, Renderers
       Boxf(node.origin, node.origin + node.size),
       style.text_input.bg_color,
       style.element.border_width,
-      state.focused ? style.element.focus_color : style.element.border_color);
+      state.in_focus_tree ? style.element.focus_color : style.element.border_color);
   Vecf text_origin =
       node.origin + Vecf::Constant(style.element.border_width + style.element.padding);
 

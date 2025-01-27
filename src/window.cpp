@@ -195,6 +195,7 @@ const int* Window::selection(
     return selections.create(choices, default_choice, max_width);
   });
 
+  bool changed = false;
   if (tree.node_in_focus_tree(node)) {
     tree.down();
     for (int i = 0; i < choices.size(); i++) {
@@ -202,7 +203,10 @@ const int* Window::selection(
         return options.create(choices[i], max_width);
       });
       if (tree.current_node_changed()) {
-        selections.set_choice(tree[node], i);
+        if (*selections.choice(tree[node]) != i) {
+          selections.set_choice(tree[node], i);
+          changed = true;
+        }
       }
     }
     tree.up();
@@ -211,11 +215,9 @@ const int* Window::selection(
     tree.up();
   }
 
-#if 0
-  if (tree[node].changed) {
-    return selections.value(tree[node]);
+  if (changed) {
+    return selections.choice(tree[node]);
   }
-#endif
   return nullptr;
 }
 

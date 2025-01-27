@@ -23,7 +23,7 @@ void SelectionSystem::calculate_child_dimensions(const Node& node, Tree& tree) c
 
   const auto& element = elements[node.element_index];
   Vecf available = node.size - node.fixed_size;
-  Vecf offset = Vecf::Constant(style.element.padding + style.element.border_width);
+  Vecf offset = Vecf::Zero();
 
   int child_index = node.first_child;
   while (child_index != -1) {
@@ -36,7 +36,7 @@ void SelectionSystem::calculate_child_dimensions(const Node& node, Tree& tree) c
     child.size = child.fixed_size;
 
     if (child.dynamic_size.x > 0) {
-      child.size.x = node.size.x - 2 * (style.element.padding + style.element.border_width);
+      child.size.x = node.size.x;
     }
     if (child.dynamic_size.y > 0) {
       child.size.y += (child.dynamic_size.y / node.dynamic_size.y) * available.y;
@@ -44,7 +44,7 @@ void SelectionSystem::calculate_child_dimensions(const Node& node, Tree& tree) c
 
     child.floating = true;
     child.origin = node.origin + offset;
-    offset.y += child.size.y + style.element.padding;
+    offset.y += child.size.y;
     child_index = child.next;
   }
 }
@@ -52,7 +52,7 @@ void SelectionSystem::calculate_child_dimensions(const Node& node, Tree& tree) c
 void SelectionSystem::render(const Node& node, const NodeState& state, Renderers& renderers) const {
   const auto& element = elements[node.element_index];
   const Color& border_color =
-      state.focused ? style.element.focus_color : style.element.border_color;
+      state.in_focus_tree ? style.element.focus_color : style.element.border_color;
 
   renderers.geometry.queue_box(
       Boxf(node.origin, node.origin + node.size),
@@ -71,8 +71,8 @@ void SelectionSystem::render(const Node& node, const NodeState& state, Renderers
 
 void OptionSystem::calculate_size_components(Node& node, const Tree& tree) const {
   const auto& element = elements[node.element_index];
-  node.fixed_size = text_size(font, element.choice, element.max_width);
-  node.fixed_size += Vecf::Constant(2 * (style.element.border_width + style.element.padding));
+  node.fixed_size.y = font.line_height + 2 * (style.element.padding + style.element.border_width);
+  node.dynamic_size.x = 1;
 }
 
 void OptionSystem::render(const Node& node, const NodeState& state, Renderers& renderers) const {
