@@ -15,6 +15,8 @@
 #include "datagui/element/text.hpp"
 #include "datagui/element/text_input.hpp"
 
+#include "datagui/internal/reader.hpp"
+
 namespace datagui {
 
 class Window {
@@ -25,12 +27,7 @@ public:
     int height;
     bool vsync;
     bool resizable;
-    Config() :
-        title("datagui"),
-        width(900),
-        height(600),
-        vsync(false),
-        resizable(true) {}
+    Config() : title("datagui"), width(900), height(600), vsync(false), resizable(true) {}
   };
 
   Window(const Config& config = Config(), const Style& style = Style());
@@ -43,39 +40,47 @@ public:
   bool vertical_layout(
       float width = 0,
       float height = 0,
-      const std::string& key = "");
+      const std::string& key = "",
+      bool open_always = false);
 
   bool horizontal_layout(
       float width = 0,
       float height = 0,
-      const std::string& key = "");
+      const std::string& key = "",
+      bool open_always = false);
 
   void layout_end();
 
-  void text(
-      const std::string& text,
-      float max_width = 0,
-      const std::string& key = "");
+  void text(const std::string& text, float max_width = 0, const std::string& key = "");
 
-  bool button(
-      const std::string& text,
-      float max_width = 0,
-      const std::string& key = "");
+  bool button(const std::string& text, float max_width = 0, const std::string& key = "");
 
-  const bool* checkbox(const std::string& key = "");
+  const bool* checkbox(const std::string& key = "", bool ret_always = false);
 
   const std::string* text_input(
       const std::string& default_text = "",
       float max_width = -1,
-      const std::string& key = "");
+      const std::string& key = "",
+      bool ret_always = false);
 
   const int* selection(
       const std::vector<std::string>& choices,
       int default_choice = 0,
       float max_width = -1,
-      const std::string& key = "");
+      const std::string& key = "",
+      bool ret_always = false);
 
   void hidden(const std::string& key = "");
+
+  template <datapack::readable T>
+  bool value(T& value) {
+    bool changed;
+    printf("Starting value\n");
+    {
+      datapack::GuiReader(*this, changed).value(value);
+    }
+    return changed;
+  }
 
 private:
   void open();

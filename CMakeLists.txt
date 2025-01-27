@@ -11,9 +11,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(BUILD_ADDITIONAL_TARGETS ON)
 endif()
 
-# TODO: Add later
-# find_package(datapack REQUIRED)
-
+find_package(datapack REQUIRED)
 find_package(Freetype REQUIRED)
 
 # Library
@@ -26,6 +24,7 @@ add_library(datagui SHARED
     src/element/text.cpp
     src/element/text_input.cpp
     src/internal/geometry_renderer.cpp
+    src/internal/reader.cpp
     src/internal/text_selection.cpp
     src/internal/shader.cpp
     src/internal/text.cpp
@@ -34,7 +33,7 @@ add_library(datagui SHARED
     src/window.cpp
 )
 target_link_libraries(datagui
-    PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES}
+    PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
 )
 target_include_directories(datagui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -50,6 +49,9 @@ endif()
 
 add_executable(example1 examples/example1.cpp)
 target_link_libraries(example1 datagui)
+
+add_executable(example2 examples/example2.cpp)
+target_link_libraries(example2 datagui)
 
 # Create install target
 

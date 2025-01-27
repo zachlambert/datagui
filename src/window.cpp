@@ -131,22 +131,22 @@ void Window::close() {
   window = nullptr;
 }
 
-bool Window::vertical_layout(float length, float width, const std::string& key) {
+bool Window::vertical_layout(float length, float width, const std::string& key, bool open_always) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Vertical);
   });
-  if (tree[node].changed) {
+  if (tree[node].changed || open_always) {
     tree.down();
     return true;
   }
   return false;
 }
 
-bool Window::horizontal_layout(float length, float width, const std::string& key) {
+bool Window::horizontal_layout(float length, float width, const std::string& key, bool open_always) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Horizontal);
   });
-  if (tree[node].changed) {
+  if (tree[node].changed || open_always) {
     tree.down();
     return true;
   }
@@ -164,9 +164,9 @@ bool Window::button(const std::string& text, float max_width, const std::string&
   return tree[node].changed;
 }
 
-const bool* Window::checkbox(const std::string& key) {
+const bool* Window::checkbox(const std::string& key, bool ret_always) {
   int node = tree.next(key, Element::Checkbox, [&]() { return checkboxes.create(false); });
-  if (tree[node].changed) {
+  if (tree[node].changed || ret_always) {
     return checkboxes.value(tree[node]);
   }
   return nullptr;
@@ -175,11 +175,12 @@ const bool* Window::checkbox(const std::string& key) {
 const std::string* Window::text_input(
     const std::string& default_text,
     float max_width,
-    const std::string& key) {
+    const std::string& key,
+    bool ret_always) {
   int node = tree.next(key, Element::TextInput, [&]() {
     return text_inputs.create(max_width, default_text);
   });
-  if (tree[node].changed) {
+  if (tree[node].changed || ret_always) {
     return text_inputs.value(tree[node]);
   }
   return nullptr;
@@ -189,7 +190,8 @@ const int* Window::selection(
     const std::vector<std::string>& choices,
     int default_choice,
     float max_width,
-    const std::string& key) {
+    const std::string& key,
+    bool ret_always) {
 
   int node = tree.next(key, Element::Selection, [&]() {
     return selections.create(choices, default_choice, max_width);
@@ -215,7 +217,7 @@ const int* Window::selection(
     tree.up();
   }
 
-  if (changed) {
+  if (changed || ret_always) {
     return selections.choice(tree[node]);
   }
   return nullptr;
