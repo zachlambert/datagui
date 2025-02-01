@@ -102,10 +102,11 @@ std::tuple<const std::uint8_t*, std::size_t> GuiReader::binary(
 }
 
 bool GuiReader::optional_begin() {
-  if (window.checkbox(next_key)) {
-    window.vertical_layout(0, 0, "", true);
+  if (*window.checkbox(next_key, true)) {
+    window.vertical_layout(0, 0, "value", true);
     return true;
   }
+  window.hidden("value");
   return false;
 }
 
@@ -130,7 +131,10 @@ void GuiReader::variant_end() {
   window.layout_end();
 }
 
-void GuiReader::object_begin(std::size_t) { window.vertical_layout(-1, 0, "", true); }
+void GuiReader::object_begin(std::size_t) {
+  //
+  window.vertical_layout(0, 0, "", true);
+}
 
 void GuiReader::object_end(std::size_t) {
   //
@@ -144,7 +148,7 @@ void GuiReader::object_next(const char* key) {
 
 void GuiReader::tuple_begin(std::size_t trivial_size) {
   //
-  window.vertical_layout();
+  window.vertical_layout(0, 0, "", true);
 }
 
 void GuiReader::tuple_end(std::size_t trivial_size) {
@@ -154,7 +158,10 @@ void GuiReader::tuple_end(std::size_t trivial_size) {
 
 void GuiReader::tuple_next() { next_key = ""; }
 
-void GuiReader::list_begin(bool is_trivial) { window.vertical_layout(); }
+void GuiReader::list_begin(bool is_trivial) {
+  //
+  window.vertical_layout(0, 0, "", true);
+}
 
 bool GuiReader::list_next() {
   next_key = "";

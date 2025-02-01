@@ -43,6 +43,9 @@ int Tree::next(
     Element element,
     const construct_element_t& construct_element) {
 
+  if (parent != -1) {
+    printf("Next %s\n", key.c_str());
+  }
   if (parent == -1) {
     if (!key.empty()) {
       throw WindowError("Root node must be unnamed");
@@ -99,11 +102,13 @@ int Tree::next(
 }
 
 void Tree::down() {
+  printf("Down\n");
   parent = current;
   current = -1;
 }
 
 void Tree::up() {
+  printf("Up\n");
   if (parent == -1) {
     throw WindowError("Called end too many times");
   }

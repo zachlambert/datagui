@@ -142,7 +142,11 @@ bool Window::vertical_layout(float length, float width, const std::string& key, 
   return false;
 }
 
-bool Window::horizontal_layout(float length, float width, const std::string& key, bool open_always) {
+bool Window::horizontal_layout(
+    float length,
+    float width,
+    const std::string& key,
+    bool open_always) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Horizontal);
   });
@@ -223,7 +227,10 @@ const int* Window::selection(
   return nullptr;
 }
 
-void Window::hidden(const std::string& key) { tree.next(key, Element::Button, nullptr); }
+void Window::hidden(const std::string& key) {
+  //
+  tree.next(key, Element::Button, nullptr);
+}
 
 void Window::render_begin() {
   glClearColor(style.bg_color.r, style.bg_color.g, style.bg_color.b, 1);
