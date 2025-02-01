@@ -1,22 +1,15 @@
 #include "datagui/internal/reader.hpp"
 #include "datagui/window.hpp"
 #include <datapack/encode/base64.hpp>
-#include <exception>
 
 namespace datapack {
 
-GuiReader::GuiReader(datagui::Window& window, bool& changed) : window(window), changed(changed) {
-  changed = false;
-  window.vertical_layout(0, 0, "", true);
-}
+GuiReader::GuiReader(datagui::Window& window) : window(window) {}
 
-GuiReader::~GuiReader() {
-  //
-  window.layout_end();
-}
+GuiReader::~GuiReader() {}
 
 void GuiReader::integer(IntType type, void* value) {
-  const std::string& output = *window.text_input("", 0, next_key, true);
+  const std::string& output = *window.text_input("", -1, next_key, true);
   try {
     switch (type) {
     case IntType::I32:
@@ -36,10 +29,25 @@ void GuiReader::integer(IntType type, void* value) {
       break;
     }
   } catch (std::invalid_argument&) {
+    switch (type) {
+    case IntType::I32:
+      *((std::int32_t*)value) = 0;
+      break;
+    case IntType::I64:
+      *((std::int32_t*)value) = 0;
+      break;
+    case IntType::U32:
+      *((std::int32_t*)value) = 0;
+      break;
+    case IntType::U64:
+      *((std::int32_t*)value) = 0;
+      break;
+    case IntType::U8:
+      *((std::uint8_t*)value) = 0;
+      break;
+    }
     return;
   }
-
-  changed = true;
 }
 
 void GuiReader::floating(FloatType type, void* value) {
@@ -54,15 +62,27 @@ void GuiReader::floating(FloatType type, void* value) {
       break;
     }
   } catch (std::invalid_argument&) {
+    switch (type) {
+    case FloatType::F32:
+      *((float*)value) = 0;
+      break;
+    case FloatType::F64:
+      *((double*)value) = 0;
+      break;
+    }
     return;
   }
-
-  changed = true;
 }
 
-bool GuiReader::boolean() { return *window.checkbox(next_key, true); }
+bool GuiReader::boolean() {
+  //
+  return *window.checkbox(next_key, true);
+}
 
-const char* GuiReader::string() { return window.text_input("", -1, next_key, true)->c_str(); }
+const char* GuiReader::string() {
+  //
+  return window.text_input("", -1, next_key, true)->c_str();
+}
 
 int GuiReader::enumerate(const std::span<const char*>& labels) {
   // TODO: Allow selection to take a span of const char*
@@ -89,7 +109,10 @@ bool GuiReader::optional_begin() {
   return false;
 }
 
-void GuiReader::optional_end() { window.layout_end(); }
+void GuiReader::optional_end() {
+  //
+  window.layout_end();
+}
 
 int GuiReader::variant_begin(const std::span<const char*>& labels) {
   // TODO: Allow selection to take a span of const char*
@@ -102,11 +125,12 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
   return choice;
 }
 
-void GuiReader::variant_end() { window.layout_end(); }
-
-void GuiReader::object_begin(std::size_t) {
-  window.vertical_layout(-1, 0, "", true);
+void GuiReader::variant_end() {
+  //
+  window.layout_end();
 }
+
+void GuiReader::object_begin(std::size_t) { window.vertical_layout(-1, 0, "", true); }
 
 void GuiReader::object_end(std::size_t) {
   //
@@ -118,9 +142,15 @@ void GuiReader::object_next(const char* key) {
   next_key = key;
 }
 
-void GuiReader::tuple_begin(std::size_t trivial_size) { window.vertical_layout(); }
+void GuiReader::tuple_begin(std::size_t trivial_size) {
+  //
+  window.vertical_layout();
+}
 
-void GuiReader::tuple_end(std::size_t trivial_size) { window.layout_end(); }
+void GuiReader::tuple_end(std::size_t trivial_size) {
+  //
+  window.layout_end();
+}
 
 void GuiReader::tuple_next() { next_key = ""; }
 
@@ -132,6 +162,9 @@ bool GuiReader::list_next() {
   return false;
 }
 
-void GuiReader::list_end() { window.layout_end(); }
+void GuiReader::list_end() {
+  //
+  window.layout_end();
+}
 
 } // namespace datapack

@@ -10,7 +10,7 @@ namespace datapack {
 
 class GuiReader : public Reader {
 public:
-  GuiReader(datagui::Window& window, bool& changed);
+  GuiReader(datagui::Window& window);
   ~GuiReader();
 
   void integer(IntType type, void* value) override;
@@ -41,7 +41,6 @@ public:
 
 private:
   datagui::Window& window;
-  bool& changed;
   std::string next_key;
   std::vector<std::uint8_t> data_temp;
 };

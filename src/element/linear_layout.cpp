@@ -2,25 +2,20 @@
 
 namespace datagui {
 
-void LinearLayoutSystem::calculate_size_components(Node& node, const Tree& tree)
-    const {
+void LinearLayoutSystem::calculate_size_components(Node& node, const Tree& tree) const {
   const auto& element = elements[node.element_index];
 
   node.fixed_size = Vecf::Zero();
   node.dynamic_size = Vecf::Zero();
 
-  float& fixed_a = element.direction == LayoutDirection::Horizontal
-                       ? node.fixed_size.x
-                       : node.fixed_size.y;
-  float& fixed_b = element.direction == LayoutDirection::Horizontal
-                       ? node.fixed_size.y
-                       : node.fixed_size.x;
-  float& dynamic_a = element.direction == LayoutDirection::Horizontal
-                         ? node.dynamic_size.x
-                         : node.dynamic_size.y;
-  float& dynamic_b = element.direction == LayoutDirection::Horizontal
-                         ? node.dynamic_size.y
-                         : node.dynamic_size.x;
+  float& fixed_a =
+      element.direction == LayoutDirection::Horizontal ? node.fixed_size.x : node.fixed_size.y;
+  float& fixed_b =
+      element.direction == LayoutDirection::Horizontal ? node.fixed_size.y : node.fixed_size.x;
+  float& dynamic_a =
+      element.direction == LayoutDirection::Horizontal ? node.dynamic_size.x : node.dynamic_size.y;
+  float& dynamic_b =
+      element.direction == LayoutDirection::Horizontal ? node.dynamic_size.y : node.dynamic_size.x;
 
   // Primary direction (a)
 
@@ -35,9 +30,8 @@ void LinearLayoutSystem::calculate_size_components(Node& node, const Tree& tree)
         continue;
       }
 
-      float child_fixed_a = element.direction == LayoutDirection::Horizontal
-                                ? child.fixed_size.x
-                                : child.fixed_size.y;
+      float child_fixed_a = element.direction == LayoutDirection::Horizontal ? child.fixed_size.x
+                                                                             : child.fixed_size.y;
       float child_dynamic_a = element.direction == LayoutDirection::Horizontal
                                   ? child.dynamic_size.x
                                   : child.dynamic_size.y;
@@ -67,15 +61,14 @@ void LinearLayoutSystem::calculate_size_components(Node& node, const Tree& tree)
         continue;
       }
 
-      float child_fixed_b = element.direction == LayoutDirection::Horizontal
-                                ? child.fixed_size.y
-                                : child.fixed_size.x;
+      float child_fixed_b = element.direction == LayoutDirection::Horizontal ? child.fixed_size.y
+                                                                             : child.fixed_size.x;
       float child_dynamic_b = element.direction == LayoutDirection::Horizontal
                                   ? child.dynamic_size.y
                                   : child.dynamic_size.x;
 
       fixed_b = std::max(fixed_b, child_fixed_b);
-      dynamic_a += std::max(dynamic_b, child_dynamic_b);
+      dynamic_b += std::max(dynamic_b, child_dynamic_b);
 
       child_index = child.next;
     }
@@ -86,17 +79,13 @@ void LinearLayoutSystem::calculate_size_components(Node& node, const Tree& tree)
     dynamic_a = -element.width;
   }
 
-  node.fixed_size +=
-      Vecf::Constant(2 * (style.element.border_width + style.element.padding));
+  node.fixed_size += Vecf::Constant(2 * (style.element.border_width + style.element.padding));
 }
 
-void LinearLayoutSystem::calculate_child_dimensions(
-    const Node& node,
-    Tree& tree) const {
+void LinearLayoutSystem::calculate_child_dimensions(const Node& node, Tree& tree) const {
   const auto& element = elements[node.element_index];
   Vecf available = node.size - node.fixed_size;
-  Vecf offset =
-      Vecf::Constant(style.element.padding + style.element.border_width);
+  Vecf offset = Vecf::Constant(style.element.padding + style.element.border_width);
 
   int child_index = node.first_child;
   while (child_index != -1) {
@@ -110,20 +99,16 @@ void LinearLayoutSystem::calculate_child_dimensions(
 
     if (child.dynamic_size.x > 0) {
       if (element.direction == LayoutDirection::Horizontal) {
-        child.size.x +=
-            (child.dynamic_size.x / node.dynamic_size.x) * available.x;
+        child.size.x += (child.dynamic_size.x / node.dynamic_size.x) * available.x;
       } else {
-        child.size.x = node.size.x -
-                       2 * (style.element.padding + style.element.border_width);
+        child.size.x = node.size.x - 2 * (style.element.padding + style.element.border_width);
       }
     }
     if (child.dynamic_size.y > 0) {
       if (element.direction == LayoutDirection::Horizontal) {
-        child.size.y = node.size.y -
-                       2 * (style.element.padding + style.element.border_width);
+        child.size.y = node.size.y - 2 * (style.element.padding + style.element.border_width);
       } else {
-        child.size.y +=
-            (child.dynamic_size.y / node.dynamic_size.y) * available.y;
+        child.size.y += (child.dynamic_size.y / node.dynamic_size.y) * available.y;
       }
     }
 
@@ -138,10 +123,8 @@ void LinearLayoutSystem::calculate_child_dimensions(
   }
 }
 
-void LinearLayoutSystem::render(
-    const Node& node,
-    const NodeState& state,
-    Renderers& renderers) const {
+void LinearLayoutSystem::render(const Node& node, const NodeState& state, Renderers& renderers)
+    const {
   const Color& border_color =
       state.in_focus_tree ? style.element.focus_color : style.element.border_color;
 

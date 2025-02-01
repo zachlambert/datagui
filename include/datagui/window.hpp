@@ -74,12 +74,12 @@ public:
 
   template <datapack::readable T>
   bool value(T& value) {
-    bool changed;
-    printf("Starting value\n");
-    {
-      datapack::GuiReader(*this, changed).value(value);
+    if (vertical_layout()) {
+      datapack::GuiReader(*this).value(value);
+      layout_end();
+      return true;
     }
-    return changed;
+    return false;
   }
 
 private:

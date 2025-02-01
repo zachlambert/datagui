@@ -244,8 +244,6 @@ void Window::render_end() {
   event_handling();
 
   tree.render(renderers, window_size);
-  // renderers.geometry.render(window_size);
-  // renderers.text.render(window_size);
 
   if (tree.root_node() != -1) {
     const auto& root_node = tree[tree.root_node()];

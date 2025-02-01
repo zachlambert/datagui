@@ -21,6 +21,7 @@ int main() {
   datagui::Window::Config config;
   config.title = "Datagui Example 2";
   datagui::Style style;
+  style.element.border_width = 1;
 
   Foo foo;
 
