@@ -14,3 +14,4 @@ IndentRequires: false
 BreakBeforeConceptDeclarations: Always
 BreakTemplateDeclarations: Yes
 ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: Empty

@@ -47,16 +47,7 @@
 namespace datagui {
 
 // Defines all element types possible in the library
-enum class Element {
-  Undefined,
-  Button,
-  Checkbox,
-  LinearLayout,
-  Selection,
-  Option,
-  Text,
-  TextInput
-};
+enum class Element { Undefined, Button, Checkbox, LinearLayout, Selection, Text, TextInput };
 
 // Used as a return value when the user queries the state
 // of a given node
@@ -132,20 +123,33 @@ public:
 
   void render(Renderers& renderers, const Vecf& window_size);
 
-  const Node& operator[](std::size_t i) const { return nodes[i]; }
-  Node& operator[](std::size_t i) { return nodes[i]; }
+  const Node& operator[](std::size_t i) const {
+    return nodes[i];
+  }
+  Node& operator[](std::size_t i) {
+    return nodes[i];
+  }
 
-  int root_node() const { return root_node_; }
+  int root_node() const {
+    return root_node_;
+  }
 
   void mouse_press(const Vecf& mouse_pos);
   void mouse_release(const Vecf& mouse_pos);
   void focus_next(bool reverse = false);
   void focus_leave(bool success);
 
-  int node_held() const { return node_held_; }
-  int node_focused() const { return node_focused_; }
-  bool node_in_focus_tree(int node) const { return nodes[node].in_focus_tree; }
+  int node_held() const {
+    return node_held_;
+  }
+  int node_focused() const {
+    return node_focused_;
+  }
+  bool node_in_focus_tree(int node) const {
+    return nodes[node].in_focus_tree;
+  }
 
+#if 0
   // TODO: Clean this up
   bool current_node_changed() const {
     if (current == -1) {
@@ -153,6 +157,7 @@ public:
     }
     return nodes[current].changed;
   }
+#endif
 
   void node_changed(Node& node);
   void set_node_focused(int new_focused);

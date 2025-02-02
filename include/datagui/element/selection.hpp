@@ -9,6 +9,22 @@
 
 namespace datagui {
 
+struct SelectionGroup {
+  std::vector<std::string> choices;
+  int choice;
+  float max_width;
+  int element_count;
+
+  SelectionGroup(const std::vector<std::string>& choices, int default_choice, float max_width) :
+      choices(choices), choice(default_choice), max_width(max_width), element_count(0) {}
+};
+
+struct SelectionElement {
+  int group;
+  int choice;
+  SelectionElement(bool group, int choice) : group(group), choice(choice) {}
+};
+
 struct Selection {
   std::vector<std::string> choices;
   int choice;
@@ -22,28 +38,51 @@ class SelectionSystem : public ElementSystem {
 public:
   SelectionSystem(const Style& style, const FontStructure& font) : style(style), font(font) {}
 
-  int create(const std::vector<std::string>& choices, int default_choice, float max_width) {
+  int create_root(const std::vector<std::string>& choices, int default_choice, float max_width) {
     if (max_width >= 0) {
       for (const auto& choice : choices) {
         float width = text_size(font, choice, 0).x;
         max_width = std::max(max_width, width);
       }
     }
-    return elements.emplace(choices, default_choice, max_width);
+
+    int group = groups.size();
+    groups.emplace(choices, default_choice, max_width);
+
+    groups[group].element_count++;
+    return elements.emplace(group, -1);
   }
 
-  void pop(int index) override { elements.pop(index); }
+  int create_option(const Node& parent, int choice) {
+    int group = elements[parent.element_index].group;
+    groups[group].element_count++;
+    return elements.emplace(group, choice);
+  }
 
-  void set_choice(const Node& node, int choice);
-  const int* choice(const Node& node) const { return &elements[node.element_index].choice; }
+  void pop(int index) override {
+    int group = elements[index].group;
+    groups[group].element_count--;
+    if (groups[group].element_count == 0) {
+      groups.pop(group);
+    }
+    elements.pop(index);
+  }
+
+  const int* choice(const Node& node) const {
+    return &groups[elements[node.element_index].group].choice;
+  }
 
   void calculate_size_components(Node& node, const Tree& tree) const override;
   void calculate_child_dimensions(const Node& node, Tree& tree) const override;
 
   void render(const Node& node, const NodeState& state, Renderers& renderers) const override;
 
-  bool release(const Node& node, const Vecf& mouse_pos) override { return true; }
-  bool focus_enter(const Node& node) override { return true; }
+  bool release(const Node& node, const Vecf& mouse_pos) override;
+  bool key_event(const Node& node, const KeyEvent& event) override;
+
+  bool focus_enter(const Node& node) override {
+    return true;
+  }
   bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override {
     return true;
   }
@@ -51,9 +90,11 @@ public:
 private:
   const Style& style;
   const FontStructure& font;
-  VectorMap<Selection> elements;
+  VectorMap<SelectionGroup> groups;
+  VectorMap<SelectionElement> elements;
 };
 
+#if 0
 struct Option {
   std::string choice;
   float max_width;
@@ -87,5 +128,6 @@ private:
   const FontStructure& font;
   VectorMap<Option> elements;
 };
+#endif
 
 } // namespace datagui

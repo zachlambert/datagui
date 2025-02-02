@@ -58,14 +58,12 @@ Window::Window(const Config& config, const Style& style) :
     checkboxes(this->style, font),
     linear_layouts(this->style),
     selections(this->style, font),
-    options(this->style, font),
     texts(this->style, font),
     text_inputs(this->style, font) {
   tree.register_element(Element::Button, buttons);
   tree.register_element(Element::Checkbox, checkboxes);
   tree.register_element(Element::LinearLayout, linear_layouts);
   tree.register_element(Element::Selection, selections);
-  tree.register_element(Element::Option, options);
   tree.register_element(Element::Text, texts);
   tree.register_element(Element::TextInput, text_inputs);
   open();
@@ -77,7 +75,9 @@ Window::~Window() {
   }
 }
 
-bool Window::running() const { return window && !glfwWindowShouldClose(window); }
+bool Window::running() const {
+  return window && !glfwWindowShouldClose(window);
+}
 
 void Window::open() {
   if (!glfwInit()) {
@@ -157,7 +157,9 @@ bool Window::horizontal_layout(
   return false;
 }
 
-void Window::layout_end() { tree.up(); }
+void Window::layout_end() {
+  tree.up();
+}
 
 void Window::text(const std::string& text, float max_width, const std::string& key) {
   tree.next(key, Element::Text, [&]() { return texts.create(text, max_width); });
@@ -198,22 +200,16 @@ const int* Window::selection(
     bool ret_always) {
 
   int node = tree.next(key, Element::Selection, [&]() {
-    return selections.create(choices, default_choice, max_width);
+    return selections.create_root(choices, default_choice, max_width);
   });
 
   bool changed = false;
   if (tree.node_in_focus_tree(node)) {
     tree.down();
     for (int i = 0; i < choices.size(); i++) {
-      tree.next(choices[i], Element::Option, [&]() {
-        return options.create(choices[i], max_width);
+      tree.next(choices[i], Element::Selection, [&]() {
+        return selections.create_option(tree[node], i);
       });
-      if (tree.current_node_changed()) {
-        if (*selections.choice(tree[node]) != i) {
-          selections.set_choice(tree[node], i);
-          changed = true;
-        }
-      }
     }
     tree.up();
   } else {

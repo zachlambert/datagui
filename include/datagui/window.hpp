@@ -83,7 +83,9 @@ public:
   }
 
   // TEMP
-  Tree& get_tree() { return tree; }
+  Tree& get_tree() {
+    return tree;
+  }
 
 private:
   void open();
@@ -103,7 +105,6 @@ private:
   CheckboxSystem checkboxes;
   LinearLayoutSystem linear_layouts;
   SelectionSystem selections;
-  OptionSystem options;
   TextSystem texts;
   TextInputSystem text_inputs;
 };

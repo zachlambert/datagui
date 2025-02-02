@@ -39,11 +39,16 @@ struct Style {
     Color check_color = Color::Black();
   };
 
+  struct Selection {
+    Color choice_color = Color::Gray(0.5);
+  };
+
   Color bg_color = Color::Gray(0.9);
   Text text;
   Element element;
   TextInput text_input;
   Checkbox checkbox;
+  Selection selection;
 };
 
 } // namespace datagui

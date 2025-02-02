@@ -3,27 +3,33 @@
 
 namespace datagui {
 
-void SelectionSystem::set_choice(const Node& node, int choice) {
-  elements[node.element_index].choice = choice;
-}
-
 void SelectionSystem::calculate_size_components(Node& node, const Tree& tree) const {
   const auto& element = elements[node.element_index];
   node.fixed_size = Vecf::Constant(2 * (style.element.border_width + style.element.padding));
 
-  node.fixed_size.y += font.line_height;
-  if (element.max_width >= 0) {
-    node.fixed_size.x += element.max_width;
+  const auto& group = groups[element.group];
+
+  if (element.choice == -1) {
+    node.fixed_size.y += font.line_height;
+    if (group.max_width >= 0) {
+      node.fixed_size.x += group.max_width;
+    } else {
+      node.dynamic_size.x = -group.max_width;
+    }
   } else {
-    node.dynamic_size.x = -element.max_width;
+    node.fixed_size.y = font.line_height + 2 * (style.element.padding + style.element.border_width);
+    node.dynamic_size.x = 1;
   }
 }
 
 void SelectionSystem::calculate_child_dimensions(const Node& node, Tree& tree) const {
 
   const auto& element = elements[node.element_index];
-  Vecf available = node.size - node.fixed_size;
-  Vecf offset = Vecf::Zero();
+  if (element.choice != -1) {
+    return;
+  }
+
+  Vecf offset = Vecf(0, node.fixed_size.y);
 
   int child_index = node.first_child;
   while (child_index != -1) {
@@ -38,9 +44,6 @@ void SelectionSystem::calculate_child_dimensions(const Node& node, Tree& tree) c
     if (child.dynamic_size.x > 0) {
       child.size.x = node.size.x;
     }
-    if (child.dynamic_size.y > 0) {
-      child.size.y += (child.dynamic_size.y / node.dynamic_size.y) * available.y;
-    }
 
     child.floating = true;
     child.origin = node.origin + offset;
@@ -50,49 +53,54 @@ void SelectionSystem::calculate_child_dimensions(const Node& node, Tree& tree) c
 }
 
 void SelectionSystem::render(const Node& node, const NodeState& state, Renderers& renderers) const {
+
   const auto& element = elements[node.element_index];
+  const auto& group = groups[element.group];
+
   const Color& border_color =
       state.in_focus_tree ? style.element.focus_color : style.element.border_color;
-
-  renderers.geometry.queue_box(
-      Boxf(node.origin, node.origin + node.size),
-      style.element.bg_color,
-      style.element.border_width,
-      border_color);
-  if (element.choice >= 0 && element.choice < element.choices.size()) {
-    renderers.text.queue_text(
-        font,
-        style.text.font_color,
-        element.choices[element.choice],
-        element.max_width,
-        node.origin + Vecf::Constant(style.element.border_width + style.element.padding));
-  }
-}
-
-void OptionSystem::calculate_size_components(Node& node, const Tree& tree) const {
-  const auto& element = elements[node.element_index];
-  node.fixed_size.y = font.line_height + 2 * (style.element.padding + style.element.border_width);
-  node.dynamic_size.x = 1;
-}
-
-void OptionSystem::render(const Node& node, const NodeState& state, Renderers& renderers) const {
-
-  const auto& element = elements[node.element_index];
-  const Color& bg_color = state.held ? style.element.pressed_bg_color : style.element.bg_color;
-  const Color& border_color =
-      state.focused ? style.element.focus_color : style.element.border_color;
+  const Color& bg_color = element.choice != -1 && element.choice == group.choice
+                              ? style.selection.choice_color
+                              : style.element.bg_color;
 
   renderers.geometry.queue_box(
       Boxf(node.origin, node.origin + node.size),
       bg_color,
       style.element.border_width,
       border_color);
-  renderers.text.queue_text(
-      font,
-      style.text.font_color,
-      element.choice,
-      element.max_width,
-      node.origin + Vecf::Constant(style.element.border_width + style.element.padding));
+
+  int choice = element.choice == -1 ? group.choice : element.choice;
+  if (choice >= 0 && choice < group.choices.size()) {
+    renderers.text.queue_text(
+        font,
+        style.text.font_color,
+        group.choices[choice],
+        group.max_width,
+        node.origin + Vecf::Constant(style.element.border_width + style.element.padding));
+  }
+}
+
+bool SelectionSystem::release(const Node& node, const Vecf& mouse_pos) {
+  const auto& element = elements[node.element_index];
+  if (element.choice == -1) {
+    return true;
+  }
+  auto& group = groups[element.group];
+  group.choice = element.choice;
+  return true;
+}
+
+bool SelectionSystem::key_event(const Node& node, const KeyEvent& event) {
+  const auto& element = elements[node.element_index];
+  if (element.choice == -1) {
+    return false;
+  }
+  if (!event.is_text && event.key_release && event.key_value == KeyValue::Enter) {
+    auto& group = groups[element.group];
+    group.choice = element.choice;
+    return true;
+  }
+  return false;
 }
 
 } // namespace datagui
