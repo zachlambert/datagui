@@ -229,7 +229,7 @@ const int* Window::selection(
 
 void Window::hidden(const std::string& key) {
   //
-  tree.next(key, Element::Button, nullptr);
+  tree.next(key, Element::Undefined, nullptr);
 }
 
 void Window::render_begin() {

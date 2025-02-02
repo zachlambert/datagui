@@ -8,6 +8,7 @@ struct Foo {
   int y;
   bool test;
   std::optional<std::array<double, 3>> points;
+  std::vector<std::string> names;
 };
 
 namespace datapack {
@@ -17,6 +18,7 @@ DATAPACK_INLINE(Foo, value, packer) {
   packer.value("y", value.y);
   packer.value("test", value.test);
   packer.value("points", value.points);
+  packer.value("names", value.names);
   packer.object_end();
 }
 } // namespace datapack

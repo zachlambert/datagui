@@ -82,6 +82,9 @@ public:
     return false;
   }
 
+  // TEMP
+  Tree& get_tree() { return tree; }
+
 private:
   void open();
   void close();

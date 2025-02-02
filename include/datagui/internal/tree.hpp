@@ -127,6 +127,9 @@ public:
   void up();
   void end(const Vecf& root_size);
 
+  bool peek_next(const std::string& key) const; // Does a node with this key exist ?
+  void prev();
+
   void render(Renderers& renderers, const Vecf& window_size);
 
   const Node& operator[](std::size_t i) const { return nodes[i]; }

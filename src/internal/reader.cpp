@@ -158,14 +158,37 @@ void GuiReader::tuple_end(std::size_t trivial_size) {
 
 void GuiReader::tuple_next() { next_key = ""; }
 
+static int test_int_len = 3;
+static int test_int = 0;
+
 void GuiReader::list_begin(bool is_trivial) {
   //
   window.vertical_layout(0, 0, "", true);
+  test_int = 0;
 }
 
 bool GuiReader::list_next() {
-  next_key = "";
-  // TODO: Handle a way to add/remove
+  if (test_int < test_int_len) {
+    next_key = "";
+    test_int++;
+    return true;
+  }
+  if (window.button("add", 0, "add_key")) {
+    test_int_len++;
+  }
+  return false;
+
+  if (window.get_tree().peek_next("")) {
+    printf("Peek next true\n");
+    next_key = "";
+    return true;
+  }
+  if (window.button("add")) {
+    window.get_tree().prev();
+    window.hidden("");
+    window.button("add", 0, "add");
+    return false;
+  }
   return false;
 }
 

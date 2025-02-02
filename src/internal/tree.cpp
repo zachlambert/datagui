@@ -1,6 +1,5 @@
 #include "datagui/internal/tree.hpp"
 #include "datagui/exception.hpp"
-#include <algorithm>
 #include <assert.h>
 #include <stack>
 
@@ -72,6 +71,7 @@ int Tree::next(
       break;
     }
     iter = nodes[iter].next;
+    printf("Skip -> %i for %s\n", iter, key.c_str());
   }
 
   if (iter == -1) {
@@ -86,6 +86,7 @@ int Tree::next(
     iter = next;
     while (iter != -1 && iter != current) {
       int next = nodes[iter].next;
+      printf("Remove %i = %s\n", iter, nodes[iter].key.c_str());
       remove_node(iter);
       iter = next;
     }
@@ -126,6 +127,31 @@ void Tree::up() {
 
   current = parent;
   parent = nodes[current].parent;
+}
+
+bool Tree::peek_next(const std::string& key) const {
+  if (parent == -1) {
+    return true;
+  }
+
+  int next = (current == -1) ? nodes[parent].first_child : nodes[current].next;
+  int iter = next;
+
+  while (iter != -1) {
+    if (key == nodes[iter].key) {
+      break;
+    }
+    iter = nodes[iter].next;
+  }
+
+  return iter != -1;
+}
+
+void Tree::prev() {
+  if (current == -1) {
+    return;
+  }
+  current = nodes[current].prev;
 }
 
 int Tree::create_node(const std::string& key, Element element, int parent, int prev) {
