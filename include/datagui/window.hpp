@@ -41,7 +41,8 @@ public:
       float width = 0,
       float height = 0,
       const std::string& key = "",
-      bool open_always = false);
+      bool open_always = false,
+      bool retain_all = false);
 
   bool horizontal_layout(
       float width = 0,

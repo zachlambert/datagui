@@ -111,7 +111,6 @@ bool GuiReader::optional_begin() {
 }
 
 void GuiReader::optional_end() {
-  //
   window.layout_end();
 }
 
@@ -122,22 +121,19 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
     choices.push_back(std::string(label));
   }
   int choice = *window.selection(choices, 0, -1, next_key, true);
-  window.vertical_layout(0, 0, "", true);
+  window.vertical_layout(0, 0, "", true, true);
   return choice;
 }
 
 void GuiReader::variant_end() {
-  //
   window.layout_end();
 }
 
 void GuiReader::object_begin(std::size_t) {
-  //
   window.vertical_layout(0, 0, "", true);
 }
 
 void GuiReader::object_end(std::size_t) {
-  //
   window.layout_end();
 }
 
@@ -147,54 +143,49 @@ void GuiReader::object_next(const char* key) {
 }
 
 void GuiReader::tuple_begin(std::size_t trivial_size) {
-  //
   window.vertical_layout(0, 0, "", true);
 }
 
 void GuiReader::tuple_end(std::size_t trivial_size) {
-  //
   window.layout_end();
 }
 
-void GuiReader::tuple_next() { next_key = ""; }
-
-static int test_int_len = 3;
-static int test_int = 0;
+void GuiReader::tuple_next() {
+  next_key = "";
+}
 
 void GuiReader::list_begin(bool is_trivial) {
-  //
-  window.vertical_layout(0, 0, "", true);
-  test_int = 0;
+  int len;
+  window.horizontal_layout(-1, 0, "length", true);
+  window.text("Length");
+  try {
+    len = std::stoi(*window.text_input("0", -1, "length", true));
+  } catch (const std::invalid_argument&) {
+    len = 0;
+  }
+  window.layout_end();
+  if (len == 0) {
+    list_lengths.push(-1);
+  } else {
+    list_lengths.push(len);
+    window.vertical_layout(0, 0, "", true);
+  }
 }
 
 bool GuiReader::list_next() {
-  if (test_int < test_int_len) {
-    next_key = "";
-    test_int++;
-    return true;
-  }
-  if (window.button("add", 0, "add_key")) {
-    test_int_len++;
-  }
-  return false;
-
-  if (window.get_tree().peek_next("")) {
-    printf("Peek next true\n");
-    next_key = "";
-    return true;
-  }
-  if (window.button("add")) {
-    window.get_tree().prev();
-    window.hidden("");
-    window.button("add", 0, "add");
+  int& remainder = list_lengths.top();
+  if (remainder <= 0) {
     return false;
   }
-  return false;
+  remainder--;
+  return true;
 }
 
 void GuiReader::list_end() {
-  //
-  window.layout_end();
+  if (list_lengths.top() >= 0) {
+    window.layout_end();
+  }
+  list_lengths.pop();
 }
 
 } // namespace datapack

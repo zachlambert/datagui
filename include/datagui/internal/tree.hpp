@@ -73,6 +73,7 @@ struct Node {
   int first_child;
   int last_child;
   bool in_focus_tree;
+  bool retain_all;
 
   // Layout calculation
   Vecf fixed_size;
@@ -95,6 +96,7 @@ struct Node {
       first_child(-1),
       last_child(-1),
       in_focus_tree(false),
+      retain_all(false),
       fixed_size(Vecf::Zero()),
       dynamic_size(Vecf::Zero()),
       floating(false),
@@ -114,7 +116,7 @@ public:
   // Define the tree
   void begin();
   int next(const std::string& key, Element element, const construct_element_t& construct_element);
-  void down();
+  void down(bool retain_all = false);
   void up();
   void end(const Vecf& root_size);
 
@@ -148,16 +150,6 @@ public:
   bool node_in_focus_tree(int node) const {
     return nodes[node].in_focus_tree;
   }
-
-#if 0
-  // TODO: Clean this up
-  bool current_node_changed() const {
-    if (current == -1) {
-      return false;
-    }
-    return nodes[current].changed;
-  }
-#endif
 
   void node_changed(Node& node);
   void set_node_focused(int new_focused);

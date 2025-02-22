@@ -86,8 +86,11 @@ bool SelectionSystem::release(const Node& node, const Vecf& mouse_pos) {
     return true;
   }
   auto& group = groups[element.group];
-  group.choice = element.choice;
-  return true;
+  if (group.choice != element.choice) {
+    group.choice = element.choice;
+    return true;
+  }
+  return false;
 }
 
 bool SelectionSystem::key_event(const Node& node, const KeyEvent& event) {
@@ -97,8 +100,10 @@ bool SelectionSystem::key_event(const Node& node, const KeyEvent& event) {
   }
   if (!event.is_text && event.key_release && event.key_value == KeyValue::Enter) {
     auto& group = groups[element.group];
-    group.choice = element.choice;
-    return true;
+    if (group.choice != element.choice) {
+      group.choice = element.choice;
+      return true;
+    }
   }
   return false;
 }

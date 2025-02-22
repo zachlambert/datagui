@@ -81,10 +81,21 @@ public:
   bool key_event(const Node& node, const KeyEvent& event) override;
 
   bool focus_enter(const Node& node) override {
-    return true;
+    if (elements[node.element_index].choice == -1) {
+      return true;
+    }
+    return false;
   }
+
   bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override {
-    return true;
+    const auto& new_node = tree[new_focus];
+    if (new_node.element != Element::Selection) {
+      return true;
+    }
+    if (elements[new_node.element_index].group != elements[node.element_index].group) {
+      return true;
+    }
+    return false;
   }
 
 private:

@@ -42,9 +42,6 @@ int Tree::next(
     Element element,
     const construct_element_t& construct_element) {
 
-  if (parent != -1) {
-    printf("Next %s\n", key.c_str());
-  }
   if (parent == -1) {
     if (!key.empty()) {
       throw WindowError("Root node must be unnamed");
@@ -71,7 +68,6 @@ int Tree::next(
       break;
     }
     iter = nodes[iter].next;
-    printf("Skip -> %i for %s\n", iter, key.c_str());
   }
 
   if (iter == -1) {
@@ -83,12 +79,17 @@ int Tree::next(
     }
   } else {
     current = iter;
-    iter = next;
-    while (iter != -1 && iter != current) {
-      int next = nodes[iter].next;
-      printf("Remove %i = %s\n", iter, nodes[iter].key.c_str());
-      remove_node(iter);
-      iter = next;
+    {
+      int iter = next;
+      while (iter != -1 && iter != current) {
+        int next = nodes[iter].next;
+        if (nodes[parent].retain_all) {
+          nodes[iter].hidden = true;
+        } else {
+          remove_node(iter);
+        }
+        iter = next;
+      }
     }
     if (nodes[current].element_index == -1 && construct_element) {
       nodes[current].element = element;
@@ -102,14 +103,13 @@ int Tree::next(
   return current;
 }
 
-void Tree::down() {
-  printf("Down\n");
+void Tree::down(bool retain_all) {
   parent = current;
   current = -1;
+  nodes[parent].retain_all = retain_all;
 }
 
 void Tree::up() {
-  printf("Up\n");
   if (parent == -1) {
     throw WindowError("Called end too many times");
   }
@@ -117,11 +117,16 @@ void Tree::up() {
   if (current != -1) {
     nodes[current].changed = false;
   }
+
   int next = current == -1 ? nodes[parent].first_child : nodes[current].next;
   int iter = next;
   while (iter != -1) {
     int next = nodes[iter].next;
-    remove_node(iter);
+    if (nodes[parent].retain_all) {
+      nodes[iter].hidden = true;
+    } else {
+      remove_node(iter);
+    }
     iter = next;
   }
 

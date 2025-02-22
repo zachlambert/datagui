@@ -1,6 +1,7 @@
 #pragma once
 
 #include <datapack/reader.hpp>
+#include <stack>
 
 namespace datagui {
 class Window;
@@ -43,6 +44,7 @@ private:
   datagui::Window& window;
   std::string next_key;
   std::vector<std::uint8_t> data_temp;
+  std::stack<int> list_lengths;
 };
 
 } // namespace datapack

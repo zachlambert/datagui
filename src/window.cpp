@@ -131,12 +131,17 @@ void Window::close() {
   window = nullptr;
 }
 
-bool Window::vertical_layout(float length, float width, const std::string& key, bool open_always) {
+bool Window::vertical_layout(
+    float length,
+    float width,
+    const std::string& key,
+    bool open_always,
+    bool retain_all) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Vertical);
   });
   if (tree[node].changed || open_always) {
-    tree.down();
+    tree.down(retain_all);
     return true;
   }
   return false;
@@ -204,20 +209,24 @@ const int* Window::selection(
   });
 
   bool changed = false;
+  int current_choice = *selections.choice(tree[node]);
   if (tree.node_in_focus_tree(node)) {
-    tree.down();
+    tree.down(true);
     for (int i = 0; i < choices.size(); i++) {
-      tree.next(choices[i], Element::Selection, [&]() {
+      int child_node = tree.next(choices[i], Element::Selection, [&]() {
         return selections.create_option(tree[node], i);
       });
+      if (tree[child_node].changed && i == *selections.choice(tree[node])) {
+        changed = true;
+      }
     }
     tree.up();
   } else {
-    tree.down();
+    tree.down(true);
     tree.up();
   }
 
-  if (changed || ret_always) {
+  if (ret_always || changed) {
     return selections.choice(tree[node]);
   }
   return nullptr;
