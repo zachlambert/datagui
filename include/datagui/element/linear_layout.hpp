@@ -10,65 +10,60 @@ namespace datagui {
 enum class LayoutDirection { Horizontal, Vertical };
 
 struct LinearLayout {
-  float length;
-  float width;
-  LayoutDirection direction;
-
-  LinearLayout(float length, float width, LayoutDirection direction) :
-      length(length), width(width), direction(direction) {}
+  float length = 0;
+  float width = 0;
+  LayoutDirection direction = LayoutDirection::Vertical;
 
   class Handle {
   public:
-    Handle& horizontal() {
-      data->direction = LayoutDirection::Horizontal;
-      return *this;
-    }
-    Handle& vertical() {
-      data->direction = LayoutDirection::Vertical;
-      return *this;
-    }
-
-    Handle& length_fixed(float length) {
-      data->length = length;
-      return *this;
-    }
-    Handle& length_expand(float weight) {
-      data->length = -weight;
-      return *this;
-    }
-    Handle& length_tight() {
-      data->length = 0;
-      return *this;
-    }
-
-    Handle& width_fixed(float width) {
-      data->width = width;
-      return *this;
-    }
-    Handle& width_expand(float weight) {
-      data->width = -weight;
-      return *this;
-    }
-    Handle& width_tight() {
-      data->width = 0;
-      return *this;
-    }
-
     Handle& retain_all() {
       node->retain_all = true;
       return *this;
     }
 
+    Handle& horizontal() {
+      element->direction = LayoutDirection::Horizontal;
+      return *this;
+    }
+    Handle& vertical() {
+      element->direction = LayoutDirection::Vertical;
+      return *this;
+    }
+
+    Handle& length_fixed(float length) {
+      element->length = length;
+      return *this;
+    }
+    Handle& length_expand(float weight = 1) {
+      element->length = -weight;
+      return *this;
+    }
+    Handle& length_tight() {
+      element->length = 0;
+      return *this;
+    }
+
+    Handle& width_fixed(float width) {
+      element->width = width;
+      return *this;
+    }
+    Handle& width_expand(float weight) {
+      element->width = -weight;
+      return *this;
+    }
+    Handle& width_tight() {
+      element->width = 0;
+      return *this;
+    }
+
     operator bool() const {
-      return changed;
+      return node->changed;
     }
 
   private:
-    Handle(LinearLayout* data, Node* node, bool changed) :
-        data(data), node(node), changed(changed) {}
-    LinearLayout* const data;
+    Handle(Node* node, LinearLayout* element) : node(node), element(element) {}
     Node* const node;
-    const bool changed;
+    LinearLayout* const element;
     friend class LinearLayoutSystem;
   };
 };
@@ -81,12 +76,12 @@ public:
     return elements.emplace(0, 0, LayoutDirection::Horizontal);
   }
 
-  void pop(int index) override {
-    elements.pop(index);
+  LinearLayout::Handle handle(Node& node) {
+    return LinearLayout::Handle(&node, &elements[node.element_index]);
   }
 
-  LinearLayout::Handle handle(int index, Node* node, bool changed) {
-    return LinearLayout::Handle(&elements[index], node, changed);
+  void pop(int index) override {
+    elements.pop(index);
   }
 
   void calculate_size_components(Node& node, const Tree& tree) const override;

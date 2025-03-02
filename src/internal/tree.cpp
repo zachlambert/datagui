@@ -106,7 +106,6 @@ int Tree::next(
 void Tree::down(bool retain_all) {
   parent = current;
   current = -1;
-  nodes[parent].retain_all = retain_all;
 }
 
 void Tree::up() {

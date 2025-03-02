@@ -135,9 +135,9 @@ LinearLayout::Handle Window::linear_layout(const std::string& key) {
   int node = tree.next(key, Element::LinearLayout, [&]() { return linear_layouts.create(); });
 
   if (tree[node].changed) {
-    tree.down(false);
+    tree.down();
   }
-  return linear_layouts.handle(tree[node].element_index, &tree[node], tree[node].changed);
+  return linear_layouts.handle(tree[node]);
 }
 
 #if 0

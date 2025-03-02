@@ -12,7 +12,7 @@ int main() {
 
   while (window.running()) {
     window.render_begin();
-    if (window.linear_layout().vertical()) {
+    if (window.linear_layout()) {
       window.text("Line 1");
       window.text("Line 2");
       if (window.button("Click me!")) {
