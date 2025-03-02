@@ -12,13 +12,13 @@ int main() {
 
   while (window.running()) {
     window.render_begin();
-    if (window.vertical_layout()) {
+    if (window.linear_layout().vertical()) {
       window.text("Line 1");
       window.text("Line 2");
       if (window.button("Click me!")) {
         std::cout << "Clicked!" << std::endl;
       }
-      if (window.horizontal_layout()) {
+      if (window.linear_layout().horizontal()) {
         if (auto value = window.checkbox()) {
           checkbox1 = *value;
           std::cout << "Toggle -> " << (*value ? "on" : "off") << std::endl;

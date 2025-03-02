@@ -131,17 +131,16 @@ void Window::close() {
   window = nullptr;
 }
 
-bool Window::vertical_layout(float length, float width, const std::string& key, bool retain_all) {
-  int node = tree.next(key, Element::LinearLayout, [&]() {
-    return linear_layouts.create(length, width, LayoutDirection::Vertical);
-  });
+LinearLayout::Handle Window::linear_layout(const std::string& key) {
+  int node = tree.next(key, Element::LinearLayout, [&]() { return linear_layouts.create(); });
+
   if (tree[node].changed) {
-    tree.down(retain_all);
-    return true;
+    tree.down(false);
   }
-  return false;
+  return linear_layouts.handle(tree[node].element_index, &tree[node], tree[node].changed);
 }
 
+#if 0
 bool Window::horizontal_layout(float length, float width, const std::string& key, bool retain_all) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Horizontal);
@@ -152,6 +151,7 @@ bool Window::horizontal_layout(float length, float width, const std::string& key
   }
   return false;
 }
+#endif
 
 void Window::layout_end() {
   tree.up();

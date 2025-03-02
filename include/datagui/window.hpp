@@ -37,17 +37,15 @@ public:
   void render_begin();
   void render_end();
 
-  bool vertical_layout(
-      float width = 0,
-      float height = 0,
-      const std::string& key = "",
-      bool retain_all = false);
+  LinearLayout::Handle linear_layout(const std::string& key = "");
 
-  bool horizontal_layout(
+#if 0
+  LinearLayout::Handle horizontal_layout(
       float width = 0,
       float height = 0,
       const std::string& key = "",
       bool retain_all = false);
+#endif
 
   void layout_end();
 
