@@ -131,32 +131,23 @@ void Window::close() {
   window = nullptr;
 }
 
-bool Window::vertical_layout(
-    float length,
-    float width,
-    const std::string& key,
-    bool open_always,
-    bool retain_all) {
+bool Window::vertical_layout(float length, float width, const std::string& key, bool retain_all) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Vertical);
   });
-  if (tree[node].changed || open_always) {
+  if (tree[node].changed) {
     tree.down(retain_all);
     return true;
   }
   return false;
 }
 
-bool Window::horizontal_layout(
-    float length,
-    float width,
-    const std::string& key,
-    bool open_always) {
+bool Window::horizontal_layout(float length, float width, const std::string& key, bool retain_all) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Horizontal);
   });
-  if (tree[node].changed || open_always) {
-    tree.down();
+  if (tree[node].changed) {
+    tree.down(retain_all);
     return true;
   }
   return false;
@@ -233,7 +224,6 @@ const int* Window::selection(
 }
 
 void Window::hidden(const std::string& key) {
-  //
   tree.next(key, Element::Undefined, nullptr);
 }
 

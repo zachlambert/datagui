@@ -41,14 +41,13 @@ public:
       float width = 0,
       float height = 0,
       const std::string& key = "",
-      bool open_always = false,
       bool retain_all = false);
 
   bool horizontal_layout(
       float width = 0,
       float height = 0,
       const std::string& key = "",
-      bool open_always = false);
+      bool retain_all = false);
 
   void layout_end();
 
@@ -73,6 +72,7 @@ public:
 
   void hidden(const std::string& key = "");
 
+#if 0
   template <datapack::readable T>
   bool value(T& value) {
     if (vertical_layout()) {
@@ -87,6 +87,7 @@ public:
   Tree& get_tree() {
     return tree;
   }
+#endif
 
 private:
   void open();

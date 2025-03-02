@@ -24,7 +24,7 @@ add_library(datagui SHARED
     src/element/text.cpp
     src/element/text_input.cpp
     src/internal/geometry_renderer.cpp
-    src/internal/reader.cpp
+    # src/internal/reader.cpp
     src/internal/text_selection.cpp
     src/internal/shader.cpp
     src/internal/text.cpp
@@ -50,8 +50,8 @@ endif()
 add_executable(example1 examples/example1.cpp)
 target_link_libraries(example1 datagui)
 
-add_executable(example2 examples/example2.cpp)
-target_link_libraries(example2 datagui)
+# add_executable(example2 examples/example2.cpp)
+# target_link_libraries(example2 datagui)
 
 # Create install target
 

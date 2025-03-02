@@ -105,40 +105,4 @@ private:
   VectorMap<SelectionElement> elements;
 };
 
-#if 0
-struct Option {
-  std::string choice;
-  float max_width;
-
-  Option(const std::string& choice, float max_width) : choice(choice), max_width(max_width) {}
-};
-
-class OptionSystem : public ElementSystem {
-public:
-  OptionSystem(const Style& style, const FontStructure& font) : style(style), font(font) {}
-
-  int create(const std::string& choice, float max_width) {
-    return elements.emplace(choice, max_width);
-  }
-
-  void pop(int index) override { elements.pop(index); }
-
-  void calculate_size_components(Node& node, const Tree& tree) const override;
-
-  void render(const Node& node, const NodeState& state, Renderers& renderers) const override;
-
-  bool release(const Node& node, const Vecf& mouse_pos) override { return true; }
-  bool focus_enter(const Node& node) override { return true; }
-  bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) override {
-    return true;
-  }
-  bool key_event(const Node& node, const KeyEvent& event) override { return true; }
-
-private:
-  const Style& style;
-  const FontStructure& font;
-  VectorMap<Option> elements;
-};
-#endif
-
 } // namespace datagui

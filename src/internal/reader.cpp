@@ -4,9 +4,13 @@
 
 namespace datapack {
 
-GuiReader::GuiReader(datagui::Window& window) : window(window) {}
+GuiReader::GuiReader(datagui::Window& window) : window(window) {
+  window.vertical_layout(0, 0, "", false, true);
+}
 
-GuiReader::~GuiReader() {}
+GuiReader::~GuiReader() {
+  window.layout_end();
+}
 
 void GuiReader::integer(IntType type, void* value) {
   const std::string& output = *window.text_input("", -1, next_key, true);
@@ -75,12 +79,10 @@ void GuiReader::floating(FloatType type, void* value) {
 }
 
 bool GuiReader::boolean() {
-  //
   return *window.checkbox(next_key, true);
 }
 
 const char* GuiReader::string() {
-  //
   return window.text_input("", -1, next_key, true)->c_str();
 }
 
@@ -121,7 +123,7 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
     choices.push_back(std::string(label));
   }
   int choice = *window.selection(choices, 0, -1, next_key, true);
-  window.vertical_layout(0, 0, "", true, true);
+  window.vertical_layout(0, 0, "", true);
   return choice;
 }
 
