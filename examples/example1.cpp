@@ -12,22 +12,22 @@ int main() {
 
   while (window.running()) {
     window.render_begin();
-    if (window.linear_layout().vertical()) {
-      window.text().text("Line 1");
-      window.text().text("Line 2");
+    if (window.vertical_layout()) {
+      window.text("Line 1");
+      window.text("Line 2");
       if (window.button("Click me!")) {
         std::cout << "Clicked!" << std::endl;
       }
-      if (window.linear_layout().horizontal()) {
+      if (window.horizontal_layout()) {
         if (auto value = window.checkbox()) {
           checkbox1 = *value;
           std::cout << "Toggle -> " << (*value ? "on" : "off") << std::endl;
         }
-        window.text().text("Toggle me!");
+        window.text("Toggle me!");
         window.layout_end();
       }
       if (checkbox1) {
-        window.text().text("Hello");
+        window.text("Hello");
       } else {
         window.hidden("");
       }
@@ -56,9 +56,9 @@ int main() {
           std::cout << "Selection -> " << choices[*value] << std::endl;
         }
       }
-      window.text().text("some more");
-      window.text().text("text goes");
-      window.text().text("here okay");
+      window.text("some more");
+      window.text("text goes");
+      window.text("here okay");
       window.layout_end();
     }
     window.render_end();

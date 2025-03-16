@@ -11,46 +11,27 @@ namespace datagui {
 
 struct Text {
   std::string text;
-  float max_width = 0;
+  float max_width;
 
-  class Handle {
-  public:
-    Handle& text(const std::string& text) {
-      element->text = text;
-      return *this;
-    }
-    Handle& max_width(float max_width) {
-      element->max_width = max_width;
-      return *this;
-    }
-
-  private:
-    Handle(Node* const node, Text* const element) : node(node), element(element) {}
-    Node* const node;
-    Text* const element;
-    friend class TextSystem;
-  };
+  Text(const std::string& text, float max_width) :
+      text(text), max_width(max_width) {}
 };
 
 class TextSystem : public ElementSystem {
 public:
-  TextSystem(const Style& style, const FontStructure& font) : style(style), font(font) {}
+  TextSystem(const Style& style, const FontStructure& font) :
+      style(style), font(font) {}
 
-  int create() {
-    return elements.emplace();
+  int create(const std::string& text, float max_width) {
+    return elements.emplace(text, max_width);
   }
 
-  void pop(int index) override {
-    elements.pop(index);
-  }
-
-  Text::Handle handle(Node& node) {
-    return Text::Handle(&node, &elements[node.element_index]);
-  }
+  void pop(int index) override { elements.pop(index); }
 
   void calculate_size_components(Node& node, const Tree& tree) const override;
 
-  void render(const Node& node, const NodeState& state, Renderers& renderers) const override;
+  void render(const Node& node, const NodeState& state, Renderers& renderers)
+      const override;
 
   bool press(const Node& node, const Vecf& mouse_pos) override;
   bool held(const Node& node, const Vecf& mouse_pos) override;

@@ -131,16 +131,17 @@ void Window::close() {
   window = nullptr;
 }
 
-LinearLayout::Handle Window::linear_layout(const std::string& key) {
-  int node = tree.next(key, Element::LinearLayout, [&]() { return linear_layouts.create(); });
-
+bool Window::vertical_layout(float length, float width, const std::string& key, bool retain_all) {
+  int node = tree.next(key, Element::LinearLayout, [&]() {
+    return linear_layouts.create(length, width, LayoutDirection::Vertical);
+  });
   if (tree[node].changed) {
-    tree.down();
+    tree.down(retain_all);
+    return true;
   }
-  return linear_layouts.handle(tree[node]);
+  return false;
 }
 
-#if 0
 bool Window::horizontal_layout(float length, float width, const std::string& key, bool retain_all) {
   int node = tree.next(key, Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Horizontal);
@@ -151,15 +152,13 @@ bool Window::horizontal_layout(float length, float width, const std::string& key
   }
   return false;
 }
-#endif
 
 void Window::layout_end() {
   tree.up();
 }
 
-Text::Handle Window::text(const std::string& key) {
-  int node = tree.next(key, Element::Text, [&]() { return texts.create(); });
-  return texts.handle(tree[node]);
+void Window::text(const std::string& text, float max_width, const std::string& key) {
+  tree.next(key, Element::Text, [&]() { return texts.create(text, max_width); });
 }
 
 bool Window::button(const std::string& text, float max_width, const std::string& key) {
