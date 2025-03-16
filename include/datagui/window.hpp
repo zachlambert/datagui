@@ -38,18 +38,10 @@ public:
   void render_end();
 
   LinearLayout::Handle linear_layout(const std::string& key = "");
-
-#if 0
-  LinearLayout::Handle horizontal_layout(
-      float width = 0,
-      float height = 0,
-      const std::string& key = "",
-      bool retain_all = false);
-#endif
-
+  // TODO: Can get the handle to call tree.up() in it's destructor
   void layout_end();
 
-  void text(const std::string& text, float max_width = 0, const std::string& key = "");
+  Text::Handle text(const std::string& key = "");
 
   bool button(const std::string& text, float max_width = 0, const std::string& key = "");
 

@@ -157,8 +157,9 @@ void Window::layout_end() {
   tree.up();
 }
 
-void Window::text(const std::string& text, float max_width, const std::string& key) {
-  tree.next(key, Element::Text, [&]() { return texts.create(text, max_width); });
+Text::Handle Window::text(const std::string& key) {
+  int node = tree.next(key, Element::Text, [&]() { return texts.create(); });
+  return texts.handle(tree[node]);
 }
 
 bool Window::button(const std::string& text, float max_width, const std::string& key) {
