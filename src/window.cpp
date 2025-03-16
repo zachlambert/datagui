@@ -66,6 +66,7 @@ Window::Window(const Config& config, const Style& style) :
   tree.register_element(Element::Selection, selections);
   tree.register_element(Element::Text, texts);
   tree.register_element(Element::TextInput, text_inputs);
+  tree.register_element(Element::Wrapper, wrappers);
   open();
 }
 
@@ -131,58 +132,54 @@ void Window::close() {
   window = nullptr;
 }
 
-bool Window::vertical_layout(float length, float width, const std::string& key, bool retain_all) {
-  int node = tree.next(key, Element::LinearLayout, [&]() {
+bool Window::vertical_layout(float length, float width) {
+  int node = tree.next("", Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Vertical);
   });
   if (tree[node].changed) {
-    tree.down(retain_all);
+    tree.down();
     return true;
   }
   return false;
 }
 
-bool Window::horizontal_layout(float length, float width, const std::string& key, bool retain_all) {
-  int node = tree.next(key, Element::LinearLayout, [&]() {
+bool Window::horizontal_layout(float length, float width) {
+  int node = tree.next("", Element::LinearLayout, [&]() {
     return linear_layouts.create(length, width, LayoutDirection::Horizontal);
   });
   if (tree[node].changed) {
-    tree.down(retain_all);
+    tree.down();
     return true;
   }
   return false;
 }
 
-void Window::layout_end() {
+void Window::container_end() {
   tree.up();
 }
 
-void Window::text(const std::string& text, float max_width, const std::string& key) {
-  tree.next(key, Element::Text, [&]() { return texts.create(text, max_width); });
+void Window::text(const std::string& text, float max_width) {
+  tree.next("", Element::Text, [&]() { return texts.create(text, max_width); });
 }
 
-bool Window::button(const std::string& text, float max_width, const std::string& key) {
-  int node = tree.next(key, Element::Button, [&]() { return buttons.create(text, max_width); });
+bool Window::button(const std::string& text, float max_width) {
+  int node = tree.next("", Element::Button, [&]() { return buttons.create(text, max_width); });
   return tree[node].changed;
 }
 
-const bool* Window::checkbox(const std::string& key, bool ret_always) {
-  int node = tree.next(key, Element::Checkbox, [&]() { return checkboxes.create(false); });
-  if (tree[node].changed || ret_always) {
+const bool* Window::checkbox() {
+  int node = tree.next("", Element::Checkbox, [&]() { return checkboxes.create(false); });
+  if (tree[node].changed) {
     return checkboxes.value(tree[node]);
   }
   return nullptr;
 }
 
-const std::string* Window::text_input(
-    const std::string& default_text,
-    float max_width,
-    const std::string& key,
-    bool ret_always) {
-  int node = tree.next(key, Element::TextInput, [&]() {
+const std::string* Window::text_input(const std::string& default_text, float max_width) {
+  int node = tree.next("", Element::TextInput, [&]() {
     return text_inputs.create(max_width, default_text);
   });
-  if (tree[node].changed || ret_always) {
+  if (tree[node].changed) {
     return text_inputs.value(tree[node]);
   }
   return nullptr;
@@ -191,11 +188,9 @@ const std::string* Window::text_input(
 const int* Window::selection(
     const std::vector<std::string>& choices,
     int default_choice,
-    float max_width,
-    const std::string& key,
-    bool ret_always) {
+    float max_width) {
 
-  int node = tree.next(key, Element::Selection, [&]() {
+  int node = tree.next("", Element::Selection, [&]() {
     return selections.create_root(choices, default_choice, max_width);
   });
 
@@ -217,14 +212,53 @@ const int* Window::selection(
     tree.up();
   }
 
-  if (ret_always || changed) {
+  if (changed) {
     return selections.choice(tree[node]);
   }
   return nullptr;
 }
 
-void Window::hidden(const std::string& key) {
-  tree.next(key, Element::Undefined, nullptr);
+bool Window::optional(bool visit, bool retain) {
+  int node = tree.next("", Element::Wrapper, [&]() {
+    //
+    return wrappers.create("", visit);
+  });
+
+  bool changed = wrappers.update(tree[node], "", visit);
+  if (visit) {
+    if (changed || tree[node].changed) {
+      tree.down(retain);
+      return true;
+    }
+  } else {
+    tree.down(retain);
+    tree.up();
+  }
+  return false;
+}
+
+bool Window::variant(bool retain) {
+  int node = tree.next("", Element::Wrapper, [&]() {
+    //
+    return wrappers.create("", true);
+  });
+  if (tree[node].changed) {
+    tree.down(retain);
+    return true;
+  }
+  return false;
+}
+
+bool Window::variant_type(const std::string& key) {
+  int node = tree.next("", Element::Wrapper, [&]() {
+    //
+    return wrappers.create("", true);
+  });
+  if (tree[node].changed) {
+    tree.down();
+    return true;
+  }
+  return false;
 }
 
 void Window::render_begin() {

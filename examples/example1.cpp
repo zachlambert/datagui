@@ -24,12 +24,12 @@ int main() {
           std::cout << "Toggle -> " << (*value ? "on" : "off") << std::endl;
         }
         window.text("Toggle me!");
-        window.layout_end();
+        window.container_end();
       }
-      if (checkbox1) {
+      if (window.optional(checkbox1)) {
+        printf("Hello\n");
         window.text("Hello");
-      } else {
-        window.hidden("");
+        window.container_end();
       }
       if (auto value = window.text_input("min input", 0)) {
         std::cout << "Input 1 changed -> " << *value << std::endl;
@@ -42,11 +42,11 @@ int main() {
         std::cout << "Input 3 changed -> " << *value << std::endl;
       }
       if (!text3.empty()) {
-        if (window.button(text3, 0, text3)) {
+        if (window.button(text3, 0)) {
           std::cout << "Clicked another button" << std::endl;
         }
       } else {
-        window.checkbox("");
+        window.checkbox();
       }
       static const std::vector<std::string> choices = {"red", "green", "blue"};
       if (auto value = window.selection(choices)) {
@@ -59,7 +59,8 @@ int main() {
       window.text("some more");
       window.text("text goes");
       window.text("here okay");
-      window.layout_end();
+
+      window.container_end();
     }
     window.render_end();
   }

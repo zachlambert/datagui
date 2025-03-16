@@ -134,31 +134,6 @@ void Tree::up() {
   parent = nodes[current].parent;
 }
 
-bool Tree::peek_next(const std::string& key) const {
-  if (parent == -1) {
-    return true;
-  }
-
-  int next = (current == -1) ? nodes[parent].first_child : nodes[current].next;
-  int iter = next;
-
-  while (iter != -1) {
-    if (key == nodes[iter].key) {
-      break;
-    }
-    iter = nodes[iter].next;
-  }
-
-  return iter != -1;
-}
-
-void Tree::prev() {
-  if (current == -1) {
-    return;
-  }
-  current = nodes[current].prev;
-}
-
 int Tree::create_node(const std::string& key, Element element, int parent, int prev) {
   int node = nodes.emplace(key, element, parent);
 

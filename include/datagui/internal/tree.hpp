@@ -47,7 +47,16 @@
 namespace datagui {
 
 // Defines all element types possible in the library
-enum class Element { Undefined, Button, Checkbox, LinearLayout, Selection, Text, TextInput };
+enum class Element {
+  Undefined,
+  Wrapper,
+  Button,
+  Checkbox,
+  LinearLayout,
+  Selection,
+  Text,
+  TextInput
+};
 
 // Used as a return value when the user queries the state
 // of a given node
