@@ -10,7 +10,7 @@ void list_1(datagui::Window& window) {
   if (window.horizontal_layout()) {
     auto item = window.data<std::string>();
     if (auto value = window.text_input("")) {
-      item = *value;
+      item.mut() = *value;
     }
     if (window.button("Add")) {
       items.mut().push_back(*item);
@@ -75,6 +75,11 @@ int main() {
   while (window.running()) {
     window.render_begin();
     if (window.vertical_layout()) {
+      if (window.vertical_layout()) {
+        auto name = window.text_input_data("");
+        window.text("Name: " + *name);
+        window.container_end();
+      }
       list_1(window);
       list_2(window);
       window.container_end();

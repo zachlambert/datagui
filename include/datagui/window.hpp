@@ -50,6 +50,7 @@ public:
   const bool* checkbox();
 
   const std::string* text_input(const std::string& default_text = "", float max_width = -1);
+  DataPtr<std::string> text_input_data(const std::string& default_text, float max_width = -1);
 
   const int* selection(
       const std::vector<std::string>& choices,
@@ -64,9 +65,9 @@ public:
   DataPtr<T> data(const T& initial_value = T()) {
     int node = tree.next("", Element::Undefined, [&]() {
       //
-      return data_store.create<T>(initial_value);
+      return data_store.emplace(initial_value);
     });
-    return data_store.get<T>(tree[node].element_index);
+    return data_store[tree[node].element_index].to_ptr<T>(&tree);
   }
 
 #if 0
@@ -100,7 +101,7 @@ private:
   Renderers renderers;
 
   Tree tree;
-  DataStore data_store;
+  VectorMap<DataAny> data_store;
 
   ButtonSystem buttons;
   CheckboxSystem checkboxes;

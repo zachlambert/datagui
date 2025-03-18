@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/internal/data.hpp"
 #include "datagui/internal/element.hpp"
 #include "datagui/internal/text.hpp"
 #include "datagui/internal/text_selection.hpp"
@@ -12,7 +13,7 @@ namespace datagui {
 struct TextInput {
   float max_width;
   std::string initial_text;
-  std::string text;
+  Data<std::string> text;
 
   TextInput(float max_width, const std::string& default_text) :
       max_width(max_width), initial_text(default_text), text(default_text) {}
@@ -26,11 +27,18 @@ public:
     return elements.emplace(max_width, default_text);
   }
 
-  void pop(int index) override { elements.pop(index); }
+  void pop(int index) override {
+    elements.pop(index);
+  }
 
   const std::string* value(const Node& node) {
     auto& element = elements[node.element_index];
-    return &element.text;
+    return element.text.value.get();
+  }
+
+  DataPtr<std::string> data_ptr(Tree& tree, const Node& node) {
+    auto& element = elements[node.element_index];
+    return element.text.to_ptr(&tree);
   }
 
   void calculate_size_components(Node& node, const Tree& tree) const override;

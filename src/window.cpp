@@ -54,7 +54,6 @@ Window::Window(const Config& config, const Style& style) :
     style(style),
     window(nullptr),
     window_size(Vecf::Zero()),
-    data_store(&tree),
     buttons(this->style, font),
     checkboxes(this->style, font),
     linear_layouts(this->style),
@@ -190,6 +189,13 @@ const std::string* Window::text_input(const std::string& default_text, float max
     return text_inputs.value(tree[node]);
   }
   return nullptr;
+}
+
+DataPtr<std::string> Window::text_input_data(const std::string& default_text, float max_width) {
+  int node = tree.next("", Element::TextInput, [&]() {
+    return text_inputs.create(max_width, default_text);
+  });
+  return text_inputs.data_ptr(tree, tree[node]);
 }
 
 const int* Window::selection(
