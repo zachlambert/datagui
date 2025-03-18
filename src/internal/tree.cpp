@@ -270,6 +270,11 @@ void Tree::end(const Vecf& root_size) {
       }
     }
   }
+
+  for (int node : queue_changed_nodes) {
+    node_changed(nodes[node]);
+  }
+  queue_changed_nodes.clear();
 }
 
 void Tree::render(Renderers& renderers, const Vecf& window_size) {

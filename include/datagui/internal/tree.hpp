@@ -165,6 +165,14 @@ public:
 
   ElementSystem& get_elements(const Node& node);
 
+  int get_parent() const {
+    return parent;
+  }
+
+  void queue_changed(int node) {
+    queue_changed_nodes.push_back(node);
+  }
+
 private:
   NodeState node_state(int node) const;
   int create_node(const std::string& key, Element element, int parent, int prev);
@@ -177,6 +185,7 @@ private:
   int parent;
   int current;
   std::vector<int> floating_nodes;
+  std::vector<int> queue_changed_nodes;
 
   int node_held_;
   int node_focused_;

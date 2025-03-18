@@ -54,6 +54,9 @@ target_link_libraries(example1 datagui)
 # add_executable(example2 examples/example2.cpp)
 # target_link_libraries(example2 datagui)
 
+add_executable(example3 examples/example3.cpp)
+target_link_libraries(example3 datagui)
+
 # Create install target
 
 include(CMakePackageConfigHelpers)

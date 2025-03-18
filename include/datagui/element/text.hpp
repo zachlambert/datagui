@@ -13,25 +13,28 @@ struct Text {
   std::string text;
   float max_width;
 
-  Text(const std::string& text, float max_width) :
-      text(text), max_width(max_width) {}
+  Text(const std::string& text, float max_width) : text(text), max_width(max_width) {}
 };
 
 class TextSystem : public ElementSystem {
 public:
-  TextSystem(const Style& style, const FontStructure& font) :
-      style(style), font(font) {}
+  TextSystem(const Style& style, const FontStructure& font) : style(style), font(font) {}
 
   int create(const std::string& text, float max_width) {
     return elements.emplace(text, max_width);
   }
 
-  void pop(int index) override { elements.pop(index); }
+  void pop(int index) override {
+    elements.pop(index);
+  }
+
+  void update(const Node& node, const std::string& text) {
+    elements[node.element_index].text = text;
+  }
 
   void calculate_size_components(Node& node, const Tree& tree) const override;
 
-  void render(const Node& node, const NodeState& state, Renderers& renderers)
-      const override;
+  void render(const Node& node, const NodeState& state, Renderers& renderers) const override;
 
   bool press(const Node& node, const Vecf& mouse_pos) override;
   bool held(const Node& node, const Vecf& mouse_pos) override;

@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include "datagui/geometry.hpp"
+#include "datagui/internal/data.hpp"
 #include "datagui/internal/renderers.hpp"
 #include "datagui/internal/tree.hpp"
 #include "datagui/style.hpp"
@@ -59,6 +60,15 @@ public:
   bool variant(bool retain = true);
   bool variant_type(const std::string& key);
 
+  template <typename T>
+  DataPtr<T> data(const T& initial_value = T()) {
+    int node = tree.next("", Element::Undefined, [&]() {
+      //
+      return data_store.create<T>(initial_value);
+    });
+    return data_store.get<T>(tree[node].element_index);
+  }
+
 #if 0
   template <datapack::readable T>
   bool value(T& value) {
@@ -90,6 +100,8 @@ private:
   Renderers renderers;
 
   Tree tree;
+  DataStore data_store;
+
   ButtonSystem buttons;
   CheckboxSystem checkboxes;
   LinearLayoutSystem linear_layouts;

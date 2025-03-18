@@ -54,6 +54,7 @@ Window::Window(const Config& config, const Style& style) :
     style(style),
     window(nullptr),
     window_size(Vecf::Zero()),
+    data_store(&tree),
     buttons(this->style, font),
     checkboxes(this->style, font),
     linear_layouts(this->style),
@@ -159,12 +160,18 @@ void Window::container_end() {
 }
 
 void Window::text(const std::string& text, float max_width) {
-  tree.next("", Element::Text, [&]() { return texts.create(text, max_width); });
+  int node = tree.next("", Element::Text, [&]() { return texts.create(text, max_width); });
+  texts.update(tree[node], text);
 }
 
 bool Window::button(const std::string& text, float max_width) {
-  int node = tree.next("", Element::Button, [&]() { return buttons.create(text, max_width); });
-  return tree[node].changed;
+  bool is_new = false;
+  int node = tree.next("", Element::Button, [&]() {
+    is_new = true;
+    return buttons.create(text, max_width);
+  });
+  // TODO: Handle this better
+  return tree[node].changed && !is_new;
 }
 
 const bool* Window::checkbox() {
