@@ -1,138 +1,125 @@
 #pragma once
 
-#include "datagui/geometry.hpp"
-#include "datagui/internal/element.hpp"
-#include "datagui/internal/renderers.hpp"
+#include "datagui/exception.hpp"
 #include "datagui/internal/vector_map.hpp"
 #include <functional>
 #include <string>
 
-/* High-level overview
- *
- *  A given GUI is structured as a tree of nodes.
- *  Each node stores the following bits of data:
- *  - Definition: Node key, element type and element data
- *  - Connectivity: Neighbour, parent, child nodes
- *  - Dimensions: Consists of "independent" and "dependent" values
- *    - fixed_size and dynamic_size are defined by the element type and user
- * configuration
- *    - origin and size are calculated by the tree after definition, since these
- * may depend on parent and/or children properties
- *  - State: Other state associated with the node
- *
- * All element-specific data and logic is handled by an ElementSystem
- * - Most importantly, each node contains an Element type (enum) and element
- *   index, where each element must have an associated ElementHandler, and
- *   internally stores a list of all the elements.
- *
- * The tree provides a "declarative" interface for building a tree, as follows:
- * tree.begin()
- *   tree.next("root");
- *   tree.down();
- *   tree.next("key1", ...);
- *   tree.up();
- * tree.end()
- *
- * The series of statements above define what route you travel through the tree.
- * The important point is that:
- * - The tree persists it's structure and element state
- * - New nodes are created if a new key is visited that wasn't present
- *   previously
- * - If keys aren't revisited on iterating over neighbours, then they are
- * removed
- * - Overall, the result is that the tree can be dynamically updated, while not
- *   re-creating itself each time
- */
-
 namespace datagui {
 
-// Defines all element types possible in the library
-enum class Element {
-  Undefined,
-  Wrapper,
-  Button,
-  Checkbox,
-  LinearLayout,
-  Selection,
-  Text,
-  TextInput
-};
+enum class NodeType { Primitive, Data, Container, Optional, Variant };
 
-// Used as a return value when the user queries the state
-// of a given node
-struct NodeState {
-  bool held;
-  bool focused;
-  bool in_focus_tree;
-
-  NodeState() : held(false), focused(false), in_focus_tree(false) {}
-};
-
-// Stores all (common) data relevant to a node
 struct Node {
-  // Definition
-  std::string key;
-  Element element;
-  int element_index;
+  NodeType type = NodeType::Primitive;
+  bool open = false;
+  std::string open_label = "";
+  std::string label = "";
 
-  // Connectivity
-  int parent;
-  int prev;
-  int next;
-  int first_child;
-  int last_child;
-  bool in_focus_tree;
-  bool retain_all;
+  int parent = -1;
+  int prev = -1;
+  int next = -1;
+  int first_child = -1;
+  int last_child = -1;
 
-  // Layout calculation
-  Vecf fixed_size;
-  Vecf dynamic_size;
-  bool floating;
-  Vecf origin;
-  Vecf size;
+  int dest_data_dep = -1;
+  int source_data_dep = -1;
 
-  // State
-  bool changed;
-  bool hidden;
+  bool is_new = true;
+  bool needs_visit = true;
+  bool modified = false;
 
-  Node(const std::string& key, Element element, int parent) :
-      key(key),
-      element(element),
-      element_index(-1),
-      parent(parent),
-      prev(-1),
-      next(-1),
-      first_child(-1),
-      last_child(-1),
-      in_focus_tree(false),
-      retain_all(false),
-      fixed_size(Vecf::Zero()),
-      dynamic_size(Vecf::Zero()),
-      floating(false),
-      origin(Vecf::Zero()),
-      size(Vecf::Zero()),
-      changed(true),
-      hidden(false) {}
+  int props_index = -1;
+};
+
+struct DataDepNode {
+  int source;
+  int dest;
+  int source_next = -1;
+  int dest_next = -1;
+
+  DataDepNode(int source, int dest) : source(source), dest(dest) {}
 };
 
 class Tree {
 public:
-  using construct_element_t = std::function<int()>;
+  template <typename T>
+  class Data {
+  public:
+    const T& operator*() const {
+      access();
+      return *ptr;
+    }
+    const T* operator->() const {
+      access();
+      return ptr;
+    }
+    T& mut() const {
+      tree->queue_changed_nodes.push_back(node);
+    }
+    operator bool() const {
+      access();
+      return tree->nodes[node].modified;
+    }
 
-  Tree();
-  void register_element(Element element, ElementSystem& system);
+  private:
+    Data(Tree* tree, int node, T* ptr) : tree(tree), node(node), ptr(ptr) {
+      if (tree->nodes[node].type != NodeType::Data) {
+        throw WindowError("Tried to create a Data object for non-data node");
+      }
+    }
 
-  // Define the tree
+    void access() const {
+      tree->add_data_dependency(node, tree->parent());
+    }
+
+    Tree* tree;
+    int node;
+    T* ptr;
+
+    friend class Tree;
+  };
+
+  using alloc_props_t = std::function<int()>;
+  using free_props_t = std::function<void(int)>;
+
+  Tree(const alloc_props_t& alloc_props, const free_props_t& free_props) :
+      alloc_props(alloc_props), free_props(free_props) {}
+
   void begin();
-  int next(const std::string& key, Element element, const construct_element_t& construct_element);
-  void down(bool retain_all = false);
+  void end();
+
+  void next();
   void up();
-  void end(const Vecf& root_size);
 
-  bool peek_next(const std::string& key) const; // Does a node with this key exist ?
-  void prev();
+  bool down();
+  bool down_optional(bool open);
+  bool down_variant(const std::string& label);
 
-  void render(Renderers& renderers, const Vecf& window_size);
+  void insert_next();
+  void erase_this();
+  void erase_next();
+
+  template <typename T>
+  Data<T> data(T* ptr) {
+    if (nodes[current_].is_new) {
+      nodes[current_].type = NodeType::Data;
+    } else if (nodes[current_].type != NodeType::Data) {
+      throw WindowError("Node not created as a data node");
+    }
+    return Data<T>(this, current_, ptr);
+  }
+
+  void set_modified(int node);
+
+  int root() const {
+    return root_;
+  }
+  int parent() const {
+    return parent_;
+  }
+  int current() const {
+    return current_;
+  }
 
   const Node& operator[](std::size_t i) const {
     return nodes[i];
@@ -141,54 +128,22 @@ public:
     return nodes[i];
   }
 
-  int root_node() const {
-    return root_node_;
-  }
-
-  void mouse_press(const Vecf& mouse_pos);
-  void mouse_release(const Vecf& mouse_pos);
-  void focus_next(bool reverse = false);
-  void focus_leave(bool success);
-
-  int node_held() const {
-    return node_held_;
-  }
-  int node_focused() const {
-    return node_focused_;
-  }
-  bool node_in_focus_tree(int node) const {
-    return nodes[node].in_focus_tree;
-  }
-
-  void node_changed(Node& node);
-  void set_node_focused(int new_focused);
-
-  ElementSystem& get_elements(const Node& node);
-
-  int get_parent() const {
-    return parent;
-  }
-
-  void queue_changed(int node) {
-    queue_changed_nodes.push_back(node);
-  }
-
 private:
-  NodeState node_state(int node) const;
-  int create_node(const std::string& key, Element element, int parent, int prev);
-  void remove_node(int root_node);
+  int create_node(int parent, int prev);
+  void remove_node(int node);
+  void set_needs_visit(int node);
+  void add_data_dependency(int source, int dest);
 
-  std::vector<ElementSystem*> element_systems;
-
+  alloc_props_t alloc_props;
+  free_props_t free_props;
   VectorMap<Node> nodes;
-  int root_node_;
-  int parent;
-  int current;
-  std::vector<int> floating_nodes;
-  std::vector<int> queue_changed_nodes;
+  VectorMap<DataDepNode> data_dep_nodes;
 
-  int node_held_;
-  int node_focused_;
+  bool is_new = true;
+  int root_ = -1;
+  int parent_ = -1;
+  int current_ = -1;
+  std::vector<int> queue_changed_nodes;
 };
 
 } // namespace datagui

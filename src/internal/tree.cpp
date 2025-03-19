@@ -5,140 +5,207 @@
 
 namespace datagui {
 
-Tree::Tree() : root_node_(-1), parent(-1), current(-1), node_held_(-1), node_focused_(-1) {}
-
-void Tree::register_element(Element element, ElementSystem& system) {
-  if (element == Element::Undefined) {
-    throw InitializationError("Cannot register undefined element");
-  }
-  int index = (int)element - 1;
-  assert(index >= 0);
-  while (element_systems.size() < index + 1) {
-    element_systems.push_back(nullptr);
-  }
-  if (element_systems[index] != nullptr) {
-    throw InitializationError("Registered the same element twice");
-  }
-  element_systems[index] = &system;
-}
-
-ElementSystem& Tree::get_elements(const Node& node) {
-  int type_index = int(node.element) - 1;
-  assert(node.element != Element::Undefined);
-  assert(type_index >= 0 && type_index < element_systems.size());
-
-  auto elements = element_systems[type_index];
-  assert(elements);
-  return *elements;
-}
-
 void Tree::begin() {
-  parent = -1;
-  current = -1;
+  parent_ = -1;
+  current_ = -1;
 }
 
-int Tree::next(
-    const std::string& key,
-    Element element,
-    const construct_element_t& construct_element) {
+void Tree::end() {
+  if (parent_ != -1) {
+    throw WindowError("Didn't call layout_... and layout_end the same number of times");
+  }
 
-  if (parent == -1) {
-    if (!key.empty()) {
-      throw WindowError("Root node must be unnamed");
+  is_new = false;
+  if (root_ == -1) {
+    return;
+  }
+
+  std::stack<int> stack;
+  stack.push(root_);
+  while (!stack.empty()) {
+    int node = stack.top();
+    stack.pop();
+
+    nodes[node].is_new = false;
+    nodes[node].needs_visit = false;
+    nodes[node].modified = false;
+    assert(nodes[node].props_index != -1);
+
+    int child = nodes[node].first_child;
+    while (child != -1) {
+      stack.push(child);
+      child = nodes[child].next;
     }
-    if (current != -1) {
+  }
+
+  for (int node : queue_changed_nodes) {
+    set_modified(node);
+  }
+  queue_changed_nodes.clear();
+}
+
+void Tree::next() {
+  if (parent_ == -1) {
+    if (current_ != -1) {
       throw WindowError("Root node was visited twice");
     }
-    if (root_node_ == -1) {
-      root_node_ = nodes.emplace(key, element, -1);
-      nodes[root_node_].element_index = construct_element();
+    if (root_ == -1) {
+      root_ = create_node(-1, -1);
     }
-    current = root_node_;
-    return current;
+    current_ = root_;
+    return;
   }
 
-  if (current != -1) {
-    nodes[current].changed = false;
+  int next;
+  if (current_ != -1) {
+    if (nodes[current_].parent == -1) {
+      throw WindowError("Cannot call next on the root node more than once");
+    }
+    next = nodes[current_].next;
+  } else {
+    next = nodes[parent_].first_child;
   }
-  int next = (current == -1) ? nodes[parent].first_child : nodes[current].next;
-  int iter = next;
 
+  if (next == -1) {
+    if (!nodes[parent_].is_new) {
+      throw WindowError("Called next with no remaining nodes in this container");
+    }
+    current_ = create_node(parent_, current_);
+  } else {
+    current_ = next;
+  }
+}
+
+void Tree::up() {
+  if (parent_ == -1) {
+    throw WindowError("Called up too many times");
+  }
+
+  if (current_ == -1 && nodes[parent_].first_child != -1) {
+    throw WindowError("Called up without visiting any children");
+  }
+
+  if (nodes[current_].next != -1) {
+    throw WindowError("Called up without visiting all children");
+  }
+
+  current_ = parent_;
+  parent_ = nodes[current_].parent;
+}
+
+bool Tree::down() {
+  if (parent_ == -1 && is_new || nodes[parent_].is_new) {
+    nodes[current_].type = NodeType::Container;
+  } else if (nodes[current_].type != NodeType::Container) {
+    throw WindowError("Node type changed, previously was container");
+  }
+  if (!nodes[current_].needs_visit) {
+    return false;
+  }
+  parent_ = current_;
+  current_ = -1;
+  return true;
+}
+
+bool Tree::down_optional(bool open) {
+  if (parent_ == -1 && is_new || nodes[parent_].is_new) {
+    nodes[current_].type = NodeType::Optional;
+  } else if (nodes[current_].type != NodeType::Optional) {
+    throw WindowError("Node type changed, previously was optional");
+  }
+  if (nodes[current_].open != open) {
+    nodes[current_].open = open;
+    set_needs_visit(current_);
+  }
+  if (!nodes[current_].needs_visit) {
+    return false;
+  }
+  parent_ = current_;
+  current_ = -1;
+  return true;
+}
+
+bool Tree::down_variant(const std::string& label) {
+  if (label.empty()) {
+    throw WindowError("Variant label cannot be empty");
+  }
+  if (parent_ == -1 && is_new || nodes[parent_].is_new) {
+    nodes[current_].type = NodeType::Variant;
+  } else if (nodes[current_].type != NodeType::Variant) {
+    throw WindowError("Node type changed, previously was optional");
+  }
+
+  bool switched = false;
+  if (nodes[current_].open_label != label) {
+    nodes[current_].open_label = label;
+    set_needs_visit(current_);
+    switched = true;
+  }
+  if (!nodes[current_].needs_visit) {
+    return false;
+  }
+
+  int iter = nodes[current_].first_child;
   while (iter != -1) {
-    if (key == nodes[iter].key) {
+    assert(!nodes[iter].label.empty());
+    if (nodes[iter].label == label) {
       break;
     }
     iter = nodes[iter].next;
   }
 
-  if (iter == -1) {
-    current = create_node(key, element, parent, current);
-    if (construct_element) {
-      nodes[current].element_index = construct_element();
-    } else {
-      nodes[current].hidden = true;
+  if (iter != -1) {
+    if (switched || nodes[iter].needs_visit) {
+      parent_ = current_;
+      current_ = iter;
+      return true;
     }
-  } else {
-    current = iter;
-    {
-      int iter = next;
-      while (iter != -1 && iter != current) {
-        int next = nodes[iter].next;
-        if (nodes[parent].retain_all) {
-          nodes[iter].hidden = true;
-        } else {
-          remove_node(iter);
-        }
-        iter = next;
-      }
-    }
-    if (nodes[current].element_index == -1 && construct_element) {
-      nodes[current].element = element;
-      nodes[current].element_index = construct_element();
-      nodes[current].hidden = false;
-    } else {
-      nodes[current].hidden = !construct_element;
-    }
+    return false;
   }
 
-  return current;
+  iter = create_node(current_, nodes[current_].last_child);
+
+  return true;
 }
 
-void Tree::down(bool retain_all) {
-  parent = current;
-  current = -1;
-  nodes[parent].retain_all = retain_all;
+void Tree::insert_next() {
+  create_node(parent_, current_);
 }
 
-void Tree::up() {
-  if (parent == -1) {
-    throw WindowError("Called end too many times");
+void Tree::erase_this() {
+  if (current_ == -1) {
+    throw WindowError("Tried to call erase_prev() with no current node");
   }
+  int new_current = nodes[current_].prev;
+  remove_node(current_);
+  current_ = new_current;
+}
 
-  if (current != -1) {
-    nodes[current].changed = false;
-  }
+void Tree::erase_next() {
+  int next = (current_ == -1) ? nodes[parent_].first_child : nodes[current_].next;
+  remove_node(next);
+}
 
-  int next = current == -1 ? nodes[parent].first_child : nodes[current].next;
-  int iter = next;
+void Tree::set_modified(int node) {
+  nodes[node].modified = true;
+  int iter = nodes[node].source_data_dep;
   while (iter != -1) {
-    int next = nodes[iter].next;
-    if (nodes[parent].retain_all) {
-      nodes[iter].hidden = true;
-    } else {
-      remove_node(iter);
-    }
-    iter = next;
+    set_needs_visit(data_dep_nodes[iter].dest);
+    iter = data_dep_nodes[iter].source_next;
   }
-
-  current = parent;
-  parent = nodes[current].parent;
 }
 
-int Tree::create_node(const std::string& key, Element element, int parent, int prev) {
-  int node = nodes.emplace(key, element, parent);
+int Tree::create_node(int parent, int prev) {
+  int node = nodes.emplace();
+  nodes[node].parent = parent;
+  nodes[node].props_index = alloc_props();
+
+  if (parent_ == -1) {
+    return node;
+  }
 
   nodes[node].prev = prev;
-  int next = prev == -1 ? nodes[parent].first_child : nodes[prev].next;
+  int next = (prev == -1) ? nodes[parent].first_child : nodes[prev].next;
   nodes[node].next = next;
 
   if (prev != -1) {
@@ -154,9 +221,9 @@ int Tree::create_node(const std::string& key, Element element, int parent, int p
   return node;
 }
 
-void Tree::remove_node(int root_node) {
+void Tree::remove_node(int node) {
   std::stack<int> stack;
-  stack.push(root_node);
+  stack.push(node);
 
   while (!stack.empty()) {
     int node_index = stack.top();
@@ -173,17 +240,10 @@ void Tree::remove_node(int root_node) {
       } else if (node.parent != -1) {
         nodes[node.parent].last_child = node.prev;
       }
-      if (node.element != Element::Undefined) {
-        get_elements(node).pop(node.element_index);
+      if (node.props_index != -1) {
+        free_props(node.props_index);
       }
       nodes.pop(node_index);
-
-      if (node_held_ == node_index) {
-        node_held_ = -1;
-      }
-      if (node_focused_ == node_index) {
-        node_focused_ = nodes[node_focused_].parent;
-      }
 
       continue;
     }
@@ -195,306 +255,34 @@ void Tree::remove_node(int root_node) {
   }
 }
 
-void Tree::end(const Vecf& root_size) {
-  if (parent != -1) {
-    throw WindowError("Didn't call layout_... and layout_end the same number of times");
-  }
-  if (root_node_ == -1) {
-    return;
-  }
-  nodes[root_node_].changed = false;
-
-  // Calculate size components
-  {
-    struct State {
-      std::size_t index;
-      bool first_visit;
-      State(int index) : index(index), first_visit(true) {}
-    };
-    std::stack<State> stack;
-    stack.emplace(root_node_);
-
-    while (!stack.empty()) {
-      State& state = stack.top();
-      Node& node = nodes[state.index];
-
-      if (node.hidden || node.element == Element::Undefined) {
-        stack.pop();
-        continue;
-      }
-
-      // If the node has children, process these first
-      if (node.first_child != -1 && state.first_visit) {
-        state.first_visit = false;
-        int child = node.first_child;
-        while (child != -1) {
-          stack.emplace(child);
-          child = nodes[child].next;
-        }
-        continue;
-      }
-      stack.pop();
-
-      get_elements(node).calculate_size_components(node, *this);
-    }
-  }
-
-  floating_nodes.clear();
-  {
-    std::stack<int> stack;
-
-    stack.push(root_node_);
-    nodes[root_node_].size = root_size;
-
-    while (!stack.empty()) {
-      int node_index = stack.top();
-      const auto& node = nodes[node_index];
-      stack.pop();
-
-      if (node.floating) {
-        floating_nodes.push_back(node_index);
-      }
-      if (node.first_child == -1) {
-        continue;
-      }
-      if (node.hidden || node.element == Element::Undefined) {
-        continue;
-      }
-
-      get_elements(node).calculate_child_dimensions(node, *this);
-
-      int child = node.first_child;
-      while (child != -1) {
-        stack.push(child);
-        child = nodes[child].next;
-      }
-    }
-  }
-
-  for (int node : queue_changed_nodes) {
-    node_changed(nodes[node]);
-  }
-  queue_changed_nodes.clear();
-}
-
-void Tree::render(Renderers& renderers, const Vecf& window_size) {
-  if (root_node_ == -1) {
-    return;
-  }
-  std::stack<int> stack;
-  for (int i = floating_nodes.size() - 1; i >= 0; i--) {
-    stack.push(floating_nodes[i]);
-  }
-  stack.push(root_node_);
-
-  while (!stack.empty()) {
-    int node_index = stack.top();
-    const auto& node = nodes[stack.top()];
-    stack.pop();
-    if (node.floating && node_index != root_node_) {
-      renderers.geometry.render(window_size);
-      renderers.text.render(window_size);
-    }
-
-    if (node.hidden || node.element == Element::Undefined) {
-      continue;
-    }
-    get_elements(node).render(node, node_state(node_index), renderers);
-    if (node.first_child == -1) {
-      continue;
-    }
-    int child = node.first_child;
-    while (child != -1) {
-      if (!nodes[child].floating) {
-        stack.push(child);
-      }
-      child = nodes[child].next;
-    }
-  }
-  renderers.geometry.render(window_size);
-  renderers.text.render(window_size);
-}
-
-void Tree::mouse_press(const Vecf& mouse_pos) {
-  if (root_node_ == -1) {
-    return;
-  }
-
-  std::vector<int> root_nodes;
-  root_nodes.push_back(root_node_);
-  root_nodes.insert(root_nodes.end(), floating_nodes.begin(), floating_nodes.end());
-
-  int node_pressed = -1;
-
-  for (int current_root_node : root_nodes) {
-    const auto& current_root = nodes[current_root_node];
-    if (!Boxf(current_root.origin, current_root.origin + current_root.size).contains(mouse_pos)) {
-      continue;
-    }
-    int current_node_pressed = current_root_node;
-
-    while (true) {
-      const auto& node = nodes[current_node_pressed];
-      if (node.hidden || node.element == Element::Undefined) {
-        current_node_pressed = -1;
-        break;
-      }
-      int child_index = node.first_child;
-      while (child_index != -1) {
-        const auto& child = nodes[child_index];
-        if (Boxf(child.origin, child.origin + child.size).contains(mouse_pos)) {
-          current_node_pressed = child_index;
-          break;
-        }
-        child_index = child.next;
-      }
-      if (child_index == -1) {
-        break;
-      }
-    }
-    if (current_node_pressed != -1) {
-      node_pressed = current_node_pressed;
-    }
-  }
-
-  if (node_pressed != -1) {
-    auto& node = nodes[node_pressed];
-    if (get_elements(node).press(node, mouse_pos)) {
-      node_changed(node);
-    }
-  }
-
-  node_held_ = node_pressed;
-  if (node_focused_ != -1 && node_pressed != node_focused_) {
-    auto& released = nodes[node_focused_];
-    if (get_elements(released).focus_leave(*this, released, true, node_pressed)) {
-      node_changed(released);
-    }
-  }
-  set_node_focused(node_pressed);
-}
-
-void Tree::mouse_release(const Vecf& mouse_pos) {
-  if (node_held_ == -1) {
-    return;
-  }
-  auto& node = nodes[node_held_];
-  node_held_ = -1;
-
-  if (node.hidden || node.element == Element::Undefined) {
-    return;
-  }
-  if (!Boxf(node.origin, node.origin + node.size).contains(mouse_pos)) {
-    return;
-  }
-  if (get_elements(node).release(node, mouse_pos)) {
-    node_changed(node);
-  }
-}
-
-void Tree::focus_next(bool reverse) {
-  if (root_node_ == -1) {
-    return;
-  }
-  int next = node_focused_;
-
-  do {
-    if (!reverse) {
-      if (next == -1) {
-        next = root_node_;
-      } else if (nodes[next].first_child != -1) {
-        next = nodes[next].first_child;
-      } else if (nodes[next].next != -1) {
-        next = nodes[next].next;
-      } else {
-        while (next != -1 && nodes[next].next == -1) {
-          next = nodes[next].parent;
-        }
-        if (next != -1) {
-          next = nodes[next].next;
-        }
-      }
-    } else {
-      if (next == -1) {
-        next = root_node_;
-        while (nodes[next].last_child != -1) {
-          next = nodes[next].last_child;
-        }
-      } else if (nodes[next].prev == -1) {
-        next = nodes[next].parent;
-      } else {
-        next = nodes[next].prev;
-        while (nodes[next].last_child != -1) {
-          next = nodes[next].last_child;
-        }
-      }
-    }
-  } while (next != -1 && next != root_node_ &&
-           (nodes[next].hidden || nodes[next].element == Element::Undefined));
-
-  if (next == root_node_ &&
-      (nodes[root_node_].hidden || nodes[root_node_].element == Element::Undefined)) {
-    next = -1;
-  }
-
-  if (node_focused_ != -1) {
-    auto& prev_focused = nodes[node_focused_];
-    if (get_elements(prev_focused).focus_leave(*this, prev_focused, true, next)) {
-      node_changed(prev_focused);
-    }
-  }
-  if (next != -1) {
-    auto& new_focused = nodes[next];
-    if (get_elements(new_focused).focus_enter(new_focused)) {
-      node_changed(new_focused);
-    }
-  }
-
-  set_node_focused(next);
-}
-
-void Tree::focus_leave(bool success) {
-  if (node_focused_ == -1) {
-    return;
-  }
-  auto& node = nodes[node_focused_];
-  if (get_elements(node).focus_leave(*this, node, success, -1)) {
-    node_changed(node);
-  }
-  node_focused_ = -1;
-}
-
-NodeState Tree::node_state(int node) const {
-  NodeState state;
-  state.held = (node == node_held_);
-  state.focused = (node == node_focused_);
-  state.in_focus_tree = nodes[node].in_focus_tree;
-  return state;
-}
-
-void Tree::node_changed(Node& node) {
-  node.changed = true;
-  int iter = node.parent;
+void Tree::set_needs_visit(int node) {
+  int iter = node;
   while (iter != -1) {
-    nodes[iter].changed = true;
+    nodes[iter].needs_visit = true;
     iter = nodes[iter].parent;
   }
 }
 
-void Tree::set_node_focused(int new_focused) {
-  int iter = node_focused_;
+void Tree::add_data_dependency(int source, int dest) {
+  // Check if the dependency exists already
+  int iter = nodes[dest].dest_data_dep;
   while (iter != -1) {
-    nodes[iter].in_focus_tree = false;
-    iter = nodes[iter].parent;
+    if (data_dep_nodes[iter].source == source) {
+      return;
+    }
+    iter = data_dep_nodes[iter].dest_next;
   }
 
-  iter = new_focused;
-  while (iter != -1) {
-    nodes[iter].in_focus_tree = true;
-    iter = nodes[iter].parent;
-  }
+  // Create new node
+  int new_node = data_dep_nodes.emplace(source, dest);
 
-  node_focused_ = new_focused;
+  // Insert at front of dest linked list
+  data_dep_nodes[new_node].dest_next = nodes[dest].dest_data_dep;
+  nodes[dest].dest_data_dep = new_node;
+
+  // Insert at front of source linked list
+  data_dep_nodes[new_node].source_next = nodes[source].source_data_dep;
+  nodes[source].source_data_dep = new_node;
 }
 
 } // namespace datagui
