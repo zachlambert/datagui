@@ -1,6 +1,6 @@
-#include "datagui/internal/text.hpp"
-#include "datagui/exception.hpp"
-#include "datagui/internal/shader.hpp"
+#include "datagui/visual/font.hpp"
+
+#include "datagui/visual/shader.hpp"
 #include <GL/glew.h>
 #include <filesystem>
 #include <string>
@@ -81,8 +81,7 @@ std::string find_font_path(Font font) {
       candidates.begin(),
       candidates.end(),
       // Return true if a.stem < b.stem
-      [](const std::filesystem::path& a,
-         const std::filesystem::path& b) -> bool {
+      [](const std::filesystem::path& a, const std::filesystem::path& b) -> bool {
         return a.stem().string().size() < b.stem().string().size();
       });
   return candidates.front();
@@ -118,13 +117,11 @@ FontStructure load_font(Font font, int font_size) {
   float texture_row_width = 0;
   for (int i = structure.char_first(); i < structure.char_end(); i++) {
     if (FT_Load_Char(ft_face, char(i), 0) != 0) {
-      throw InitializationError(
-          "Failed to load character: " + std::to_string(char(i)));
+      throw InitializationError("Failed to load character: " + std::to_string(char(i)));
     }
 
     auto& character = structure.get(i);
-    character.size =
-        Vecf(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows);
+    character.size = Vecf(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows);
     character.offset = Vecf(
         ft_face->glyph->bitmap_left,
         float(ft_face->glyph->bitmap_top) - ft_face->glyph->bitmap.rows);
@@ -153,22 +150,10 @@ FontStructure load_font(Font font, int font_size) {
   glBindVertexArray(VAO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-  glVertexAttribPointer(
-      0,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)offsetof(Vertex, pos));
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(
-      1,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)offsetof(Vertex, uv));
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
   glEnableVertexAttribArray(1);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -197,11 +182,7 @@ FontStructure load_font(Font font, int font_size) {
   unsigned int framebuffer;
   glGenFramebuffers(1, &framebuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-  glFramebufferTexture(
-      GL_FRAMEBUFFER,
-      GL_COLOR_ATTACHMENT0,
-      structure.font_texture,
-      0);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, structure.font_texture, 0);
 
   // 2nd pass iterate through characters
   // -> Render to the font texture
@@ -215,8 +196,7 @@ FontStructure load_font(Font font, int font_size) {
   float char_y = 0;
   for (int i = structure.char_first(); i < structure.char_end(); i++) {
     if (FT_Load_Char(ft_face, char(i), FT_LOAD_RENDER) != 0) {
-      throw std::runtime_error(
-          "Failed to load character: " + std::to_string(char(i)));
+      throw std::runtime_error("Failed to load character: " + std::to_string(char(i)));
     }
 
     auto& character = structure.get(i);
@@ -233,12 +213,8 @@ FontStructure load_font(Font font, int font_size) {
     float y_lower = char_y + structure.descender + character.offset.y;
     float y_upper = y_lower + ft_face->glyph->bitmap.rows;
 
-    Vecf bottom_left(
-        -1.f + 2 * x_lower / texture_width,
-        -1.f + 2 * y_lower / texture_height);
-    Vecf top_right(
-        -1.f + 2 * x_upper / texture_width,
-        -1.f + 2 * y_upper / texture_height);
+    Vecf bottom_left(-1.f + 2 * x_lower / texture_width, -1.f + 2 * y_lower / texture_height);
+    Vecf top_right(-1.f + 2 * x_upper / texture_width, -1.f + 2 * y_upper / texture_height);
     Vecf bottom_right(top_right.x, bottom_left.y);
     Vecf top_left(bottom_left.x, top_right.y);
 
@@ -306,10 +282,17 @@ FontStructure load_font(Font font, int font_size) {
   return structure;
 }
 
-Vecf text_size(
-    const FontStructure& font,
-    const std::string& text,
-    float max_width) {
+const FontStructure& FontManager::font_structure(Font font, int font_size) {
+  for (const auto& loaded_font : fonts) {
+    if (loaded_font.font == font && loaded_font.font_size == font_size) {
+      return loaded_font.structure;
+    }
+  }
+  fonts.emplace_back(font, font_size, load_font(font, font_size));
+  return fonts.back().structure;
+};
+
+Vecf FontManager::text_size(const FontStructure& font, const std::string& text, float max_width) {
   bool has_max_width = max_width > 0;
   Vecf pos = Vecf::Zero();
   pos.y += font.line_height;

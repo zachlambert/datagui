@@ -18,8 +18,12 @@ struct TextSelection {
   std::size_t span() const {
     return end >= begin ? (end - begin) : (begin - end);
   }
-  std::size_t from() const { return std::min(begin, end); }
-  std::size_t to() const { return std::max(begin, end); }
+  std::size_t from() const {
+    return std::min(begin, end);
+  }
+  std::size_t to() const {
+    return std::max(begin, end);
+  }
 };
 
 enum class KeyValue { Backspace, LeftArrow, RightArrow, Enter };

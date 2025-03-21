@@ -1,5 +1,4 @@
 #include "datagui/internal/text_selection.hpp"
-#include <GLFW/glfw3.h>
 
 namespace datagui {
 
@@ -81,9 +80,7 @@ void selection_key_event(
     }
 
     if (selection.span() > 0) {
-      text.erase(
-          text.begin() + selection.from(),
-          text.begin() + selection.to());
+      text.erase(text.begin() + selection.from(), text.begin() + selection.to());
       selection.reset(selection.from());
     }
 
@@ -124,12 +121,10 @@ void selection_key_event(
           return;
         }
         selection.end++;
-        while (selection.end != text.size() &&
-               !std::isalnum(text[selection.end])) {
+        while (selection.end != text.size() && !std::isalnum(text[selection.end])) {
           selection.end++;
         }
-        while (selection.end != text.size() &&
-               std::isalnum(text[selection.end])) {
+        while (selection.end != text.size() && std::isalnum(text[selection.end])) {
           selection.end++;
         }
         if (!event.key_shift) {
@@ -150,9 +145,7 @@ void selection_key_event(
         break;
       }
       if (selection.span() > 0) {
-        text.erase(
-            text.begin() + selection.from(),
-            text.begin() + selection.to());
+        text.erase(text.begin() + selection.from(), text.begin() + selection.to());
         selection.reset(selection.from());
 
       } else if (selection.begin > 0) {
@@ -202,8 +195,7 @@ void render_selection(
     geometry_renderer.queue_box(
         Boxf(
             origin + offset - Vecf(float(style.text_input.cursor_width) / 2, 0),
-            origin + offset +
-                Vecf(style.text_input.cursor_width, font.line_height)),
+            origin + offset + Vecf(style.text_input.cursor_width, font.line_height)),
         style.text_input.cursor_color,
         0,
         Color::Black(),

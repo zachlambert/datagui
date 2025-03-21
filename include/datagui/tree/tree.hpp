@@ -1,7 +1,8 @@
 #pragma once
 
 #include "datagui/exception.hpp"
-#include "datagui/internal/vector_map.hpp"
+#include "datagui/tree/state.hpp"
+#include "datagui/tree/vector_map.hpp"
 #include <functional>
 #include <string>
 
@@ -28,7 +29,7 @@ struct Node {
   bool needs_visit = true;
   bool modified = false;
 
-  int props_index = -1;
+  State state;
 };
 
 struct DataDepNode {
@@ -82,21 +83,20 @@ public:
     friend class Tree;
   };
 
-  using alloc_props_t = std::function<int()>;
-  using free_props_t = std::function<void(int)>;
+  using init_state_t = std::function<void(State& state)>;
+  using deinit_state_t = std::function<void(const State&)>;
 
-  Tree(const alloc_props_t& alloc_props, const free_props_t& free_props) :
-      alloc_props(alloc_props), free_props(free_props) {}
+  Tree(const deinit_state_t& deinit_state) : deinit_state(deinit_state) {}
 
   void begin();
   void end();
 
-  void next();
-  void up();
+  void container_next(const init_state_t& init_state);
+  bool container_down();
+  bool optional_down(bool open, const init_state_t& init_state);
+  bool variant_down(const std::string& label, const init_state_t& init_state);
 
-  bool down();
-  bool down_optional(bool open);
-  bool down_variant(const std::string& label);
+  void up();
 
   void insert_next();
   void erase_this();
@@ -139,8 +139,7 @@ private:
   void remove_data_dest_dependencies(int node);
   void remove_data_source_dependencies(int node);
 
-  alloc_props_t alloc_props;
-  free_props_t free_props;
+  deinit_state_t deinit_state;
   VectorMap<Node> nodes;
   VectorMap<DataDepNode> data_dep_nodes;
 

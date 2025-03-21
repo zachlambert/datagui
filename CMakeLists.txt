@@ -17,21 +17,13 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-    # src/element/button.cpp
-    # src/element/checkbox.cpp
-    # src/element/linear_layout.cpp
-    # src/element/selection.cpp
-    # src/element/text.cpp
-    # src/element/text_input.cpp
-    # src/element/wrapper.cpp
-    # src/internal/geometry_renderer.cpp
-    # src/internal/reader.cpp
-    # src/internal/text_selection.cpp
-    # src/internal/shader.cpp
-    # src/internal/text.cpp
-    # src/internal/text_renderer.cpp
-    src/internal/tree.cpp
-    # src/window.cpp
+  # src/tree/layout.cpp
+  src/tree/tree.cpp
+  # src/visual/font.cpp
+  # src/visual/geometry_renderer.cpp
+  # src/visual/shader.cpp
+  # src/visual/text_renderer.cpp
+  # src/visual/text_selection.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack

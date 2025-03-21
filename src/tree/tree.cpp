@@ -1,4 +1,4 @@
-#include "datagui/internal/tree.hpp"
+#include "datagui/tree/tree.hpp"
 #include "datagui/exception.hpp"
 #include <assert.h>
 #include <stack>
@@ -29,7 +29,6 @@ void Tree::end() {
     nodes[node].is_new = false;
     nodes[node].needs_visit = false;
     nodes[node].modified = false;
-    assert(nodes[node].props_index != -1);
 
     int child = nodes[node].first_child;
     while (child != -1) {
@@ -44,7 +43,7 @@ void Tree::end() {
   queue_changed_nodes.clear();
 }
 
-void Tree::next() {
+void Tree::container_next(const init_state_t& init_state) {
   if (parent_ == -1) {
     if (current_ != -1) {
       throw WindowError("Root node was visited twice");
@@ -54,6 +53,10 @@ void Tree::next() {
     }
     current_ = root_;
     return;
+  }
+
+  if (nodes[parent_].type != NodeType::Container) {
+    throw WindowError("Cannot call container_next in a non-container node");
   }
 
   int next;
@@ -71,6 +74,7 @@ void Tree::next() {
       throw WindowError("Called next with no remaining nodes in this container");
     }
     current_ = create_node(parent_, current_);
+    init_state(nodes[current_].state);
   } else {
     current_ = next;
   }
@@ -93,7 +97,7 @@ void Tree::up() {
   parent_ = nodes[current_].parent;
 }
 
-bool Tree::down() {
+bool Tree::container_down() {
   if (parent_ == -1 && is_new || nodes[parent_].is_new) {
     nodes[current_].type = NodeType::Container;
   } else if (nodes[current_].type != NodeType::Container) {
@@ -107,7 +111,7 @@ bool Tree::down() {
   return true;
 }
 
-bool Tree::down_optional(bool open) {
+bool Tree::optional_down(bool open, const init_state_t& init_state) {
   if (parent_ == -1 && is_new || nodes[parent_].is_new) {
     nodes[current_].type = NodeType::Optional;
   } else if (nodes[current_].type != NodeType::Optional) {
@@ -121,11 +125,17 @@ bool Tree::down_optional(bool open) {
     return false;
   }
   parent_ = current_;
-  current_ = -1;
+
+  if (nodes[parent_].first_child == -1) {
+    nodes[parent_].first_child = create_node(parent_, -1);
+    init_state(nodes[nodes[parent_].first_child].state);
+  }
+  current_ = nodes[parent_].first_child;
+
   return true;
 }
 
-bool Tree::down_variant(const std::string& label) {
+bool Tree::variant_down(const std::string& label, const init_state_t& init_state) {
   if (label.empty()) {
     throw WindowError("Variant label cannot be empty");
   }
@@ -198,7 +208,6 @@ void Tree::set_modified(int node) {
 int Tree::create_node(int parent, int prev) {
   int node = nodes.emplace();
   nodes[node].parent = parent;
-  nodes[node].props_index = alloc_props();
 
   if (parent_ == -1) {
     return node;
@@ -240,9 +249,7 @@ void Tree::remove_node(int node) {
       } else if (node.parent != -1) {
         nodes[node.parent].last_child = node.prev;
       }
-      if (node.props_index != -1) {
-        free_props(node.props_index);
-      }
+      deinit_state(node.state);
       remove_data_dest_dependencies(node_index);
       remove_data_source_dependencies(node_index);
       nodes.pop(node_index);

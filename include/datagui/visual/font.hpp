@@ -1,12 +1,13 @@
 #pragma once
 
 #include "datagui/geometry.hpp"
-#include "datagui/style.hpp"
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace datagui {
+
+enum class Font { DejaVuSans, DejaVuSerif, DejaVuSansMono };
 
 struct FontStructure {
   struct Character {
@@ -21,12 +22,7 @@ struct FontStructure {
   unsigned int font_texture;
 
   FontStructure() :
-      line_height(0),
-      ascender(0),
-      descender(0),
-      font_texture(0),
-      char_first_(0),
-      char_end_(0) {}
+      line_height(0), ascender(0), descender(0), font_texture(0), char_first_(0), char_end_(0) {}
 
   void resize(int char_first, int char_last) {
     char_first_ = char_first;
@@ -48,8 +44,12 @@ struct FontStructure {
     return characters[character - char_first_];
   }
 
-  int char_first() const { return char_first_; }
-  int char_end() const { return char_end_; }
+  int char_first() const {
+    return char_first_;
+  }
+  int char_end() const {
+    return char_end_;
+  }
   bool char_valid(char c) const {
     return int(c) >= char_first_ && int(c) < char_end_;
   }
@@ -60,11 +60,21 @@ private:
   std::vector<Character> characters;
 };
 
-FontStructure load_font(Font font, int font_size);
+class FontManager {
+public:
+  const FontStructure& font_structure(Font font, int font_size);
+  Vecf text_size(Font font, int font_size, const std::string& text, float max_width);
 
-Vecf text_size(
-    const FontStructure& font,
-    const std::string& text,
-    float max_width);
+private:
+  struct LoadedFont {
+    Font font;
+    int font_size;
+    FontStructure structure;
+    LoadedFont(Font font, int font_size, FontStructure structure) :
+        font(font), font_size(font_size), structure(structure) {}
+  };
+  // TODO: Replace with unordered_map<std::pair<Font,int>, FontStructure>?
+  std::vector<LoadedFont> fonts;
+};
 
 } // namespace datagui
