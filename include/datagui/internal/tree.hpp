@@ -33,8 +33,11 @@ struct Node {
 
 struct DataDepNode {
   int source;
-  int dest;
+  int source_prev = -1;
   int source_next = -1;
+
+  int dest;
+  int dest_prev = -1;
   int dest_next = -1;
 
   DataDepNode(int source, int dest) : source(source), dest(dest) {}
@@ -133,6 +136,8 @@ private:
   void remove_node(int node);
   void set_needs_visit(int node);
   void add_data_dependency(int source, int dest);
+  void remove_data_dest_dependencies(int node);
+  void remove_data_source_dependencies(int node);
 
   alloc_props_t alloc_props;
   free_props_t free_props;

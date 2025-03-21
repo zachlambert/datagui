@@ -243,6 +243,8 @@ void Tree::remove_node(int node) {
       if (node.props_index != -1) {
         free_props(node.props_index);
       }
+      remove_data_dest_dependencies(node_index);
+      remove_data_source_dependencies(node_index);
       nodes.pop(node_index);
 
       continue;
@@ -278,11 +280,39 @@ void Tree::add_data_dependency(int source, int dest) {
 
   // Insert at front of dest linked list
   data_dep_nodes[new_node].dest_next = nodes[dest].dest_data_dep;
+  data_dep_nodes[nodes[dest].dest_data_dep].dest_prev = new_node;
   nodes[dest].dest_data_dep = new_node;
 
   // Insert at front of source linked list
   data_dep_nodes[new_node].source_next = nodes[source].source_data_dep;
+  data_dep_nodes[nodes[dest].source_data_dep].source_prev = new_node;
   nodes[source].source_data_dep = new_node;
+}
+
+void Tree::remove_data_dest_dependencies(int node) {
+  if (nodes[node].dest_data_dep == -1) {
+    return;
+  }
+  const auto& dep_node = data_dep_nodes[nodes[node].dest_data_dep];
+  if (dep_node.dest_prev != -1) {
+    data_dep_nodes[dep_node.dest_prev].dest_next = dep_node.dest_next;
+  }
+  if (dep_node.dest_next != -1) {
+    data_dep_nodes[dep_node.dest_next].dest_prev = dep_node.dest_prev;
+  }
+}
+
+void Tree::remove_data_source_dependencies(int node) {
+  if (nodes[node].source_data_dep == -1) {
+    return;
+  }
+  const auto& dep_node = data_dep_nodes[nodes[node].source_data_dep];
+  if (dep_node.source_prev != -1) {
+    data_dep_nodes[dep_node.source_prev].source_next = dep_node.source_next;
+  }
+  if (dep_node.source_next != -1) {
+    data_dep_nodes[dep_node.source_next].source_prev = dep_node.source_prev;
+  }
 }
 
 } // namespace datagui
