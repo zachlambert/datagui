@@ -3,13 +3,14 @@
 #include "datagui/color.hpp"
 #include "datagui/tree/element.hpp"
 #include "datagui/visual/font.hpp"
+#include "datagui/visual/text_renderer.hpp"
 
 namespace datagui {
 
 struct TextStyle {
-  float max_width = -1;
+  float max_width = 0;
   Font font = Font::DejaVuSans;
-  int font_size = 12;
+  int font_size = 24;
   Color text_color = Color::Black();
 };
 
@@ -21,13 +22,16 @@ struct TextElement {
 
 class TextSystem : public ElementSystemBase<TextElement> {
 public:
-  TextSystem(const FontManager& font_manager) : font_manager(font_manager) {}
+  TextSystem(FontManager& font_manager, TextRenderer& text_renderer) :
+      font_manager(font_manager), text_renderer(text_renderer) {}
 
   void init(const std::function<void(TextStyle&)> set_style);
-  void render(const State& state, Renderers& renderers) const override;
+  void set_layout_input(Tree::Ptr node) const override;
+  void render(Tree::ConstPtr node) const override;
 
 private:
-  const FontManager& font_manager;
+  FontManager& font_manager;
+  TextRenderer& text_renderer;
 };
 
 } // namespace datagui

@@ -3,6 +3,7 @@
 #include "datagui/exception.hpp"
 #include "datagui/tree/state.hpp"
 #include "datagui/tree/vector_map.hpp"
+#include <assert.h>
 #include <functional>
 #include <string>
 
@@ -28,6 +29,7 @@ struct Node {
   bool is_new = true;
   bool needs_visit = true;
   bool modified = false;
+  bool visible = true;
 
   State state;
 };
@@ -46,6 +48,56 @@ struct DataDepNode {
 
 class Tree {
 public:
+  template <bool IsConst>
+  class Ptr_ {
+    using tree_ptr_t = std::conditional_t<IsConst, const Tree*, Tree*>;
+    using state_ptr_t = std::conditional_t<IsConst, const State*, State*>;
+    using state_ref_t = std::conditional_t<IsConst, const State&, State&>;
+
+  public:
+    Ptr_ first_child() {
+      assert(index != -1);
+      return Ptr_(tree, tree->nodes[index].first_child);
+    }
+    Ptr_ next() {
+      assert(index != -1);
+      return Ptr_(tree, tree->nodes[index].next);
+    }
+    state_ref_t operator*() const {
+      return tree->nodes[index].state;
+    }
+    state_ptr_t operator->() const {
+      return &tree->nodes[index].state;
+    }
+    operator bool() const {
+      return index != -1;
+    }
+    bool visible() const {
+      return tree->nodes[index].visible;
+    }
+
+    template <
+        bool OtherConst,
+        typename = std::enable_if_t<IsConst || !OtherConst>>
+    Ptr_(const Ptr_<OtherConst>& other) :
+        tree(other.tree), index(other.index) {}
+
+    template <
+        bool OtherConst,
+        typename = std::enable_if_t<IsConst || !OtherConst>>
+    Ptr_(Ptr_<OtherConst>&& other) : tree(other.tree), index(other.index) {}
+
+  private:
+    Ptr_(tree_ptr_t tree, int index) : tree(tree), index(index) {}
+
+    tree_ptr_t tree;
+    int index;
+
+    friend class Tree;
+  };
+  using Ptr = Ptr_<false>;
+  using ConstPtr = Ptr_<true>;
+
   template <typename T>
   class Data {
   public:
@@ -73,7 +125,7 @@ public:
     }
 
     void access() const {
-      tree->add_data_dependency(node, tree->parent());
+      tree->add_data_dependency(node, tree->parent_);
     }
 
     Tree* tree;
@@ -93,8 +145,14 @@ public:
 
   void container_next(const init_state_t& init_state);
   bool container_down();
-  bool optional_down(bool open, const init_state_t& init_state);
-  bool variant_down(const std::string& label, const init_state_t& init_state);
+  bool optional_down(
+      bool open,
+      const init_state_t& init_state,
+      bool retain = true);
+  bool variant_down(
+      const std::string& label,
+      const init_state_t& init_state,
+      bool retain = true);
 
   void up();
 
@@ -114,6 +172,7 @@ public:
 
   void set_modified(int node);
 
+#if 0
   int root() const {
     return root_;
   }
@@ -130,6 +189,29 @@ public:
   Node& operator[](std::size_t i) {
     return nodes[i];
   }
+
+  Ptr ptr(int index) {
+    return Ptr(this, index);
+  }
+  ConstPtr ptr(int index) const {
+    return ConstPtr(this, index);
+  }
+#else
+
+  Ptr root() {
+    return Ptr(this, root_);
+  }
+  ConstPtr root() const {
+    return ConstPtr(this, root_);
+  }
+
+  Ptr current() {
+    return Ptr(this, current_);
+  }
+  ConstPtr current() const {
+    return ConstPtr(this, current_);
+  }
+#endif
 
 private:
   int create_node(int parent, int prev);

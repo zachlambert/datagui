@@ -85,7 +85,11 @@ private:
 class FontManager {
 public:
   const FontStructure& font_structure(Font font, int font_size);
-  Vecf text_size(Font font, int font_size, const std::string& text, float max_width);
+  Vecf text_size(
+      Font font,
+      int font_size,
+      const std::string& text,
+      float max_width);
 
 private:
   std::unordered_map<std::pair<Font, int>, FontStructure> fonts;

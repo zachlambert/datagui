@@ -1,4 +1,5 @@
 #include "datagui/gui.hpp"
+#include <stack>
 
 namespace datagui {
 
@@ -6,20 +7,29 @@ using namespace std::placeholders;
 
 Gui::Gui(const Window::Config& config) :
     window(config),
-    tree([this](const State& state) { systems[state.element_type].pop(state.element_index); }),
-    renderers(font_manager),
-    systems(font_manager) {
-  renderers.text.init();
-  renderers.geometry.init();
+    text_renderer(font_manager),
+    linear_layout_system(geometry_renderer),
+    text_system(font_manager, text_renderer),
+    tree([this](const State& state) {
+      element_system(state.element_type).pop(state.element_index);
+    }) {
+  geometry_renderer.init();
+  text_renderer.init();
 }
 
 bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::linear_layout() {
+bool Gui::linear_layout(
+    const std::function<void(LinearLayoutStyle&)>& set_style) {
   tree.container_next([&](State& state) {
-    // TODO
+    printf("Create linear layout\n");
+    state.element_type = ElementType::LinearLayout;
+    state.element_index = linear_layout_system.emplace();
+    if (set_style) {
+      set_style(linear_layout_system[state.element_index].style);
+    }
   });
   if (!tree.container_down()) {
     return false;
@@ -31,15 +41,19 @@ void Gui::container_end() {
   tree.up();
 }
 
-void Gui::text(const std::string& text, const std::function<void(TextStyle&)>& set_style) {
+void Gui::text(
+    const std::string& text,
+    const std::function<void(TextStyle&)>& set_style) {
   tree.container_next([&](State& state) {
     state.element_type = ElementType::Text;
-    state.element_index = systems.text.emplace();
-    set_style(systems.text[state.element_index].style);
+    state.element_index = text_system.emplace();
+    if (set_style) {
+      set_style(text_system[state.element_index].style);
+    }
   });
 
-  auto& state = tree[tree.current()].state;
-  systems.text[state.element_index].text = text;
+  auto node = tree.current();
+  text_system[node->element_index].text = text;
 }
 
 #if 0
@@ -66,11 +80,105 @@ void Gui::render_begin() {
 void Gui::render_end() {
   tree.end();
 
+  // Calculate size components
+  {
+    struct State {
+      Tree::Ptr node;
+      bool first_visit;
+      State(Tree::Ptr node) : node(node), first_visit(true) {}
+    };
+    std::stack<State> stack;
+    stack.emplace(tree.root());
+
+    while (!stack.empty()) {
+      State& state = stack.top();
+      auto node = state.node;
+
+      if (!node.visible() || node->element_index == -1) {
+        stack.pop();
+        continue;
+      }
+
+      // If the node has children, process these first
+      if (node.first_child() && state.first_visit) {
+        state.first_visit = false;
+        auto child = node.first_child();
+        while (child) {
+          stack.emplace(child);
+          child = child.next();
+        }
+        continue;
+      }
+      stack.pop();
+
+      element_system(node->element_type).set_layout_input(node);
+    }
+  }
+
+  {
+    std::stack<Tree::Ptr> stack;
+    stack.emplace(tree.root());
+    tree.root()->size = window.size();
+
+    while (!stack.empty()) {
+      auto node = stack.top();
+      stack.pop();
+
+      if (!node.visible() || node->element_index == -1) {
+        continue;
+      }
+
+      if (!node.first_child()) {
+        continue;
+      }
+
+      element_system(node->element_type).set_child_layout_output(node);
+
+      auto child = node.first_child();
+      while (child) {
+        stack.push(child);
+        child = child.next();
+      }
+    }
+  }
+
+  {
+    std::stack<Tree::ConstPtr> stack;
+    stack.push(tree.root());
+
+    while (!stack.empty()) {
+      auto node = stack.top();
+      stack.pop();
+
+      if (!node.visible() || node->element_index == -1) {
+        continue;
+      }
+      element_system(node->element_type).render(node);
+
+      auto child = node.first_child();
+      while (child) {
+        stack.push(child);
+        child = child.next();
+      }
+    }
+  }
+
+  geometry_renderer.render(window.size());
+  text_renderer.render(window.size());
   window.render_end();
-  renderers.geometry.render(window.size());
-  renderers.text.render(window.size());
 
   window.poll_events();
+}
+
+ElementSystem& Gui::element_system(ElementType type) {
+  switch (type) {
+  case ElementType::LinearLayout:
+    return linear_layout_system;
+  case ElementType::Text:
+    return text_system;
+  }
+  assert(false);
+  return linear_layout_system;
 }
 
 } // namespace datagui

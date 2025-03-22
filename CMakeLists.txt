@@ -17,15 +17,18 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
+  src/element/linear_layout.cpp
   src/element/text.cpp
-  src/tree/layout.cpp
+
   src/tree/tree.cpp
+
   src/visual/font.cpp
   src/visual/geometry_renderer.cpp
   src/visual/shader.cpp
   src/visual/text_renderer.cpp
   src/visual/text_selection.cpp
   src/visual/window.cpp
+
   src/gui.cpp
 )
 target_link_libraries(datagui
@@ -48,6 +51,10 @@ target_link_libraries(example_tree datagui)
 
 add_executable(example_window examples/window.cpp)
 target_link_libraries(example_window datagui)
+
+add_executable(example_gui examples/gui.cpp)
+target_link_libraries(example_gui datagui)
+
 
 # Create install target
 

@@ -12,7 +12,8 @@ void Tree::begin() {
 
 void Tree::end() {
   if (parent_ != -1) {
-    throw WindowError("Didn't call layout_... and layout_end the same number of times");
+    throw WindowError(
+        "Didn't call layout_... and layout_end the same number of times");
   }
 
   is_new = false;
@@ -50,6 +51,7 @@ void Tree::container_next(const init_state_t& init_state) {
     }
     if (root_ == -1) {
       root_ = create_node(-1, -1);
+      init_state(nodes[root_].state);
     }
     current_ = root_;
     return;
@@ -71,7 +73,8 @@ void Tree::container_next(const init_state_t& init_state) {
 
   if (next == -1) {
     if (!nodes[parent_].is_new) {
-      throw WindowError("Called next with no remaining nodes in this container");
+      throw WindowError(
+          "Called next with no remaining nodes in this container");
     }
     current_ = create_node(parent_, current_);
     init_state(nodes[current_].state);
@@ -111,16 +114,29 @@ bool Tree::container_down() {
   return true;
 }
 
-bool Tree::optional_down(bool open, const init_state_t& init_state) {
+bool Tree::optional_down(
+    bool open,
+    const init_state_t& init_state,
+    bool retain) {
   if (parent_ == -1 && is_new || nodes[parent_].is_new) {
     nodes[current_].type = NodeType::Optional;
   } else if (nodes[current_].type != NodeType::Optional) {
     throw WindowError("Node type changed, previously was optional");
   }
-  if (nodes[current_].open != open) {
-    nodes[current_].open = open;
+
+  if (nodes[current_].open && !open && !retain) {
+    if (nodes[current_].first_child != -1) {
+      remove_node(nodes[current_].first_child);
+    }
+    return false;
+  }
+  if (!nodes[current_].open && open) {
     set_needs_visit(current_);
   }
+
+  nodes[current_].open = open;
+  nodes[current_].visible = nodes[current_].open;
+
   if (!nodes[current_].needs_visit) {
     return false;
   }
@@ -131,11 +147,15 @@ bool Tree::optional_down(bool open, const init_state_t& init_state) {
     init_state(nodes[nodes[parent_].first_child].state);
   }
   current_ = nodes[parent_].first_child;
+  nodes[current_].needs_visit = nodes[parent_].needs_visit;
 
   return true;
 }
 
-bool Tree::variant_down(const std::string& label, const init_state_t& init_state) {
+bool Tree::variant_down(
+    const std::string& label,
+    const init_state_t& init_state,
+    bool retain) {
   if (label.empty()) {
     throw WindowError("Variant label cannot be empty");
   }
@@ -174,6 +194,7 @@ bool Tree::variant_down(const std::string& label, const init_state_t& init_state
   }
 
   iter = create_node(current_, nodes[current_].last_child);
+  init_state(nodes[iter].state);
 
   return true;
 }
@@ -192,7 +213,8 @@ void Tree::erase_this() {
 }
 
 void Tree::erase_next() {
-  int next = (current_ == -1) ? nodes[parent_].first_child : nodes[current_].next;
+  int next =
+      (current_ == -1) ? nodes[parent_].first_child : nodes[current_].next;
   remove_node(next);
 }
 

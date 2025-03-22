@@ -3,19 +3,20 @@
 
 namespace datagui {
 
-#if 0
-void TextSystem::calculate_size_components(Node& node, const Tree& tree) const {
-  const auto& element = elements[node.element_index];
-  if (element.max_width >= 0) {
-    node.fixed_size = text_size(font, element.text, element.max_width);
-  } else {
-    node.dynamic_size.x = -element.max_width;
-  }
-}
-#endif
+void TextSystem::set_layout_input(Tree::Ptr node) const {
+  const auto& element = elements[node->element_index];
+  const auto& style = element.style;
 
-void TextSystem::render(const State& state, Renderers& renderers) const {
-  const auto& element = elements[state.element_index];
+  node->fixed_size = font_manager.text_size(
+      style.font,
+      style.font_size,
+      element.text,
+      style.max_width);
+}
+
+void TextSystem::render(Tree::ConstPtr node) const {
+  const auto& element = elements[node->element_index];
+  const auto& style = element.style;
 
 #if 0
   if (state.in_focus_tree) {
@@ -45,10 +46,15 @@ void TextSystem::render(const State& state, Renderers& renderers) const {
         false,
         renderers.geometry);
   }
-
-  renderers.text
-      .queue_text(font, style.text.font_color, element.text, element.max_width, node.origin);
 #endif
+
+  text_renderer.queue_text(
+      element.text,
+      node->position,
+      style.font,
+      style.font_size,
+      style.text_color,
+      style.max_width);
 }
 
 } // namespace datagui

@@ -4,24 +4,19 @@
 
 namespace datagui {
 
-enum class ElementType { LinearLayout, Text, TextInput };
-
-struct LayoutInput {
-  Vecf fixed_size;
-  Vecf dynamic_size;
-};
-
-struct LayoutOutput {
-  Vecf position;
-  Vecf size;
-};
+enum class ElementType { Undefined, LinearLayout, Text };
 
 struct State {
-  ElementType element_type;
-  int element_index;
+  ElementType element_type = ElementType::Undefined;
+  int element_index = -1;
 
-  LayoutInput layout_input;
-  LayoutOutput layout_output;
+  // Layout input
+  Vecf fixed_size;
+  Vecf dynamic_size;
+
+  // Layout output
+  Vecf position;
+  Vecf size;
 };
 
 } // namespace datagui
