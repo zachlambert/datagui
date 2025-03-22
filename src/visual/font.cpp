@@ -106,14 +106,22 @@ FontStructure load_font(Font font, int font_size) {
   }
 
   FT_Set_Pixel_Sizes(ft_face, 0, font_size);
+
   structure.ascender = float(ft_face->ascender) / 128;
   structure.descender = -float(ft_face->descender) / 128;
   structure.line_height = float(ft_face->height) / 128;
 
+  // For some reason, the ascender, descender and line_height values aren't scaled to the requested
+  // font size, even though the glyphs are
+  float scale = float(font_size) / structure.line_height;
+  structure.ascender *= scale;
+  structure.descender *= scale;
+  structure.line_height = font_size;
+
   // 1st pass iterate through characters
   // -> Read properties and find required texture height
 
-  const std::size_t texture_width = 256;
+  const std::size_t texture_width = 512;
   std::size_t texture_height = structure.line_height;
 
   float texture_row_width = 0;
@@ -281,17 +289,18 @@ FontStructure load_font(Font font, int font_size) {
   FT_Done_Face(ft_face);
   FT_Done_FreeType(ft_library);
 
+  structure.font_texture_width = texture_width;
+  structure.font_texture_height = texture_height;
   return structure;
 }
 
 const FontStructure& FontManager::font_structure(Font font, int font_size) {
-  for (const auto& loaded_font : fonts) {
-    if (loaded_font.font == font && loaded_font.font_size == font_size) {
-      return loaded_font.structure;
-    }
+  auto iter = fonts.find(std::make_pair(font, font_size));
+  if (iter != fonts.end()) {
+    return iter->second;
   }
-  fonts.emplace_back(font, font_size, load_font(font, font_size));
-  return fonts.back().structure;
+  auto new_font = fonts.emplace(std::make_pair(font, font_size), load_font(font, font_size));
+  return new_font.first->second;
 };
 
 Vecf FontManager::text_size(Font font, int font_size, const std::string& text, float max_width) {

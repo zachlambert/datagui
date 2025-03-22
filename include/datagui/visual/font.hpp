@@ -3,11 +3,24 @@
 #include "datagui/geometry.hpp"
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace datagui {
 
 enum class Font { DejaVuSans, DejaVuSerif, DejaVuSansMono };
+
+} // namespace datagui
+
+template <>
+struct std::hash<std::pair<datagui::Font, int>> {
+  using Key = std::pair<datagui::Font, int>;
+  std::size_t operator()(const Key& k) const {
+    return std::hash<int>()(int(k.first)) ^ (std::hash<int>()(k.second) << 1);
+  }
+};
+
+namespace datagui {
 
 struct FontStructure {
   struct Character {
@@ -20,9 +33,18 @@ struct FontStructure {
   float ascender;
   float descender;
   unsigned int font_texture;
+  std::size_t font_texture_width;
+  std::size_t font_texture_height;
 
   FontStructure() :
-      line_height(0), ascender(0), descender(0), font_texture(0), char_first_(0), char_end_(0) {}
+      line_height(0),
+      ascender(0),
+      descender(0),
+      font_texture(0),
+      font_texture_width(0),
+      font_texture_height(0),
+      char_first_(0),
+      char_end_(0) {}
 
   void resize(int char_first, int char_last) {
     char_first_ = char_first;
@@ -66,15 +88,7 @@ public:
   Vecf text_size(Font font, int font_size, const std::string& text, float max_width);
 
 private:
-  struct LoadedFont {
-    Font font;
-    int font_size;
-    FontStructure structure;
-    LoadedFont(Font font, int font_size, FontStructure structure) :
-        font(font), font_size(font_size), structure(structure) {}
-  };
-  // TODO: Replace with unordered_map<std::pair<Font,int>, FontStructure>?
-  std::vector<LoadedFont> fonts;
+  std::unordered_map<std::pair<Font, int>, FontStructure> fonts;
 };
 
 } // namespace datagui
