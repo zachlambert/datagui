@@ -1,5 +1,5 @@
-#include "datagui/internal/text_renderer.hpp"
-#include "datagui/internal/shader.hpp"
+#include "datagui/visual/text_renderer.hpp"
+#include "datagui/visual/shader.hpp"
 #include <GL/glew.h>
 #include <string>
 
@@ -45,33 +45,20 @@ void TextRenderer::init() {
   // Configure shader program and buffers
 
   gl_data.program_id = create_program(vertex_shader, fragment_shader);
-  gl_data.uniform_viewport_size =
-      glGetUniformLocation(gl_data.program_id, "viewport_size");
-  gl_data.uniform_text_color =
-      glGetUniformLocation(gl_data.program_id, "text_color");
+  gl_data.uniform_viewport_size = glGetUniformLocation(gl_data.program_id, "viewport_size");
+  gl_data.uniform_text_color = glGetUniformLocation(gl_data.program_id, "text_color");
 
   glGenVertexArrays(1, &gl_data.VAO);
   glGenBuffers(1, &gl_data.VBO);
-
+}
+void TextRenderer::init2() {
   glBindVertexArray(gl_data.VAO);
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
 
-  glVertexAttribPointer(
-      0,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)offsetof(Vertex, pos));
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(
-      1,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)offsetof(Vertex, uv));
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
   glEnableVertexAttribArray(1);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -79,43 +66,46 @@ void TextRenderer::init() {
 }
 
 void TextRenderer::queue_text(
-    const FontStructure& font,
-    const Color& font_color,
     const std::string& text,
-    float max_width,
-    const Vecf& origin) {
+    const Vecf& origin,
+    Font font,
+    int font_size,
+    const Color& font_color,
+    float max_width) {
+
+  const auto& fs = font_manager.font_structure(font, font_size);
+
   std::size_t command_i = 0;
   while (command_i < commands.size()) {
     const auto& command = commands[command_i];
-    if (command.font_texture == font.font_texture &&
-        command.font_color.equals(font_color)) {
+    if (command.font_texture == fs.font_texture && command.font_color.equals(font_color)) {
       break;
     }
     command_i++;
   }
   if (command_i == commands.size()) {
-    commands.emplace_back(font.font_texture, font_color);
+    commands.emplace_back(fs.font_texture, font_color);
   }
   auto& vertices = commands[command_i].vertices;
 
   bool has_max_width = max_width > 0;
   Vecf offset = Vecf::Zero();
-  offset.y += font.line_height;
+  offset.y += fs.line_height;
 
   for (char c_char : text) {
-    if (!font.char_valid(c_char)) {
+    if (!fs.char_valid(c_char)) {
       continue;
     }
-    const auto& c = font.get(c_char);
+    const auto& c = fs.get(c_char);
 
     if (has_max_width && offset.x + c.advance > max_width) {
       offset.x = 0;
-      offset.y += font.line_height;
+      offset.y += fs.line_height;
     }
 
     Vecf pos = origin + offset;
     pos.x += c.offset.x;
-    pos.y += (-font.descender - (c.offset.y + c.size.y));
+    pos.y += (-fs.descender - (c.offset.y + c.size.y));
 
     Boxf box(pos, pos + c.size);
     const Boxf& uv = c.uv;

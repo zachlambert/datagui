@@ -17,13 +17,16 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-  # src/tree/layout.cpp
+  src/element/text.cpp
+  src/tree/layout.cpp
   src/tree/tree.cpp
-  # src/visual/font.cpp
-  # src/visual/geometry_renderer.cpp
-  # src/visual/shader.cpp
-  # src/visual/text_renderer.cpp
-  # src/visual/text_selection.cpp
+  src/visual/font.cpp
+  src/visual/geometry_renderer.cpp
+  src/visual/shader.cpp
+  src/visual/text_renderer.cpp
+  src/visual/text_selection.cpp
+  src/visual/window.cpp
+  src/gui.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
@@ -42,6 +45,9 @@ endif()
 
 add_executable(example_tree examples/tree.cpp)
 target_link_libraries(example_tree datagui)
+
+add_executable(example_window examples/window.cpp)
+target_link_libraries(example_window datagui)
 
 # Create install target
 

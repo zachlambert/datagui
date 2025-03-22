@@ -1,8 +1,9 @@
 #include "datagui/element/text.hpp"
-#include "datagui/internal/text_renderer.hpp"
+#include "datagui/visual/text_renderer.hpp"
 
 namespace datagui {
 
+#if 0
 void TextSystem::calculate_size_components(Node& node, const Tree& tree) const {
   const auto& element = elements[node.element_index];
   if (element.max_width >= 0) {
@@ -11,6 +12,7 @@ void TextSystem::calculate_size_components(Node& node, const Tree& tree) const {
     node.dynamic_size.x = -element.max_width;
   }
 }
+#endif
 
 void TextSystem::render(const State& state, Renderers& renderers) const {
   const auto& element = elements[state.element_index];

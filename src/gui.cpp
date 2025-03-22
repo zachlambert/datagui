@@ -7,13 +7,20 @@ using namespace std::placeholders;
 Gui::Gui(const Window::Config& config) :
     window(config),
     tree([this](const State& state) { systems[state.element_type].pop(state.element_index); }),
-    systems(font_manager) {}
+    renderers(font_manager),
+    systems(font_manager) {
+  renderers.text.init();
+  renderers.geometry.init();
+}
 
 bool Gui::running() const {
   return window.running();
 }
 
 bool Gui::linear_layout() {
+  tree.container_next([&](State& state) {
+    // TODO
+  });
   if (!tree.container_down()) {
     return false;
   }
@@ -58,7 +65,11 @@ void Gui::render_begin() {
 
 void Gui::render_end() {
   tree.end();
+
   window.render_end();
+  renderers.geometry.render(window.size());
+  renderers.text.render(window.size());
+
   window.poll_events();
 }
 

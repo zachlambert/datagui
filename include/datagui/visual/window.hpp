@@ -69,6 +69,13 @@ public:
   void render_begin();
   void render_end();
 
+  const Vecf& size() const {
+    return size_;
+  }
+  const Vecf& mouse_pos() const {
+    return mouse_pos_;
+  }
+
   void poll_events();
   const Events& events() const {
     return events_;
@@ -80,7 +87,7 @@ private:
 
   const Config config;
   GLFWwindow* window;
-  Vecf window_size;
+  Vecf size_;
 
   Vecf mouse_pos_;
   Events& events_;

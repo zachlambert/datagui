@@ -42,7 +42,7 @@ void glfw_char_callback(GLFWwindow* callback_window, unsigned int codepoint) {
 }
 
 Window::Window(const Config& config) :
-    config(config), window(nullptr), window_size(Vecf::Zero()), events_(g_events) {
+    config(config), window(nullptr), size_(Vecf::Zero()), events_(g_events) {
   open();
 }
 
@@ -112,7 +112,7 @@ void Window::render_begin() {
   int display_w, display_h;
   glfwGetFramebufferSize(window, &display_w, &display_h);
   glViewport(0, 0, display_w, display_h);
-  window_size = Vecf(display_w, display_h);
+  size_ = Vecf(display_w, display_h);
 }
 
 void Window::render_end() {

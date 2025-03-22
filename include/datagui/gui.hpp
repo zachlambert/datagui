@@ -28,8 +28,9 @@ public:
 
 private:
   Window window;
-  FontManager font_manager;
   Tree tree;
+  FontManager font_manager;
+  Renderers renderers;
   Systems systems;
 };
 

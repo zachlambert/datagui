@@ -1,5 +1,5 @@
-#include "datagui/internal/geometry_renderer.hpp"
-#include "datagui/internal/shader.hpp"
+#include "datagui/visual/geometry_renderer.hpp"
+#include "datagui/visual/shader.hpp"
 #include <GL/glew.h>
 #include <array>
 #include <string>
@@ -95,8 +95,7 @@ GeometryRenderer::GeometryRenderer() {}
 void GeometryRenderer::init() {
   gl_data.program_id = create_program(rect_vs, rect_fs);
 
-  gl_data.uniform_viewport_size =
-      glGetUniformLocation(gl_data.program_id, "viewport_size");
+  gl_data.uniform_viewport_size = glGetUniformLocation(gl_data.program_id, "viewport_size");
 
   // Generate ids
   glGenVertexArrays(1, &gl_data.VAO);
@@ -212,11 +211,7 @@ void GeometryRenderer::queue_box(
 
 void GeometryRenderer::render(const Vecf& viewport_size) {
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
-  glBufferData(
-      GL_ARRAY_BUFFER,
-      elements.size() * sizeof(Element),
-      elements.data(),
-      GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, elements.size() * sizeof(Element), elements.data(), GL_STATIC_DRAW);
 
   glUseProgram(gl_data.program_id);
   glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);

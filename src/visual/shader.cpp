@@ -1,4 +1,4 @@
-#include "datagui/internal/shader.hpp"
+#include "datagui/visual/shader.hpp"
 
 #include <GL/glew.h>
 #include <fstream>
@@ -21,9 +21,7 @@ bool load_file_into_string(const std::string& file_path, std::string& string) {
   }
 }
 
-void compile_and_check_shader(
-    const std::string& code,
-    const unsigned int shader_id) {
+void compile_and_check_shader(const std::string& code, const unsigned int shader_id) {
   GLint result = GL_FALSE;
   int info_log_length;
 
@@ -37,18 +35,12 @@ void compile_and_check_shader(
   glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &info_log_length);
   if (info_log_length > 0) {
     char vertex_shader_error_message[info_log_length + 1];
-    glGetShaderInfoLog(
-        shader_id,
-        info_log_length,
-        NULL,
-        vertex_shader_error_message);
+    glGetShaderInfoLog(shader_id, info_log_length, NULL, vertex_shader_error_message);
     std::cerr << vertex_shader_error_message << std::endl;
   }
 }
 
-unsigned int create_program(
-    const std::string& vs_code,
-    const std::string& fs_code) {
+unsigned int create_program(const std::string& vs_code, const std::string& fs_code) {
   // Create shaders
   unsigned int vertex_program_id = glCreateShader(GL_VERTEX_SHADER);
   unsigned int fragment_program_id = glCreateShader(GL_FRAGMENT_SHADER);
@@ -71,11 +63,7 @@ unsigned int create_program(
   glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &info_log_length);
   if (info_log_length > 0) {
     char program_error_message[info_log_length + 1];
-    glGetProgramInfoLog(
-        program_id,
-        info_log_length,
-        NULL,
-        program_error_message);
+    glGetProgramInfoLog(program_id, info_log_length, NULL, program_error_message);
     std::cerr << program_error_message << std::endl;
   }
 

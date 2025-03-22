@@ -1,23 +1,24 @@
-#include <datagui/internal/tree.hpp>
-#include <datagui/internal/vector_map.hpp>
+#include <datagui/tree/tree.hpp>
 #include <iostream>
 
 int main() {
-  datagui::Tree tree([]() { return 0; }, [](int) {});
+  using namespace datagui;
+
+  Tree tree([](const State&) {});
 
   std::string name_value;
   int name_node;
 
   while (true) {
     tree.begin();
-    tree.next();
-    if (tree.down()) {
-      tree.next();
+    tree.container_next([](State&) {});
+    if (tree.container_down()) {
+      tree.container_next([](State&) {});
       name_node = tree.current();
       auto name = tree.data(&name_value);
-      tree.next();
-      if (tree.down()) {
-        tree.next();
+      tree.container_next([](State&) {});
+      if (tree.container_down()) {
+        tree.container_next([](State&) {});
         if (name) {
           std::cout << "Name: " << *name << std::endl;
         }

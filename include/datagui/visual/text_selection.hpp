@@ -1,7 +1,7 @@
 #pragma once
 
-#include "datagui/internal/geometry_renderer.hpp"
-#include "datagui/internal/text.hpp"
+#include "datagui/visual/font.hpp"
+#include "datagui/visual/geometry_renderer.hpp"
 
 namespace datagui {
 
@@ -71,8 +71,14 @@ void selection_key_event(
     bool editable,
     const KeyEvent& event);
 
+struct TextSelectionStyle {
+  float cursor_width = 2;
+  Color cursor_color = Color::Gray(0.5);
+  Color highlight_color = Color(0.3, 0.8, 1.0);
+};
+
 void render_selection(
-    const Style& style,
+    const TextSelectionStyle& style,
     const FontStructure& font,
     const std::string& text,
     float max_width,

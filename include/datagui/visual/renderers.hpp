@@ -8,6 +8,8 @@ namespace datagui {
 struct Renderers {
   GeometryRenderer geometry;
   TextRenderer text;
+
+  Renderers(FontManager& font_manager) : text(font_manager) {}
 };
 
 } // namespace datagui

@@ -3,8 +3,6 @@
 #include "datagui/tree/state.hpp"
 #include "datagui/tree/vector_map.hpp"
 #include "datagui/visual/renderers.hpp"
-#include <concepts>
-#include <functional>
 #include <type_traits>
 
 namespace datagui {
@@ -33,7 +31,7 @@ public:
     return elements[index];
   }
 
-private:
+protected:
   VectorMap<Element> elements;
 };
 

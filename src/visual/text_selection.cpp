@@ -1,4 +1,4 @@
-#include "datagui/internal/text_selection.hpp"
+#include "datagui/visual/text_selection.hpp"
 
 namespace datagui {
 
@@ -177,7 +177,7 @@ void selection_key_event(
 }
 
 void render_selection(
-    const Style& style,
+    const TextSelectionStyle& style,
     const FontStructure& font,
     const std::string& text,
     float max_width,
@@ -194,9 +194,9 @@ void render_selection(
     Vecf offset = cursor_offset(font, text, max_width, selection.begin);
     geometry_renderer.queue_box(
         Boxf(
-            origin + offset - Vecf(float(style.text_input.cursor_width) / 2, 0),
-            origin + offset + Vecf(style.text_input.cursor_width, font.line_height)),
-        style.text_input.cursor_color,
+            origin + offset - Vecf(float(style.cursor_width) / 2, 0),
+            origin + offset + Vecf(style.cursor_width, font.line_height)),
+        style.cursor_color,
         0,
         Color::Black(),
         0);
@@ -226,7 +226,7 @@ void render_selection(
       to_offset.y += font.line_height;
       geometry_renderer.queue_box(
           Boxf(origin + from_offset, origin + to_offset),
-          style.text_input.highlight_color,
+          style.highlight_color,
           0,
           Color::Black(),
           0);
@@ -242,7 +242,7 @@ void render_selection(
   Vecf to_offset = offset + Vecf(0, font.line_height);
   geometry_renderer.queue_box(
       Boxf(origin + from_offset, origin + to_offset),
-      style.text_input.highlight_color,
+      style.highlight_color,
       0,
       Color::Black(),
       0);

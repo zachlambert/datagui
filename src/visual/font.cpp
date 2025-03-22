@@ -1,7 +1,9 @@
 #include "datagui/visual/font.hpp"
 
+#include "datagui/exception.hpp"
 #include "datagui/visual/shader.hpp"
 #include <GL/glew.h>
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <unordered_map>
@@ -292,19 +294,21 @@ const FontStructure& FontManager::font_structure(Font font, int font_size) {
   return fonts.back().structure;
 };
 
-Vecf FontManager::text_size(const FontStructure& font, const std::string& text, float max_width) {
+Vecf FontManager::text_size(Font font, int font_size, const std::string& text, float max_width) {
+  const auto& fs = font_structure(font, font_size);
+
   bool has_max_width = max_width > 0;
   Vecf pos = Vecf::Zero();
-  pos.y += font.line_height;
+  pos.y += fs.line_height;
 
   for (char c : text) {
-    if (!font.char_valid(c)) {
+    if (!fs.char_valid(c)) {
       continue;
     }
-    const auto& character = font.get(c);
+    const auto& character = fs.get(c);
     if (has_max_width && pos.x + character.advance > max_width) {
       pos.x = 0;
-      pos.y += font.line_height;
+      pos.y += fs.line_height;
     }
     pos.x += character.advance;
   }
