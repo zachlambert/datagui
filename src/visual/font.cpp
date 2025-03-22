@@ -266,7 +266,7 @@ FontStructure load_font(Font font, int font_size) {
 
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
-    glBindTexture(GL_TEXTURE0, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glDeleteTextures(1, &char_texture);
   }
 
@@ -275,7 +275,7 @@ FontStructure load_font(Font font, int font_size) {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glDeleteFramebuffers(1, &framebuffer);
   glDeleteProgram(shader_program);
-  glDeleteBuffers(1, &VAO);
+  glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
 
   FT_Done_Face(ft_face);

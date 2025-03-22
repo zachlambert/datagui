@@ -12,7 +12,6 @@ class TextRenderer {
 public:
   TextRenderer(FontManager& font_manager) : font_manager(font_manager) {}
   void init();
-  void init2();
 
   void queue_text(
       const std::string& text,

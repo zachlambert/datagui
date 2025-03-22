@@ -13,7 +13,6 @@ int main() {
   TextRenderer text(font_manager);
   geometry.init();
   text.init();
-  text.init2();
   font_manager.font_structure(Font::DejaVuSans, 20);
 
   Boxf box;
@@ -23,10 +22,10 @@ int main() {
   while (window.running()) {
     window.render_begin();
 
-    // geometry.queue_box(box, Color::Red(), 5, Color::Black());
+    geometry.queue_box(box, Color::Red(), 5, Color::Black());
     text.queue_text("Hello", Vecf(400, 50), Font::DejaVuSans, 20, Color::Blue(), 500);
 
-    // geometry.render(window.size());
+    geometry.render(window.size());
     text.render(window.size());
     window.render_end();
 

@@ -50,8 +50,7 @@ void TextRenderer::init() {
 
   glGenVertexArrays(1, &gl_data.VAO);
   glGenBuffers(1, &gl_data.VBO);
-}
-void TextRenderer::init2() {
+
   glBindVertexArray(gl_data.VAO);
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
 
