@@ -268,7 +268,7 @@ private:
   int create_node(int parent, int prev);
   void remove_node(int node);
 
-  void set_needs_visit(int node);
+  void set_needs_visit(int node, bool visit_children = false);
 
   int create_data_node(int node);
   void data_mutate(int data_node);

@@ -11,7 +11,7 @@ void Tree::begin() {
   parent_data_current_ = -1;
 
   for (int node : queue_needs_visit) {
-    set_needs_visit(node);
+    set_needs_visit(node, true);
   }
   queue_needs_visit.clear();
 }
@@ -294,11 +294,29 @@ void Tree::remove_node(int node) {
   }
 }
 
-void Tree::set_needs_visit(int node) {
+void Tree::set_needs_visit(int node, bool visit_children) {
   int iter = node;
   while (iter != -1) {
     nodes[iter].needs_visit = true;
     iter = nodes[iter].parent;
+  }
+
+  if (!visit_children) {
+    return;
+  }
+  std::stack<int> stack;
+  stack.push(node);
+  while (!stack.empty()) {
+    int node = stack.top();
+    stack.pop();
+    int child = nodes[node].first_child;
+    while (child != -1) {
+      nodes[child].needs_visit = true;
+      if (nodes[child].first_child != -1) {
+        stack.push(child);
+      }
+      child = nodes[child].next;
+    }
   }
 }
 
