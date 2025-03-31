@@ -3,13 +3,15 @@
 #include "datagui/exception.hpp"
 #include "datagui/tree/state.hpp"
 #include "datagui/tree/vector_map.hpp"
+#include <any>
 #include <assert.h>
 #include <functional>
+#include <stack>
 #include <string>
 
 namespace datagui {
 
-enum class NodeType { Primitive, Data, Container, Optional, Variant };
+enum class NodeType { Primitive, Container, Optional, Variant };
 
 struct Node {
   NodeType type = NodeType::Primitive;
@@ -23,27 +25,50 @@ struct Node {
   int first_child = -1;
   int last_child = -1;
 
-  int dest_data_dep = -1;
-  int source_data_dep = -1;
-
   bool is_new = true;
   bool needs_visit = true;
-  bool modified = false;
   bool visible = true;
+
+  int first_data = -1;
+  int first_dep = -1;
 
   State state;
 };
 
-struct DataDepNode {
-  int source;
-  int source_prev = -1;
-  int source_next = -1;
+struct DataNode {
+  int node;
 
-  int dest;
-  int dest_prev = -1;
-  int dest_next = -1;
+  std::any data;
+  bool modified;
 
-  DataDepNode(int source, int dest) : source(source), dest(dest) {}
+  // Linked list of data nodes for a given gui node
+  int prev;
+  int next;
+  int first_dep;
+
+  DataNode(int node) :
+      node(node), modified(false), prev(-1), next(-1), first_dep(-1) {}
+};
+
+struct DepNode {
+  int node;
+
+  // Linked list of dependencies for a given data node
+  int data_node;
+  int prev;
+  int next;
+
+  // Linked list of dependencies for a given gui node
+  int node_prev;
+  int node_next;
+
+  DepNode(int node, int data_node) :
+      node(node),
+      data_node(data_node),
+      prev(-1),
+      next(-1),
+      node_prev(-1),
+      node_next(-1) {}
 };
 
 class Tree {
@@ -102,34 +127,29 @@ public:
   class Data {
   public:
     const T& operator*() const {
-      access();
+      tree->data_access(data_node);
       return *ptr;
     }
     const T* operator->() const {
-      access();
+      tree->data_access(data_node);
       return ptr;
     }
     T& mut() const {
-      tree->queue_changed_nodes.push_back(node);
+      tree->data_mutate(data_node);
     }
     operator bool() const {
-      access();
-      return tree->nodes[node].modified;
+      tree->data_access(data_node);
+      return tree->data_nodes[data_node].modified;
     }
 
   private:
-    Data(Tree* tree, int node, T* ptr) : tree(tree), node(node), ptr(ptr) {
-      if (tree->nodes[node].type != NodeType::Data) {
-        throw WindowError("Tried to create a Data object for non-data node");
-      }
-    }
-
-    void access() const {
-      tree->add_data_dependency(node, tree->parent_);
-    }
+    Data(Tree* tree, int data_node) :
+        tree(tree),
+        data_node(data_node),
+        ptr(std::any_cast<T>(&tree->data_nodes[data_node].data)) {}
 
     Tree* tree;
-    int node;
+    int data_node;
     T* ptr;
 
     friend class Tree;
@@ -161,42 +181,23 @@ public:
   void erase_next();
 
   template <typename T>
-  Data<T> data(T* ptr) {
-    if (nodes[current_].is_new) {
-      nodes[current_].type = NodeType::Data;
-    } else if (nodes[current_].type != NodeType::Data) {
-      throw WindowError("Node not created as a data node");
+  Data<T> data(const std::function<T()>& construct = []() { return T(); }) {
+    int data_node;
+    if (data_current_ == -1) {
+      data_node = nodes[current_].first_data;
+    } else {
+      data_node = data_nodes[data_current_].next;
     }
-    return Data<T>(this, current_, ptr);
+    if (data_node == -1) {
+      if (!nodes[current_].is_new) {
+        throw WindowError("Changed the number of data nodes");
+      }
+      data_node = create_data_node(current_);
+      data_nodes[data_node].data = construct();
+    }
+    data_current_ = data_node;
+    return Data<T>(this, data_current_);
   }
-
-  void set_modified(int node);
-
-#if 0
-  int root() const {
-    return root_;
-  }
-  int parent() const {
-    return parent_;
-  }
-  int current() const {
-    return current_;
-  }
-
-  const Node& operator[](std::size_t i) const {
-    return nodes[i];
-  }
-  Node& operator[](std::size_t i) {
-    return nodes[i];
-  }
-
-  Ptr ptr(int index) {
-    return Ptr(this, index);
-  }
-  ConstPtr ptr(int index) const {
-    return ConstPtr(this, index);
-  }
-#else
 
   Ptr root() {
     return Ptr(this, root_);
@@ -211,25 +212,34 @@ public:
   ConstPtr current() const {
     return ConstPtr(this, current_);
   }
-#endif
 
 private:
   int create_node(int parent, int prev);
   void remove_node(int node);
+
   void set_needs_visit(int node);
-  void add_data_dependency(int source, int dest);
-  void remove_data_dest_dependencies(int node);
-  void remove_data_source_dependencies(int node);
+
+  int create_data_node(int node);
+  void data_mutate(int data_node);
+  void data_access(int data_node);
+
+  void remove_data_node(int data_node);
+  void remove_dep_node(int dep_node);
+  void remove_node_data_nodes(int node);
+  void remove_node_dep_nodes(int node);
 
   deinit_state_t deinit_state;
   VectorMap<Node> nodes;
-  VectorMap<DataDepNode> data_dep_nodes;
+  VectorMap<DataNode> data_nodes;
+  VectorMap<DepNode> dep_nodes;
 
   bool is_new = true;
   int root_ = -1;
   int parent_ = -1;
   int current_ = -1;
-  std::vector<int> queue_changed_nodes;
+  int data_current_ = -1;
+  std::stack<int> parent_data_current_;
+  std::vector<int> queue_needs_visit;
 };
 
 } // namespace datagui

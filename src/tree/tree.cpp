@@ -8,12 +8,17 @@ namespace datagui {
 void Tree::begin() {
   parent_ = -1;
   current_ = -1;
+  data_current_ = -1;
 }
 
 void Tree::end() {
   if (parent_ != -1) {
     throw WindowError(
         "Didn't call layout_... and layout_end the same number of times");
+  }
+  if (!parent_data_current_.empty()) {
+    // If this isn't true, should also fail the above condition
+    assert(false);
   }
 
   is_new = false;
@@ -29,7 +34,6 @@ void Tree::end() {
 
     nodes[node].is_new = false;
     nodes[node].needs_visit = false;
-    nodes[node].modified = false;
 
     int child = nodes[node].first_child;
     while (child != -1) {
@@ -38,10 +42,10 @@ void Tree::end() {
     }
   }
 
-  for (int node : queue_changed_nodes) {
-    set_modified(node);
+  for (int node : queue_needs_visit) {
+    set_needs_visit(node);
   }
-  queue_changed_nodes.clear();
+  queue_needs_visit.clear();
 }
 
 void Tree::container_next(const init_state_t& init_state) {
@@ -98,6 +102,9 @@ void Tree::up() {
 
   current_ = parent_;
   parent_ = nodes[current_].parent;
+
+  data_current_ = parent_data_current_.top();
+  parent_data_current_.pop();
 }
 
 bool Tree::container_down() {
@@ -111,6 +118,8 @@ bool Tree::container_down() {
   }
   parent_ = current_;
   current_ = -1;
+  parent_data_current_.push(data_current_);
+  data_current_ = -1;
   return true;
 }
 
@@ -148,6 +157,9 @@ bool Tree::optional_down(
   }
   current_ = nodes[parent_].first_child;
   nodes[current_].needs_visit = nodes[parent_].needs_visit;
+
+  parent_data_current_.push(data_current_);
+  data_current_ = -1;
 
   return true;
 }
@@ -188,6 +200,8 @@ bool Tree::variant_down(
     if (switched || nodes[iter].needs_visit) {
       parent_ = current_;
       current_ = iter;
+      parent_data_current_.push(data_current_);
+      data_current_ = -1;
       return true;
     }
     return false;
@@ -195,6 +209,9 @@ bool Tree::variant_down(
 
   iter = create_node(current_, nodes[current_].last_child);
   init_state(nodes[iter].state);
+
+  parent_data_current_.push(data_current_);
+  data_current_ = -1;
 
   return true;
 }
@@ -216,15 +233,6 @@ void Tree::erase_next() {
   int next =
       (current_ == -1) ? nodes[parent_].first_child : nodes[current_].next;
   remove_node(next);
-}
-
-void Tree::set_modified(int node) {
-  nodes[node].modified = true;
-  int iter = nodes[node].source_data_dep;
-  while (iter != -1) {
-    set_needs_visit(data_dep_nodes[iter].dest);
-    iter = data_dep_nodes[iter].source_next;
-  }
 }
 
 int Tree::create_node(int parent, int prev) {
@@ -272,8 +280,8 @@ void Tree::remove_node(int node) {
         nodes[node.parent].last_child = node.prev;
       }
       deinit_state(node.state);
-      remove_data_dest_dependencies(node_index);
-      remove_data_source_dependencies(node_index);
+      remove_node_data_nodes(node_index);
+      remove_node_dep_nodes(node_index);
       nodes.pop(node_index);
 
       continue;
@@ -294,53 +302,122 @@ void Tree::set_needs_visit(int node) {
   }
 }
 
-void Tree::add_data_dependency(int source, int dest) {
+int Tree::create_data_node(int node) {
+  int new_node = data_nodes.emplace(node);
+
+  int prev = nodes[node].first_data;
+  if (prev == -1) {
+    nodes[node].first_data = new_node;
+    return new_node;
+  }
+  while (data_nodes[prev].next != -1) {
+    prev = data_nodes[prev].next;
+  }
+  data_nodes[prev].next = new_node;
+  data_nodes[new_node].prev = prev;
+  return new_node;
+}
+
+void Tree::data_access(int data_node) {
+  int dep_gui_node = parent_;
+
   // Check if the dependency exists already
-  int iter = nodes[dest].dest_data_dep;
-  while (iter != -1) {
-    if (data_dep_nodes[iter].source == source) {
-      return;
+  int dep = nodes[dep_gui_node].first_dep;
+  while (dep != -1) {
+    if (dep_nodes[dep].data_node == data_node) {
+      return; // Already have a dependency to the given data_node
     }
-    iter = data_dep_nodes[iter].dest_next;
+    dep = dep_nodes[dep].next;
   }
 
-  // Create new node
-  int new_node = data_dep_nodes.emplace(source, dest);
+  // Create new dependency
+  int new_dep = dep_nodes.emplace(dep_gui_node, data_node);
 
-  // Insert at front of dest linked list
-  data_dep_nodes[new_node].dest_next = nodes[dest].dest_data_dep;
-  data_dep_nodes[nodes[dest].dest_data_dep].dest_prev = new_node;
-  nodes[dest].dest_data_dep = new_node;
+  // Insert at front of dependencies linked list
+  dep_nodes[new_dep].next = data_nodes[data_node].first_dep;
+  if (data_nodes[data_node].first_dep != -1) {
+    dep_nodes[data_nodes[data_node].first_dep].prev = new_dep;
+  }
+  data_nodes[data_node].first_dep = new_dep;
 
-  // Insert at front of source linked list
-  data_dep_nodes[new_node].source_next = nodes[source].source_data_dep;
-  data_dep_nodes[nodes[dest].source_data_dep].source_prev = new_node;
-  nodes[source].source_data_dep = new_node;
+  // Insert at front of gui node linked list
+  dep_nodes[new_dep].node_next = nodes[dep_gui_node].first_dep;
+  if (nodes[dep_gui_node].first_dep != -1) {
+    dep_nodes[nodes[dep_gui_node].first_dep].prev = new_dep;
+  }
+  nodes[dep_gui_node].first_dep = new_dep;
 }
 
-void Tree::remove_data_dest_dependencies(int node) {
-  if (nodes[node].dest_data_dep == -1) {
-    return;
-  }
-  const auto& dep_node = data_dep_nodes[nodes[node].dest_data_dep];
-  if (dep_node.dest_prev != -1) {
-    data_dep_nodes[dep_node.dest_prev].dest_next = dep_node.dest_next;
-  }
-  if (dep_node.dest_next != -1) {
-    data_dep_nodes[dep_node.dest_next].dest_prev = dep_node.dest_prev;
+void Tree::data_mutate(int data_node) {
+  data_nodes[data_node].modified = true;
+  int dep = data_nodes[data_node].first_dep;
+  while (dep != -1) {
+    queue_needs_visit.push_back(dep_nodes[dep].node);
+    dep = dep_nodes[dep].next;
   }
 }
 
-void Tree::remove_data_source_dependencies(int node) {
-  if (nodes[node].source_data_dep == -1) {
-    return;
+void Tree::remove_data_node(int data_node) {
+  int dep = data_nodes[data_node].first_dep;
+  while (dep != -1) {
+    remove_dep_node(dep);
   }
-  const auto& dep_node = data_dep_nodes[nodes[node].source_data_dep];
-  if (dep_node.source_prev != -1) {
-    data_dep_nodes[dep_node.source_prev].source_next = dep_node.source_next;
+
+  if (data_nodes[data_node].prev != -1) {
+    data_nodes[data_nodes[data_node].prev].next = data_nodes[data_node].next;
+  } else {
+    nodes[data_nodes[data_node].node].first_data = data_nodes[data_node].next;
   }
-  if (dep_node.source_next != -1) {
-    data_dep_nodes[dep_node.source_next].source_prev = dep_node.source_prev;
+
+  if (data_nodes[data_node].next != -1) {
+    data_nodes[data_nodes[data_node].next].prev = data_nodes[data_node].prev;
+  }
+
+  data_nodes.pop(data_node);
+}
+
+void Tree::remove_dep_node(int dep_node) {
+  if (dep_nodes[dep_node].prev != -1) {
+    dep_nodes[dep_nodes[dep_node].prev].next = dep_nodes[dep_node].next;
+  } else {
+    data_nodes[dep_nodes[dep_node].data_node].first_dep =
+        dep_nodes[dep_node].next;
+  }
+  if (dep_nodes[dep_node].next != -1) {
+    dep_nodes[dep_nodes[dep_node].next].prev = dep_nodes[dep_node].prev;
+  }
+
+  if (dep_nodes[dep_node].node_prev != -1) {
+    dep_nodes[dep_nodes[dep_node].node_prev].node_next =
+        dep_nodes[dep_node].node_next;
+  } else {
+    nodes[dep_nodes[dep_node].node].first_dep = dep_nodes[dep_node].node_next;
+  }
+  if (dep_nodes[dep_node].node_next != -1) {
+    dep_nodes[dep_nodes[dep_node].node_next].node_prev =
+        dep_nodes[dep_node].node_prev;
+  }
+
+  dep_nodes.pop(dep_node);
+}
+
+void Tree::remove_node_data_nodes(int node) {
+  int data = nodes[node].first_data;
+
+  while (data != -1) {
+    int next = data_nodes[data].next;
+    remove_data_node(data);
+    data = next;
+  }
+}
+
+void Tree::remove_node_dep_nodes(int node) {
+  int dep = nodes[node].first_dep;
+
+  while (dep != -1) {
+    int next = dep_nodes[dep].node_next;
+    remove_dep_node(dep);
+    dep = next;
   }
 }
 
