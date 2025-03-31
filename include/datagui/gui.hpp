@@ -12,6 +12,7 @@
 
 #include "datagui/element/linear_layout.hpp"
 #include "datagui/element/text.hpp"
+#include "datagui/element/text_input.hpp"
 
 namespace datagui {
 
@@ -31,9 +32,13 @@ public:
       const std::string& text,
       const std::function<void(TextStyle&)>& set_style = nullptr);
 
-#if 0
-  DataPtr<std::string> text_input(const std::string& initial_text);
-#endif
+  Tree::ConstData<std::string> text_input(
+      const std::function<void(TextInputStyle&)>& set_style = nullptr);
+
+  template <typename T>
+  Tree::Data<T> data() {
+    return tree.data_parent<T>();
+  }
 
 private:
   ElementSystem& element_system(ElementType type);
@@ -47,6 +52,7 @@ private:
 
   LinearLayoutSystem linear_layout_system;
   TextSystem text_system;
+  TextInputSystem text_input_system;
 };
 
 } // namespace datagui

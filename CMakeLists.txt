@@ -19,6 +19,7 @@ find_package(Freetype REQUIRED)
 add_library(datagui SHARED
   src/element/linear_layout.cpp
   src/element/text.cpp
+  src/element/text_input.cpp
 
   src/tree/tree.cpp
 

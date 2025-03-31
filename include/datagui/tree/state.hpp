@@ -4,7 +4,7 @@
 
 namespace datagui {
 
-enum class ElementType { Undefined, LinearLayout, Text };
+enum class ElementType { Undefined, LinearLayout, Text, TextInput };
 
 struct State {
   ElementType element_type = ElementType::Undefined;
@@ -17,6 +17,10 @@ struct State {
   // Layout output
   Vecf position;
   Vecf size;
+
+  // Focus
+  bool in_focus_tree = false;
+  bool focused = false;
 };
 
 } // namespace datagui

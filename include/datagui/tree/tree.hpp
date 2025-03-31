@@ -73,6 +73,58 @@ struct DepNode {
 
 class Tree {
 public:
+  template <typename T, bool IsConst>
+  class Data_ {
+    using data_ptr_t = std::conditional_t<IsConst, const T*, T*>;
+
+  public:
+    const T& operator*() const {
+      tree->data_access(data_node);
+      return *ptr;
+    }
+    const T* operator->() const {
+      tree->data_access(data_node);
+      return ptr;
+    }
+    T& mut() const {
+      static_assert(!IsConst);
+      tree->data_mutate(data_node);
+      return *ptr;
+    }
+    operator bool() const {
+      tree->data_access(data_node);
+      return tree->data_nodes[data_node].modified;
+    }
+
+    template <
+        bool OtherConst,
+        typename = std::enable_if_t<IsConst || !OtherConst>>
+    Data_(const Data_<T, OtherConst>& other) :
+        tree(other.tree), data_node(other.data_node), ptr(other.ptr) {}
+
+    template <
+        bool OtherConst,
+        typename = std::enable_if_t<IsConst || !OtherConst>>
+    Data_(Data_<T, OtherConst>&& other) :
+        tree(other.tree), data_node(other.data_node), ptr(other.ptr) {}
+
+  private:
+    Data_(Tree* tree, int data_node) :
+        tree(tree),
+        data_node(data_node),
+        ptr(std::any_cast<T>(&tree->data_nodes[data_node].data)) {}
+
+    Tree* tree;
+    int data_node;
+    data_ptr_t ptr;
+
+    friend class Tree;
+  };
+  template <typename T>
+  using Data = Data_<T, false>;
+  template <typename T>
+  using ConstData = Data_<T, true>;
+
   template <bool IsConst>
   class Ptr_ {
     using tree_ptr_t = std::conditional_t<IsConst, const Tree*, Tree*>;
@@ -101,6 +153,11 @@ public:
       return tree->nodes[index].visible;
     }
 
+    template <typename T>
+    Data_<T, IsConst> data() const {
+      return const_cast<Tree*>(tree)->template data_single<T>(index);
+    }
+
     template <
         bool OtherConst,
         typename = std::enable_if_t<IsConst || !OtherConst>>
@@ -122,38 +179,6 @@ public:
   };
   using Ptr = Ptr_<false>;
   using ConstPtr = Ptr_<true>;
-
-  template <typename T>
-  class Data {
-  public:
-    const T& operator*() const {
-      tree->data_access(data_node);
-      return *ptr;
-    }
-    const T* operator->() const {
-      tree->data_access(data_node);
-      return ptr;
-    }
-    T& mut() const {
-      tree->data_mutate(data_node);
-    }
-    operator bool() const {
-      tree->data_access(data_node);
-      return tree->data_nodes[data_node].modified;
-    }
-
-  private:
-    Data(Tree* tree, int data_node) :
-        tree(tree),
-        data_node(data_node),
-        ptr(std::any_cast<T>(&tree->data_nodes[data_node].data)) {}
-
-    Tree* tree;
-    int data_node;
-    T* ptr;
-
-    friend class Tree;
-  };
 
   using init_state_t = std::function<void(State& state)>;
   using deinit_state_t = std::function<void(const State&)>;
@@ -181,22 +206,33 @@ public:
   void erase_next();
 
   template <typename T>
-  Data<T> data(const std::function<T()>& construct = []() { return T(); }) {
+  Data<T> data_parent(const std::function<T()>& construct = []() {
+    return T();
+  }) {
+    assert(parent_ != -1);
     int data_node;
-    if (data_current_ == -1) {
-      data_node = nodes[current_].first_data;
+    if (parent_data_current_ == -1) {
+      data_node = nodes[parent_].first_data;
     } else {
-      data_node = data_nodes[data_current_].next;
+      data_node = data_nodes[parent_data_current_].next;
     }
     if (data_node == -1) {
-      if (!nodes[current_].is_new) {
+      if (!nodes[parent_].is_new) {
         throw WindowError("Changed the number of data nodes");
       }
-      data_node = create_data_node(current_);
+      data_node = create_data_node(parent_);
       data_nodes[data_node].data = construct();
     }
-    data_current_ = data_node;
-    return Data<T>(this, data_current_);
+    parent_data_current_ = data_node;
+    return Data<T>(this, parent_data_current_);
+  }
+
+  template <typename T>
+  Data<T> data_current(const std::function<T()>& construct = []() {
+    return T();
+  }) {
+    assert(current_ != -1);
+    return data_single(current_, construct);
   }
 
   Ptr root() {
@@ -214,6 +250,21 @@ public:
   }
 
 private:
+  template <typename T>
+  Data<T> data_single(
+      int node,
+      const std::function<T()>& construct = []() { return T(); }) {
+    int data_node = nodes[node].first_data;
+    if (data_node == -1) {
+      if (!nodes[node].is_new) {
+        throw WindowError("Changed the number of data nodes");
+      }
+      data_node = create_data_node(node);
+      data_nodes[data_node].data = construct();
+    }
+    return Data<T>(this, data_node);
+  }
+
   int create_node(int parent, int prev);
   void remove_node(int node);
 
@@ -237,8 +288,8 @@ private:
   int root_ = -1;
   int parent_ = -1;
   int current_ = -1;
-  int data_current_ = -1;
-  std::stack<int> parent_data_current_;
+  int parent_data_current_ = -1;
+  std::stack<int> parent_data_current_stack_;
   std::vector<int> queue_needs_visit;
 };
 

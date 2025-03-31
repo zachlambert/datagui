@@ -10,6 +10,7 @@ Gui::Gui(const Window::Config& config) :
     text_renderer(font_manager),
     linear_layout_system(geometry_renderer),
     text_system(font_manager, text_renderer),
+    text_input_system(font_manager, text_renderer, geometry_renderer),
     tree([this](const State& state) {
       element_system(state.element_type).pop(state.element_index);
     }) {
@@ -24,7 +25,6 @@ bool Gui::running() const {
 bool Gui::linear_layout(
     const std::function<void(LinearLayoutStyle&)>& set_style) {
   tree.container_next([&](State& state) {
-    printf("Create linear layout\n");
     state.element_type = ElementType::LinearLayout;
     state.element_index = linear_layout_system.emplace();
     if (set_style) {
@@ -54,6 +54,20 @@ void Gui::text(
 
   auto node = tree.current();
   text_system[node->element_index].text = text;
+}
+
+Tree::ConstData<std::string> Gui::text_input(
+    const std::function<void(TextInputStyle&)>& set_style) {
+  tree.container_next([&](State& state) {
+    state.element_type = ElementType::TextInput;
+    state.element_index = text_input_system.emplace();
+    if (set_style) {
+      set_style(text_input_system[state.element_index].style);
+    }
+  });
+
+  auto node = tree.current();
+  return tree.data_current<std::string>();
 }
 
 #if 0
@@ -176,6 +190,11 @@ ElementSystem& Gui::element_system(ElementType type) {
     return linear_layout_system;
   case ElementType::Text:
     return text_system;
+  case ElementType::TextInput:
+    return text_system;
+  case ElementType::Undefined:
+    assert(false);
+    return linear_layout_system;
   }
   assert(false);
   return linear_layout_system;

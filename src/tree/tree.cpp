@@ -8,7 +8,12 @@ namespace datagui {
 void Tree::begin() {
   parent_ = -1;
   current_ = -1;
-  data_current_ = -1;
+  parent_data_current_ = -1;
+
+  for (int node : queue_needs_visit) {
+    set_needs_visit(node);
+  }
+  queue_needs_visit.clear();
 }
 
 void Tree::end() {
@@ -16,7 +21,7 @@ void Tree::end() {
     throw WindowError(
         "Didn't call layout_... and layout_end the same number of times");
   }
-  if (!parent_data_current_.empty()) {
+  if (!parent_data_current_stack_.empty()) {
     // If this isn't true, should also fail the above condition
     assert(false);
   }
@@ -41,11 +46,6 @@ void Tree::end() {
       child = nodes[child].next;
     }
   }
-
-  for (int node : queue_needs_visit) {
-    set_needs_visit(node);
-  }
-  queue_needs_visit.clear();
 }
 
 void Tree::container_next(const init_state_t& init_state) {
@@ -103,8 +103,8 @@ void Tree::up() {
   current_ = parent_;
   parent_ = nodes[current_].parent;
 
-  data_current_ = parent_data_current_.top();
-  parent_data_current_.pop();
+  parent_data_current_ = parent_data_current_stack_.top();
+  parent_data_current_stack_.pop();
 }
 
 bool Tree::container_down() {
@@ -118,8 +118,8 @@ bool Tree::container_down() {
   }
   parent_ = current_;
   current_ = -1;
-  parent_data_current_.push(data_current_);
-  data_current_ = -1;
+  parent_data_current_stack_.push(parent_data_current_);
+  parent_data_current_ = -1;
   return true;
 }
 
@@ -158,8 +158,8 @@ bool Tree::optional_down(
   current_ = nodes[parent_].first_child;
   nodes[current_].needs_visit = nodes[parent_].needs_visit;
 
-  parent_data_current_.push(data_current_);
-  data_current_ = -1;
+  parent_data_current_stack_.push(parent_data_current_);
+  parent_data_current_ = -1;
 
   return true;
 }
@@ -200,8 +200,8 @@ bool Tree::variant_down(
     if (switched || nodes[iter].needs_visit) {
       parent_ = current_;
       current_ = iter;
-      parent_data_current_.push(data_current_);
-      data_current_ = -1;
+      parent_data_current_stack_.push(parent_data_current_);
+      parent_data_current_ = -1;
       return true;
     }
     return false;
@@ -210,8 +210,8 @@ bool Tree::variant_down(
   iter = create_node(current_, nodes[current_].last_child);
   init_state(nodes[iter].state);
 
-  parent_data_current_.push(data_current_);
-  data_current_ = -1;
+  parent_data_current_stack_.push(parent_data_current_);
+  parent_data_current_ = -1;
 
   return true;
 }
