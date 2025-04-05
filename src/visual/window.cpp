@@ -44,6 +44,8 @@ void glfw_mouse_button_callback(
   case GLFW_MOUSE_BUTTON_RIGHT:
     event.button = MouseButton::Right;
     break;
+  default:
+    return;
   }
 
   switch (action) {
@@ -55,6 +57,8 @@ void glfw_mouse_button_callback(
     event.action = MouseAction::Release;
     window->mouse_button_down_[(std::size_t)event.button] = false;
     break;
+  default:
+    return;
   }
 
   double mx, my;
@@ -87,6 +91,8 @@ void glfw_key_callback(
   case GLFW_RELEASE:
     event.action = KeyAction::Release;
     break;
+  default:
+    return;
   }
 
   switch (key) {
@@ -114,10 +120,23 @@ void glfw_key_callback(
   case GLFW_KEY_BACKSPACE:
     event.key = Key::Backspace;
     break;
+  case GLFW_KEY_C:
+    event.key = Key::C;
+    break;
+  case GLFW_KEY_V:
+    event.key = Key::V;
+    break;
+  case GLFW_KEY_X:
+    event.key = Key::X;
+    break;
+  default:
+    return;
   }
 
   event.mod_ctrl = mods & (1 << 1);
   event.mod_shift = mods & (1 << 0);
+
+  event.glfw_window = (void*)glfw_window;
 
   window->key_events_.push_back(event);
 }

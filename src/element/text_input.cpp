@@ -79,13 +79,15 @@ void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
 
   std::size_t cursor_pos = find_cursor(
       font,
-      text,
+      active_text,
       element.style.max_width,
       event.position - text_origin);
 
   if (event.action == MouseAction::Press) {
-    active_node = node;
-    active_text = text;
+    if (active_node != node) {
+      active_node = node;
+      active_text = text;
+    }
     active_selection.reset(cursor_pos);
   } else if (event.action == MouseAction::Hold) {
     active_selection.end = cursor_pos;

@@ -24,6 +24,9 @@ enum class Key {
   Escape,
   Enter,
   Backspace,
+  C,
+  V,
+  X
 };
 
 enum class KeyAction { Press, Repeat, Release };
@@ -33,6 +36,9 @@ struct KeyEvent {
   KeyAction action;
   bool mod_ctrl;
   bool mod_shift;
+  // Only need this for handling CtrlC/CtrlV behaviour
+  // Pass GLFWWindow* as a void pointer to avoid including glfw here
+  void* glfw_window;
 };
 
 struct TextEvent {

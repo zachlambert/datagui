@@ -1,4 +1,5 @@
 #include "datagui/input/text_selection.hpp"
+#include <GLFW/glfw3.h> // For copy/paste
 
 namespace datagui {
 
@@ -74,6 +75,7 @@ void selection_text_event(
     TextSelection& selection,
     bool editable,
     const TextEvent& event) {
+
   if (!editable) {
     return;
   }
@@ -181,6 +183,44 @@ void selection_key_event(
         selection.end = selection.begin;
       }
     }
+    break;
+  }
+  case Key::C: {
+    if (!event.mod_ctrl || selection.span() == 0 || !event.glfw_window) {
+      break;
+    }
+    std::string copied = text.substr(selection.from(), selection.span());
+    glfwSetClipboardString((GLFWwindow*)event.glfw_window, copied.c_str());
+    break;
+  }
+  case Key::V: {
+    if (!editable || !event.mod_ctrl || !event.glfw_window) {
+      break;
+    }
+    const char* pasted_cstr =
+        glfwGetClipboardString((GLFWwindow*)event.glfw_window);
+    if (!pasted_cstr) {
+      break;
+    }
+    const std::string pasted = pasted_cstr;
+
+    if (selection.span() > 0) {
+      text.erase(
+          text.begin() + selection.from(),
+          text.begin() + selection.to());
+    }
+    text.insert(text.begin() + selection.from(), pasted.begin(), pasted.end());
+    selection.reset(selection.from() + pasted.size());
+    break;
+  }
+  case Key::X: {
+    if (!event.mod_ctrl || selection.span() == 0 || !event.glfw_window) {
+      break;
+    }
+    std::string copied = text.substr(selection.from(), selection.span());
+    glfwSetClipboardString((GLFWwindow*)event.glfw_window, copied.c_str());
+    text.erase(text.begin() + selection.from(), text.begin() + selection.to());
+    selection.reset(selection.from());
     break;
   }
   default:
