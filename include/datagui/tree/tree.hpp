@@ -136,9 +136,17 @@ public:
       assert(index != -1);
       return Ptr_(tree, tree->nodes[index].first_child);
     }
+    Ptr_ last_child() const {
+      assert(index != -1);
+      return Ptr_(tree, tree->nodes[index].last_child);
+    }
     Ptr_ next() const {
       assert(index != -1);
       return Ptr_(tree, tree->nodes[index].next);
+    }
+    Ptr_ prev() const {
+      assert(index != -1);
+      return Ptr_(tree, tree->nodes[index].prev);
     }
     Ptr_ parent() const {
       assert(index != -1);

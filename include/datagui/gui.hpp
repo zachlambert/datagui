@@ -46,8 +46,9 @@ private:
 
   void event_handling();
   void event_handling_left_click(const MouseEvent& event);
+
+  void set_tree_focus(Tree::Ptr node, bool value);
   void focus_next(bool reverse);
-  void focus_escape();
 
   void deinit_node(Tree::ConstPtr node);
   ElementSystem& element_system(ElementType type);

@@ -96,12 +96,11 @@ void selection_key_event(
     bool editable,
     const KeyEvent& event) {
 
-  if (event.action != KeyAction::Release) {
-    return;
-  }
-
   switch (event.key) {
   case Key::Left: {
+    if (event.action == KeyAction::Release) {
+      break;
+    }
     if (event.mod_ctrl) {
       if (selection.end == 0) {
         return;
@@ -127,6 +126,9 @@ void selection_key_event(
     break;
   }
   case Key::Right: {
+    if (event.action == KeyAction::Release) {
+      break;
+    }
     if (event.mod_ctrl) {
       if (selection.end == text.size()) {
         return;
@@ -154,7 +156,7 @@ void selection_key_event(
     break;
   }
   case Key::Backspace: {
-    if (!editable) {
+    if (event.action == KeyAction::Release || !editable) {
       break;
     }
     if (selection.span() > 0) {
@@ -186,6 +188,9 @@ void selection_key_event(
     break;
   }
   case Key::C: {
+    if (event.action != KeyAction::Release) {
+      break;
+    }
     if (!event.mod_ctrl || selection.span() == 0 || !event.glfw_window) {
       break;
     }
@@ -194,6 +199,9 @@ void selection_key_event(
     break;
   }
   case Key::V: {
+    if (event.action != KeyAction::Release) {
+      break;
+    }
     if (!editable || !event.mod_ctrl || !event.glfw_window) {
       break;
     }
@@ -214,6 +222,9 @@ void selection_key_event(
     break;
   }
   case Key::X: {
+    if (event.action != KeyAction::Release) {
+      break;
+    }
     if (!event.mod_ctrl || selection.span() == 0 || !event.glfw_window) {
       break;
     }

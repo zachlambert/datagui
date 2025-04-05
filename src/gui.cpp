@@ -95,6 +95,16 @@ void Gui::render() {
       }
       element_system(node->element_type).render(node);
 
+#if 1
+      geometry_renderer.queue_box(
+          Boxf(node->position, node->position + node->size),
+          Color::Clear(),
+          2,
+          node->focused         ? Color::Blue()
+          : node->in_focus_tree ? Color::Red()
+                                : Color::Green());
+#endif
+
       auto child = node.first_child();
       while (child) {
         stack.push(child);
@@ -193,7 +203,12 @@ void Gui::event_handling() {
         handled = true;
         break;
       case Key::Escape:
-        focus_escape();
+        if (node_focus) {
+          element_system(node_focus->element_type)
+              .focus_leave(node_focus, false, Tree::Ptr());
+          set_tree_focus(node_focus, false);
+          node_focus = Tree::Ptr();
+        }
         handled = true;
         break;
       default:
@@ -224,14 +239,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     return;
   }
 
-  if (node_focus) {
-    node_focus->focused = false;
-    auto node = node_focus;
-    while (node) {
-      node->in_focus_tree = false;
-      node = node.parent();
-    }
-  }
+  // Clicked -> new focused node
 
   Tree::Ptr prev_node_focus = node_focus;
   node_focus = Tree::Ptr();
@@ -264,33 +272,95 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   }
 
   if (node_focus) {
-    node_focus->focused = true;
     element_system(node_focus->element_type).mouse_event(node_focus, event);
   }
 
   if (node_focus != prev_node_focus) {
     if (prev_node_focus) {
       element_system(prev_node_focus->element_type)
-          .focus_leave(prev_node_focus, false, node_focus);
+          .focus_leave(prev_node_focus, true, node_focus);
+      set_tree_focus(prev_node_focus, false);
     }
     if (node_focus) {
       element_system(node_focus->element_type).focus_enter(node_focus);
+      set_tree_focus(node_focus, true);
     }
   }
 }
 
-void Gui::focus_next(bool reverse) {
-  printf(
-      "Focus next (reverse = %s) - not implemented",
-      reverse ? "true" : "false");
+void Gui::set_tree_focus(Tree::Ptr node, bool value) {
+  node->focused = value;
+  node->in_focus_tree = value;
+  node = node.parent();
+  while (node) {
+    node->in_focus_tree = value;
+    node = node.parent();
+  }
 }
 
-void Gui::focus_escape() {
-  printf("Focus escape - not implemented");
+void Gui::focus_next(bool reverse) {
+  if (!tree.root()) {
+    return;
+  }
+  auto next = node_focus;
+
+  do {
+    if (!reverse) {
+      if (!next) {
+        next = tree.root();
+      } else if (next.first_child()) {
+        next = next.first_child();
+      } else if (next.next()) {
+        next = next.next();
+      } else {
+        while (next && !next.next()) {
+          next = next.parent();
+        }
+        if (next) {
+          next = next.next();
+        }
+      }
+    } else {
+      if (!next) {
+        next = tree.root();
+        while (next.last_child()) {
+          next = next.last_child();
+        }
+      } else if (!next.prev()) {
+        next = next.parent();
+      } else {
+        next = next.prev();
+        while (next.last_child()) {
+          next = next.last_child();
+        }
+      }
+    }
+  } while (next && next != tree.root() && !next.visible());
+
+  if (next == tree.root() && !tree.root().visible()) {
+    next = Tree::Ptr();
+  }
+
+  if (node_focus) {
+    auto prev_node_focus = node_focus;
+    element_system(prev_node_focus->element_type)
+        .focus_leave(prev_node_focus, true, next);
+    set_tree_focus(node_focus, false);
+  }
+
+  node_focus = next;
+
+  if (node_focus) {
+    set_tree_focus(node_focus, true);
+    element_system(node_focus->element_type).focus_enter(node_focus);
+  }
 }
 
 void Gui::deinit_node(Tree::ConstPtr node) {
   if (node == node_focus) {
+    element_system(node_focus->element_type)
+        .focus_leave(node_focus, false, Tree::Ptr());
+    set_tree_focus(node_focus, false);
     node_focus = Tree::Ptr();
   }
   element_system(node->element_type).pop(node->element_index);

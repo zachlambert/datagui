@@ -19,7 +19,7 @@ void TextInputSystem::set_layout_input(Tree::Ptr node) const {
     node->fixed_size += text_size;
   } else {
     node->fixed_size.y += text_size.y;
-    node->dynamic_size.x = -1;
+    node->dynamic_size.x = 1;
   }
 }
 
