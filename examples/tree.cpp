@@ -4,7 +4,7 @@
 int main() {
   using namespace datagui;
 
-  Tree tree([](const State&) {});
+  Tree tree([](Tree::ConstPtr) {});
 
   while (true) {
     tree.begin();
@@ -16,7 +16,7 @@ int main() {
       tree.container_next([](State&) {});
       if (tree.container_down()) {
         tree.container_next([](State&) {});
-        if (name) {
+        if (name.modified()) {
           std::cout << "Name: " << *name << std::endl;
         }
         tree.up();

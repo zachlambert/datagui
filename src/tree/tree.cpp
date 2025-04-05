@@ -279,7 +279,7 @@ void Tree::remove_node(int node) {
       } else if (node.parent != -1) {
         nodes[node.parent].last_child = node.prev;
       }
-      deinit_state(node.state);
+      deinit_node(ConstPtr(this, node_index));
       remove_node_data_nodes(node_index);
       remove_node_dep_nodes(node_index);
       nodes.pop(node_index);
@@ -338,6 +338,9 @@ int Tree::create_data_node(int node) {
 
 void Tree::data_access(int data_node) {
   int dep_gui_node = parent_;
+  if (dep_gui_node == -1) {
+    return;
+  }
 
   // Check if the dependency exists already
   int dep = nodes[dep_gui_node].first_dep;

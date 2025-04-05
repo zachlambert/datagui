@@ -1,55 +1,14 @@
 #pragma once
 
 #include "datagui/geometry.hpp"
+#include "datagui/input/event.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <array>
 #include <string>
+#include <vector>
 
 namespace datagui {
-
-enum class MouseButton { Left, Middle, Right };
-
-enum class Key : unsigned int {
-  Left = GLFW_KEY_LEFT,
-  Right = GLFW_KEY_RIGHT,
-  Up = GLFW_KEY_UP,
-  Down = GLFW_KEY_DOWN,
-  Tab = GLFW_KEY_TAB,
-  Escape = GLFW_KEY_ESCAPE,
-  Enter = GLFW_KEY_ENTER,
-  Backspace = GLFW_KEY_BACKSPACE,
-};
-
-struct Events {
-  struct {
-    bool press = false;
-    bool release = false;
-    MouseButton button = MouseButton::Left;
-  } mouse;
-
-  struct {
-    bool press = false;
-    bool release = false;
-    bool repeat = false;
-    Key key;
-    bool mod_ctrl = false;
-    bool mod_shift = false;
-  } key;
-
-  struct {
-    bool received = false;
-    char character = 0;
-  } text;
-
-  void reset() {
-    mouse.press = false;
-    mouse.release = false;
-    key.press = false;
-    key.release = false;
-    key.repeat = false;
-    text.received = false;
-  }
-};
 
 class Window {
 public:
@@ -59,7 +18,12 @@ public:
     int height;
     bool vsync;
     bool resizable;
-    Config() : title("datagui"), width(900), height(600), vsync(false), resizable(true) {}
+    Config() :
+        title("datagui"),
+        width(900),
+        height(600),
+        vsync(false),
+        resizable(true) {}
   };
 
   Window(const Config& config = Config());
@@ -72,13 +36,17 @@ public:
   const Vecf& size() const {
     return size_;
   }
-  const Vecf& mouse_pos() const {
-    return mouse_pos_;
-  }
 
   void poll_events();
-  const Events& events() const {
-    return events_;
+
+  const std::vector<MouseEvent>& mouse_events() const {
+    return mouse_events_;
+  }
+  const std::vector<KeyEvent>& key_events() const {
+    return key_events_;
+  }
+  const std::vector<TextEvent>& text_events() const {
+    return text_events_;
   }
 
 private:
@@ -89,8 +57,14 @@ private:
   GLFWwindow* window;
   Vecf size_;
 
-  Vecf mouse_pos_;
-  Events& events_;
+  std::vector<MouseEvent> mouse_events_;
+  std::vector<KeyEvent> key_events_;
+  std::vector<TextEvent> text_events_;
+  std::array<bool, MouseButtonSize> mouse_button_down_;
+
+  friend void glfw_mouse_button_callback(GLFWwindow*, int, int, int);
+  friend void glfw_key_callback(GLFWwindow*, int, int, int, int);
+  friend void glfw_char_callback(GLFWwindow*, unsigned int);
 };
 
 } // namespace datagui

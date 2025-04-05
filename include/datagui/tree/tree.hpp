@@ -91,7 +91,7 @@ public:
       tree->data_mutate(data_node);
       return *ptr;
     }
-    operator bool() const {
+    bool modified() const {
       tree->data_access(data_node);
       return tree->data_nodes[data_node].modified;
     }
@@ -132,25 +132,32 @@ public:
     using state_ref_t = std::conditional_t<IsConst, const State&, State&>;
 
   public:
-    Ptr_ first_child() {
+    Ptr_ first_child() const {
       assert(index != -1);
       return Ptr_(tree, tree->nodes[index].first_child);
     }
-    Ptr_ next() {
+    Ptr_ next() const {
       assert(index != -1);
       return Ptr_(tree, tree->nodes[index].next);
     }
+    Ptr_ parent() const {
+      assert(index != -1);
+      return Ptr_(tree, tree->nodes[index].parent);
+    }
+
     state_ref_t operator*() const {
       return tree->nodes[index].state;
     }
     state_ptr_t operator->() const {
       return &tree->nodes[index].state;
     }
-    operator bool() const {
-      return index != -1;
-    }
     bool visible() const {
       return tree->nodes[index].visible;
+    }
+
+    // TEMP: May remove if not needed
+    int get_index() const {
+      return index;
     }
 
     template <typename T>
@@ -167,7 +174,18 @@ public:
     template <
         bool OtherConst,
         typename = std::enable_if_t<IsConst || !OtherConst>>
+
     Ptr_(Ptr_<OtherConst>&& other) : tree(other.tree), index(other.index) {}
+
+    Ptr_() : tree(nullptr), index(-1) {}
+
+    operator bool() const {
+      return index != -1;
+    }
+
+    friend bool operator==(const Ptr_& lhs, const Ptr_& rhs) {
+      return lhs.tree == rhs.tree && lhs.index == rhs.index;
+    }
 
   private:
     Ptr_(tree_ptr_t tree, int index) : tree(tree), index(index) {}
@@ -181,9 +199,9 @@ public:
   using ConstPtr = Ptr_<true>;
 
   using init_state_t = std::function<void(State& state)>;
-  using deinit_state_t = std::function<void(const State&)>;
+  using deinit_node_t = std::function<void(ConstPtr)>;
 
-  Tree(const deinit_state_t& deinit_state) : deinit_state(deinit_state) {}
+  Tree(const deinit_node_t& deinit_node) : deinit_node(deinit_node) {}
 
   void begin();
   void end();
@@ -279,7 +297,7 @@ private:
   void remove_node_data_nodes(int node);
   void remove_node_dep_nodes(int node);
 
-  deinit_state_t deinit_state;
+  deinit_node_t deinit_node;
   VectorMap<Node> nodes;
   VectorMap<DataNode> data_nodes;
   VectorMap<DepNode> dep_nodes;

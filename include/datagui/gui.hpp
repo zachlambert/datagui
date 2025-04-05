@@ -21,8 +21,8 @@ public:
   Gui(const Window::Config& window_config = Window::Config());
 
   bool running() const;
-  void render_begin();
-  void render_end();
+  void begin();
+  void end();
 
   bool linear_layout(
       const std::function<void(LinearLayoutStyle&)>& set_style = nullptr);
@@ -41,6 +41,15 @@ public:
   }
 
 private:
+  void render();
+  void calculate_sizes();
+
+  void event_handling();
+  void event_handling_left_click(const MouseEvent& event);
+  void focus_next(bool reverse);
+  void focus_escape();
+
+  void deinit_node(Tree::ConstPtr node);
   ElementSystem& element_system(ElementType type);
 
   Window window;
@@ -53,6 +62,8 @@ private:
   LinearLayoutSystem linear_layout_system;
   TextSystem text_system;
   TextInputSystem text_input_system;
+
+  Tree::Ptr node_focus;
 };
 
 } // namespace datagui

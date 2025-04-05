@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/input/event.hpp"
 #include "datagui/visual/font.hpp"
 #include "datagui/visual/geometry_renderer.hpp"
 
@@ -28,31 +29,6 @@ struct TextSelection {
 
 enum class KeyValue { Backspace, LeftArrow, RightArrow, Enter };
 
-struct KeyEvent {
-  bool is_text; // else is_char
-  KeyValue key_value;
-  bool key_release; // else press
-  bool key_shift;
-  bool key_ctrl;
-  char text_value;
-
-  static KeyEvent key(KeyValue key, bool release, bool shift, bool ctrl) {
-    KeyEvent event;
-    event.is_text = false;
-    event.key_value = key;
-    event.key_release = release;
-    event.key_shift = shift;
-    event.key_ctrl = ctrl;
-    return event;
-  }
-  static KeyEvent text(char text) {
-    KeyEvent event;
-    event.is_text = true;
-    event.text_value = text;
-    return event;
-  }
-};
-
 std::size_t find_cursor(
     const FontStructure& font,
     const std::string& text,
@@ -71,20 +47,26 @@ void selection_key_event(
     bool editable,
     const KeyEvent& event);
 
+void selection_text_event(
+    std::string& text,
+    TextSelection& selection,
+    bool editable,
+    const TextEvent& event);
+
 struct TextSelectionStyle {
-  float cursor_width = 2;
-  Color cursor_color = Color::Gray(0.5);
-  Color highlight_color = Color(0.3, 0.8, 1.0);
+  float max_width;
+  float cursor_width;
+  Color cursor_color;
+  Color highlight_color;
+  bool disabled;
 };
 
 void render_selection(
-    const TextSelectionStyle& style,
     const FontStructure& font,
+    const TextSelectionStyle& style,
     const std::string& text,
-    float max_width,
     const Vecf& origin,
     const TextSelection& selection,
-    bool editable,
     GeometryRenderer& geometry_renderer);
 
 } // namespace datagui

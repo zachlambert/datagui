@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/input/event.hpp"
 #include "datagui/tree/tree.hpp"
 #include "datagui/tree/vector_map.hpp"
 #include <type_traits>
@@ -14,6 +15,16 @@ public:
   virtual void set_layout_input(Tree::Ptr node) const = 0;
   virtual void set_child_layout_output(Tree::Ptr node) const {}
   virtual void render(Tree::ConstPtr node) const = 0;
+
+  virtual void mouse_event(Tree::Ptr node, const MouseEvent& event) {}
+  virtual void key_event(Tree::Ptr node, const KeyEvent& event) {}
+  virtual void text_event(Tree::Ptr node, const TextEvent& event) {}
+
+  virtual void focus_enter(Tree::Ptr node) {}
+  virtual void focus_leave(
+      Tree::Ptr node,
+      bool success,
+      Tree::ConstPtr new_node) {}
 };
 
 template <typename Element>
@@ -38,23 +49,3 @@ protected:
 };
 
 } // namespace datagui
-
-#if 0
-virtual void calculate_size_components(Node& node, const Tree& tree) const = 0;
-virtual void calculate_child_dimensions(const Node& node, Tree& tree) const {}
-
-virtual void render(const Node& node, const NodeState& state, Renderers& renderers) const = 0;
-
-virtual bool press(const Node& node, const Vecf& mouse_pos) { return false; }
-
-virtual bool release(const Node& node, const Vecf& mouse_pos) { return false; }
-
-virtual bool held(const Node& node, const Vecf& mouse_pos) { return false; }
-
-virtual bool focus_enter(const Node& node) { return false; };
-virtual bool focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) {
-  return false;
-};
-virtual bool key_event(const Node& node, const KeyEvent& event) { return false; };
-
-#endif

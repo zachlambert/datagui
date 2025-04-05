@@ -11,9 +11,7 @@ Gui::Gui(const Window::Config& config) :
     linear_layout_system(geometry_renderer),
     text_system(font_manager, text_renderer),
     text_input_system(font_manager, text_renderer, geometry_renderer),
-    tree([this](const State& state) {
-      element_system(state.element_type).pop(state.element_index);
-    }) {
+    tree(std::bind(&Gui::deinit_node, this, std::placeholders::_1)) {
   geometry_renderer.init();
   text_renderer.init();
 }
@@ -70,31 +68,47 @@ Tree::ConstData<std::string> Gui::text_input(
   return tree.data_current<std::string>();
 }
 
-#if 0
-DataPtr<std::string> Window::text_input(const std::string& initial_text) {
-  tree.next();
-  auto& node = tree[tree.current()];
-  if (node.state_index == -1) {
-    node.state_index = node_states.emplace();
-    auto& node_state = node_states[node.state_index];
-    node_state.element_type = ElementType::TextInput;
-    node_state.element_index = text_input_states.emplace();
-  }
-
-  auto& state = text_input_states[node_states[node.state_index].element_index];
-  state.text = initial_text;
-}
-#endif
-
-void Gui::render_begin() {
-  window.render_begin();
+void Gui::begin() {
   tree.begin();
 }
 
-void Gui::render_end() {
+void Gui::end() {
   tree.end();
+  calculate_sizes();
+  render();
+  event_handling();
+}
 
-  // Calculate size components
+void Gui::render() {
+  window.render_begin();
+
+  {
+    std::stack<Tree::ConstPtr> stack;
+    stack.push(tree.root());
+
+    while (!stack.empty()) {
+      auto node = stack.top();
+      stack.pop();
+
+      if (!node.visible() || node->element_index == -1) {
+        continue;
+      }
+      element_system(node->element_type).render(node);
+
+      auto child = node.first_child();
+      while (child) {
+        stack.push(child);
+        child = child.next();
+      }
+    }
+  }
+
+  geometry_renderer.render(window.size());
+  text_renderer.render(window.size());
+  window.render_end();
+}
+
+void Gui::calculate_sizes() {
   {
     struct State {
       Tree::Ptr node;
@@ -155,19 +169,91 @@ void Gui::render_end() {
       }
     }
   }
+}
 
-  {
-    std::stack<Tree::ConstPtr> stack;
-    stack.push(tree.root());
+void Gui::event_handling() {
+  window.poll_events();
 
+  for (const auto& event : window.mouse_events()) {
+    switch (event.button) {
+    case MouseButton::Left:
+      event_handling_left_click(event);
+      break;
+    default:
+      break;
+    }
+  }
+
+  for (const auto& event : window.key_events()) {
+    bool handled = false;
+    if (event.action == KeyAction::Press) {
+      switch (event.key) {
+      case Key::Tab:
+        focus_next(event.mod_shift);
+        handled = true;
+        break;
+      case Key::Escape:
+        focus_escape();
+        handled = true;
+        break;
+      default:
+        break;
+      }
+    }
+
+    if (!handled && node_focus) {
+      element_system(node_focus->element_type).key_event(node_focus, event);
+    }
+  }
+
+  for (const auto& event : window.text_events()) {
+    if (node_focus) {
+      element_system(node_focus->element_type).text_event(node_focus, event);
+    }
+  }
+}
+
+void Gui::event_handling_left_click(const MouseEvent& event) {
+  if (event.action != MouseAction::Press) {
+    // Pass-through the hold or release event
+    // node_focus should be a valid node, but there may be edge cases where
+    // this isn't true (eg: The node gets removed)
+    if (node_focus) {
+      element_system(node_focus->element_type).mouse_event(node_focus, event);
+    }
+    return;
+  }
+
+  if (node_focus) {
+    node_focus->focused = false;
+    auto node = node_focus;
+    while (node) {
+      node->in_focus_tree = false;
+      node = node.parent();
+    }
+  }
+
+  Tree::Ptr prev_node_focus = node_focus;
+  node_focus = Tree::Ptr();
+
+  std::stack<Tree::Ptr> stack;
+  stack.push(tree.root());
+
+  // TODO: parse floating nodes first when added
+
+  if (!node_focus) {
+    // No floating nodes clicked, process standard nodes
     while (!stack.empty()) {
       auto node = stack.top();
       stack.pop();
 
-      if (!node.visible() || node->element_index == -1) {
+      Boxf box(node->position, node->position + node->size);
+      if (!Boxf(node->position, node->position + node->size)
+               .contains(event.position)) {
         continue;
       }
-      element_system(node->element_type).render(node);
+      node->in_focus_tree = true;
+      node_focus = node;
 
       auto child = node.first_child();
       while (child) {
@@ -177,11 +263,37 @@ void Gui::render_end() {
     }
   }
 
-  geometry_renderer.render(window.size());
-  text_renderer.render(window.size());
-  window.render_end();
+  if (node_focus) {
+    node_focus->focused = true;
+    element_system(node_focus->element_type).mouse_event(node_focus, event);
+  }
 
-  window.poll_events();
+  if (node_focus != prev_node_focus) {
+    if (prev_node_focus) {
+      element_system(prev_node_focus->element_type)
+          .focus_leave(prev_node_focus, false, node_focus);
+    }
+    if (node_focus) {
+      element_system(node_focus->element_type).focus_enter(node_focus);
+    }
+  }
+}
+
+void Gui::focus_next(bool reverse) {
+  printf(
+      "Focus next (reverse = %s) - not implemented",
+      reverse ? "true" : "false");
+}
+
+void Gui::focus_escape() {
+  printf("Focus escape - not implemented");
+}
+
+void Gui::deinit_node(Tree::ConstPtr node) {
+  if (node == node_focus) {
+    node_focus = Tree::Ptr();
+  }
+  element_system(node->element_type).pop(node->element_index);
 }
 
 ElementSystem& Gui::element_system(ElementType type) {
@@ -191,7 +303,7 @@ ElementSystem& Gui::element_system(ElementType type) {
   case ElementType::Text:
     return text_system;
   case ElementType::TextInput:
-    return text_system;
+    return text_input_system;
   case ElementType::Undefined:
     assert(false);
     return linear_layout_system;

@@ -1,4 +1,4 @@
-#include "datagui/visual/text_selection.hpp"
+#include "datagui/input/text_selection.hpp"
 
 namespace datagui {
 
@@ -69,129 +69,140 @@ Vecf cursor_offset(
   return offset;
 }
 
+void selection_text_event(
+    std::string& text,
+    TextSelection& selection,
+    bool editable,
+    const TextEvent& event) {
+  if (!editable) {
+    return;
+  }
+
+  if (selection.span() > 0) {
+    text.erase(text.begin() + selection.from(), text.begin() + selection.to());
+    selection.reset(selection.from());
+  }
+
+  text.insert(text.begin() + selection.begin, event.value);
+  selection.begin++;
+  selection.end = selection.begin;
+}
+
 void selection_key_event(
     std::string& text,
     TextSelection& selection,
     bool editable,
     const KeyEvent& event) {
-  if (event.is_text) {
-    if (!editable) {
-      return;
-    }
 
-    if (selection.span() > 0) {
-      text.erase(text.begin() + selection.from(), text.begin() + selection.to());
+  if (event.action != KeyAction::Release) {
+    return;
+  }
+
+  switch (event.key) {
+  case Key::Left: {
+    if (event.mod_ctrl) {
+      if (selection.end == 0) {
+        return;
+      }
+      selection.end--;
+      while (selection.end != 0 && !std::isalnum(text[selection.end - 1])) {
+        selection.end--;
+      }
+      while (selection.end != 0 && std::isalnum(text[selection.end - 1])) {
+        selection.end--;
+      }
+      if (!event.mod_shift) {
+        selection.begin = selection.end;
+      }
+    } else if (selection.span() > 0 && !event.mod_shift) {
       selection.reset(selection.from());
-    }
-
-    text.insert(text.begin() + selection.begin, event.text_value);
-    selection.begin++;
-    selection.end = selection.begin;
-
-  } else if (!event.key_release) {
-    switch (event.key_value) {
-    case KeyValue::LeftArrow: {
-      if (event.key_ctrl) {
-        if (selection.end == 0) {
-          return;
-        }
-        selection.end--;
-        while (selection.end != 0 && !std::isalnum(text[selection.end - 1])) {
-          selection.end--;
-        }
-        while (selection.end != 0 && std::isalnum(text[selection.end - 1])) {
-          selection.end--;
-        }
-        if (!event.key_shift) {
-          selection.begin = selection.end;
-        }
-      } else if (selection.span() > 0 && !event.key_shift) {
-        selection.reset(selection.from());
-      } else if (selection.end != 0) {
-        selection.end--;
-        if (!event.key_shift) {
-          selection.begin = selection.end;
-        }
+    } else if (selection.end != 0) {
+      selection.end--;
+      if (!event.mod_shift) {
+        selection.begin = selection.end;
       }
-      break;
     }
-    case KeyValue::RightArrow: {
-      if (event.key_ctrl) {
-        if (selection.end == text.size()) {
-          return;
-        }
+    break;
+  }
+  case Key::Right: {
+    if (event.mod_ctrl) {
+      if (selection.end == text.size()) {
+        return;
+      }
+      selection.end++;
+      while (selection.end != text.size() &&
+             !std::isalnum(text[selection.end])) {
         selection.end++;
-        while (selection.end != text.size() && !std::isalnum(text[selection.end])) {
-          selection.end++;
-        }
-        while (selection.end != text.size() && std::isalnum(text[selection.end])) {
-          selection.end++;
-        }
-        if (!event.key_shift) {
-          selection.begin = selection.end;
-        }
-      } else if (selection.span() > 0 && !event.key_shift) {
-        selection.reset(selection.to());
-      } else if (selection.end != text.size()) {
+      }
+      while (selection.end != text.size() &&
+             std::isalnum(text[selection.end])) {
         selection.end++;
-        if (!event.key_shift) {
+      }
+      if (!event.mod_shift) {
+        selection.begin = selection.end;
+      }
+    } else if (selection.span() > 0 && !event.mod_shift) {
+      selection.reset(selection.to());
+    } else if (selection.end != text.size()) {
+      selection.end++;
+      if (!event.mod_shift) {
+        selection.begin = selection.end;
+      }
+    }
+    break;
+  }
+  case Key::Backspace: {
+    if (!editable) {
+      break;
+    }
+    if (selection.span() > 0) {
+      text.erase(
+          text.begin() + selection.from(),
+          text.begin() + selection.to());
+      selection.reset(selection.from());
+
+    } else if (selection.begin > 0) {
+      if (event.mod_ctrl) {
+        int pos = selection.begin - 1;
+        while (pos != 0 && !std::isalnum(text[pos])) {
+          pos--;
+        }
+        while (pos != 0 && std::isalnum(text[pos])) {
+          pos--;
+        }
+        text.erase(pos, selection.begin - pos);
+        selection.reset(pos);
+        if (!event.mod_shift) {
           selection.begin = selection.end;
         }
+      } else {
+        selection.begin--;
+        text.erase(text.begin() + selection.begin);
+        selection.end = selection.begin;
       }
-      break;
     }
-    case KeyValue::Backspace: {
-      if (!editable) {
-        break;
-      }
-      if (selection.span() > 0) {
-        text.erase(text.begin() + selection.from(), text.begin() + selection.to());
-        selection.reset(selection.from());
-
-      } else if (selection.begin > 0) {
-        if (event.key_ctrl) {
-          int pos = selection.begin - 1;
-          while (pos != 0 && !std::isalnum(text[pos])) {
-            pos--;
-          }
-          while (pos != 0 && std::isalnum(text[pos])) {
-            pos--;
-          }
-          text.erase(pos, selection.begin - pos);
-          selection.reset(pos);
-          if (!event.key_shift) {
-            selection.begin = selection.end;
-          }
-        } else {
-          selection.begin--;
-          text.erase(text.begin() + selection.begin);
-          selection.end = selection.begin;
-        }
-      }
-      break;
-    }
-    default:
-      break;
-    }
+    break;
+  }
+  default:
+    break;
   }
 }
 
 void render_selection(
-    const TextSelectionStyle& style,
     const FontStructure& font,
+    const TextSelectionStyle& style,
     const std::string& text,
-    float max_width,
     const Vecf& origin,
     const TextSelection& selection,
-    bool editable,
     GeometryRenderer& geometry_renderer) {
-  // Render cursor
+
+  // Render cursor only
 
   if (selection.span() == 0) {
-    if (!editable) {
+    if (style.disabled) {
       return;
     }
-    Vecf offset = cursor_offset(font, text, max_width, selection.begin);
+    Vecf offset = cursor_offset(font, text, style.max_width, selection.begin);
     geometry_renderer.queue_box(
         Boxf(
             origin + offset - Vecf(float(style.cursor_width) / 2, 0),
@@ -203,13 +214,13 @@ void render_selection(
     return;
   }
 
-  bool has_max_width = max_width > 0;
+  bool has_max_width = style.max_width > 0;
 
   // Render higlighlight
 
   std::size_t from = selection.from();
   std::size_t to = selection.to();
-  Vecf offset = cursor_offset(font, text, max_width, from);
+  Vecf offset = cursor_offset(font, text, style.max_width, from);
   Vecf from_offset = offset;
 
   for (std::size_t i = from; i < to; i++) {
@@ -218,7 +229,7 @@ void render_selection(
     }
     const auto& c = font.get(text[i]);
 
-    if (has_max_width && offset.x + c.advance > max_width) {
+    if (has_max_width && offset.x + c.advance > style.max_width) {
       Vecf to_offset = offset;
       if (from == text.size()) {
         to_offset.x += c.advance;

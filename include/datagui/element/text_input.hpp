@@ -1,6 +1,7 @@
 #pragma once
 
 #include "datagui/color.hpp"
+#include "datagui/input/text_selection.hpp"
 #include "datagui/tree/element.hpp"
 #include "datagui/visual/font.hpp"
 #include "datagui/visual/geometry_renderer.hpp"
@@ -12,12 +13,12 @@ struct TextInputStyle {
   float max_width;
   Font font = Font::DejaVuSans;
   int font_size = 24;
-  Color text_color;
-  Color bg_color;
-  float padding;
-  float border_width;
-  Color border_color;
-  Color focus_color;
+  Color text_color = Color::Black();
+  Color bg_color = Color::Gray(0.8);
+  float padding = 5;
+  float border_width = 2;
+  Color border_color = Color::Gray(0.4);
+  Color focus_color = Color(0.0, 1.0, 1.0);
 };
 
 struct TextInputElement {
@@ -39,24 +40,22 @@ public:
   void set_layout_input(Tree::Ptr node) const override;
   void render(Tree::ConstPtr node) const override;
 
-#if 0
+  void mouse_event(Tree::Ptr node, const MouseEvent& event) override;
+  void key_event(Tree::Ptr node, const KeyEvent& event) override;
+  void text_event(Tree::Ptr node, const TextEvent& event) override;
 
-  bool press(const Node& node, const Vecf& mouse_pos) override;
-  bool held(const Node& node, const Vecf& mouse_pos) override;
-  bool focus_enter(const Node& node) override;
-  bool focus_leave(
-      const Tree& tree,
-      const Node& node,
-      bool success,
-      int new_focus) override;
-  bool key_event(const Node& node, const KeyEvent& event) override;
-
-#endif
+  void focus_enter(Tree::Ptr node) override;
+  void focus_leave(Tree::Ptr node, bool success, Tree::ConstPtr new_node)
+      override;
 
 private:
   FontManager& font_manager;
   TextRenderer& text_renderer;
   GeometryRenderer& geometry_renderer;
+
+  Tree::ConstPtr active_node;
+  std::string active_text;
+  TextSelection active_selection;
 };
 
 } // namespace datagui

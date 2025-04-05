@@ -4,50 +4,161 @@
 #include <GLFW/glfw3.h>
 #include <assert.h>
 #include <cstring>
+#include <mutex>
+#include <shared_mutex>
 
 namespace datagui {
 
-static Events g_events;
+static std::vector<std::pair<GLFWwindow*, Window*>> windows;
+static std::shared_mutex windows_mutex;
 
-void glfw_mouse_button_callback(GLFWwindow* callback_window, int button, int action, int mods) {
-  switch (action) {
-  case GLFW_PRESS:
-    g_events.mouse.press = true;
-    break;
-  case GLFW_RELEASE:
-    g_events.mouse.release = true;
-    break;
+static Window* lookup_window(GLFWwindow* glfw_window) {
+  std::shared_lock<std::shared_mutex> lock;
+  for (auto [glfw_window_i, window_i] : windows) {
+    if (glfw_window == glfw_window_i) {
+      return window_i;
+    }
   }
+  return nullptr;
 }
 
-void glfw_key_callback(GLFWwindow* callback_window, int key, int scancode, int action, int mods) {
+void glfw_mouse_button_callback(
+    GLFWwindow* glfw_window,
+    int button,
+    int action,
+    int mods) {
+  auto window = lookup_window(glfw_window);
+  if (!window) {
+    return;
+  }
+
+  MouseEvent event;
+
+  switch (button) {
+  case GLFW_MOUSE_BUTTON_LEFT:
+    event.button = MouseButton::Left;
+    break;
+  case GLFW_MOUSE_BUTTON_MIDDLE:
+    event.button = MouseButton::Middle;
+    break;
+  case GLFW_MOUSE_BUTTON_RIGHT:
+    event.button = MouseButton::Right;
+    break;
+  }
+
   switch (action) {
   case GLFW_PRESS:
-    g_events.mouse.press = true;
+    event.action = MouseAction::Press;
+    window->mouse_button_down_[(std::size_t)event.button] = true;
     break;
   case GLFW_RELEASE:
-    g_events.mouse.release = true;
+    event.action = MouseAction::Release;
+    window->mouse_button_down_[(std::size_t)event.button] = false;
     break;
   }
-  g_events.key.key = (Key)key;
-  g_events.key.mod_ctrl = mods & (1 << 1);
-  g_events.key.mod_shift = mods & (1 << 0);
+
+  double mx, my;
+  glfwGetCursorPos(glfw_window, &mx, &my);
+  event.position = Vecf(mx, my);
+
+  window->mouse_events_.push_back(event);
 }
 
-void glfw_char_callback(GLFWwindow* callback_window, unsigned int codepoint) {
-  if (codepoint < 256) {
-    g_events.text.received = true;
-    g_events.text.character = char(codepoint);
+void glfw_key_callback(
+    GLFWwindow* glfw_window,
+    int key,
+    int scancode,
+    int action,
+    int mods) {
+  auto window = lookup_window(glfw_window);
+  if (!window) {
+    return;
   }
+
+  KeyEvent event;
+
+  switch (action) {
+  case GLFW_PRESS:
+    event.action = KeyAction::Press;
+    break;
+  case GLFW_REPEAT:
+    event.action = KeyAction::Repeat;
+    break;
+  case GLFW_RELEASE:
+    event.action = KeyAction::Release;
+    break;
+  }
+
+  switch (key) {
+  case GLFW_KEY_LEFT:
+    event.key = Key::Left;
+    break;
+  case GLFW_KEY_RIGHT:
+    event.key = Key::Right;
+    break;
+  case GLFW_KEY_UP:
+    event.key = Key::Up;
+    break;
+  case GLFW_KEY_DOWN:
+    event.key = Key::Down;
+    break;
+  case GLFW_KEY_TAB:
+    event.key = Key::Tab;
+    break;
+  case GLFW_KEY_ESCAPE:
+    event.key = Key::Escape;
+    break;
+  case GLFW_KEY_ENTER:
+    event.key = Key::Enter;
+    break;
+  case GLFW_KEY_BACKSPACE:
+    event.key = Key::Backspace;
+    break;
+  }
+
+  event.mod_ctrl = mods & (1 << 1);
+  event.mod_shift = mods & (1 << 0);
+
+  window->key_events_.push_back(event);
+}
+
+void glfw_char_callback(GLFWwindow* glfw_window, unsigned int codepoint) {
+  auto window = lookup_window(glfw_window);
+  if (!window) {
+    return;
+  }
+
+  if (codepoint >= 256) {
+    return;
+  }
+
+  TextEvent event;
+  event.value = char(codepoint);
+  window->text_events_.push_back(event);
 }
 
 Window::Window(const Config& config) :
-    config(config), window(nullptr), size_(Vecf::Zero()), events_(g_events) {
+    config(config), window(nullptr), size_(Vecf::Zero()) {
+  for (std::size_t i = 0; i < MouseButtonSize; i++) {
+    mouse_button_down_[i] = false;
+  }
   open();
+  std::scoped_lock<std::shared_mutex> lock(windows_mutex);
+  windows.emplace_back(window, this);
 }
 
 Window::~Window() {
   if (window) {
+    {
+      std::scoped_lock<std::shared_mutex> lock(windows_mutex);
+      for (auto iter = windows.begin(); iter != windows.end(); iter++) {
+        if (iter->second == this) {
+          assert(iter->first == window);
+          windows.erase(iter);
+          break;
+        }
+      }
+    }
     close();
   }
 }
@@ -67,7 +178,12 @@ void Window::open() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
   // Create window with graphics context
-  window = glfwCreateWindow(config.width, config.height, config.title.c_str(), nullptr, nullptr);
+  window = glfwCreateWindow(
+      config.width,
+      config.height,
+      config.title.c_str(),
+      nullptr,
+      nullptr);
 
   if (window == nullptr) {
     throw InitializationError("Failed to create window");
@@ -120,8 +236,24 @@ void Window::render_end() {
 }
 
 void Window::poll_events() {
-  events_.reset();
+  mouse_events_.clear();
+  key_events_.clear();
+  text_events_.clear();
   glfwPollEvents();
+
+  MouseEvent hold_event;
+  hold_event.action = MouseAction::Hold;
+  double mx, my;
+  glfwGetCursorPos(window, &mx, &my);
+  hold_event.position = Vecf(mx, my);
+
+  for (std::size_t i = 0; i < MouseButtonSize; i++) {
+    if (!mouse_button_down_[i]) {
+      continue;
+    }
+    hold_event.button = (MouseButton)i;
+    mouse_events_.push_back(hold_event);
+  }
 }
 
 } // namespace datagui

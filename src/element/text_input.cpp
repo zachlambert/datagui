@@ -25,7 +25,9 @@ void TextInputSystem::set_layout_input(Tree::Ptr node) const {
 
 void TextInputSystem::render(Tree::ConstPtr node) const {
   const auto& element = elements[node->element_index];
-  const std::string& text = *node.data<std::string>();
+
+  const std::string& text =
+      node == active_node ? active_text : *node.data<std::string>();
 
   geometry_renderer.queue_box(
       Boxf(node->position, node->position + node->size),
@@ -37,18 +39,22 @@ void TextInputSystem::render(Tree::ConstPtr node) const {
       node->position +
       Vecf::Constant(element.style.border_width + element.style.padding);
 
-  if (node->focused) {
-#if 0
+  if (node == active_node) {
+    TextSelectionStyle style;
+    style.cursor_color = Color::Gray(0.3);
+    style.cursor_width = 2;
+    style.max_width = element.style.max_width;
+    style.disabled = false;
+    style.highlight_color = Color::Gray(0.5);
     render_selection(
+        font_manager.font_structure(
+            element.style.font,
+            element.style.font_size),
         style,
-        font,
-        *element.text,
-        element.max_width,
-        text_origin,
-        text_selection,
-        true,
-        renderers.geometry);
-#endif
+        text,
+        text_position,
+        active_selection,
+        geometry_renderer);
   }
 
   text_renderer.queue_text(
@@ -60,69 +66,66 @@ void TextInputSystem::render(Tree::ConstPtr node) const {
       element.style.max_width);
 }
 
-#if 0
-bool TextInputSystem::press(const Node& node, const Vecf& mouse_pos) {
-  const auto& element = elements[node.element_index];
+void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
+  const auto& element = elements[node->element_index];
+  const std::string& text = *node.data<std::string>();
+
   Vecf text_origin =
-      node.origin +
-      Vecf::Constant(style.element.border_width + style.element.padding);
-  text_selection.reset(find_cursor(
+      node->position +
+      Vecf::Constant(element.style.border_width + element.style.padding);
+
+  const auto& font =
+      font_manager.font_structure(element.style.font, element.style.font_size);
+
+  std::size_t cursor_pos = find_cursor(
       font,
-      *element.text,
-      element.max_width,
-      mouse_pos - text_origin));
-  return false;
+      text,
+      element.style.max_width,
+      event.position - text_origin);
+
+  if (event.action == MouseAction::Press) {
+    active_node = node;
+    active_text = text;
+    active_selection.reset(cursor_pos);
+  } else if (event.action == MouseAction::Hold) {
+    active_selection.end = cursor_pos;
+  }
 }
 
-bool TextInputSystem::held(const Node& node, const Vecf& mouse_pos) {
-  const auto& element = elements[node.element_index];
-  Vecf text_origin =
-      node.origin +
-      Vecf::Constant(style.element.border_width + style.element.padding);
-  text_selection.end = find_cursor(
-      font,
-      *element.text,
-      element.max_width,
-      mouse_pos - text_origin);
-  return false;
+void TextInputSystem::key_event(Tree::Ptr node, const KeyEvent& event) {
+  auto& element = elements[node->element_index];
+
+  if (event.action == KeyAction::Press && event.key == Key::Enter) {
+    node.data<std::string>().mut() = active_text;
+    return;
+  }
+  selection_key_event(active_text, active_selection, true, event);
 }
 
-bool TextInputSystem::focus_enter(const Node& node) {
-  text_selection.reset(0);
-  return false;
+void TextInputSystem::text_event(Tree::Ptr node, const TextEvent& event) {
+  selection_text_event(active_text, active_selection, true, event);
 }
 
-bool TextInputSystem::focus_leave(
-    const Tree& tree,
-    const Node& node,
+void TextInputSystem::focus_enter(Tree::Ptr node) {
+  active_node = node;
+  active_selection.reset(0);
+}
+
+void TextInputSystem::focus_leave(
+    Tree::Ptr node,
     bool success,
-    int new_focus) {
-  auto& element = elements[node.element_index];
+    Tree::ConstPtr new_node) {
+
+  active_node = Tree::ConstPtr();
   if (!success) {
-    *element.text = element.initial_text;
-  } else if (element.initial_text != *element.text) {
-    element.initial_text = *element.text;
-    // TODO: Fix so don't need const cast
-    element.text.mutate(const_cast<Tree&>(tree));
-    return true;
+    return;
   }
-  return false;
-}
 
-bool TextInputSystem::key_event(const Node& node, const KeyEvent& event) {
-  auto& element = elements[node.element_index];
-
-  if (!event.is_text && !event.key_release &&
-      event.key_value == KeyValue::Enter) {
-    if (element.initial_text != *element.text) {
-      element.initial_text = *element.text;
-      return true;
-    }
-  } else {
-    selection_key_event(*element.text, text_selection, true, event);
+  auto& element = elements[node->element_index];
+  auto data = node.data<std::string>();
+  if (*data != active_text) {
+    data.mut() = active_text;
   }
-  return false;
 }
-#endif
 
 } // namespace datagui

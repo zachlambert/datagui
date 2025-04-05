@@ -21,13 +21,14 @@ add_library(datagui SHARED
   src/element/text.cpp
   src/element/text_input.cpp
 
+  src/input/text_selection.cpp
+
   src/tree/tree.cpp
 
   src/visual/font.cpp
   src/visual/geometry_renderer.cpp
   src/visual/shader.cpp
   src/visual/text_renderer.cpp
-  src/visual/text_selection.cpp
   src/visual/window.cpp
 
   src/gui.cpp
