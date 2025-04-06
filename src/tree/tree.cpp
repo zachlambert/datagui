@@ -6,8 +6,12 @@
 namespace datagui {
 
 Tree::Tree(const deinit_node_t& deinit_node) : deinit_node(deinit_node) {
-  nodes.emplace();
-  nodes[0].type = NodeType::External;
+  external_ = nodes.emplace();
+  nodes[external_].type = NodeType::External;
+
+  parent_ = external_;
+  current_ = -1;
+  parent_data_current_ = -1;
 }
 
 void Tree::begin() {
@@ -51,6 +55,9 @@ void Tree::end() {
       child = nodes[child].next;
     }
   }
+
+  parent_ = external_;
+  parent_data_current_ = -1;
 }
 
 void Tree::container_next(const init_state_t& init_state) {

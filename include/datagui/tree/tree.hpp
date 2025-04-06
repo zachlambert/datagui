@@ -2,8 +2,8 @@
 
 #include "datagui/exception.hpp"
 #include "datagui/tree/state.hpp"
+#include "datagui/tree/unique_any.hpp"
 #include "datagui/tree/vector_map.hpp"
-#include <any>
 #include <assert.h>
 #include <functional>
 #include <stack>
@@ -38,7 +38,7 @@ struct Node {
 struct DataNode {
   int node;
 
-  std::any data;
+  UniqueAny data;
   bool modified;
 
   // Linked list of data nodes for a given gui node
@@ -112,7 +112,7 @@ public:
     Data_(Tree* tree, int data_node) :
         tree(tree),
         data_node(data_node),
-        ptr(std::any_cast<T>(&tree->data_nodes[data_node].data)) {}
+        ptr(tree->data_nodes[data_node].data.cast<T>()) {}
 
     Tree* tree;
     int data_node;
@@ -311,6 +311,7 @@ private:
   VectorMap<DepNode> dep_nodes;
 
   bool is_new = true;
+  int external_ = -1;
   int root_ = -1;
   int parent_ = -1;
   int current_ = -1;

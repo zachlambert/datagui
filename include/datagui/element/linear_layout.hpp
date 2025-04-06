@@ -13,6 +13,7 @@ struct LinearLayoutStyle {
   float length = 0;
   float width = -1;
   float padding = 0;
+  float inner_padding = 0;
   float border_width = 0;
   Color border_color = Color::Black();
   Color bg_color = Color::Clear();

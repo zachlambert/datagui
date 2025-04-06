@@ -39,8 +39,8 @@ public:
       const std::function<void(TextInputStyle&)>& set_style = nullptr);
 
   template <typename T>
-  Tree::Data<T> data() {
-    return tree.data_parent<T>();
+  Tree::Data<T> data(T initial_value) {
+    return tree.data_parent<T>([&]() { return initial_value; });
   }
 
 private:

@@ -47,7 +47,7 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
       child = child.next();
       count++;
     }
-    fixed_a += (count - 1) * element.style.padding;
+    fixed_a += (count - 1) * element.style.inner_padding;
 
   } else if (element.style.length > 0) {
     fixed_a = element.style.length;

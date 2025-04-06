@@ -26,7 +26,10 @@ public:
     } else {
       index = free.back();
       free.pop_back();
-      data[index] = T(std::forward<Args>(args)...);
+      // Can't do data[index] = T(std::forward<Args>(args)...)
+      // since this uses the copy constructor - wan't to move the data only
+      data[index].~T();
+      new (&data[index]) T(std::forward<Args>(args)...);
     }
     return index;
   }
