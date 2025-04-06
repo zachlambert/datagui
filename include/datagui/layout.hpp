@@ -39,18 +39,19 @@ inline Length operator""_dynamic(long double weight) {
 
 class BoxDims {
 public:
-  float left, right, top, bottom;
+  // Use same ordering as CSS
+  // Also makes the layout easier for geometry_renderer shader
+  float left, top, right, bottom;
 
-  BoxDims() : left(0), right(0), top(0), bottom(0) {}
+  BoxDims() : left(0), top(0), right(0), bottom(0) {}
 
-  BoxDims(float value) : left(value), right(value), top(value), bottom(value) {}
+  BoxDims(float value) : left(value), top(value), right(value), bottom(value) {}
 
   BoxDims(float horizontal, float vertical) :
-      left(horizontal), right(horizontal), top(vertical), bottom(vertical) {}
+      left(horizontal), top(vertical), right(horizontal), bottom(vertical) {}
 
-  // Use same ordering as CSS
   BoxDims(float left, float top, float right, float bottom) :
-      left(left), right(right), top(top), bottom(bottom) {}
+      left(left), top(top), right(right), bottom(bottom) {}
 
   Vecf size() const {
     return Vecf(left + right, top + bottom);
@@ -105,58 +106,6 @@ inline BoxDims operator*(BoxDims lhs, float rhs) {
 }
 
 inline BoxDims operator/(BoxDims lhs, float rhs) {
-  lhs /= rhs;
-  return lhs;
-}
-
-struct LayoutSize {
-  Vecf fixed;
-  Vecf dynamic;
-
-  LayoutSize& operator+=(const LayoutSize& rhs) {
-    fixed += rhs.fixed;
-    dynamic += rhs.dynamic;
-    return *this;
-  }
-  LayoutSize& operator-=(const LayoutSize& rhs) {
-    fixed -= rhs.fixed;
-    dynamic -= rhs.dynamic;
-    return *this;
-  }
-  LayoutSize& operator*=(float rhs) {
-    fixed *= rhs;
-    dynamic *= rhs;
-    return *this;
-  }
-  LayoutSize& operator/=(float rhs) {
-    fixed /= rhs;
-    dynamic /= rhs;
-    return *this;
-  }
-  LayoutSize operator-() {
-    LayoutSize result;
-    result.fixed = -fixed;
-    result.dynamic = -dynamic;
-    return result;
-  };
-};
-
-inline LayoutSize operator+(LayoutSize lhs, const LayoutSize& rhs) {
-  lhs += rhs;
-  return lhs;
-}
-
-inline LayoutSize operator-(LayoutSize lhs, const LayoutSize& rhs) {
-  lhs -= rhs;
-  return lhs;
-}
-
-inline LayoutSize operator*(LayoutSize lhs, float rhs) {
-  lhs *= rhs;
-  return lhs;
-}
-
-inline LayoutSize operator/(LayoutSize lhs, float rhs) {
   lhs /= rhs;
   return lhs;
 }

@@ -14,15 +14,20 @@ layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 offset;
 layout(location = 2) in vec2 size;
 layout(location = 3) in float radius;
-layout(location = 4) in vec4 color;
+layout(location = 4) in vec4 bg_color;
+layout(location = 5) in vec4 border_color;
+layout(location = 6) in vec4 border_width;
 
 uniform vec2 viewport_size;
 
 out vec2 fs_pos;
-out vec2 fs_box_lower;
-out vec2 fs_box_upper;
+out vec2 fs_box_outer_lower;
+out vec2 fs_box_outer_upper;
+out vec2 fs_box_inner_lower;
+out vec2 fs_box_inner_upper;
 out float fs_radius;
-out vec4 fs_color;
+out vec4 fs_bg_color;
+out vec4 fs_border_color;
 
 void main(){
   fs_pos = offset + vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
@@ -32,10 +37,14 @@ void main(){
     0,
     1);
 
-  fs_box_lower = offset;
-  fs_box_upper = offset + size;
+  fs_box_outer_lower = offset;
+  fs_box_outer_upper = offset + size;
+  fs_box_inner_lower = offset + vec2(border_width[0], border_width[1]);
+  fs_box_inner_upper = offset + size - vec2(border_width[2], border_width[3]);
+
   fs_radius = radius;
-  fs_color = color;
+  fs_bg_color = bg_color;
+  fs_border_color = border_color;
 }
 )";
 
@@ -43,31 +52,51 @@ const static std::string rect_fs = R"(
 #version 330 core
 
 in vec2 fs_pos;
-in vec2 fs_box_lower;
-in vec2 fs_box_upper;
+in vec2 fs_box_outer_lower;
+in vec2 fs_box_outer_upper;
+in vec2 fs_box_inner_lower;
+in vec2 fs_box_inner_upper;
 in float fs_radius;
-in vec4 fs_color;
+in vec4 fs_bg_color;
+in vec4 fs_border_color;
 
 uniform vec2 viewport_size;
 
 out vec4 color;
 
 void main(){
-    vec2 delta_lower = fs_pos - fs_box_lower;
-    vec2 delta_upper = fs_box_upper - fs_pos;
-    vec2 delta = vec2(min(delta_lower.x, delta_upper.x), min(delta_lower.y, delta_upper.y));
+    vec2 delta_outer_lower = fs_pos - fs_box_outer_lower;
+    vec2 delta_outer_upper = fs_box_outer_upper - fs_pos;
+    vec2 delta_outer = vec2(
+      min(delta_outer_lower.x, delta_outer_upper.x),
+      min(delta_outer_lower.y, delta_outer_upper.y));
 
-    float dist = 0;
-    if (delta.x <= fs_radius && delta.y <= fs_radius) {
-        dist = fs_radius - length(vec2(fs_radius, fs_radius) - delta);
+    float dist_outer = 0;
+    if (delta_outer.x <= fs_radius && delta_outer.y <= fs_radius) {
+        dist_outer = fs_radius - length(vec2(fs_radius, fs_radius) - delta_outer);
     } else {
-        dist = min(delta.x, delta.y);
+        dist_outer = min(delta_outer.x, delta_outer.y);
     }
 
-    if (dist < 0) {
-        color = vec4(0, 0, 0, 0);
+    vec2 delta_inner_lower = fs_pos - fs_box_inner_lower;
+    vec2 delta_inner_upper = fs_box_inner_upper - fs_pos;
+    vec2 delta_inner = vec2(
+      min(delta_inner_lower.x, delta_inner_upper.x),
+      min(delta_inner_lower.y, delta_inner_upper.y));
+
+    float dist_inner = 0;
+    if (delta_inner.x <= fs_radius && delta_inner.y <= fs_radius) {
+        dist_inner = fs_radius - length(vec2(fs_radius, fs_radius) - delta_inner);
     } else {
-        color = fs_color;
+        dist_inner = min(delta_inner.x, delta_inner.y);
+    }
+
+    if (dist_outer < 0) {
+        color = vec4(0, 0, 0, 0);
+    } else if (dist_inner < 0) {
+        color = fs_border_color;
+    } else {
+        color = fs_bg_color;
     }
 }
 )";
@@ -154,7 +183,29 @@ void GeometryRenderer::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)offsetof(Element, color));
+      (void*)offsetof(Element, bg_color));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      4,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, border_color));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      4,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, border_width));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -164,25 +215,18 @@ void GeometryRenderer::init() {
 
 void GeometryRenderer::queue_box(
     const Boxf& box,
-    const Color& color,
+    const Color& bg_color,
     BoxDims border_width,
     Color border_color,
     float radius) {
-
-  if (border_width.size() != Vecf::Zero()) {
-    Element element;
-    element.offset = box.lower;
-    element.size = box.size();
-    element.radius = radius;
-    element.color = border_color;
-    elements.push_back(element);
-  }
 
   Element element;
   element.offset = box.lower + border_width.offset();
   element.size = box.size() - border_width.size();
   element.radius = radius;
-  element.color = color;
+  element.bg_color = bg_color;
+  element.border_color = border_color;
+  element.border_width = border_width;
   elements.push_back(element);
 }
 

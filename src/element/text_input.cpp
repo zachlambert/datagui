@@ -7,19 +7,18 @@ void TextInputSystem::set_layout_input(Tree::Ptr node) const {
   const std::string& text = *node.data<std::string>();
 
   node->fixed_size =
-      Vecf::Constant(2 * (element.style.border_width + element.style.padding));
+      (element.style.border_width + element.style.padding).size();
 
-  Vecf text_size = font_manager.text_size(
-      element.style.font,
-      element.style.font_size,
-      text,
-      element.style.max_width);
+  Vecf text_size = font_manager.text_size(text, element.style);
+  node->fixed_size.y += text_size.y;
 
-  if (element.style.max_width >= 0) {
-    node->fixed_size += text_size;
+  if (auto width = std::get_if<LengthFixed>(&element.style.text_width)) {
+    node->fixed_size.x += width->value;
   } else {
-    node->fixed_size.y += text_size.y;
-    node->dynamic_size.x = 1;
+    node->fixed_size.x += text_size.x;
+    if (auto width = std::get_if<LengthDynamic>(&element.style.text_width)) {
+      node->dynamic_size.x = width->weight;
+    }
   }
 }
 
@@ -30,40 +29,30 @@ void TextInputSystem::render(Tree::ConstPtr node) const {
       node == active_node ? active_text : *node.data<std::string>();
 
   geometry_renderer.queue_box(
-      Boxf(node->position, node->position + node->size),
+      node->box(),
       element.style.bg_color,
       element.style.border_width,
       node->in_focus_tree ? element.style.focus_color
-                          : element.style.border_color);
+                          : element.style.border_color,
+      element.style.radius);
+
   Vecf text_position =
       node->position +
-      Vecf::Constant(element.style.border_width + element.style.padding);
+      (element.style.border_width + element.style.padding).offset();
 
   if (node == active_node) {
-    TextSelectionStyle style;
-    style.cursor_color = Color::Gray(0.3);
-    style.cursor_width = 2;
-    style.max_width = element.style.max_width;
-    style.disabled = false;
-    style.highlight_color = Color::Gray(0.5);
     render_selection(
         font_manager.font_structure(
             element.style.font,
             element.style.font_size),
-        style,
+        element.style,
         text,
         text_position,
         active_selection,
         geometry_renderer);
   }
 
-  text_renderer.queue_text(
-      text,
-      text_position,
-      element.style.font,
-      element.style.font_size,
-      element.style.text_color,
-      element.style.max_width);
+  text_renderer.queue_text(text_position, text, element.style);
 }
 
 void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
@@ -72,7 +61,7 @@ void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
 
   Vecf text_origin =
       node->position +
-      Vecf::Constant(element.style.border_width + element.style.padding);
+      (element.style.border_width + element.style.padding).offset();
 
   const auto& font =
       font_manager.font_structure(element.style.font, element.style.font_size);
@@ -80,7 +69,7 @@ void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
   std::size_t cursor_pos = find_cursor(
       font,
       active_text,
-      element.style.max_width,
+      element.style.text_width,
       event.position - text_origin);
 
   if (event.action == MouseAction::Press) {

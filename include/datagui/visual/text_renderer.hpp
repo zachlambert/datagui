@@ -14,12 +14,25 @@ public:
   void init();
 
   void queue_text(
-      const std::string& text,
       const Vecf& origin,
-      const Font font,
+      const std::string& text,
+      Font font,
       int font_size,
-      const Color& font_color,
-      float max_width);
+      Color text_color,
+      Length text_width);
+
+  void queue_text(
+      const Vecf& origin,
+      const std::string& text,
+      const TextStyle& style) {
+    queue_text(
+        origin,
+        text,
+        style.font,
+        style.font_size,
+        style.text_color,
+        style.text_width);
+  }
 
   void render(const Vecf& viewport_size);
 

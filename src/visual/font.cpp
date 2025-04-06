@@ -329,14 +329,11 @@ const FontStructure& FontManager::font_structure(Font font, int font_size) {
   return new_font.first->second;
 };
 
-Vecf FontManager::text_size(
-    Font font,
-    int font_size,
-    const std::string& text,
-    float max_width) {
-  const auto& fs = font_structure(font, font_size);
+Vecf FontManager::text_size(const std::string& text, const TextStyle& style) {
+  const auto& fs = font_structure(style.font, style.font_size);
 
-  bool has_max_width = max_width > 0;
+  auto fixed_width = std::get_if<LengthFixed>(&style.text_width);
+
   Vecf pos = Vecf::Zero();
   pos.y += fs.line_height;
 
@@ -353,15 +350,15 @@ Vecf FontManager::text_size(
       continue;
     }
     const auto& character = fs.get(c);
-    if (has_max_width && pos.x + character.advance > max_width) {
+    if (fixed_width && pos.x + character.advance > fixed_width->value) {
       pos.x = 0;
       pos.y += fs.line_height;
     }
     pos.x += character.advance;
   }
 
-  if (has_max_width) {
-    return Vecf(max_width, pos.y);
+  if (fixed_width) {
+    return Vecf(fixed_width->value, pos.y);
   } else {
     return Vecf(std::max(line_break_max_x, pos.x), pos.y);
   }

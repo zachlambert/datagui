@@ -7,7 +7,7 @@ int main() {
   datagui::Gui gui;
 
   auto style_root = [](datagui::VerticalLayoutStyle& style) {
-    style.outer_padding = {40, 10};
+    style.padding = {40, 10};
     style.inner_padding = 10;
     style.horizontal_alignment = datagui::AlignmentX::Center;
   };
@@ -22,13 +22,16 @@ int main() {
   auto style_horiz_expand = [](datagui::HorizontalLayoutStyle& style) {
     style.length = 1.0_dynamic;
     style.width = _wrap;
-    style.outer_padding = {10, 50, 10, 20};
+    style.padding = {10, 50, 10, 20};
     style.bg_color = datagui::Color::Hsl(260, 0.4, 0.9);
     style.vertical_alignment = datagui::AlignmentY::Bottom;
+    style.border_width = {4, 12};
+    style.border_color = datagui::Color::Hsl(260, 0.4, 0.7);
+    style.radius = 10;
   };
 
   auto style_text_input = [](datagui::TextInputStyle& style) {
-    style.max_width = -1;
+    style.text_width = 1.0_dynamic;
     style.font_size = 40;
   };
 
@@ -39,12 +42,12 @@ int main() {
   while (gui.running()) {
     gui.begin();
     if (gui.vertical_layout(style_root)) {
-      gui.text("Welcome Screen!", style_h1);
+      gui.text_box("Welcome Screen!", style_h1);
 
       auto name = gui.data<std::string>("");
 
       if (gui.horizontal_layout(style_horiz_expand)) {
-        gui.text("Name: ", style_text);
+        gui.text_box("Name: ", style_text);
         auto data = gui.text_input(style_text_input);
         if (data.modified()) {
           name.mut() = *data;
@@ -53,12 +56,12 @@ int main() {
       }
 
       if (name->empty()) {
-        gui.text("Hello... what is your name?", style_text);
+        gui.text_box("Hello... what is your name?", style_text);
       } else {
-        gui.text("Hello " + *name, style_text);
+        gui.text_box("Hello " + *name, style_text);
       }
 
-      gui.text("Timer: " + std::to_string(*timer));
+      gui.text_box("Timer: " + std::to_string(*timer));
       gui.layout_end();
     }
     gui.end();

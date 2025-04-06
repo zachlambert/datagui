@@ -1,7 +1,7 @@
 #pragma once
 
-#include "datagui/color.hpp"
 #include "datagui/input/text_selection.hpp"
+#include "datagui/style.hpp"
 #include "datagui/tree/element.hpp"
 #include "datagui/visual/font.hpp"
 #include "datagui/visual/geometry_renderer.hpp"
@@ -9,16 +9,15 @@
 
 namespace datagui {
 
-struct TextInputStyle {
-  float max_width;
-  Font font = Font::DejaVuSans;
-  int font_size = 24;
-  Color text_color = Color::Black();
-  Color bg_color = Color::Gray(0.8);
-  float padding = 5;
-  float border_width = 2;
-  Color border_color = Color::Gray(0.4);
+struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
   Color focus_color = Color(0.0, 1.0, 1.0);
+
+  TextInputStyle() {
+    bg_color = Color::White();
+    border_color = Color::Gray(0.5);
+    border_width = 2;
+    padding = 5;
+  }
 };
 
 struct TextInputElement {

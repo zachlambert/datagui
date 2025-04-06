@@ -8,7 +8,7 @@ enum class ElementType {
   Undefined,
   HorizontalLayout,
   VerticalLayout,
-  Text,
+  TextBox,
   TextInput
 };
 
@@ -23,6 +23,9 @@ struct State {
   // Layout output
   Vecf position;
   Vecf size;
+  Boxf box() const {
+    return Boxf(position, position + size);
+  }
 
   // Focus
   bool in_focus_tree = false;

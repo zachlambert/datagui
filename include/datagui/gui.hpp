@@ -11,7 +11,7 @@
 #include "datagui/visual/text_renderer.hpp"
 
 #include "datagui/element/horizontal_layout.hpp"
-#include "datagui/element/text.hpp"
+#include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
 #include "datagui/element/vertical_layout.hpp"
 
@@ -34,9 +34,9 @@ public:
       const std::function<void(VerticalLayoutStyle&)>& set_style = nullptr);
   void layout_end();
 
-  void text(
+  void text_box(
       const std::string& text,
-      const std::function<void(TextStyle&)>& set_style = nullptr);
+      const std::function<void(TextBoxStyle&)>& set_style = nullptr);
 
   Tree::ConstData<std::string> text_input(
       const std::function<void(TextInputStyle&)>& set_style = nullptr);
@@ -69,7 +69,7 @@ private:
 
   HorizontalLayoutSystem horizontal_layout_system;
   VerticalLayoutSystem vertical_layout_system;
-  TextSystem text_system;
+  TextBoxSystem text_box_system;
   TextInputSystem text_input_system;
 
   Tree::Ptr node_focus;

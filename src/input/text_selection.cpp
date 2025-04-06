@@ -6,9 +6,10 @@ namespace datagui {
 std::size_t find_cursor(
     const FontStructure& font,
     const std::string& text,
-    float max_width,
+    Length text_width,
     const Vecf& point) {
-  bool has_max_width = max_width > 0;
+
+  auto fixed_width = std::get_if<LengthFixed>(&text_width);
   Vecf pos = Vecf::Zero();
   pos.y += font.line_height;
 
@@ -29,7 +30,7 @@ std::size_t find_cursor(
       }
     }
 
-    if (has_max_width && pos.x + c.advance > max_width) {
+    if (fixed_width && pos.x + c.advance > fixed_width->value) {
       if (!column_found) {
         column = i + 1;
       }
@@ -51,9 +52,9 @@ std::size_t find_cursor(
 Vecf cursor_offset(
     const FontStructure& font,
     const std::string& text,
-    float max_width,
+    Length text_width,
     std::size_t cursor) {
-  bool has_max_width = max_width > 0;
+  auto fixed_width = std::get_if<LengthFixed>(&text_width);
   Vecf offset = Vecf::Zero();
 
   for (std::size_t i = 0; i < cursor; i++) {
@@ -61,7 +62,7 @@ Vecf cursor_offset(
       continue;
     }
     const auto& c = font.get(text[i]);
-    if (has_max_width && offset.x + c.advance > max_width) {
+    if (fixed_width && offset.x + c.advance > fixed_width->value) {
       offset.x = 0;
       offset.y += font.line_height;
     }
@@ -241,7 +242,7 @@ void selection_key_event(
 
 void render_selection(
     const FontStructure& font,
-    const TextSelectionStyle& style,
+    const SelectableTextStyle& style,
     const std::string& text,
     const Vecf& origin,
     const TextSelection& selection,
@@ -253,7 +254,7 @@ void render_selection(
     if (style.disabled) {
       return;
     }
-    Vecf offset = cursor_offset(font, text, style.max_width, selection.begin);
+    Vecf offset = cursor_offset(font, text, style.text_width, selection.begin);
     geometry_renderer.queue_box(
         Boxf(
             origin + offset - Vecf(float(style.cursor_width) / 2, 0),
@@ -265,13 +266,13 @@ void render_selection(
     return;
   }
 
-  bool has_max_width = style.max_width > 0;
+  auto fixed_width = std::get_if<LengthFixed>(&style.text_width);
 
   // Render higlighlight
 
   std::size_t from = selection.from();
   std::size_t to = selection.to();
-  Vecf offset = cursor_offset(font, text, style.max_width, from);
+  Vecf offset = cursor_offset(font, text, style.text_width, from);
   Vecf from_offset = offset;
 
   for (std::size_t i = from; i < to; i++) {
@@ -280,7 +281,7 @@ void render_selection(
     }
     const auto& c = font.get(text[i]);
 
-    if (has_max_width && offset.x + c.advance > style.max_width) {
+    if (fixed_width && offset.x + c.advance > fixed_width->value) {
       Vecf to_offset = offset;
       if (from == text.size()) {
         to_offset.x += c.advance;

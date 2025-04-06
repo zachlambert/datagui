@@ -1,16 +1,11 @@
 #pragma once
 
 #include "datagui/geometry.hpp"
+#include "datagui/style.hpp"
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-namespace datagui {
-
-enum class Font { DejaVuSans, DejaVuSerif, DejaVuSansMono };
-
-} // namespace datagui
 
 template <>
 struct std::hash<std::pair<datagui::Font, int>> {
@@ -85,11 +80,7 @@ private:
 class FontManager {
 public:
   const FontStructure& font_structure(Font font, int font_size);
-  Vecf text_size(
-      Font font,
-      int font_size,
-      const std::string& text,
-      float max_width);
+  Vecf text_size(const std::string& text, const TextStyle& style);
 
 private:
   std::unordered_map<std::pair<Font, int>, FontStructure> fonts;

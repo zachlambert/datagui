@@ -62,7 +62,7 @@ void HorizontalLayoutSystem::set_layout_input(Tree::Ptr node) const {
   }
 
   node->fixed_size +=
-      (element.style.outer_padding + element.style.border_width).size();
+      (element.style.padding + element.style.border_width).size();
 }
 
 void HorizontalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
@@ -70,7 +70,7 @@ void HorizontalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
   const auto& style = element.style;
 
   Vecf available = node->size - node->fixed_size;
-  float offset_x = style.outer_padding.left + style.border_width.left;
+  float offset_x = style.padding.left + style.border_width.left;
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
@@ -98,7 +98,7 @@ void HorizontalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
     }
     if (child->dynamic_size.y > 0) {
       child->size.y =
-          node->size.y - (style.outer_padding + style.border_width).size().y;
+          node->size.y - (style.padding + style.border_width).size().y;
     }
 
     child->position.x = node->position.x + offset_x;
@@ -107,16 +107,15 @@ void HorizontalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
     switch (style.vertical_alignment) {
     case AlignmentY::Top:
       child->position.y =
-          node->position.y + style.outer_padding.top + style.border_width.top;
+          node->position.y + style.padding.top + style.border_width.top;
       break;
     case AlignmentY::Center:
       child->position.y =
           node->position.y + node->size.y / 2 - child->size.y / 2;
       break;
     case AlignmentY::Bottom:
-      child->position.y =
-          node->position.y + node->size.y - child->size.y -
-          (style.outer_padding.bottom + style.border_width.bottom);
+      child->position.y = node->position.y + node->size.y - child->size.y -
+                          (style.padding.bottom + style.border_width.bottom);
       break;
     }
 
@@ -128,11 +127,7 @@ void HorizontalLayoutSystem::render(Tree::ConstPtr node) const {
   const auto& element = elements[node->element_index];
   const auto& style = element.style;
 
-  geometry_renderer.queue_box(
-      Boxf(node->position, node->position + node->size),
-      style.bg_color,
-      style.border_width,
-      style.border_color);
+  geometry_renderer.queue_box(node->box(), style);
 }
 
 } // namespace datagui

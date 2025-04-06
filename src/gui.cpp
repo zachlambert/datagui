@@ -10,7 +10,7 @@ Gui::Gui(const Window::Config& config) :
     text_renderer(font_manager),
     horizontal_layout_system(geometry_renderer),
     vertical_layout_system(geometry_renderer),
-    text_system(font_manager, text_renderer),
+    text_box_system(font_manager, text_renderer),
     text_input_system(font_manager, text_renderer, geometry_renderer),
     tree(std::bind(&Gui::deinit_node, this, std::placeholders::_1)) {
   geometry_renderer.init();
@@ -55,19 +55,19 @@ void Gui::layout_end() {
   tree.up();
 }
 
-void Gui::text(
+void Gui::text_box(
     const std::string& text,
-    const std::function<void(TextStyle&)>& set_style) {
+    const std::function<void(TextBoxStyle&)>& set_style) {
   tree.container_next([&](State& state) {
-    state.element_type = ElementType::Text;
-    state.element_index = text_system.emplace();
+    state.element_type = ElementType::TextBox;
+    state.element_index = text_box_system.emplace();
     if (set_style) {
-      set_style(text_system[state.element_index].style);
+      set_style(text_box_system[state.element_index].style);
     }
   });
 
   auto node = tree.current();
-  text_system[node->element_index].text = text;
+  text_box_system[node->element_index].text = text;
 }
 
 Tree::ConstData<std::string> Gui::text_input(
@@ -118,7 +118,8 @@ void Gui::render() {
             2,
             node->focused         ? Color::Blue()
             : node->in_focus_tree ? Color::Red()
-                                  : Color::Green());
+                                  : Color::Green(),
+            0);
 
         if (node->focused) {
           std::string debug_text;
@@ -129,27 +130,22 @@ void Gui::render() {
           debug_text += "\nsize: " + std::to_string(node->size.x) + ", " +
                         std::to_string(node->size.y);
 
-          int font_size = 24;
-          auto text_size = font_manager.text_size(
-              Font::DejaVuSans,
-              font_size,
-              debug_text,
-              0);
+          BoxStyle box_style;
+          box_style.bg_color = Color::White();
+          box_style.border_width = 2;
+          TextStyle text_style;
+          text_style.font_size = 24;
+          auto text_size = font_manager.text_size(debug_text, text_style);
 
           geometry_renderer.queue_box(
               Boxf(
                   window.size() - text_size - Vecf::Constant(15),
                   window.size() - Vecf::Constant(5)),
-              Color::White(),
-              2,
-              Color::Black());
+              box_style);
           text_renderer.queue_text(
-              debug_text,
               window.size() - text_size - Vecf::Constant(10),
-              Font::DejaVuSans,
-              font_size,
-              Color::Red(),
-              0);
+              debug_text,
+              text_style);
         }
       }
 
@@ -425,8 +421,8 @@ ElementSystem& Gui::element_system(ElementType type) {
     return horizontal_layout_system;
   case ElementType::VerticalLayout:
     return vertical_layout_system;
-  case ElementType::Text:
-    return text_system;
+  case ElementType::TextBox:
+    return text_box_system;
   case ElementType::TextInput:
     return text_input_system;
   case ElementType::Undefined:

@@ -79,12 +79,12 @@ void TextRenderer::init() {
 }
 
 void TextRenderer::queue_text(
-    const std::string& text,
     const Vecf& origin,
+    const std::string& text,
     Font font,
     int font_size,
-    const Color& font_color,
-    float max_width) {
+    Color text_color,
+    Length text_width) {
 
   const auto& fs = font_manager.font_structure(font, font_size);
 
@@ -92,17 +92,17 @@ void TextRenderer::queue_text(
   while (command_i < commands.size()) {
     const auto& command = commands[command_i];
     if (command.font_texture == fs.font_texture &&
-        command.font_color.equals(font_color)) {
+        command.font_color.equals(text_color)) {
       break;
     }
     command_i++;
   }
   if (command_i == commands.size()) {
-    commands.emplace_back(fs.font_texture, font_color);
+    commands.emplace_back(fs.font_texture, text_color);
   }
   auto& vertices = commands[command_i].vertices;
 
-  bool has_max_width = max_width > 0;
+  auto fixed_width = std::get_if<LengthFixed>(&text_width);
   Vecf offset = Vecf::Zero();
   offset.y += fs.line_height;
 
@@ -117,7 +117,7 @@ void TextRenderer::queue_text(
     }
     const auto& c = fs.get(c_char);
 
-    if (has_max_width && offset.x + c.advance > max_width) {
+    if (fixed_width && offset.x + c.advance > fixed_width->value) {
       offset.x = 0;
       offset.y += fs.line_height;
     }
