@@ -12,6 +12,7 @@ Gui::Gui(const Window::Config& config) :
     vertical_layout_system(geometry_renderer),
     text_box_system(font_manager, text_renderer),
     text_input_system(font_manager, text_renderer, geometry_renderer),
+    button_system(font_manager, geometry_renderer, text_renderer),
     tree(std::bind(&Gui::deinit_node, this, std::placeholders::_1)) {
   geometry_renderer.init();
   text_renderer.init();
@@ -82,6 +83,29 @@ Tree::ConstData<std::string> Gui::text_input(
 
   auto node = tree.current();
   return tree.data_current<std::string>();
+}
+
+bool Gui::button(
+    const std::string& text,
+    const std::function<void(ButtonStyle&)>& set_style) {
+
+  tree.container_next([&](State& state) {
+    state.element_type = ElementType::Button;
+    state.element_index = button_system.emplace();
+    if (set_style) {
+      set_style(button_system[state.element_index].style);
+    }
+  });
+
+  auto node = tree.current();
+  button_system[node->element_index].text = text;
+
+  auto& element = button_system[node->element_index];
+  if (element.released) {
+    element.released = false;
+    return true;
+  }
+  return false;
 }
 
 void Gui::begin() {
@@ -425,6 +449,8 @@ ElementSystem& Gui::element_system(ElementType type) {
     return text_box_system;
   case ElementType::TextInput:
     return text_input_system;
+  case ElementType::Button:
+    return button_system;
   case ElementType::Undefined:
     assert(false);
     return horizontal_layout_system;

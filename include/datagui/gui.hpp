@@ -10,6 +10,7 @@
 #include "datagui/visual/geometry_renderer.hpp"
 #include "datagui/visual/text_renderer.hpp"
 
+#include "datagui/element/button.hpp"
 #include "datagui/element/horizontal_layout.hpp"
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
@@ -41,6 +42,10 @@ public:
   Tree::ConstData<std::string> text_input(
       const std::function<void(TextInputStyle&)>& set_style = nullptr);
 
+  bool button(
+      const std::string& text,
+      const std::function<void(ButtonStyle&)>& set_style = nullptr);
+
   template <typename T>
   Tree::Data<T> data(T initial_value) {
     return tree.data_parent<T>([&]() { return initial_value; });
@@ -71,6 +76,7 @@ private:
   VerticalLayoutSystem vertical_layout_system;
   TextBoxSystem text_box_system;
   TextInputSystem text_input_system;
+  ButtonSystem button_system;
 
   Tree::Ptr node_focus;
 };

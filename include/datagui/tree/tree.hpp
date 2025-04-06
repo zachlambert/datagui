@@ -163,9 +163,8 @@ public:
       return tree->nodes[index].visible;
     }
 
-    // TEMP: May remove if not needed
-    int get_index() const {
-      return index;
+    void needs_visit() const {
+      tree->queue_needs_visit.push_back(index);
     }
 
     template <typename T>

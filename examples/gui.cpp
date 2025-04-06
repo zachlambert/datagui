@@ -62,6 +62,12 @@ int main() {
       }
 
       gui.text_box("Timer: " + std::to_string(*timer));
+
+      if (gui.button("Reset")) {
+        timer.mut() = 0;
+        next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
+      }
+
       gui.layout_end();
     }
     gui.end();

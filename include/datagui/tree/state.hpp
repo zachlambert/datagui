@@ -9,7 +9,8 @@ enum class ElementType {
   HorizontalLayout,
   VerticalLayout,
   TextBox,
-  TextInput
+  TextInput,
+  Button
 };
 
 struct State {

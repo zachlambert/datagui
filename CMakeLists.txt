@@ -17,6 +17,7 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
+  src/element/button.cpp
   src/element/horizontal_layout.cpp
   src/element/text_box.cpp
   src/element/text_input.cpp

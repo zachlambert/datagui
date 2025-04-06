@@ -25,39 +25,7 @@ void TextBoxSystem::set_layout_input(Tree::Ptr node) const {
 
 void TextBoxSystem::render(Tree::ConstPtr node) const {
   const auto& element = elements[node->element_index];
-  const auto& style = element.style;
-
-#if 0
-  if (state.in_focus_tree) {
-    renderers.geometry.queue_box(
-        Boxf(node.origin, node.origin + node.size),
-        Color::Clear(),
-        style.element.border_width,
-        style.element.focus_color,
-        0);
-  } else {
-    renderers.geometry.queue_box(
-        Boxf(node.origin, node.origin + node.size),
-        Color::Clear(),
-        0,
-        Color::Black(),
-        0);
-  }
-
-  if (state.focused) {
-    render_selection(
-        style,
-        font,
-        element.text,
-        element.max_width,
-        node.origin,
-        text_selection,
-        false,
-        renderers.geometry);
-  }
-#endif
-
-  text_renderer.queue_text(node->position, element.text, style);
+  text_renderer.queue_text(node->position, element.text, element.style);
 }
 
 } // namespace datagui
