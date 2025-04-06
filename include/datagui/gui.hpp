@@ -10,9 +10,10 @@
 #include "datagui/visual/geometry_renderer.hpp"
 #include "datagui/visual/text_renderer.hpp"
 
-#include "datagui/element/linear_layout.hpp"
+#include "datagui/element/horizontal_layout.hpp"
 #include "datagui/element/text.hpp"
 #include "datagui/element/text_input.hpp"
+#include "datagui/element/vertical_layout.hpp"
 
 namespace datagui {
 
@@ -27,9 +28,11 @@ public:
   void begin();
   void end();
 
-  bool linear_layout(
-      const std::function<void(LinearLayoutStyle&)>& set_style = nullptr);
-  void container_end();
+  bool horizontal_layout(
+      const std::function<void(HorizontalLayoutStyle&)>& set_style = nullptr);
+  bool vertical_layout(
+      const std::function<void(VerticalLayoutStyle&)>& set_style = nullptr);
+  void layout_end();
 
   void text(
       const std::string& text,
@@ -64,7 +67,8 @@ private:
   GeometryRenderer geometry_renderer;
   TextRenderer text_renderer;
 
-  LinearLayoutSystem linear_layout_system;
+  HorizontalLayoutSystem horizontal_layout_system;
+  VerticalLayoutSystem vertical_layout_system;
   TextSystem text_system;
   TextInputSystem text_input_system;
 

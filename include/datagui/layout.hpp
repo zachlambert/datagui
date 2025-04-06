@@ -6,6 +6,8 @@
 namespace datagui {
 
 enum class Direction { Horizontal, Vertical };
+enum class AlignmentX { Left, Center, Right };
+enum class AlignmentY { Top, Center, Bottom };
 
 struct LengthFixed {
   float value = 0;

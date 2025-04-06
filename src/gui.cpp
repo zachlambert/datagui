@@ -8,7 +8,8 @@ using namespace std::placeholders;
 Gui::Gui(const Window::Config& config) :
     window(config),
     text_renderer(font_manager),
-    linear_layout_system(geometry_renderer),
+    horizontal_layout_system(geometry_renderer),
+    vertical_layout_system(geometry_renderer),
     text_system(font_manager, text_renderer),
     text_input_system(font_manager, text_renderer, geometry_renderer),
     tree(std::bind(&Gui::deinit_node, this, std::placeholders::_1)) {
@@ -20,13 +21,13 @@ bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::linear_layout(
-    const std::function<void(LinearLayoutStyle&)>& set_style) {
+bool Gui::horizontal_layout(
+    const std::function<void(HorizontalLayoutStyle&)>& set_style) {
   tree.container_next([&](State& state) {
-    state.element_type = ElementType::LinearLayout;
-    state.element_index = linear_layout_system.emplace();
+    state.element_type = ElementType::HorizontalLayout;
+    state.element_index = horizontal_layout_system.emplace();
     if (set_style) {
-      set_style(linear_layout_system[state.element_index].style);
+      set_style(horizontal_layout_system[state.element_index].style);
     }
   });
   if (!tree.container_down()) {
@@ -35,7 +36,22 @@ bool Gui::linear_layout(
   return true;
 }
 
-void Gui::container_end() {
+bool Gui::vertical_layout(
+    const std::function<void(VerticalLayoutStyle&)>& set_style) {
+  tree.container_next([&](State& state) {
+    state.element_type = ElementType::VerticalLayout;
+    state.element_index = vertical_layout_system.emplace();
+    if (set_style) {
+      set_style(vertical_layout_system[state.element_index].style);
+    }
+  });
+  if (!tree.container_down()) {
+    return false;
+  }
+  return true;
+}
+
+void Gui::layout_end() {
   tree.up();
 }
 
@@ -405,18 +421,20 @@ void Gui::deinit_node(Tree::ConstPtr node) {
 
 ElementSystem& Gui::element_system(ElementType type) {
   switch (type) {
-  case ElementType::LinearLayout:
-    return linear_layout_system;
+  case ElementType::HorizontalLayout:
+    return horizontal_layout_system;
+  case ElementType::VerticalLayout:
+    return vertical_layout_system;
   case ElementType::Text:
     return text_system;
   case ElementType::TextInput:
     return text_input_system;
   case ElementType::Undefined:
     assert(false);
-    return linear_layout_system;
+    return horizontal_layout_system;
   }
   assert(false);
-  return linear_layout_system;
+  return horizontal_layout_system;
 }
 
 } // namespace datagui

@@ -6,7 +6,7 @@ int main() {
 
   datagui::Gui gui;
 
-  auto style_root = [](datagui::LinearLayoutStyle& style) {
+  auto style_root = [](datagui::VerticalLayoutStyle& style) {
     style.outer_padding = {40, 10};
     style.inner_padding = 10;
   };
@@ -18,12 +18,12 @@ int main() {
 
   auto style_text = [](datagui::TextStyle& style) { style.font_size = 30; };
 
-  auto style_horiz_expand = [](datagui::LinearLayoutStyle& style) {
-    style.direction = datagui::Direction::Horizontal;
+  auto style_horiz_expand = [](datagui::HorizontalLayoutStyle& style) {
     style.length = 1.0_dynamic;
     style.width = _wrap;
     style.outer_padding = {10, 50, 10, 20};
     style.bg_color = datagui::Color::Hsl(260, 0.4, 0.9);
+    style.vertical_alignment = datagui::AlignmentY::Center;
   };
 
   auto style_text_input_expand = [](datagui::TextInputStyle& style) {
@@ -36,18 +36,18 @@ int main() {
 
   while (gui.running()) {
     gui.begin();
-    if (gui.linear_layout(style_root)) {
+    if (gui.vertical_layout(style_root)) {
       gui.text("Welcome Screen!", style_h1);
 
       auto name = gui.data<std::string>("");
 
-      if (gui.linear_layout(style_horiz_expand)) {
+      if (gui.horizontal_layout(style_horiz_expand)) {
         gui.text("Name: ", style_text);
         auto data = gui.text_input(style_text_input_expand);
         if (data.modified()) {
           name.mut() = *data;
         }
-        gui.container_end();
+        gui.layout_end();
       }
 
       if (name->empty()) {
@@ -57,7 +57,7 @@ int main() {
       }
 
       gui.text("Timer: " + std::to_string(*timer));
-      gui.container_end();
+      gui.layout_end();
     }
     gui.end();
 

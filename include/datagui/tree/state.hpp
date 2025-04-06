@@ -4,7 +4,13 @@
 
 namespace datagui {
 
-enum class ElementType { Undefined, LinearLayout, Text, TextInput };
+enum class ElementType {
+  Undefined,
+  HorizontalLayout,
+  VerticalLayout,
+  Text,
+  TextInput
+};
 
 struct State {
   ElementType element_type = ElementType::Undefined;
