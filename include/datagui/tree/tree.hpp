@@ -11,7 +11,7 @@
 
 namespace datagui {
 
-enum class NodeType { Primitive, Container, Optional, Variant };
+enum class NodeType { External, Primitive, Container, Optional, Variant };
 
 struct Node {
   NodeType type = NodeType::Primitive;
@@ -209,7 +209,7 @@ public:
   using init_state_t = std::function<void(State& state)>;
   using deinit_node_t = std::function<void(ConstPtr)>;
 
-  Tree(const deinit_node_t& deinit_node) : deinit_node(deinit_node) {}
+  Tree(const deinit_node_t& deinit_node);
 
   void begin();
   void end();

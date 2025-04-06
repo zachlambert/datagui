@@ -120,17 +120,13 @@ void glfw_key_callback(
   case GLFW_KEY_BACKSPACE:
     event.key = Key::Backspace;
     break;
-  case GLFW_KEY_C:
-    event.key = Key::C;
-    break;
-  case GLFW_KEY_V:
-    event.key = Key::V;
-    break;
-  case GLFW_KEY_X:
-    event.key = Key::X;
-    break;
   default:
-    return;
+    if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) {
+      event.key = (Key)((int)Key::A + (key - GLFW_KEY_A));
+    } else {
+      return;
+    }
+    break;
   }
 
   event.mod_ctrl = mods & (1 << 1);

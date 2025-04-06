@@ -5,6 +5,11 @@
 
 namespace datagui {
 
+Tree::Tree(const deinit_node_t& deinit_node) : deinit_node(deinit_node) {
+  nodes.emplace();
+  nodes[0].type = NodeType::External;
+}
+
 void Tree::begin() {
   parent_ = -1;
   current_ = -1;

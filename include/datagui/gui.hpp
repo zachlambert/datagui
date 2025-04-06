@@ -20,6 +20,9 @@ class Gui {
 public:
   Gui(const Window::Config& window_config = Window::Config());
 
+  void set_debug_mode(bool value) {
+    debug_mode_ = value;
+  }
   bool running() const;
   void begin();
   void end();
@@ -55,6 +58,7 @@ private:
 
   Window window;
   Tree tree;
+  bool debug_mode_ = false;
 
   FontManager font_manager;
   GeometryRenderer geometry_renderer;

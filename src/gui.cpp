@@ -95,15 +95,15 @@ void Gui::render() {
       }
       element_system(node->element_type).render(node);
 
-#if 1
-      geometry_renderer.queue_box(
-          Boxf(node->position, node->position + node->size),
-          Color::Clear(),
-          2,
-          node->focused         ? Color::Blue()
-          : node->in_focus_tree ? Color::Red()
-                                : Color::Green());
-#endif
+      if (debug_mode_) {
+        geometry_renderer.queue_box(
+            Boxf(node->position, node->position + node->size),
+            Color::Clear(),
+            2,
+            node->focused         ? Color::Blue()
+            : node->in_focus_tree ? Color::Red()
+                                  : Color::Green());
+      }
 
       auto child = node.first_child();
       while (child) {
@@ -211,6 +211,11 @@ void Gui::event_handling() {
         }
         handled = true;
         break;
+      case Key::D:
+        if (event.mod_ctrl) {
+          handled = true;
+          debug_mode_ = !debug_mode_;
+        }
       default:
         break;
       }
