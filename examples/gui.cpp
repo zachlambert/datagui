@@ -9,6 +9,7 @@ int main() {
   auto style_root = [](datagui::VerticalLayoutStyle& style) {
     style.outer_padding = {40, 10};
     style.inner_padding = 10;
+    style.horizontal_alignment = datagui::AlignmentX::Center;
   };
 
   auto style_h1 = [](datagui::TextStyle& style) {
@@ -23,11 +24,12 @@ int main() {
     style.width = _wrap;
     style.outer_padding = {10, 50, 10, 20};
     style.bg_color = datagui::Color::Hsl(260, 0.4, 0.9);
-    style.vertical_alignment = datagui::AlignmentY::Center;
+    style.vertical_alignment = datagui::AlignmentY::Bottom;
   };
 
-  auto style_text_input_expand = [](datagui::TextInputStyle& style) {
+  auto style_text_input = [](datagui::TextInputStyle& style) {
     style.max_width = -1;
+    style.font_size = 40;
   };
 
   auto timer = gui.data<int>(0);
@@ -43,7 +45,7 @@ int main() {
 
       if (gui.horizontal_layout(style_horiz_expand)) {
         gui.text("Name: ", style_text);
-        auto data = gui.text_input(style_text_input_expand);
+        auto data = gui.text_input(style_text_input);
         if (data.modified()) {
           name.mut() = *data;
         }

@@ -70,7 +70,7 @@ void VerticalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
   const auto& style = element.style;
 
   Vecf available = node->size - node->fixed_size;
-  Vecf offset = (style.outer_padding + style.border_width).offset();
+  float offset_y = style.outer_padding.top + style.border_width.top;
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
@@ -101,8 +101,24 @@ void VerticalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
           node->size.x - (style.outer_padding + style.border_width).size().x;
     }
 
-    child->position = node->position + offset;
-    offset.y += child->size.y + style.inner_padding;
+    child->position.y = node->position.y + offset_y;
+    offset_y += child->size.y + style.inner_padding;
+
+    switch (style.horizontal_alignment) {
+    case AlignmentX::Left:
+      child->position.x =
+          node->position.x + style.outer_padding.left + style.border_width.left;
+      break;
+    case AlignmentX::Center:
+      child->position.x =
+          node->position.x + node->size.x / 2 - child->size.x / 2;
+      break;
+    case AlignmentX::Right:
+      child->position.x =
+          node->position.x + node->size.x - child->size.x -
+          (style.outer_padding.right + style.border_width.right);
+      break;
+    }
 
     child = child.next();
   }
