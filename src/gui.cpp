@@ -103,6 +103,38 @@ void Gui::render() {
             node->focused         ? Color::Blue()
             : node->in_focus_tree ? Color::Red()
                                   : Color::Green());
+
+        if (node->focused) {
+          std::string debug_text;
+          debug_text += "fixed: " + std::to_string(node->fixed_size.x) + ", " +
+                        std::to_string(node->fixed_size.y);
+          debug_text += "\ndynamic: " + std::to_string(node->dynamic_size.x) +
+                        ", " + std::to_string(node->dynamic_size.y);
+          debug_text += "\nsize: " + std::to_string(node->size.x) + ", " +
+                        std::to_string(node->size.y);
+
+          int font_size = 24;
+          auto text_size = font_manager.text_size(
+              Font::DejaVuSans,
+              font_size,
+              debug_text,
+              0);
+
+          geometry_renderer.queue_box(
+              Boxf(
+                  window.size() - text_size - Vecf::Constant(15),
+                  window.size() - Vecf::Constant(5)),
+              Color::White(),
+              2,
+              Color::Black());
+          text_renderer.queue_text(
+              debug_text,
+              window.size() - text_size - Vecf::Constant(10),
+              Font::DejaVuSans,
+              font_size,
+              Color::Red(),
+              0);
+        }
       }
 
       auto child = node.first_child();

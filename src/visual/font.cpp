@@ -340,7 +340,15 @@ Vecf FontManager::text_size(
   Vecf pos = Vecf::Zero();
   pos.y += fs.line_height;
 
+  float line_break_max_x = 0;
+
   for (char c : text) {
+    if (c == '\n') {
+      line_break_max_x = std::max(pos.x, line_break_max_x);
+      pos.x = 0;
+      pos.y += fs.line_height;
+      continue;
+    }
     if (!fs.char_valid(c)) {
       continue;
     }
@@ -355,7 +363,7 @@ Vecf FontManager::text_size(
   if (has_max_width) {
     return Vecf(max_width, pos.y);
   } else {
-    return pos;
+    return Vecf(std::max(line_break_max_x, pos.x), pos.y);
   }
 }
 

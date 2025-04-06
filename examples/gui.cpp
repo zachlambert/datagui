@@ -2,10 +2,12 @@
 #include <datagui/gui.hpp>
 
 int main() {
+  using namespace datagui::literals;
+
   datagui::Gui gui;
 
   auto style_root = [](datagui::LinearLayoutStyle& style) {
-    style.padding = 10;
+    style.outer_padding = 10;
     style.inner_padding = 10;
   };
 
@@ -18,9 +20,9 @@ int main() {
 
   auto style_horiz_expand = [](datagui::LinearLayoutStyle& style) {
     style.direction = datagui::LinearLayoutDirection::Horizontal;
-    style.length = -1;
-    style.width = 0;
-    style.padding = 20;
+    style.length = 1.0_dynamic;
+    style.width = _wrap;
+    style.outer_padding = 20;
   };
 
   auto style_text_input_expand = [](datagui::TextInputStyle& style) {

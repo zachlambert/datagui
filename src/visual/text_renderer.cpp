@@ -45,8 +45,10 @@ void TextRenderer::init() {
   // Configure shader program and buffers
 
   gl_data.program_id = create_program(vertex_shader, fragment_shader);
-  gl_data.uniform_viewport_size = glGetUniformLocation(gl_data.program_id, "viewport_size");
-  gl_data.uniform_text_color = glGetUniformLocation(gl_data.program_id, "text_color");
+  gl_data.uniform_viewport_size =
+      glGetUniformLocation(gl_data.program_id, "viewport_size");
+  gl_data.uniform_text_color =
+      glGetUniformLocation(gl_data.program_id, "text_color");
 
   glGenVertexArrays(1, &gl_data.VAO);
   glGenBuffers(1, &gl_data.VBO);
@@ -54,10 +56,22 @@ void TextRenderer::init() {
   glBindVertexArray(gl_data.VAO);
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
 
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
+  glVertexAttribPointer(
+      0,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, pos));
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+  glVertexAttribPointer(
+      1,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, uv));
   glEnableVertexAttribArray(1);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -77,7 +91,8 @@ void TextRenderer::queue_text(
   std::size_t command_i = 0;
   while (command_i < commands.size()) {
     const auto& command = commands[command_i];
-    if (command.font_texture == fs.font_texture && command.font_color.equals(font_color)) {
+    if (command.font_texture == fs.font_texture &&
+        command.font_color.equals(font_color)) {
       break;
     }
     command_i++;
@@ -92,6 +107,11 @@ void TextRenderer::queue_text(
   offset.y += fs.line_height;
 
   for (char c_char : text) {
+    if (c_char == '\n') {
+      offset.x = 0;
+      offset.y += fs.line_height;
+      continue;
+    }
     if (!fs.char_valid(c_char)) {
       continue;
     }

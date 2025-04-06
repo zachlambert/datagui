@@ -3,7 +3,7 @@
 namespace datagui {
 
 void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
-  const auto& element = elements[node->element_index];
+  auto& element = elements[node->element_index];
   const auto& style = element.style;
 
   node->fixed_size = Vecf::Zero();
@@ -24,7 +24,10 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
 
   // Primary direction (a)
 
-  if (style.length == 0) {
+  if (auto length = std::get_if<LengthFixed>(&element.style.length)) {
+    fixed_a = length->value;
+
+  } else {
     auto child = node.first_child();
     int count = 0;
     while (child) {
@@ -40,6 +43,10 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
           style.direction == LinearLayoutDirection::Horizontal
               ? child->dynamic_size.x
               : child->dynamic_size.y;
+      float child_dynamic_b =
+          style.direction == LinearLayoutDirection::Horizontal
+              ? child->dynamic_size.y
+              : child->dynamic_size.x;
 
       fixed_a += child_fixed_a;
       dynamic_a += child_dynamic_a;
@@ -49,15 +56,16 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
     }
     fixed_a += (count - 1) * element.style.inner_padding;
 
-  } else if (element.style.length > 0) {
-    fixed_a = element.style.length;
-  } else {
-    dynamic_a = -element.style.length;
+    if (auto length = std::get_if<LengthDynamic>(&element.style.length)) {
+      dynamic_a = length->weight;
+    }
   }
 
   // Secondary direction (b)
 
-  if (element.style.width == 0) {
+  if (auto width = std::get_if<LengthFixed>(&element.style.width)) {
+    fixed_b = width->value;
+  } else {
     auto child = node.first_child();
     while (child) {
       if (!child.visible()) {
@@ -80,14 +88,13 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
       child = child.next();
     }
 
-  } else if (element.style.width > 0) {
-    fixed_a = element.style.width;
-  } else {
-    dynamic_a = -element.style.width;
+    if (auto width = std::get_if<LengthDynamic>(&element.style.width)) {
+      dynamic_b = width->weight;
+    }
   }
 
-  node->fixed_size +=
-      Vecf::Constant(2 * (element.style.border_width + element.style.padding));
+  node->fixed_size += Vecf::Constant(
+      2 * (element.style.border_width + element.style.outer_padding));
 }
 
 void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
@@ -95,7 +102,18 @@ void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
   const auto& style = element.style;
 
   Vecf available = node->size - node->fixed_size;
-  Vecf offset = Vecf::Constant(style.padding + style.border_width);
+  Vecf offset = Vecf::Constant(style.outer_padding + style.border_width);
+
+  // Node dynamic size may differ from sum of child dynamic sizes, so need to
+  // re-calculate
+  Vecf children_dynamic_size = Vecf::Zero();
+  {
+    auto child = node.first_child();
+    while (child) {
+      children_dynamic_size += child->dynamic_size;
+      child = child.next();
+    }
+  }
 
   auto child = node.first_child();
   while (child) {
@@ -109,26 +127,28 @@ void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
     if (child->dynamic_size.x > 0) {
       if (style.direction == LinearLayoutDirection::Horizontal) {
         child->size.x +=
-            (child->dynamic_size.x / node->dynamic_size.x) * available.x;
+            (child->dynamic_size.x / children_dynamic_size.x) * available.x;
       } else {
-        child->size.x = node->size.x - 2 * (style.padding + style.border_width);
+        child->size.x =
+            node->size.x - 2 * (style.outer_padding + style.border_width);
       }
     }
     if (child->dynamic_size.y > 0) {
       if (style.direction == LinearLayoutDirection::Horizontal) {
-        child->size.y = node->size.y - 2 * (style.padding + style.border_width);
+        child->size.y =
+            node->size.y - 2 * (style.outer_padding + style.border_width);
       } else {
         child->size.y +=
-            (child->dynamic_size.y / node->dynamic_size.y) * available.y;
+            (child->dynamic_size.y / children_dynamic_size.y) * available.y;
       }
     }
 
     child->position = node->position + offset;
 
     if (style.direction == LinearLayoutDirection::Horizontal) {
-      offset.x += child->size.x + style.padding;
+      offset.x += child->size.x + style.inner_padding;
     } else {
-      offset.y += child->size.y + style.padding;
+      offset.y += child->size.y + style.inner_padding;
     }
     child = child.next();
   }
@@ -137,17 +157,6 @@ void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
 void LinearLayoutSystem::render(Tree::ConstPtr node) const {
   const auto& element = elements[node->element_index];
   const auto& style = element.style;
-#if 0
-  const Color& border_color = state.in_focus_tree ? style.element.focus_color
-                                                  : style.element.border_color;
-
-  renderers.geometry.queue_box(
-      Boxf(node.origin, node.origin + node.size),
-      Color::Clear(),
-      style.element.border_width,
-      border_color,
-      0);
-#endif
 
   geometry_renderer.queue_box(
       Boxf(node->position, node->position + node->size),

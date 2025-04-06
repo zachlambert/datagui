@@ -1,6 +1,7 @@
 #pragma once
 
 #include "datagui/color.hpp"
+#include "datagui/layout.hpp"
 #include "datagui/tree/element.hpp"
 #include "datagui/visual/geometry_renderer.hpp"
 
@@ -10,9 +11,9 @@ enum class LinearLayoutDirection { Horizontal, Vertical };
 
 struct LinearLayoutStyle {
   LinearLayoutDirection direction = LinearLayoutDirection::Vertical;
-  float length = 0;
-  float width = -1;
-  float padding = 0;
+  Length length = literals::_wrap;
+  Length width = literals::_wrap;
+  float outer_padding = 0;
   float inner_padding = 0;
   float border_width = 0;
   Color border_color = Color::Black();
