@@ -37,21 +37,75 @@ inline Length operator""_dynamic(long double weight) {
 
 class BoxDims {
 public:
-  Length left, right, up, down;
+  float left, right, top, bottom;
 
-  BoxDims() :
-      left(LengthWrap()),
-      right(LengthWrap()),
-      up(LengthWrap()),
-      down(LengthWrap()) {}
+  BoxDims() : left(0), right(0), top(0), bottom(0) {}
 
-  BoxDims(
-      const Length& left,
-      const Length& right,
-      const Length& up,
-      const Length& down) :
-      left(left), right(right), up(up), down(down) {}
+  BoxDims(float value) : left(value), right(value), top(value), bottom(value) {}
+
+  BoxDims(float horizontal, float vertical) :
+      left(horizontal), right(horizontal), top(vertical), bottom(vertical) {}
+
+  // Use same ordering as CSS
+  BoxDims(float left, float top, float right, float bottom) :
+      left(left), right(right), top(top), bottom(bottom) {}
+
+  Vecf size() const {
+    return Vecf(left + right, top + bottom);
+  }
+  Vecf offset() const {
+    return Vecf(left, top);
+  }
+
+  BoxDims& operator+=(const BoxDims& rhs) {
+    left += rhs.left;
+    right += rhs.right;
+    top += rhs.top;
+    bottom += rhs.bottom;
+    return *this;
+  }
+  BoxDims& operator-=(const BoxDims& rhs) {
+    left -= rhs.left;
+    right -= rhs.right;
+    top -= rhs.top;
+    bottom -= rhs.bottom;
+    return *this;
+  }
+  BoxDims& operator*=(float rhs) {
+    left *= rhs;
+    right *= rhs;
+    top *= rhs;
+    bottom *= rhs;
+    return *this;
+  }
+  BoxDims& operator/=(float rhs) {
+    left /= rhs;
+    right /= rhs;
+    top /= rhs;
+    bottom /= rhs;
+    return *this;
+  }
 };
+
+inline BoxDims operator+(BoxDims lhs, const BoxDims& rhs) {
+  lhs += rhs;
+  return lhs;
+}
+
+inline BoxDims operator-(BoxDims lhs, const BoxDims& rhs) {
+  lhs -= rhs;
+  return lhs;
+}
+
+inline BoxDims operator*(BoxDims lhs, float rhs) {
+  lhs *= rhs;
+  return lhs;
+}
+
+inline BoxDims operator/(BoxDims lhs, float rhs) {
+  lhs /= rhs;
+  return lhs;
+}
 
 struct LayoutSize {
   Vecf fixed;

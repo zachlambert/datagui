@@ -89,8 +89,8 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
     }
   }
 
-  node->fixed_size += Vecf::Constant(
-      2 * (element.style.border_width + element.style.outer_padding));
+  node->fixed_size +=
+      (element.style.outer_padding + element.style.border_width).size();
 }
 
 void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
@@ -98,7 +98,7 @@ void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
   const auto& style = element.style;
 
   Vecf available = node->size - node->fixed_size;
-  Vecf offset = Vecf::Constant(style.outer_padding + style.border_width);
+  Vecf offset = (style.outer_padding + style.border_width).offset();
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
@@ -126,13 +126,13 @@ void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
             (child->dynamic_size.x / children_dynamic_size.x) * available.x;
       } else {
         child->size.x =
-            node->size.x - 2 * (style.outer_padding + style.border_width);
+            node->size.x - (style.outer_padding + style.border_width).size().x;
       }
     }
     if (child->dynamic_size.y > 0) {
       if (style.direction == Direction::Horizontal) {
         child->size.y =
-            node->size.y - 2 * (style.outer_padding + style.border_width);
+            node->size.y - (style.outer_padding + style.border_width).size().y;
       } else {
         child->size.y +=
             (child->dynamic_size.y / children_dynamic_size.y) * available.y;
@@ -158,8 +158,7 @@ void LinearLayoutSystem::render(Tree::ConstPtr node) const {
       Boxf(node->position, node->position + node->size),
       style.bg_color,
       style.border_width,
-      style.border_color,
-      style.border_width);
+      style.border_color);
 }
 
 } // namespace datagui

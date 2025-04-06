@@ -11,9 +11,9 @@ struct LinearLayoutStyle {
   Direction direction = Direction::Vertical;
   Length length = literals::_wrap;
   Length width = literals::_wrap;
-  float outer_padding = 0;
+  BoxDims outer_padding = BoxDims();
   float inner_padding = 0;
-  float border_width = 0;
+  BoxDims border_width = BoxDims();
   Color border_color = Color::Black();
   Color bg_color = Color::Clear();
 };

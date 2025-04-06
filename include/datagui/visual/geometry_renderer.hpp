@@ -2,6 +2,7 @@
 
 #include "datagui/color.hpp"
 #include "datagui/geometry.hpp"
+#include "datagui/layout.hpp"
 #include <vector>
 
 namespace datagui {
@@ -14,7 +15,7 @@ public:
   void queue_box(
       const Boxf& box,
       const Color& color,
-      float border_width,
+      BoxDims border_width,
       Color border_color,
       float radius = 0.f);
 
@@ -39,9 +40,7 @@ private:
     Vecf offset;
     Vecf size;
     float radius;
-    float border_width;
-    Color bg_color;
-    Color border_color;
+    Color color;
   };
   std::vector<Element> elements;
 };

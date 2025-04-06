@@ -14,9 +14,7 @@ layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 offset;
 layout(location = 2) in vec2 size;
 layout(location = 3) in float radius;
-layout(location = 4) in float border_width;
-layout(location = 5) in vec4 bg_color;
-layout(location = 6) in vec4 border_color;
+layout(location = 4) in vec4 color;
 
 uniform vec2 viewport_size;
 
@@ -24,9 +22,7 @@ out vec2 fs_pos;
 out vec2 fs_box_lower;
 out vec2 fs_box_upper;
 out float fs_radius;
-out float fs_border_width;
-out vec4 fs_bg_color;
-out vec4 fs_border_color;
+out vec4 fs_color;
 
 void main(){
   fs_pos = offset + vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
@@ -39,9 +35,7 @@ void main(){
   fs_box_lower = offset;
   fs_box_upper = offset + size;
   fs_radius = radius;
-  fs_border_width = border_width;
-  fs_bg_color = bg_color;
-  fs_border_color = border_color;
+  fs_color = color;
 }
 )";
 
@@ -52,9 +46,7 @@ in vec2 fs_pos;
 in vec2 fs_box_lower;
 in vec2 fs_box_upper;
 in float fs_radius;
-in float fs_border_width;
-in vec4 fs_bg_color;
-in vec4 fs_border_color;
+in vec4 fs_color;
 
 uniform vec2 viewport_size;
 
@@ -74,10 +66,8 @@ void main(){
 
     if (dist < 0) {
         color = vec4(0, 0, 0, 0);
-    } else if (dist >= fs_border_width) {
-        color = fs_bg_color;
     } else {
-        color = fs_border_color;
+        color = fs_color;
     }
 }
 )";
@@ -95,7 +85,8 @@ GeometryRenderer::GeometryRenderer() {}
 void GeometryRenderer::init() {
   gl_data.program_id = create_program(rect_vs, rect_fs);
 
-  gl_data.uniform_viewport_size = glGetUniformLocation(gl_data.program_id, "viewport_size");
+  gl_data.uniform_viewport_size =
+      glGetUniformLocation(gl_data.program_id, "viewport_size");
 
   // Generate ids
   glGenVertexArrays(1, &gl_data.VAO);
@@ -159,33 +150,11 @@ void GeometryRenderer::init() {
 
   glVertexAttribPointer(
       index,
-      1,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)offsetof(Element, border_width));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
       4,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)offsetof(Element, bg_color));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      4,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)offsetof(Element, border_color));
+      (void*)offsetof(Element, color));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -196,22 +165,34 @@ void GeometryRenderer::init() {
 void GeometryRenderer::queue_box(
     const Boxf& box,
     const Color& color,
-    float border_width,
+    BoxDims border_width,
     Color border_color,
     float radius) {
+
+  if (border_width.size() != Vecf::Zero()) {
+    Element element;
+    element.offset = box.lower;
+    element.size = box.size();
+    element.radius = radius;
+    element.color = border_color;
+    elements.push_back(element);
+  }
+
   Element element;
-  element.offset = box.lower;
-  element.size = box.size();
+  element.offset = box.lower + border_width.offset();
+  element.size = box.size() - border_width.size();
   element.radius = radius;
-  element.bg_color = color;
-  element.border_width = border_width;
-  element.border_color = border_color;
+  element.color = color;
   elements.push_back(element);
 }
 
 void GeometryRenderer::render(const Vecf& viewport_size) {
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
-  glBufferData(GL_ARRAY_BUFFER, elements.size() * sizeof(Element), elements.data(), GL_STATIC_DRAW);
+  glBufferData(
+      GL_ARRAY_BUFFER,
+      elements.size() * sizeof(Element),
+      elements.data(),
+      GL_STATIC_DRAW);
 
   glUseProgram(gl_data.program_id);
   glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);

@@ -7,7 +7,7 @@ int main() {
   datagui::Gui gui;
 
   auto style_root = [](datagui::LinearLayoutStyle& style) {
-    style.outer_padding = 10;
+    style.outer_padding = {40, 10};
     style.inner_padding = 10;
   };
 
@@ -22,7 +22,7 @@ int main() {
     style.direction = datagui::Direction::Horizontal;
     style.length = 1.0_dynamic;
     style.width = _wrap;
-    style.outer_padding = 20;
+    style.outer_padding = {10, 50, 10, 20};
     style.bg_color = datagui::Color::Hsl(260, 0.4, 0.9);
   };
 
