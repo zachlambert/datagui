@@ -7,10 +7,8 @@
 
 namespace datagui {
 
-enum class LinearLayoutDirection { Horizontal, Vertical };
-
 struct LinearLayoutStyle {
-  LinearLayoutDirection direction = LinearLayoutDirection::Vertical;
+  Direction direction = Direction::Vertical;
   Length length = literals::_wrap;
   Length width = literals::_wrap;
   float outer_padding = 0;

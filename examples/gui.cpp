@@ -19,10 +19,11 @@ int main() {
   auto style_text = [](datagui::TextStyle& style) { style.font_size = 30; };
 
   auto style_horiz_expand = [](datagui::LinearLayoutStyle& style) {
-    style.direction = datagui::LinearLayoutDirection::Horizontal;
+    style.direction = datagui::Direction::Horizontal;
     style.length = 1.0_dynamic;
     style.width = _wrap;
     style.outer_padding = 20;
+    style.bg_color = datagui::Color::Hsl(260, 0.4, 0.9);
   };
 
   auto style_text_input_expand = [](datagui::TextInputStyle& style) {

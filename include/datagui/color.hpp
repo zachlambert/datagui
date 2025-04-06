@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 
 namespace datagui {
 
@@ -14,13 +15,61 @@ public:
   Color() {}
   Color(float r, float g, float b, float a = 1) : r(r), g(g), b(b), a(a) {}
 
-  static Color Red(float value = 1) { return Color(value, 0, 0, 1); }
-  static Color Green(float value = 1) { return Color(0, value, 0, 1); }
-  static Color Blue(float value = 1) { return Color(0, 0, value, 1); }
-  static Color Black() { return Color(0, 0, 0, 1); }
-  static Color White() { return Color(1, 1, 1, 1); }
-  static Color Gray(float value) { return Color(value, value, value, 1); }
-  static Color Clear() { return Color(0, 0, 0, 0); }
+  static Color Red(float value = 1) {
+    return Color(value, 0, 0, 1);
+  }
+  static Color Green(float value = 1) {
+    return Color(0, value, 0, 1);
+  }
+  static Color Blue(float value = 1) {
+    return Color(0, 0, value, 1);
+  }
+  static Color Black() {
+    return Color(0, 0, 0, 1);
+  }
+  static Color White() {
+    return Color(1, 1, 1, 1);
+  }
+  static Color Gray(float value) {
+    return Color(value, value, value, 1);
+  }
+  static Color Clear() {
+    return Color(0, 0, 0, 0);
+  }
+
+  static Color Hsl(
+      float hue,
+      float saturation,
+      float lightness,
+      float alpha = 1) {
+    // https://www.rapidtables.com/convert/color/hsl-to-rgb.html
+    float c = (1 - std::abs(2 * lightness - 1)) * saturation;
+    float x = c * (1 - std::abs(int(hue / 60) % 2 - 1));
+    float m = lightness - c / 2;
+
+    std::array<float, 3> rgb;
+    if (hue < 60) {
+      rgb = {c, x, 0};
+    } else if (hue < 120) {
+      rgb = {x, c, 0};
+    } else if (hue < 180) {
+      rgb = {0, c, x};
+    } else if (hue < 240) {
+      rgb = {0, x, c};
+    } else if (hue < 300) {
+      rgb = {x, 0, c};
+    } else {
+      rgb = {c, 0, x};
+    }
+
+    Color color;
+    color.r = rgb[0] + m;
+    color.g = rgb[1] + m;
+    color.b = rgb[2] + m;
+    color.a = alpha;
+
+    return color;
+  }
 
   bool equals(const Color& other, float max_error = 1e-6) const {
     float error = 1;

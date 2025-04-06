@@ -9,16 +9,16 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
   node->fixed_size = Vecf::Zero();
   node->dynamic_size = Vecf::Zero();
 
-  float& fixed_a = style.direction == LinearLayoutDirection::Horizontal
+  float& fixed_a = style.direction == Direction::Horizontal
                        ? node->fixed_size.x
                        : node->fixed_size.y;
-  float& fixed_b = style.direction == LinearLayoutDirection::Horizontal
+  float& fixed_b = style.direction == Direction::Horizontal
                        ? node->fixed_size.y
                        : node->fixed_size.x;
-  float& dynamic_a = style.direction == LinearLayoutDirection::Horizontal
+  float& dynamic_a = style.direction == Direction::Horizontal
                          ? node->dynamic_size.x
                          : node->dynamic_size.y;
-  float& dynamic_b = style.direction == LinearLayoutDirection::Horizontal
+  float& dynamic_b = style.direction == Direction::Horizontal
                          ? node->dynamic_size.y
                          : node->dynamic_size.x;
 
@@ -36,17 +36,15 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
         continue;
       }
 
-      float child_fixed_a = style.direction == LinearLayoutDirection::Horizontal
+      float child_fixed_a = style.direction == Direction::Horizontal
                                 ? child->fixed_size.x
                                 : child->fixed_size.y;
-      float child_dynamic_a =
-          style.direction == LinearLayoutDirection::Horizontal
-              ? child->dynamic_size.x
-              : child->dynamic_size.y;
-      float child_dynamic_b =
-          style.direction == LinearLayoutDirection::Horizontal
-              ? child->dynamic_size.y
-              : child->dynamic_size.x;
+      float child_dynamic_a = style.direction == Direction::Horizontal
+                                  ? child->dynamic_size.x
+                                  : child->dynamic_size.y;
+      float child_dynamic_b = style.direction == Direction::Horizontal
+                                  ? child->dynamic_size.y
+                                  : child->dynamic_size.x;
 
       fixed_a += child_fixed_a;
       dynamic_a += child_dynamic_a;
@@ -73,14 +71,12 @@ void LinearLayoutSystem::set_layout_input(Tree::Ptr node) const {
         continue;
       }
 
-      float child_fixed_b =
-          element.style.direction == LinearLayoutDirection::Horizontal
-              ? child->fixed_size.y
-              : child->fixed_size.x;
-      float child_dynamic_b =
-          element.style.direction == LinearLayoutDirection::Horizontal
-              ? child->dynamic_size.y
-              : child->dynamic_size.x;
+      float child_fixed_b = element.style.direction == Direction::Horizontal
+                                ? child->fixed_size.y
+                                : child->fixed_size.x;
+      float child_dynamic_b = element.style.direction == Direction::Horizontal
+                                  ? child->dynamic_size.y
+                                  : child->dynamic_size.x;
 
       fixed_b = std::max(fixed_b, child_fixed_b);
       dynamic_b += std::max(dynamic_b, child_dynamic_b);
@@ -125,7 +121,7 @@ void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
     child->size = child->fixed_size;
 
     if (child->dynamic_size.x > 0) {
-      if (style.direction == LinearLayoutDirection::Horizontal) {
+      if (style.direction == Direction::Horizontal) {
         child->size.x +=
             (child->dynamic_size.x / children_dynamic_size.x) * available.x;
       } else {
@@ -134,7 +130,7 @@ void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
       }
     }
     if (child->dynamic_size.y > 0) {
-      if (style.direction == LinearLayoutDirection::Horizontal) {
+      if (style.direction == Direction::Horizontal) {
         child->size.y =
             node->size.y - 2 * (style.outer_padding + style.border_width);
       } else {
@@ -145,7 +141,7 @@ void LinearLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
 
     child->position = node->position + offset;
 
-    if (style.direction == LinearLayoutDirection::Horizontal) {
+    if (style.direction == Direction::Horizontal) {
       offset.x += child->size.x + style.inner_padding;
     } else {
       offset.y += child->size.y + style.inner_padding;

@@ -5,6 +5,8 @@
 
 namespace datagui {
 
+enum class Direction { Horizontal, Vertical };
+
 struct LengthFixed {
   float value = 0;
   LengthFixed() = default;
