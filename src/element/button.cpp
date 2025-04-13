@@ -50,7 +50,7 @@ void ButtonSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
   case MouseAction::Release:
     element.down = false;
     element.released = true;
-    node.needs_visit();
+    node.trigger();
     break;
   default:
     break;
@@ -69,7 +69,7 @@ void ButtonSystem::key_event(Tree::Ptr node, const KeyEvent& event) {
   case KeyAction::Release:
     element.down = false;
     element.released = true;
-    node.needs_visit();
+    node.trigger();
     break;
   default:
     break;

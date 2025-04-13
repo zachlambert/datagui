@@ -23,6 +23,8 @@ struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
 
 struct TextInputElement {
   using Style = TextInputStyle;
+  std::string text;
+  bool changed = false;
   Style style;
 };
 

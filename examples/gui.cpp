@@ -35,7 +35,7 @@ int main() {
     style.font_size = 40;
   };
 
-  auto timer = gui.data<int>(0);
+  auto timer = gui.variable<int>(0);
   using clock_t = std::chrono::high_resolution_clock;
   auto next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
 
@@ -44,14 +44,11 @@ int main() {
     if (gui.vertical_layout(style_root)) {
       gui.text_box("Welcome Screen!", style_h1);
 
-      auto name = gui.data<std::string>("");
+      auto name = gui.variable<std::string>("");
 
       if (gui.horizontal_layout(style_horiz_expand)) {
         gui.text_box("Name: ", style_text);
-        auto data = gui.text_input(style_text_input);
-        if (data.modified()) {
-          name.mut() = *data;
-        }
+        gui.text_input(name, style_text_input);
         gui.layout_end();
       }
 

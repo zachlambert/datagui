@@ -4,12 +4,11 @@ namespace datagui {
 
 void TextInputSystem::set_layout_input(Tree::Ptr node) const {
   const auto& element = elements[node->element_index];
-  const std::string& text = *node.data<std::string>();
 
   node->fixed_size =
       (element.style.border_width + element.style.padding).size();
 
-  Vecf text_size = font_manager.text_size(text, element.style);
+  Vecf text_size = font_manager.text_size(element.text, element.style);
   node->fixed_size.y += text_size.y;
 
   if (auto width = std::get_if<LengthFixed>(&element.style.text_width)) {
@@ -24,9 +23,7 @@ void TextInputSystem::set_layout_input(Tree::Ptr node) const {
 
 void TextInputSystem::render(Tree::ConstPtr node) const {
   const auto& element = elements[node->element_index];
-
-  const std::string& text =
-      node == active_node ? active_text : *node.data<std::string>();
+  const std::string& text = node == active_node ? active_text : element.text;
 
   geometry_renderer.queue_box(
       node->box(),
@@ -57,7 +54,6 @@ void TextInputSystem::render(Tree::ConstPtr node) const {
 
 void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
   const auto& element = elements[node->element_index];
-  const std::string& text = *node.data<std::string>();
 
   Vecf text_origin =
       node->position +
@@ -68,7 +64,7 @@ void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
 
   if (event.action == MouseAction::Press && active_node != node) {
     active_node = node;
-    active_text = text;
+    active_text = element.text;
   }
 
   std::size_t cursor_pos = find_cursor(
@@ -88,7 +84,9 @@ void TextInputSystem::key_event(Tree::Ptr node, const KeyEvent& event) {
   auto& element = elements[node->element_index];
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
-    node.data<std::string>().mut() = active_text;
+    element.text = active_text;
+    element.changed = true;
+    node.trigger();
     return;
   }
   selection_key_event(active_text, active_selection, true, event);
@@ -116,9 +114,10 @@ void TextInputSystem::focus_leave(
   }
 
   auto& element = elements[node->element_index];
-  auto data = node.data<std::string>();
-  if (*data != active_text) {
-    data.mut() = active_text;
+  if (element.text != active_text) {
+    element.text = active_text;
+    element.changed = true;
+    node.trigger();
   }
 }
 

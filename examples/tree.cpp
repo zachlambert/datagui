@@ -7,11 +7,12 @@ int main() {
   Tree tree([](Tree::ConstPtr) {});
 
   while (true) {
+    auto name = tree.variable<std::string>();
+
     tree.begin();
     tree.container_next([](State&) {});
 
     if (tree.container_down()) {
-      auto name = tree.data_parent<std::string>();
       tree.container_next([](State&) {});
       tree.container_next([](State&) {});
       if (tree.container_down()) {
@@ -30,7 +31,7 @@ int main() {
       std::cout << "> ";
       std::getline(std::cin, line);
       if (!line.empty()) {
-        tree.root().data<std::string>().mut() = line;
+        name.mut() = line;
       }
     }
   }

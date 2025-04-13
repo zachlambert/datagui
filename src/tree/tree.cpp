@@ -19,10 +19,10 @@ void Tree::begin() {
   current_ = -1;
   parent_variable_current_ = -1;
 
-  for (int node : queue_needs_visit) {
-    set_needs_visit(node, true);
+  for (int node : queue_triggered) {
+    set_triggered(node);
   }
-  queue_needs_visit.clear();
+  queue_triggered.clear();
 }
 
 void Tree::end() {
@@ -30,7 +30,7 @@ void Tree::end() {
     throw WindowError(
         "Didn't call layout_... and layout_end the same number of times");
   }
-  if (!parent_data_current_stack_.empty()) {
+  if (!parent_variable_current_stack_.empty()) {
     // If this isn't true, should also fail the above condition
     assert(false);
   }
@@ -47,7 +47,7 @@ void Tree::end() {
     stack.pop();
 
     nodes[node].is_new = false;
-    nodes[node].needs_visit = false;
+    nodes[node].triggered = false;
 
     int child = nodes[node].first_child;
     while (child != -1) {
@@ -57,7 +57,7 @@ void Tree::end() {
   }
 
   parent_ = external_;
-  parent_data_current_ = -1;
+  parent_variable_current_ = -1;
 }
 
 void Tree::container_next(const init_state_t& init_state) {
@@ -115,8 +115,8 @@ void Tree::up() {
   current_ = parent_;
   parent_ = nodes[current_].parent;
 
-  parent_data_current_ = parent_data_current_stack_.top();
-  parent_data_current_stack_.pop();
+  parent_variable_current_ = parent_variable_current_stack_.top();
+  parent_variable_current_stack_.pop();
 }
 
 bool Tree::container_down() {
@@ -125,13 +125,13 @@ bool Tree::container_down() {
   } else if (nodes[current_].type != NodeType::Container) {
     throw WindowError("Node type changed, previously was container");
   }
-  if (!nodes[current_].needs_visit) {
+  if (!nodes[current_].triggered) {
     return false;
   }
   parent_ = current_;
   current_ = -1;
-  parent_data_current_stack_.push(parent_data_current_);
-  parent_data_current_ = -1;
+  parent_variable_current_stack_.push(parent_variable_current_);
+  parent_variable_current_ = -1;
   return true;
 }
 
@@ -152,13 +152,13 @@ bool Tree::optional_down(
     return false;
   }
   if (!nodes[current_].open && open) {
-    set_needs_visit(current_);
+    set_triggered(current_);
   }
 
   nodes[current_].open = open;
   nodes[current_].visible = nodes[current_].open;
 
-  if (!nodes[current_].needs_visit) {
+  if (!nodes[current_].triggered) {
     return false;
   }
   parent_ = current_;
@@ -168,10 +168,10 @@ bool Tree::optional_down(
     init_state(nodes[nodes[parent_].first_child].state);
   }
   current_ = nodes[parent_].first_child;
-  nodes[current_].needs_visit = nodes[parent_].needs_visit;
+  nodes[current_].triggered = nodes[parent_].triggered;
 
-  parent_data_current_stack_.push(parent_data_current_);
-  parent_data_current_ = -1;
+  parent_variable_current_stack_.push(parent_variable_current_);
+  parent_variable_current_ = -1;
 
   return true;
 }
@@ -192,10 +192,10 @@ bool Tree::variant_down(
   bool switched = false;
   if (nodes[current_].open_label != label) {
     nodes[current_].open_label = label;
-    set_needs_visit(current_);
+    set_triggered(current_);
     switched = true;
   }
-  if (!nodes[current_].needs_visit) {
+  if (!nodes[current_].triggered) {
     return false;
   }
 
@@ -209,11 +209,11 @@ bool Tree::variant_down(
   }
 
   if (iter != -1) {
-    if (switched || nodes[iter].needs_visit) {
+    if (switched || nodes[iter].triggered) {
       parent_ = current_;
       current_ = iter;
-      parent_data_current_stack_.push(parent_data_current_);
-      parent_data_current_ = -1;
+      parent_variable_current_stack_.push(parent_variable_current_);
+      parent_variable_current_ = -1;
       return true;
     }
     return false;
@@ -222,8 +222,8 @@ bool Tree::variant_down(
   iter = create_node(current_, nodes[current_].last_child);
   init_state(nodes[iter].state);
 
-  parent_data_current_stack_.push(parent_data_current_);
-  parent_data_current_ = -1;
+  parent_variable_current_stack_.push(parent_variable_current_);
+  parent_variable_current_ = -1;
 
   return true;
 }
@@ -306,16 +306,15 @@ void Tree::remove_node(int node) {
   }
 }
 
-void Tree::set_needs_visit(int node, bool visit_children) {
+void Tree::set_triggered(int node) {
+  // Trigger the node and all ancestors
   int iter = node;
   while (iter != -1) {
-    nodes[iter].needs_visit = true;
+    nodes[iter].triggered = true;
     iter = nodes[iter].parent;
   }
 
-  if (!visit_children) {
-    return;
-  }
+  // Trigger descendants
   std::stack<int> stack;
   stack.push(node);
   while (!stack.empty()) {
@@ -323,7 +322,7 @@ void Tree::set_needs_visit(int node, bool visit_children) {
     stack.pop();
     int child = nodes[node].first_child;
     while (child != -1) {
-      nodes[child].needs_visit = true;
+      nodes[child].triggered = true;
       if (nodes[child].first_child != -1) {
         stack.push(child);
       }
@@ -385,7 +384,7 @@ void Tree::variable_mutate(int variable_node) {
   variable_nodes[variable_node].modified = true;
   int dep = variable_nodes[variable_node].first_dep;
   while (dep != -1) {
-    queue_needs_visit.push_back(dep_nodes[dep].node);
+    queue_triggered.push_back(dep_nodes[dep].node);
     dep = dep_nodes[dep].next;
   }
 }
@@ -400,7 +399,7 @@ void Tree::remove_variable_node(int variable_node) {
     variable_nodes[variable_nodes[variable_node].prev].next =
         variable_nodes[variable_node].next;
   } else {
-    nodes[variable_nodes[variable_node].node].first_data =
+    nodes[variable_nodes[variable_node].node].first_variable =
         variable_nodes[variable_node].next;
   }
 

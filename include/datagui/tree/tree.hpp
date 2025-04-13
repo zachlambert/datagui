@@ -26,7 +26,7 @@ struct Node {
   int last_child = -1;
 
   bool is_new = true;
-  bool needs_visit = true;
+  bool triggered = true;
   bool visible = true;
 
   int first_variable = -1;
@@ -167,8 +167,8 @@ public:
       return tree->nodes[index].visible;
     }
 
-    void needs_visit() const {
-      tree->queue_needs_visit.push_back(index);
+    void trigger() const {
+      tree->queue_triggered.push_back(index);
     }
 
     template <
@@ -251,11 +251,25 @@ public:
     return Variable<T>(this, parent_variable_current_);
   }
 
+  Ptr root() {
+    return Ptr(this, root_);
+  }
+  ConstPtr root() const {
+    return ConstPtr(this, root_);
+  }
+
+  Ptr current() {
+    return Ptr(this, current_);
+  }
+  ConstPtr current() const {
+    return ConstPtr(this, current_);
+  }
+
 private:
   int create_node(int parent, int prev);
   void remove_node(int node);
 
-  void set_needs_visit(int node, bool visit_children = false);
+  void set_triggered(int node);
 
   int create_variable_node(int node);
   void variable_mutate(int data_node);
@@ -277,8 +291,8 @@ private:
   int parent_ = -1;
   int current_ = -1;
   int parent_variable_current_ = -1;
-  std::stack<int> parent_data_current_stack_;
-  std::vector<int> queue_needs_visit;
+  std::stack<int> parent_variable_current_stack_;
+  std::vector<int> queue_triggered;
 };
 
 } // namespace datagui

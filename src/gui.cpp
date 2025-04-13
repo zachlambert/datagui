@@ -71,7 +71,7 @@ void Gui::text_box(
   text_box_system[node->element_index].text = text;
 }
 
-Tree::ConstData<std::string> Gui::text_input(
+const std::string* Gui::text_input(
     const std::function<void(TextInputStyle&)>& set_style) {
   tree.container_next([&](State& state) {
     state.element_type = ElementType::TextInput;
@@ -82,7 +82,20 @@ Tree::ConstData<std::string> Gui::text_input(
   });
 
   auto node = tree.current();
-  return tree.data_current<std::string>();
+  auto& element = text_input_system[node->element_index];
+  if (element.changed) {
+    element.changed = false;
+    return &element.text;
+  }
+  return nullptr;
+}
+
+void Gui::text_input(
+    Tree::Variable<std::string>& variable,
+    const std::function<void(TextInputStyle&)>& set_style) {
+  if (auto data = text_input(set_style)) {
+    variable.mut() = *data;
+  }
 }
 
 bool Gui::button(
