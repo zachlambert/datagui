@@ -21,18 +21,20 @@ int main() {
       }
       if (gui.vertical_layout()) {
         items.depend_immutable();
-        auto to_remove = items->end();
-        for (auto iter = items->begin(); iter != items->end(); iter++) {
+        std::size_t to_remove = items->size();
+        for (std::size_t i = 0; i < items->size(); i++) {
           if (gui.horizontal_layout()) {
-            gui.text_box(*iter);
+            if (auto value = gui.text_input((*items)[i])) {
+              items.mut()[i] = *value;
+            }
             if (gui.button("Remove")) {
-              to_remove = iter;
+              to_remove = i;
             }
             gui.layout_end();
           }
         }
-        if (to_remove != items->end()) {
-          items.mut().erase(to_remove);
+        if (to_remove != items->size()) {
+          items.mut().erase(items->begin() + to_remove);
         }
         gui.layout_end();
       }

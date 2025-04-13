@@ -40,6 +40,7 @@ public:
       const std::function<void(TextBoxStyle&)>& set_style = nullptr);
 
   const std::string* text_input(
+      const std::string& initial_value = "",
       const std::function<void(TextInputStyle&)>& set_style = nullptr);
 
   void text_input(
