@@ -66,6 +66,11 @@ void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
   const auto& font =
       font_manager.font_structure(element.style.font, element.style.font_size);
 
+  if (event.action == MouseAction::Press && active_node != node) {
+    active_node = node;
+    active_text = text;
+  }
+
   std::size_t cursor_pos = find_cursor(
       font,
       active_text,
@@ -73,10 +78,6 @@ void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
       event.position - text_origin);
 
   if (event.action == MouseAction::Press) {
-    if (active_node != node) {
-      active_node = node;
-      active_text = text;
-    }
     active_selection.reset(cursor_pos);
   } else if (event.action == MouseAction::Hold) {
     active_selection.end = cursor_pos;
@@ -98,8 +99,10 @@ void TextInputSystem::text_event(Tree::Ptr node, const TextEvent& event) {
 }
 
 void TextInputSystem::focus_enter(Tree::Ptr node) {
-  active_node = node;
-  active_selection.reset(0);
+  if (active_node != node) {
+    active_node = node;
+    active_selection.reset(0);
+  }
 }
 
 void TextInputSystem::focus_leave(

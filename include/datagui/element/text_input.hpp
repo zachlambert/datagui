@@ -17,6 +17,7 @@ struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
     border_color = Color::Gray(0.5);
     border_width = 2;
     padding = 5;
+    text_width = LengthDynamic(1.0);
   }
 };
 
