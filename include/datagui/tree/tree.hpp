@@ -52,6 +52,8 @@ struct VariableNode {
 
 struct DepNode {
   int node;
+  // If true, the node is re-created from scratch on variable change
+  bool immutable;
 
   // Linked list of dependencies for a given variable node
   int variable_node;
@@ -62,8 +64,9 @@ struct DepNode {
   int node_prev;
   int node_next;
 
-  DepNode(int node, int variable_node) :
+  DepNode(int node, int variable_node, bool immutable) :
       node(node),
+      immutable(immutable),
       variable_node(variable_node),
       prev(-1),
       next(-1),
@@ -79,11 +82,11 @@ public:
 
   public:
     const T& operator*() const {
-      tree->variable_access(variable_node);
+      tree->variable_access(variable_node, false);
       return *data_ptr;
     }
     const T* operator->() const {
-      tree->variable_access(variable_node);
+      tree->variable_access(variable_node, false);
       return data_ptr;
     }
     T& mut() const {
@@ -92,8 +95,11 @@ public:
       return *data_ptr;
     }
     bool modified() const {
-      tree->variable_access(variable_node);
+      tree->variable_access(variable_node, false);
       return tree->variable_nodes[variable_node].modified;
+    }
+    void depend_immutable() const {
+      tree->variable_access(variable_node, true);
     }
 
     template <
@@ -168,7 +174,7 @@ public:
     }
 
     void trigger() const {
-      tree->queue_triggered.push_back(index);
+      tree->queue_triggered.emplace_back(index, false);
     }
 
     template <
@@ -225,9 +231,12 @@ public:
 
   void up();
 
+  // TODO: Decide if I need these
+#if 0
   void insert_next();
   void erase_this();
   void erase_next();
+#endif
 
   template <typename T>
   Variable<T> variable(const std::function<T()>& construct = []() {
@@ -266,6 +275,12 @@ public:
   }
 
 private:
+  struct NodeTrigger {
+    const int node;
+    const bool immutable;
+    NodeTrigger(int node, bool immutable) : node(node), immutable(immutable) {}
+  };
+
   int create_node(int parent, int prev);
   void remove_node(int node);
 
@@ -273,7 +288,7 @@ private:
 
   int create_variable_node(int node);
   void variable_mutate(int data_node);
-  void variable_access(int data_node);
+  void variable_access(int data_node, bool immutable);
 
   void remove_variable_node(int data_node);
   void remove_dep_node(int dep_node);
@@ -292,7 +307,7 @@ private:
   int current_ = -1;
   int parent_variable_current_ = -1;
   std::stack<int> parent_variable_current_stack_;
-  std::vector<int> queue_triggered;
+  std::vector<NodeTrigger> queue_triggered;
 };
 
 } // namespace datagui

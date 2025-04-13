@@ -19,8 +19,18 @@ void Tree::begin() {
   current_ = -1;
   parent_variable_current_ = -1;
 
-  for (int node : queue_triggered) {
-    set_triggered(node);
+  for (auto trigger : queue_triggered) {
+    set_triggered(trigger.node);
+    if (trigger.immutable) {
+      nodes[trigger.node].is_new = true;
+      // Remove all children
+      int child = nodes[trigger.node].first_child;
+      while (child != -1) {
+        int next = nodes[child].next;
+        remove_node(child);
+        child = next;
+      }
+    }
   }
   queue_triggered.clear();
 }
@@ -108,7 +118,7 @@ void Tree::up() {
     throw WindowError("Called up without visiting any children");
   }
 
-  if (nodes[current_].next != -1) {
+  if (current_ != -1 && nodes[current_].next != -1) {
     throw WindowError("Called up without visiting all children");
   }
 
@@ -228,6 +238,7 @@ bool Tree::variant_down(
   return true;
 }
 
+#if 0
 void Tree::insert_next() {
   create_node(parent_, current_);
 }
@@ -246,6 +257,7 @@ void Tree::erase_next() {
       (current_ == -1) ? nodes[parent_].first_child : nodes[current_].next;
   remove_node(next);
 }
+#endif
 
 int Tree::create_node(int parent, int prev) {
   int node = nodes.emplace();
@@ -347,7 +359,7 @@ int Tree::create_variable_node(int node) {
   return new_node;
 }
 
-void Tree::variable_access(int variable_node) {
+void Tree::variable_access(int variable_node, bool immutable) {
   int dep_gui_node = parent_;
   if (dep_gui_node == -1) {
     return;
@@ -363,7 +375,7 @@ void Tree::variable_access(int variable_node) {
   }
 
   // Create new dependency
-  int new_dep = dep_nodes.emplace(dep_gui_node, variable_node);
+  int new_dep = dep_nodes.emplace(dep_gui_node, variable_node, immutable);
 
   // Insert at front of dependencies linked list
   dep_nodes[new_dep].next = variable_nodes[variable_node].first_dep;
@@ -384,7 +396,7 @@ void Tree::variable_mutate(int variable_node) {
   variable_nodes[variable_node].modified = true;
   int dep = variable_nodes[variable_node].first_dep;
   while (dep != -1) {
-    queue_triggered.push_back(dep_nodes[dep].node);
+    queue_triggered.emplace_back(dep_nodes[dep].node, dep_nodes[dep].immutable);
     dep = dep_nodes[dep].next;
   }
 }

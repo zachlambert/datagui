@@ -51,7 +51,7 @@ public:
       const std::function<void(ButtonStyle&)>& set_style = nullptr);
 
   template <typename T>
-  Tree::Variable<T> variable(const T& initial_value) {
+  Tree::Variable<T> variable(const T& initial_value = T()) {
     // Capture initial_value by value
     return tree.variable<T>([initial_value]() { return initial_value; });
   }
