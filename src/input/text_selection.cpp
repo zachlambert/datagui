@@ -177,13 +177,36 @@ void selection_key_event(
         }
         text.erase(pos, selection.begin - pos);
         selection.reset(pos);
-        if (!event.mod_shift) {
-          selection.begin = selection.end;
-        }
       } else {
         selection.begin--;
         text.erase(text.begin() + selection.begin);
         selection.end = selection.begin;
+      }
+    }
+    break;
+  }
+  case Key::Delete: {
+    if (event.action == KeyAction::Release || !editable) {
+      break;
+    }
+    if (selection.span() > 0) {
+      text.erase(
+          text.begin() + selection.from(),
+          text.begin() + selection.to());
+      selection.reset(selection.from());
+
+    } else if (selection.begin < text.size()) {
+      if (event.mod_ctrl) {
+        int pos = selection.begin;
+        while (pos != text.size() && !std::isalnum(text[pos])) {
+          pos++;
+        }
+        while (pos != text.size() && std::isalnum(text[pos])) {
+          pos++;
+        }
+        text.erase(selection.begin, pos - selection.begin);
+      } else {
+        text.erase(text.begin() + selection.begin);
       }
     }
     break;

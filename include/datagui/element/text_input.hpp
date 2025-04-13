@@ -55,7 +55,6 @@ private:
   TextRenderer& text_renderer;
   GeometryRenderer& geometry_renderer;
 
-  Tree::ConstPtr active_node;
   std::string active_text;
   TextSelection active_selection;
 };

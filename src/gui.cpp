@@ -359,10 +359,6 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     }
   }
 
-  if (node_focus) {
-    element_system(node_focus->element_type).mouse_event(node_focus, event);
-  }
-
   if (node_focus != prev_node_focus) {
     if (prev_node_focus) {
       element_system(prev_node_focus->element_type)
@@ -370,9 +366,13 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
       set_tree_focus(prev_node_focus, false);
     }
     if (node_focus) {
-      element_system(node_focus->element_type).focus_enter(node_focus);
+      // Only use focus_enter() for non-click focus enter (ie: tab into the
+      // element)
       set_tree_focus(node_focus, true);
     }
+  }
+  if (node_focus) {
+    element_system(node_focus->element_type).mouse_event(node_focus, event);
   }
 }
 

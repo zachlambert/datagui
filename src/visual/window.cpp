@@ -120,6 +120,9 @@ void glfw_key_callback(
   case GLFW_KEY_BACKSPACE:
     event.key = Key::Backspace;
     break;
+  case GLFW_KEY_DELETE:
+    event.key = Key::Delete;
+    break;
   default:
     if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) {
       event.key = (Key)((int)Key::A + (key - GLFW_KEY_A));

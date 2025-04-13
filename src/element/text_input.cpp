@@ -23,7 +23,7 @@ void TextInputSystem::set_layout_input(Tree::Ptr node) const {
 
 void TextInputSystem::render(Tree::ConstPtr node) const {
   const auto& element = elements[node->element_index];
-  const std::string& text = node == active_node ? active_text : element.text;
+  const std::string& text = node == node->focused ? active_text : element.text;
 
   geometry_renderer.queue_box(
       node->box(),
@@ -37,7 +37,7 @@ void TextInputSystem::render(Tree::ConstPtr node) const {
       node->position +
       (element.style.border_width + element.style.padding).offset();
 
-  if (node == active_node) {
+  if (node->focused) {
     render_selection(
         font_manager.font_structure(
             element.style.font,
@@ -62,8 +62,7 @@ void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
   const auto& font =
       font_manager.font_structure(element.style.font, element.style.font_size);
 
-  if (event.action == MouseAction::Press && active_node != node) {
-    active_node = node;
+  if (event.action == MouseAction::Press) {
     active_text = element.text;
   }
 
@@ -97,10 +96,10 @@ void TextInputSystem::text_event(Tree::Ptr node, const TextEvent& event) {
 }
 
 void TextInputSystem::focus_enter(Tree::Ptr node) {
-  if (active_node != node) {
-    active_node = node;
-    active_selection.reset(0);
-  }
+  auto& element = elements[node->element_index];
+
+  active_selection.reset(0);
+  active_text = element.text;
 }
 
 void TextInputSystem::focus_leave(
@@ -108,13 +107,8 @@ void TextInputSystem::focus_leave(
     bool success,
     Tree::ConstPtr new_node) {
 
-  active_node = Tree::ConstPtr();
-  if (!success) {
-    return;
-  }
-
   auto& element = elements[node->element_index];
-  if (element.text != active_text) {
+  if (success && element.text != active_text) {
     element.text = active_text;
     element.changed = true;
     node.trigger();

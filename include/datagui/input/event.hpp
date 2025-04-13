@@ -24,6 +24,7 @@ enum class Key {
   Escape,
   Enter,
   Backspace,
+  Delete,
   // For Ctrl-Character
   A,
   B,
