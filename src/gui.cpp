@@ -65,10 +65,22 @@ void Gui::text_box(
     if (set_style) {
       set_style(text_box_system[state.element_index].style);
     }
+    text_box_system[state.element_index].text = text;
   });
+}
 
-  auto node = tree.current();
-  text_box_system[node->element_index].text = text;
+void Gui::text_box(
+    const std::function<std::string()>& text,
+    const std::function<void(TextBoxStyle&)>& set_style) {
+
+  tree.container_next([&](State& state) {
+    state.element_type = ElementType::TextBox;
+    state.element_index = text_box_system.emplace();
+    if (set_style) {
+      set_style(text_box_system[state.element_index].style);
+    }
+    text_box_system[state.element_index].text = text();
+  });
 }
 
 const std::string* Gui::text_input(
@@ -92,11 +104,44 @@ const std::string* Gui::text_input(
   return nullptr;
 }
 
+const std::string* Gui::text_input(
+    const std::function<std::string()>& initial_value,
+    const std::function<void(TextInputStyle&)>& set_style) {
+  tree.container_next([&](State& state) {
+    state.element_type = ElementType::TextInput;
+    state.element_index = text_input_system.emplace();
+    if (set_style) {
+      set_style(text_input_system[state.element_index].style);
+    }
+    text_input_system[state.element_index].text = initial_value();
+  });
+
+  auto node = tree.current();
+  auto& element = text_input_system[node->element_index];
+  if (element.changed) {
+    element.changed = false;
+    return &element.text;
+  }
+  return nullptr;
+}
+
 void Gui::text_input(
     Tree::Variable<std::string>& variable,
     const std::function<void(TextInputStyle&)>& set_style) {
-  if (auto data = text_input(*variable, set_style)) {
-    variable.mut() = *data;
+  tree.container_next([&](State& state) {
+    state.element_type = ElementType::TextInput;
+    state.element_index = text_input_system.emplace();
+    if (set_style) {
+      set_style(text_input_system[state.element_index].style);
+    }
+    text_input_system[state.element_index].text = variable.immut();
+  });
+
+  auto node = tree.current();
+  auto& element = text_input_system[node->element_index];
+  if (element.changed) {
+    element.changed = false;
+    variable.mut() = element.text;
   }
 }
 
@@ -162,8 +207,9 @@ void Gui::render() {
 
         if (node->focused) {
           std::string debug_text;
-          debug_text += "fixed: " + std::to_string(node->fixed_size.x) + ", " +
-                        std::to_string(node->fixed_size.y);
+          debug_text += node.debug();
+          debug_text += "\nfixed: " + std::to_string(node->fixed_size.x) +
+                        ", " + std::to_string(node->fixed_size.y);
           debug_text += "\ndynamic: " + std::to_string(node->dynamic_size.x) +
                         ", " + std::to_string(node->dynamic_size.y);
           debug_text += "\nsize: " + std::to_string(node->size.x) + ", " +

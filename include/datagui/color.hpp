@@ -71,6 +71,15 @@ public:
     return color;
   }
 
+  static Color Random() {
+    Color color;
+    color.r = float(rand()) / RAND_MAX;
+    color.g = float(rand()) / RAND_MAX;
+    color.b = float(rand()) / RAND_MAX;
+    color.a = 1;
+    return color;
+  }
+
   bool equals(const Color& other, float max_error = 1e-6) const {
     float error = 1;
     error = std::max(error, std::abs(r - other.r));

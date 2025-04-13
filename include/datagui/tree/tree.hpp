@@ -32,6 +32,7 @@ struct Node {
   int first_variable = -1;
   int first_dep = -1;
 
+  int version = 0; // Debug information
   State state;
 };
 
@@ -52,8 +53,6 @@ struct VariableNode {
 
 struct DepNode {
   int node;
-  // If true, the node is re-created from scratch on variable change
-  bool immutable;
 
   // Linked list of dependencies for a given variable node
   int variable_node;
@@ -64,9 +63,8 @@ struct DepNode {
   int node_prev;
   int node_next;
 
-  DepNode(int node, int variable_node, bool immutable) :
+  DepNode(int node, int variable_node) :
       node(node),
-      immutable(immutable),
       variable_node(variable_node),
       prev(-1),
       next(-1),
@@ -82,11 +80,11 @@ public:
 
   public:
     const T& operator*() const {
-      tree->variable_access(variable_node, false);
+      tree->variable_access(variable_node);
       return *data_ptr;
     }
     const T* operator->() const {
-      tree->variable_access(variable_node, false);
+      tree->variable_access(variable_node);
       return data_ptr;
     }
     T& mut() const {
@@ -94,12 +92,13 @@ public:
       tree->variable_mutate(variable_node);
       return *data_ptr;
     }
-    bool modified() const {
-      tree->variable_access(variable_node, false);
-      return tree->variable_nodes[variable_node].modified;
+    // TEMP
+    const T& immut() const {
+      return *data_ptr;
     }
-    void depend_immutable() const {
-      tree->variable_access(variable_node, true);
+    bool modified() const {
+      tree->variable_access(variable_node);
+      return tree->variable_nodes[variable_node].modified;
     }
 
     template <
@@ -172,6 +171,9 @@ public:
     bool visible() const {
       return tree->nodes[index].visible;
     }
+    std::string debug() const {
+      return tree->node_debug(index);
+    }
 
     void trigger() const {
       tree->queue_triggered.emplace_back(index, false);
@@ -231,13 +233,6 @@ public:
 
   void up();
 
-  // TODO: Decide if I need these
-#if 0
-  void insert_next();
-  void erase_this();
-  void erase_next();
-#endif
-
   template <typename T>
   Variable<T> variable(const std::function<T()>& construct = []() {
     return T();
@@ -282,18 +277,22 @@ private:
   };
 
   int create_node(int parent, int prev);
+  void init_node(int node, const init_state_t& init_state);
+  void reset_node(int node);
   void remove_node(int node);
 
   void set_triggered(int node);
 
   int create_variable_node(int node);
   void variable_mutate(int data_node);
-  void variable_access(int data_node, bool immutable);
+  void variable_access(int data_node);
 
   void remove_variable_node(int data_node);
   void remove_dep_node(int dep_node);
   void remove_node_variable_nodes(int node);
   void remove_node_dep_nodes(int node);
+
+  std::string node_debug(int node) const;
 
   deinit_node_t deinit_node;
   VectorMap<Node> nodes;
@@ -306,6 +305,7 @@ private:
   int parent_ = -1;
   int current_ = -1;
   int parent_variable_current_ = -1;
+  int variable_access_node_ = -1;
   std::stack<int> parent_variable_current_stack_;
   std::vector<NodeTrigger> queue_triggered;
 };
