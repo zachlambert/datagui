@@ -53,6 +53,7 @@ struct VariableNode {
 
 struct DepNode {
   int node;
+  bool immutable;
 
   // Linked list of dependencies for a given variable node
   int variable_node;
@@ -63,8 +64,9 @@ struct DepNode {
   int node_prev;
   int node_next;
 
-  DepNode(int node, int variable_node) :
+  DepNode(int node, int variable_node, bool immutable) :
       node(node),
+      immutable(immutable),
       variable_node(variable_node),
       prev(-1),
       next(-1),
@@ -80,11 +82,11 @@ public:
 
   public:
     const T& operator*() const {
-      tree->variable_access(variable_node);
+      tree->variable_access(variable_node, false);
       return *data_ptr;
     }
     const T* operator->() const {
-      tree->variable_access(variable_node);
+      tree->variable_access(variable_node, false);
       return data_ptr;
     }
     T& mut() const {
@@ -92,13 +94,12 @@ public:
       tree->variable_mutate(variable_node);
       return *data_ptr;
     }
-    // TEMP
-    const T& immut() const {
-      return *data_ptr;
-    }
     bool modified() const {
-      tree->variable_access(variable_node);
+      tree->variable_access(variable_node, false);
       return tree->variable_nodes[variable_node].modified;
+    }
+    void depend_immutable() const {
+      tree->variable_access(variable_node, true);
     }
 
     template <
@@ -285,7 +286,7 @@ private:
 
   int create_variable_node(int node);
   void variable_mutate(int data_node);
-  void variable_access(int data_node);
+  void variable_access(int data_node, bool immutable);
 
   void remove_variable_node(int data_node);
   void remove_dep_node(int dep_node);

@@ -39,17 +39,21 @@ public:
       const std::string& text,
       const std::function<void(TextBoxStyle&)>& set_style = nullptr);
 
+#if 0
   void text_box(
       const std::function<std::string()>& text,
       const std::function<void(TextBoxStyle&)>& set_style = nullptr);
+#endif
 
   const std::string* text_input(
       const std::string& initial_value = "",
       const std::function<void(TextInputStyle&)>& set_style = nullptr);
 
+#if 0
   const std::string* text_input(
       const std::function<std::string()>& initial_value,
       const std::function<void(TextInputStyle&)>& set_style = nullptr);
+#endif
 
   void text_input(
       Tree::Variable<std::string>& variable,

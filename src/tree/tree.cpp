@@ -381,7 +381,7 @@ int Tree::create_variable_node(int node) {
   return new_node;
 }
 
-void Tree::variable_access(int variable_node) {
+void Tree::variable_access(int variable_node, bool immutable) {
   int dep_gui_node =
       variable_access_node_ != -1 ? variable_access_node_ : parent_;
   if (dep_gui_node == -1) {
@@ -398,7 +398,7 @@ void Tree::variable_access(int variable_node) {
   }
 
   // Create new dependency
-  int new_dep = dep_nodes.emplace(dep_gui_node, variable_node);
+  int new_dep = dep_nodes.emplace(dep_gui_node, variable_node, immutable);
 
   // Insert at front of dependencies linked list
   dep_nodes[new_dep].next = variable_nodes[variable_node].first_dep;
@@ -419,7 +419,7 @@ void Tree::variable_mutate(int variable_node) {
   variable_nodes[variable_node].modified = true;
   int dep = variable_nodes[variable_node].first_dep;
   while (dep != -1) {
-    queue_triggered.emplace_back(dep_nodes[dep].node, true);
+    queue_triggered.emplace_back(dep_nodes[dep].node, dep_nodes[dep].immutable);
     dep = dep_nodes[dep].next;
   }
 }

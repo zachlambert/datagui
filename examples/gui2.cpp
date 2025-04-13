@@ -20,11 +20,12 @@ int main() {
         gui.text_box("Item");
         gui.text_input(item);
         if (gui.button("Add")) {
-          items.mut().push_back(item.immut());
+          items.mut().push_back(*item);
         }
         gui.layout_end();
       }
       if (gui.vertical_layout(boxed_layout)) {
+        items.depend_immutable();
         std::size_t to_remove = items->size();
         for (std::size_t i = 0; i < items->size(); i++) {
           if (gui.horizontal_layout()) {
@@ -50,14 +51,13 @@ int main() {
             text_overwrite.mut() = *value;
           }
           if (gui.button("Overwrite")) {
-            text.mut() = text_overwrite.immut();
+            text.mut() = *text_overwrite;
           }
           gui.layout_end();
         }
-        if (auto value = gui.text_input([&]() { return *text; })) {
-          text.mut() = *value;
-        }
-        gui.text_box([&]() { return *text; });
+        gui.text_input(text);
+        printf("Text: %s\n", text->c_str());
+        gui.text_box(*text);
         gui.layout_end();
       }
       if (gui.vertical_layout(boxed_layout)) {

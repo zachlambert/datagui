@@ -65,10 +65,14 @@ void Gui::text_box(
     if (set_style) {
       set_style(text_box_system[state.element_index].style);
     }
-    text_box_system[state.element_index].text = text;
   });
+
+  auto node = tree.current();
+  auto& element = text_box_system[node->element_index];
+  element.text = text;
 }
 
+#if 0
 void Gui::text_box(
     const std::function<std::string()>& text,
     const std::function<void(TextBoxStyle&)>& set_style) {
@@ -82,6 +86,7 @@ void Gui::text_box(
     text_box_system[state.element_index].text = text();
   });
 }
+#endif
 
 const std::string* Gui::text_input(
     const std::string& initial_value,
@@ -104,6 +109,7 @@ const std::string* Gui::text_input(
   return nullptr;
 }
 
+#if 0
 const std::string* Gui::text_input(
     const std::function<std::string()>& initial_value,
     const std::function<void(TextInputStyle&)>& set_style) {
@@ -124,6 +130,7 @@ const std::string* Gui::text_input(
   }
   return nullptr;
 }
+#endif
 
 void Gui::text_input(
     Tree::Variable<std::string>& variable,
@@ -134,14 +141,17 @@ void Gui::text_input(
     if (set_style) {
       set_style(text_input_system[state.element_index].style);
     }
-    text_input_system[state.element_index].text = variable.immut();
+    text_input_system[state.element_index].text = *variable;
   });
 
   auto node = tree.current();
   auto& element = text_input_system[node->element_index];
+
   if (element.changed) {
     element.changed = false;
     variable.mut() = element.text;
+  } else if (variable.modified()) {
+    element.text = *variable;
   }
 }
 
