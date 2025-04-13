@@ -11,13 +11,13 @@ Tree::Tree(const deinit_node_t& deinit_node) : deinit_node(deinit_node) {
 
   parent_ = external_;
   current_ = -1;
-  parent_data_current_ = -1;
+  parent_variable_current_ = -1;
 }
 
 void Tree::begin() {
   parent_ = -1;
   current_ = -1;
-  parent_data_current_ = -1;
+  parent_variable_current_ = -1;
 
   for (int node : queue_needs_visit) {
     set_needs_visit(node, true);
@@ -292,7 +292,7 @@ void Tree::remove_node(int node) {
         nodes[node.parent].last_child = node.prev;
       }
       deinit_node(ConstPtr(this, node_index));
-      remove_node_data_nodes(node_index);
+      remove_node_variable_nodes(node_index);
       remove_node_dep_nodes(node_index);
       nodes.pop(node_index);
 
@@ -332,23 +332,23 @@ void Tree::set_needs_visit(int node, bool visit_children) {
   }
 }
 
-int Tree::create_data_node(int node) {
-  int new_node = data_nodes.emplace(node);
+int Tree::create_variable_node(int node) {
+  int new_node = variable_nodes.emplace(node);
 
-  int prev = nodes[node].first_data;
+  int prev = nodes[node].first_variable;
   if (prev == -1) {
-    nodes[node].first_data = new_node;
+    nodes[node].first_variable = new_node;
     return new_node;
   }
-  while (data_nodes[prev].next != -1) {
-    prev = data_nodes[prev].next;
+  while (variable_nodes[prev].next != -1) {
+    prev = variable_nodes[prev].next;
   }
-  data_nodes[prev].next = new_node;
-  data_nodes[new_node].prev = prev;
+  variable_nodes[prev].next = new_node;
+  variable_nodes[new_node].prev = prev;
   return new_node;
 }
 
-void Tree::data_access(int data_node) {
+void Tree::variable_access(int variable_node) {
   int dep_gui_node = parent_;
   if (dep_gui_node == -1) {
     return;
@@ -357,21 +357,21 @@ void Tree::data_access(int data_node) {
   // Check if the dependency exists already
   int dep = nodes[dep_gui_node].first_dep;
   while (dep != -1) {
-    if (dep_nodes[dep].data_node == data_node) {
-      return; // Already have a dependency to the given data_node
+    if (dep_nodes[dep].variable_node == variable_node) {
+      return; // Already have a dependency to the given variable_node
     }
     dep = dep_nodes[dep].next;
   }
 
   // Create new dependency
-  int new_dep = dep_nodes.emplace(dep_gui_node, data_node);
+  int new_dep = dep_nodes.emplace(dep_gui_node, variable_node);
 
   // Insert at front of dependencies linked list
-  dep_nodes[new_dep].next = data_nodes[data_node].first_dep;
-  if (data_nodes[data_node].first_dep != -1) {
-    dep_nodes[data_nodes[data_node].first_dep].prev = new_dep;
+  dep_nodes[new_dep].next = variable_nodes[variable_node].first_dep;
+  if (variable_nodes[variable_node].first_dep != -1) {
+    dep_nodes[variable_nodes[variable_node].first_dep].prev = new_dep;
   }
-  data_nodes[data_node].first_dep = new_dep;
+  variable_nodes[variable_node].first_dep = new_dep;
 
   // Insert at front of gui node linked list
   dep_nodes[new_dep].node_next = nodes[dep_gui_node].first_dep;
@@ -381,39 +381,42 @@ void Tree::data_access(int data_node) {
   nodes[dep_gui_node].first_dep = new_dep;
 }
 
-void Tree::data_mutate(int data_node) {
-  data_nodes[data_node].modified = true;
-  int dep = data_nodes[data_node].first_dep;
+void Tree::variable_mutate(int variable_node) {
+  variable_nodes[variable_node].modified = true;
+  int dep = variable_nodes[variable_node].first_dep;
   while (dep != -1) {
     queue_needs_visit.push_back(dep_nodes[dep].node);
     dep = dep_nodes[dep].next;
   }
 }
 
-void Tree::remove_data_node(int data_node) {
-  int dep = data_nodes[data_node].first_dep;
+void Tree::remove_variable_node(int variable_node) {
+  int dep = variable_nodes[variable_node].first_dep;
   while (dep != -1) {
     remove_dep_node(dep);
   }
 
-  if (data_nodes[data_node].prev != -1) {
-    data_nodes[data_nodes[data_node].prev].next = data_nodes[data_node].next;
+  if (variable_nodes[variable_node].prev != -1) {
+    variable_nodes[variable_nodes[variable_node].prev].next =
+        variable_nodes[variable_node].next;
   } else {
-    nodes[data_nodes[data_node].node].first_data = data_nodes[data_node].next;
+    nodes[variable_nodes[variable_node].node].first_data =
+        variable_nodes[variable_node].next;
   }
 
-  if (data_nodes[data_node].next != -1) {
-    data_nodes[data_nodes[data_node].next].prev = data_nodes[data_node].prev;
+  if (variable_nodes[variable_node].next != -1) {
+    variable_nodes[variable_nodes[variable_node].next].prev =
+        variable_nodes[variable_node].prev;
   }
 
-  data_nodes.pop(data_node);
+  variable_nodes.pop(variable_node);
 }
 
 void Tree::remove_dep_node(int dep_node) {
   if (dep_nodes[dep_node].prev != -1) {
     dep_nodes[dep_nodes[dep_node].prev].next = dep_nodes[dep_node].next;
   } else {
-    data_nodes[dep_nodes[dep_node].data_node].first_dep =
+    variable_nodes[dep_nodes[dep_node].variable_node].first_dep =
         dep_nodes[dep_node].next;
   }
   if (dep_nodes[dep_node].next != -1) {
@@ -434,12 +437,12 @@ void Tree::remove_dep_node(int dep_node) {
   dep_nodes.pop(dep_node);
 }
 
-void Tree::remove_node_data_nodes(int node) {
-  int data = nodes[node].first_data;
+void Tree::remove_node_variable_nodes(int node) {
+  int data = nodes[node].first_variable;
 
   while (data != -1) {
-    int next = data_nodes[data].next;
-    remove_data_node(data);
+    int next = variable_nodes[data].next;
+    remove_variable_node(data);
     data = next;
   }
 }

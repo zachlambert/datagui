@@ -29,13 +29,13 @@ struct Node {
   bool needs_visit = true;
   bool visible = true;
 
-  int first_data = -1;
+  int first_variable = -1;
   int first_dep = -1;
 
   State state;
 };
 
-struct DataNode {
+struct VariableNode {
   int node;
 
   UniqueAny data;
@@ -46,15 +46,15 @@ struct DataNode {
   int next;
   int first_dep;
 
-  DataNode(int node) :
+  VariableNode(int node) :
       node(node), modified(false), prev(-1), next(-1), first_dep(-1) {}
 };
 
 struct DepNode {
   int node;
 
-  // Linked list of dependencies for a given data node
-  int data_node;
+  // Linked list of dependencies for a given variable node
+  int variable_node;
   int prev;
   int next;
 
@@ -62,9 +62,9 @@ struct DepNode {
   int node_prev;
   int node_next;
 
-  DepNode(int node, int data_node) :
+  DepNode(int node, int variable_node) :
       node(node),
-      data_node(data_node),
+      variable_node(variable_node),
       prev(-1),
       next(-1),
       node_prev(-1),
@@ -74,56 +74,60 @@ struct DepNode {
 class Tree {
 public:
   template <typename T, bool IsConst>
-  class Data_ {
+  class Variable_ {
     using data_ptr_t = std::conditional_t<IsConst, const T*, T*>;
 
   public:
     const T& operator*() const {
-      tree->data_access(data_node);
-      return *ptr;
+      tree->variable_access(variable_node);
+      return *data_ptr;
     }
     const T* operator->() const {
-      tree->data_access(data_node);
-      return ptr;
+      tree->variable_access(variable_node);
+      return data_ptr;
     }
     T& mut() const {
       static_assert(!IsConst);
-      tree->data_mutate(data_node);
-      return *ptr;
+      tree->variable_mutate(variable_node);
+      return *data_ptr;
     }
     bool modified() const {
-      tree->data_access(data_node);
-      return tree->data_nodes[data_node].modified;
+      tree->variable_access(variable_node);
+      return tree->variable_nodes[variable_node].modified;
     }
 
     template <
         bool OtherConst,
         typename = std::enable_if_t<IsConst || !OtherConst>>
-    Data_(const Data_<T, OtherConst>& other) :
-        tree(other.tree), data_node(other.data_node), ptr(other.ptr) {}
+    Variable_(const Variable_<T, OtherConst>& other) :
+        tree(other.tree),
+        variable_node(other.variable_node),
+        data_ptr(other.data_ptr) {}
 
     template <
         bool OtherConst,
         typename = std::enable_if_t<IsConst || !OtherConst>>
-    Data_(Data_<T, OtherConst>&& other) :
-        tree(other.tree), data_node(other.data_node), ptr(other.ptr) {}
+    Variable_(Variable_<T, OtherConst>&& other) :
+        tree(other.tree),
+        variable_node(other.variable_node),
+        data_ptr(other.data_ptr) {}
 
   private:
-    Data_(Tree* tree, int data_node) :
+    Variable_(Tree* tree, int variable_node) :
         tree(tree),
-        data_node(data_node),
-        ptr(tree->data_nodes[data_node].data.cast<T>()) {}
+        variable_node(variable_node),
+        data_ptr(tree->variable_nodes[variable_node].data.cast<T>()) {}
 
     Tree* tree;
-    int data_node;
-    data_ptr_t ptr;
+    int variable_node;
+    data_ptr_t data_ptr;
 
     friend class Tree;
   };
   template <typename T>
-  using Data = Data_<T, false>;
+  using Variable = Variable_<T, false>;
   template <typename T>
-  using ConstData = Data_<T, true>;
+  using ConstVariable = Variable_<T, true>;
 
   template <bool IsConst>
   class Ptr_ {
@@ -165,11 +169,6 @@ public:
 
     void needs_visit() const {
       tree->queue_needs_visit.push_back(index);
-    }
-
-    template <typename T>
-    Data_<T, IsConst> data() const {
-      return const_cast<Tree*>(tree)->template data_single<T>(index);
     }
 
     template <
@@ -231,82 +230,45 @@ public:
   void erase_next();
 
   template <typename T>
-  Data<T> data_parent(const std::function<T()>& construct = []() {
+  Variable<T> variable(const std::function<T()>& construct = []() {
     return T();
   }) {
     assert(parent_ != -1);
-    int data_node;
-    if (parent_data_current_ == -1) {
-      data_node = nodes[parent_].first_data;
+    int variable_node;
+    if (parent_variable_current_ == -1) {
+      variable_node = nodes[parent_].first_variable;
     } else {
-      data_node = data_nodes[parent_data_current_].next;
+      variable_node = variable_nodes[parent_variable_current_].next;
     }
-    if (data_node == -1) {
+    if (variable_node == -1) {
       if (!nodes[parent_].is_new) {
-        throw WindowError("Changed the number of data nodes");
+        throw WindowError("Changed the number of variable nodes");
       }
-      data_node = create_data_node(parent_);
-      data_nodes[data_node].data = construct();
+      variable_node = create_variable_node(parent_);
+      variable_nodes[variable_node].data = construct();
     }
-    parent_data_current_ = data_node;
-    return Data<T>(this, parent_data_current_);
-  }
-
-  template <typename T>
-  Data<T> data_current(const std::function<T()>& construct = []() {
-    return T();
-  }) {
-    assert(current_ != -1);
-    return data_single(current_, construct);
-  }
-
-  Ptr root() {
-    return Ptr(this, root_);
-  }
-  ConstPtr root() const {
-    return ConstPtr(this, root_);
-  }
-
-  Ptr current() {
-    return Ptr(this, current_);
-  }
-  ConstPtr current() const {
-    return ConstPtr(this, current_);
+    parent_variable_current_ = variable_node;
+    return Variable<T>(this, parent_variable_current_);
   }
 
 private:
-  template <typename T>
-  Data<T> data_single(
-      int node,
-      const std::function<T()>& construct = []() { return T(); }) {
-    int data_node = nodes[node].first_data;
-    if (data_node == -1) {
-      if (!nodes[node].is_new) {
-        throw WindowError("Changed the number of data nodes");
-      }
-      data_node = create_data_node(node);
-      data_nodes[data_node].data = construct();
-    }
-    return Data<T>(this, data_node);
-  }
-
   int create_node(int parent, int prev);
   void remove_node(int node);
 
   void set_needs_visit(int node, bool visit_children = false);
 
-  int create_data_node(int node);
-  void data_mutate(int data_node);
-  void data_access(int data_node);
+  int create_variable_node(int node);
+  void variable_mutate(int data_node);
+  void variable_access(int data_node);
 
-  void remove_data_node(int data_node);
+  void remove_variable_node(int data_node);
   void remove_dep_node(int dep_node);
-  void remove_node_data_nodes(int node);
+  void remove_node_variable_nodes(int node);
   void remove_node_dep_nodes(int node);
 
   deinit_node_t deinit_node;
   VectorMap<Node> nodes;
-  VectorMap<DataNode> data_nodes;
+  VectorMap<VariableNode> variable_nodes;
   VectorMap<DepNode> dep_nodes;
 
   bool is_new = true;
@@ -314,7 +276,7 @@ private:
   int root_ = -1;
   int parent_ = -1;
   int current_ = -1;
-  int parent_data_current_ = -1;
+  int parent_variable_current_ = -1;
   std::stack<int> parent_data_current_stack_;
   std::vector<int> queue_needs_visit;
 };
