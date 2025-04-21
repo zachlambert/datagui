@@ -61,7 +61,7 @@ int main() {
       gui.text_box("Timer: " + std::to_string(*timer));
 
       if (gui.button("Reset")) {
-        timer.mut() = 0;
+        timer.set(0);
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
       }
 
@@ -70,7 +70,7 @@ int main() {
     gui.end();
 
     if (clock_t::now() > next_t) {
-      timer.mut() += 1;
+      timer.set(*timer + 1);
       next_t += clock_t::duration(std::chrono::seconds(1));
     }
   }

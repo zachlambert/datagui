@@ -66,7 +66,8 @@ struct VariableNode {
   int element;
 
   UniqueAny data;
-  bool modified = false;
+  UniqueAny data_new;
+  bool modified;
 
   // Linked list of data nodes for a given gui node
   int prev = -1;
@@ -127,7 +128,6 @@ public:
 
 private:
   int create_element(int parent, int prev, int type);
-  void rerender_element(int node, int type);
   void remove_element(int node);
 
   int create_variable(int element);
@@ -152,8 +152,9 @@ private:
 
   std::stack<int> variable_stack_;
   std::vector<int> queue_revisit_;
-  std::vector<int> queue_rerender_;
+  std::vector<int> queue_rerender_variables_;
   std::vector<int> queue_remove_;
+  std::vector<int> modified_variables_;
 
   int external_first_variable_ = -1;
 
@@ -170,15 +171,24 @@ class Variable_ {
 
 public:
   data_ref_t operator*() const {
+    auto data_ptr = tree->variables[variable].data.cast<T>();
     return *data_ptr;
   }
   data_ptr_t operator->() const {
+    auto data_ptr = tree->variables[variable].data.cast<T>();
     return data_ptr;
   }
-  T& mut() const {
+  void set(const T& value) const {
     static_assert(!IsConst);
+    assert(tree->variables[variable].data.cast<T>());
+    tree->variables[variable].data_new = UniqueAny::Make<T>(value);
     tree->variable_mutate(variable);
-    return *data_ptr;
+  }
+  void set(T&& value) const {
+    static_assert(!IsConst);
+    assert(tree->variables[variable].data.cast<T>());
+    tree->variables[variable].data_new = UniqueAny::Make<T>(std::move(value));
+    tree->variable_mutate(variable);
   }
   bool modified() const {
     return tree->variables[variable].modified;
@@ -206,7 +216,9 @@ private:
   Variable_(Tree* tree, int variable) :
       tree(tree),
       variable(variable),
-      data_ptr(tree->variables[variable].data.cast<T>()) {}
+      data_ptr(tree->variables[variable].data.cast<T>()) {
+    assert(data_ptr);
+  }
 
   Tree* tree;
   int variable;
@@ -366,13 +378,13 @@ Var<T> Tree::variable(const std::function<T()>& construct) {
         throw UsageError("Changed the number of variable nodes");
       }
       variable = create_variable(-1);
-      variables[variable].data = construct();
+      variables[variable].data = UniqueAny::Make<T>(construct());
     } else {
       if (!elements[parent_].is_new) {
         throw UsageError("Changed the number of variable nodes");
       }
       variable = create_variable(parent_);
-      variables[variable].data = construct();
+      variables[variable].data = UniqueAny::Make<T>(construct());
     }
   }
   variable_current_ = variable;

@@ -15,10 +15,20 @@ void Tree::begin() {
     set_revisit(element);
   }
   queue_revisit_.clear();
-  for (auto element : queue_rerender_) {
-    set_rerender(element);
+
+  for (auto variable : modified_variables_) {
+    variables[variable].modified = false;
   }
-  queue_rerender_.clear();
+  modified_variables_.clear();
+  for (auto variable : queue_rerender_variables_) {
+    set_rerender(variables[variable].element);
+    variables[variable].data = std::move(variables[variable].data_new);
+    assert(variables[variable].data);
+    variables[variable].modified = true;
+    modified_variables_.push_back(variable);
+  }
+  queue_rerender_variables_.clear();
+
   for (auto element : queue_remove_) {
     remove_element(element);
   }
@@ -107,9 +117,6 @@ Element Tree::next(int type, const std::string& key) {
     if (type != elements[next].type && !elements[next].rerender) {
       throw UsageError("Structure changed outside of a re-render");
     }
-    if (elements[next].rerender) {
-      rerender_element(next, type);
-    }
     current_ = next;
     return Element(this, current_);
   }
@@ -147,7 +154,7 @@ void Tree::up() {
   int remove_from =
       current_ == -1 ? elements[parent_].first_child : elements[current_].next;
 
-  if (remove_from != -1 && elements[parent_].rerender) {
+  if (remove_from != -1 && !elements[parent_].rerender) {
     throw UsageError("Structure changed outside of a re-render");
   }
   while (remove_from != -1) {
@@ -189,23 +196,6 @@ int Tree::create_element(int parent, int prev, int type) {
     elements[parent].last_child = element;
   }
   return element;
-}
-
-void Tree::rerender_element(int element, int type) {
-  auto& node = elements[element];
-
-  if (node.type != -1) {
-    assert(node.data_index != -1);
-    assert(node.type < data_containers.size());
-    data_containers[node.type]->pop(node.data_index);
-  }
-
-  node.type = type;
-  if (node.type != -1) {
-    node.data_index = data_containers.at(node.type)->emplace();
-  } else {
-    node.data_index = -1;
-  }
 }
 
 void Tree::remove_element(int element) {
@@ -293,8 +283,7 @@ void Tree::remove_variable(int variable) {
 }
 
 void Tree::variable_mutate(int variable) {
-  variables[variable].modified = true;
-  queue_rerender_.push_back(variables[variable].element);
+  queue_rerender_variables_.push_back(variable);
 }
 
 void Tree::set_revisit(int element) {

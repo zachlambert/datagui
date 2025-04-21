@@ -21,9 +21,13 @@ class UniqueAny {
 
 public:
   UniqueAny() : value(std::make_unique<ValueNull>()) {}
+  UniqueAny(UniqueAny&& other) = default;
+  UniqueAny& operator=(UniqueAny&& other) = default;
 
-  template <typename T>
-  UniqueAny(T&& value) : value(std::make_unique<Value<T>>(std::move(value))) {}
+  template <typename T, typename... Args>
+  static UniqueAny Make(Args&&... args) {
+    return UniqueAny(T(std::forward<Args>(args)...));
+  }
 
   template <typename T>
   T* cast() {
@@ -42,11 +46,17 @@ public:
   }
 
   operator bool() const {
-    return dynamic_cast<const ValueNull*>(value.get());
+    return !dynamic_cast<const ValueNull*>(value.get());
   }
 
 private:
+  template <typename T>
+  UniqueAny(T&& value) : value(std::make_unique<Value<T>>(std::move(value))) {}
+
   std::unique_ptr<ValueBase> value;
+
+  template <typename T, typename... Args>
+  friend UniqueAny make_unique_any(Args&&... args);
 };
 
 } // namespace datagui

@@ -32,7 +32,7 @@ int main() {
       std::cout << "> ";
       std::getline(std::cin, line);
       if (!line.empty()) {
-        name.mut() = line;
+        name.set(line);
       }
     }
   }

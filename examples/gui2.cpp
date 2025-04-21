@@ -20,17 +20,20 @@ int main() {
         gui.text_box("Item");
         gui.text_input(item);
         if (gui.button("Add")) {
-          items.mut().push_back(*item);
+          std::vector<std::string> new_items = *items;
+          new_items.push_back(*item);
+          items.set(new_items);
         }
         gui.layout_end();
       }
       if (gui.vertical_layout(boxed_layout)) {
-        items.depend_immutable();
         std::size_t to_remove = items->size();
         for (std::size_t i = 0; i < items->size(); i++) {
           if (gui.horizontal_layout()) {
             if (auto value = gui.text_input((*items)[i])) {
-              items.mut()[i] = *value;
+              auto new_items = *items;
+              new_items[i] = *value;
+              items.set(new_items);
             }
             if (gui.button("Remove")) {
               to_remove = i;
@@ -39,24 +42,23 @@ int main() {
           }
         }
         if (to_remove != items->size()) {
-          items.mut().erase(items->begin() + to_remove);
+          auto new_items = *items;
+          new_items.erase(new_items.begin() + to_remove);
+          items.set(new_items);
         }
         gui.layout_end();
       }
       if (gui.vertical_layout(boxed_layout)) {
         auto text = gui.variable<std::string>("Foo");
         if (gui.horizontal_layout()) {
-          auto text_overwrite = gui.variable<std::string>("");
-          if (auto value = gui.text_input()) {
-            text_overwrite.mut() = *value;
-          }
+          auto text_overwrite = gui.variable<std::string>();
+          gui.text_input(text_overwrite);
           if (gui.button("Overwrite")) {
-            text.mut() = *text_overwrite;
+            text.set(*text_overwrite);
           }
           gui.layout_end();
         }
         gui.text_input(text);
-        printf("Text: %s\n", text->c_str());
         gui.text_box(*text);
         gui.layout_end();
       }

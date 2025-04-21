@@ -32,11 +32,13 @@ void TextInputSystem::visit(
     data.text = *variable;
   }
   if (element.rerender()) {
-    set_style(data.style);
+    if (set_style) {
+      set_style(data.style);
+    }
   }
   if (data.changed) {
     data.changed = false;
-    variable.mut() = data.text;
+    variable.set(data.text);
   } else if (variable.modified()) {
     data.text = *variable;
   }
@@ -121,9 +123,11 @@ void TextInputSystem::key_event(Element element, const KeyEvent& event) {
   auto& data = element.data<TextInputData>();
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
-    data.text = active_text;
-    data.changed = true;
-    element.trigger();
+    if (data.text != active_text) {
+      data.text = active_text;
+      data.changed = true;
+      element.trigger();
+    }
     return;
   }
   selection_key_event(active_text, active_selection, true, event);
