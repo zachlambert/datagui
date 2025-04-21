@@ -17,23 +17,23 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-  src/element/button.cpp
-  src/element/horizontal_layout.cpp
-  src/element/text_box.cpp
-  src/element/text_input.cpp
-  src/element/vertical_layout.cpp
+  # src/element/button.cpp
+  # src/element/horizontal_layout.cpp
+  # src/element/text_box.cpp
+  # src/element/text_input.cpp
+  # src/element/vertical_layout.cpp
 
-  src/input/text_selection.cpp
+  # src/input/text_selection.cpp
 
   src/tree/tree.cpp
 
-  src/visual/font.cpp
-  src/visual/geometry_renderer.cpp
-  src/visual/shader.cpp
-  src/visual/text_renderer.cpp
-  src/visual/window.cpp
+  # src/visual/font.cpp
+  # src/visual/geometry_renderer.cpp
+  # src/visual/shader.cpp
+  # src/visual/text_renderer.cpp
+  # src/visual/window.cpp
 
-  src/gui.cpp
+  # src/gui.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
@@ -53,14 +53,14 @@ endif()
 add_executable(example_tree examples/tree.cpp)
 target_link_libraries(example_tree datagui)
 
-add_executable(example_window examples/window.cpp)
-target_link_libraries(example_window datagui)
+# add_executable(example_window examples/window.cpp)
+# target_link_libraries(example_window datagui)
 
-add_executable(example_gui examples/gui.cpp)
-target_link_libraries(example_gui datagui)
+# add_executable(example_gui examples/gui.cpp)
+# target_link_libraries(example_gui datagui)
 
-add_executable(example_gui2 examples/gui2.cpp)
-target_link_libraries(example_gui2 datagui)
+# add_executable(example_gui2 examples/gui2.cpp)
+# target_link_libraries(example_gui2 datagui)
 
 # Create install target
 

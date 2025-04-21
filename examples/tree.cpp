@@ -4,19 +4,20 @@
 int main() {
   using namespace datagui;
 
-  Tree tree([](Tree::ConstPtr) {});
+  Tree tree;
+  Variable<std::string> name;
 
   while (true) {
-    auto name = tree.variable<std::string>();
+    name = tree.variable<std::string>();
 
     tree.begin();
-    tree.container_next([](State&) {});
+    tree.next(ElementType::HorizontalLayout);
 
-    if (tree.container_down()) {
-      tree.container_next([](State&) {});
-      tree.container_next([](State&) {});
-      if (tree.container_down()) {
-        tree.container_next([](State&) {});
+    if (tree.down_if()) {
+      tree.next(ElementType::TextInput);
+      tree.next(ElementType::TextBox);
+      if (tree.down_if()) {
+        tree.next(ElementType::TextBox);
         if (name.modified()) {
           std::cout << "Name: " << *name << std::endl;
         }

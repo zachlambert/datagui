@@ -4,19 +4,7 @@
 
 namespace datagui {
 
-enum class ElementType {
-  Undefined,
-  HorizontalLayout,
-  VerticalLayout,
-  TextBox,
-  TextInput,
-  Button
-};
-
 struct State {
-  ElementType element_type = ElementType::Undefined;
-  int element_index = -1;
-
   // Layout input
   Vecf fixed_size;
   Vecf dynamic_size;

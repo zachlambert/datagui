@@ -3,29 +3,27 @@
 #include <assert.h>
 #include <stack>
 
+#include "datagui/tree/element_system.hpp"
+
 namespace datagui {
-
-Tree::Tree(const deinit_node_t& deinit_node) : deinit_node(deinit_node) {
-  external_ = nodes.emplace();
-  nodes[external_].type = NodeType::External;
-
-  parent_ = external_;
-  current_ = -1;
-  parent_variable_current_ = -1;
-}
 
 void Tree::begin() {
   parent_ = -1;
   current_ = -1;
-  parent_variable_current_ = -1;
+  variable_current_ = -1;
 
-  for (auto trigger : queue_triggered) {
-    set_triggered(trigger.node);
-    if (trigger.immutable) {
-      reset_node(trigger.node);
-    }
+  for (auto element : queue_revisit_) {
+    set_revisit(element);
   }
-  queue_triggered.clear();
+  queue_revisit_.clear();
+  for (auto element : queue_rerender_) {
+    set_rerender(element);
+  }
+  queue_rerender_.clear();
+  for (auto element : queue_remove_) {
+    remove_element(element);
+  }
+  queue_remove_.clear();
 }
 
 void Tree::end() {
@@ -33,7 +31,7 @@ void Tree::end() {
     throw WindowError(
         "Didn't call layout_... and layout_end the same number of times");
   }
-  if (!parent_variable_current_stack_.empty()) {
+  if (!variable_stack_.empty()) {
     // If this isn't true, should also fail the above condition
     assert(false);
   }
@@ -43,67 +41,101 @@ void Tree::end() {
     return;
   }
 
+  // Clear the rerender and revisit flags
+  // TODO: Can this be done during the visit?
+
   std::stack<int> stack;
   stack.push(root_);
   while (!stack.empty()) {
-    int node = stack.top();
+    int element = stack.top();
     stack.pop();
 
-    nodes[node].is_new = false;
-    nodes[node].triggered = false;
+    elements[element].is_new = false;
+    elements[element].revisit = false;
+    elements[element].rerender = false;
 
-    int child = nodes[node].first_child;
+    int child = elements[element].first_child;
     while (child != -1) {
       stack.push(child);
-      child = nodes[child].next;
+      child = elements[child].next;
     }
   }
 
-  parent_ = external_;
-  parent_variable_current_ = -1;
+  parent_ = -1;
+  variable_current_ = -1;
 }
 
-void Tree::container_next(const init_state_t& init_state) {
+void Tree::next(ElementType type, const std::string& key) {
   if (parent_ == -1) {
     if (current_ != -1) {
-      throw WindowError("Root node was visited twice");
+      throw WindowError("Cannot create more than one root node");
     }
     if (root_ == -1) {
-      root_ = create_node(-1, -1);
-    }
-    if (nodes[root_].is_new) {
-      init_node(root_, init_state);
+      root_ = create_element(-1, -1, type);
     }
     current_ = root_;
     return;
   }
 
-  if (nodes[parent_].type != NodeType::Container) {
-    throw WindowError("Cannot call container_next in a non-container node");
+  if (current_ != -1 && elements[current_].parent == -1) {
+    throw WindowError("Cannot call next on the root node more than once");
   }
 
-  int next;
-  if (current_ != -1) {
-    if (nodes[current_].parent == -1) {
-      throw WindowError("Cannot call next on the root node more than once");
+  int prev = current_;
+  int next =
+      current_ == -1 ? elements[parent_].first_child : elements[current_].next;
+
+  while (next != -1) {
+    if (elements[next].key == key) {
+      break;
     }
-    next = nodes[current_].next;
-  } else {
-    next = nodes[parent_].first_child;
+    if (!elements[parent_].rerender) {
+      throw WindowError("Structure changed outside of a re-render");
+    }
+    if (elements[next].key.empty() && !key.empty()) {
+      next = create_element(parent_, prev, type);
+      break;
+    }
+    if (!elements[parent_].retain) {
+      queue_remove_.push_back(next);
+    }
+    prev = next;
+    next = elements[next].next;
   }
 
-  if (next == -1) {
-    if (!nodes[parent_].is_new) {
-      throw WindowError(
-          "Called next with no remaining nodes in this container");
+  if (next != -1) {
+    if (type != elements[next].type && !elements[next].rerender) {
+      throw WindowError("Structure changed outside of a re-render");
     }
-    current_ = create_node(parent_, current_);
-  } else {
+    if (elements[next].rerender) {
+      rerender_element(next, type);
+    }
     current_ = next;
+    return;
   }
-  if (nodes[current_].is_new) {
-    init_node(current_, init_state);
+
+  if (!elements[parent_].rerender) {
+    throw WindowError("Structure changed outside of a re-render");
   }
+  current_ = create_element(parent_, prev, type);
+}
+
+bool Tree::down_if() {
+  if (!elements[current_].revisit) {
+    return false;
+  }
+  parent_ = current_;
+  current_ = -1;
+  variable_stack_.push(variable_current_);
+  variable_current_ = -1;
+  return true;
+}
+
+void Tree::down() {
+  parent_ = current_;
+  current_ = -1;
+  variable_stack_.push(variable_current_);
+  variable_current_ = -1;
 }
 
 void Tree::up() {
@@ -111,404 +143,176 @@ void Tree::up() {
     throw WindowError("Called up too many times");
   }
 
-  if (current_ == -1 && nodes[parent_].first_child != -1) {
-    throw WindowError("Called up without visiting any children");
-  }
+  int remove_from =
+      current_ == -1 ? elements[parent_].first_child : elements[current_].next;
 
-  if (current_ != -1 && nodes[current_].next != -1) {
-    throw WindowError("Called up without visiting all children");
+  if (remove_from != -1 && elements[parent_].rerender) {
+    throw WindowError("Structure changed outside of a re-render");
+  }
+  while (remove_from != -1) {
+    queue_remove_.push_back(remove_from);
+    remove_from = elements[remove_from].next;
   }
 
   current_ = parent_;
-  parent_ = nodes[current_].parent;
+  parent_ = elements[current_].parent;
 
-  parent_variable_current_ = parent_variable_current_stack_.top();
-  parent_variable_current_stack_.pop();
+  variable_current_ = variable_stack_.top();
+  variable_stack_.pop();
 }
 
-bool Tree::container_down() {
-  if (parent_ == -1 && is_new || nodes[parent_].is_new) {
-    nodes[current_].type = NodeType::Container;
-  } else if (nodes[current_].type != NodeType::Container) {
-    throw WindowError("Node type changed, previously was container");
-  }
-  if (!nodes[current_].triggered) {
-    return false;
-  }
-  parent_ = current_;
-  current_ = -1;
-  parent_variable_current_stack_.push(parent_variable_current_);
-  parent_variable_current_ = -1;
-  return true;
-}
+int Tree::create_element(int parent, int prev, ElementType type) {
+  int element =
+      elements.emplace(type, element_containers[int(type)]->emplace());
+  auto& node = elements[element];
+  node.parent = parent;
 
-bool Tree::optional_down(
-    bool open,
-    const init_state_t& init_state,
-    bool retain) {
-  if (parent_ == -1 && is_new || nodes[parent_].is_new) {
-    nodes[current_].type = NodeType::Optional;
-  } else if (nodes[current_].type != NodeType::Optional) {
-    throw WindowError("Node type changed, previously was optional");
-  }
-
-  if (nodes[current_].open && !open && !retain) {
-    if (nodes[current_].first_child != -1) {
-      remove_node(nodes[current_].first_child);
-    }
-    return false;
-  }
-  if (!nodes[current_].open && open) {
-    set_triggered(current_);
-  }
-
-  nodes[current_].open = open;
-  nodes[current_].visible = nodes[current_].open;
-
-  if (!nodes[current_].triggered) {
-    return false;
-  }
-  parent_ = current_;
-
-  if (nodes[parent_].first_child == -1) {
-    nodes[parent_].first_child = create_node(parent_, -1);
-  }
-  current_ = nodes[parent_].first_child;
-  nodes[current_].triggered = nodes[parent_].triggered;
-
-  parent_variable_current_stack_.push(parent_variable_current_);
-  parent_variable_current_ = -1;
-
-  if (nodes[current_].is_new) {
-    init_node(current_, init_state);
-  }
-
-  return true;
-}
-
-bool Tree::variant_down(
-    const std::string& label,
-    const init_state_t& init_state,
-    bool retain) {
-  if (label.empty()) {
-    throw WindowError("Variant label cannot be empty");
-  }
-  if (parent_ == -1 && is_new || nodes[parent_].is_new) {
-    nodes[current_].type = NodeType::Variant;
-  } else if (nodes[current_].type != NodeType::Variant) {
-    throw WindowError("Node type changed, previously was optional");
-  }
-
-  bool switched = false;
-  if (nodes[current_].open_label != label) {
-    nodes[current_].open_label = label;
-    set_triggered(current_);
-    switched = true;
-  }
-  if (!nodes[current_].triggered) {
-    return false;
-  }
-
-  int iter = nodes[current_].first_child;
-  while (iter != -1) {
-    assert(!nodes[iter].label.empty());
-    if (nodes[iter].label == label) {
-      break;
-    }
-    iter = nodes[iter].next;
-  }
-
-  if (iter != -1) {
-    if (switched || nodes[iter].triggered) {
-      parent_ = current_;
-      current_ = iter;
-      parent_variable_current_stack_.push(parent_variable_current_);
-      parent_variable_current_ = -1;
-      return true;
-    }
-    return false;
-  }
-
-  current_ = create_node(current_, nodes[current_].last_child);
-  if (nodes[current_].is_new) {
-    init_node(current_, init_state);
-  }
-
-  parent_variable_current_stack_.push(parent_variable_current_);
-  parent_variable_current_ = -1;
-
-  return true;
-}
-
-#if 0
-void Tree::insert_next() {
-  create_node(parent_, current_);
-}
-
-void Tree::erase_this() {
-  if (current_ == -1) {
-    throw WindowError("Tried to call erase_prev() with no current node");
-  }
-  int new_current = nodes[current_].prev;
-  remove_node(current_);
-  current_ = new_current;
-}
-
-void Tree::erase_next() {
-  int next =
-      (current_ == -1) ? nodes[parent_].first_child : nodes[current_].next;
-  remove_node(next);
-}
-#endif
-
-int Tree::create_node(int parent, int prev) {
-  int node = nodes.emplace();
-  nodes[node].parent = parent;
-
-  if (parent_ == -1) {
-    return node;
-  }
-
-  nodes[node].prev = prev;
-  int next = (prev == -1) ? nodes[parent].first_child : nodes[prev].next;
-  nodes[node].next = next;
+  node.prev = prev;
+  int next = (prev == -1) ? elements[parent].first_child : elements[prev].next;
+  node.next = next;
 
   if (prev != -1) {
-    nodes[prev].next = node;
+    elements[prev].next = element;
   } else {
-    nodes[parent].first_child = node;
+    elements[parent].first_child = element;
   }
   if (next != -1) {
-    nodes[next].prev = node;
+    elements[next].prev = element;
   } else {
-    nodes[parent].last_child = node;
+    elements[parent].last_child = element;
   }
-  return node;
+  return element;
 }
 
-void Tree::init_node(int node, const init_state_t& init_state) {
-  variable_access_node_ = node;
-  init_state(nodes[node].state);
-  variable_access_node_ = -1;
+void Tree::rerender_element(int element, ElementType type) {
+  auto& node = elements[element];
+  assert(node.data_index != -1);
+  element_containers[int(node.type)]->pop(node.data_index);
+
+  node.type = type;
+  node.data_index = element_containers[int(node.type)]->emplace();
 }
 
-void Tree::reset_node(int node) {
-  nodes[node].version++;
-  auto child = nodes[node].first_child;
-  while (child != -1) {
-    int next = nodes[child].next;
-    remove_node(child);
-    child = next;
-  }
-  deinit_node(ConstPtr(this, node));
-  // remove_node_variable_nodes(node);
-  // remove_node_dep_nodes(node);
-  nodes[node].is_new = true;
-}
-
-void Tree::remove_node(int node) {
+void Tree::remove_element(int element) {
   std::stack<int> stack;
-  stack.push(node);
+  stack.push(element);
 
   while (!stack.empty()) {
-    int node_index = stack.top();
-    const auto& node = nodes[node_index];
+    int element = stack.top();
+    const auto& node = elements[element];
+
     if (node.first_child == -1) {
       stack.pop();
       if (node.prev != -1) {
-        nodes[node.prev].next = node.next;
+        elements[node.prev].next = node.next;
       } else if (node.parent != -1) {
-        nodes[node.parent].first_child = node.next;
+        elements[node.parent].first_child = node.next;
       }
       if (node.next != -1) {
-        nodes[node.next].prev = node.prev;
+        elements[node.next].prev = node.prev;
       } else if (node.parent != -1) {
-        nodes[node.parent].last_child = node.prev;
+        elements[node.parent].last_child = node.prev;
       }
-      deinit_node(ConstPtr(this, node_index));
-      remove_node_variable_nodes(node_index);
-      remove_node_dep_nodes(node_index);
-      nodes.pop(node_index);
+
+      assert(node.data_index != -1);
+      element_systems[int(node.type)]->pop(node.data_index);
+
+      int variable = node.first_variable;
+      while (variable != -1) {
+        int next = variables[variable].next;
+        remove_variable(variable);
+        variable = next;
+      }
+      elements.pop(element);
 
       continue;
     }
     int iter = node.first_child;
     while (iter != -1) {
       stack.push(iter);
-      iter = nodes[iter].next;
+      iter = elements[iter].next;
     }
   }
 }
 
-void Tree::set_triggered(int node) {
-  // Trigger the node and all ancestors
-  int iter = node;
-  while (iter != -1) {
-    nodes[iter].triggered = true;
-    iter = nodes[iter].parent;
-  }
+int Tree::create_variable(int element) {
+  int variable = variables.emplace(element);
 
-  // Trigger descendants
-  std::stack<int> stack;
-  stack.push(node);
-  while (!stack.empty()) {
-    int node = stack.top();
-    stack.pop();
-    int child = nodes[node].first_child;
-    while (child != -1) {
-      nodes[child].triggered = true;
-      if (nodes[child].first_child != -1) {
-        stack.push(child);
-      }
-      child = nodes[child].next;
-    }
-  }
-}
-
-int Tree::create_variable_node(int node) {
-  int new_node = variable_nodes.emplace(node);
-
-  int prev = nodes[node].first_variable;
+  int prev = elements[element].first_variable;
   if (prev == -1) {
-    nodes[node].first_variable = new_node;
-    return new_node;
+    elements[element].first_variable = variable;
+    return variable;
   }
-  while (variable_nodes[prev].next != -1) {
-    prev = variable_nodes[prev].next;
+  while (variables[prev].next != -1) {
+    prev = variables[prev].next;
   }
-  variable_nodes[prev].next = new_node;
-  variable_nodes[new_node].prev = prev;
-  return new_node;
+  variables[prev].next = variable;
+  variables[variable].prev = prev;
+  return variable;
 }
 
-void Tree::variable_access(int variable_node, bool immutable) {
-  int dep_gui_node =
-      variable_access_node_ != -1 ? variable_access_node_ : parent_;
-  if (dep_gui_node == -1) {
-    return;
+void Tree::remove_variable(int variable) {
+  auto& node = variables[variable];
+  if (node.prev != -1) {
+    variables[node.prev].next = node.next;
+  } else {
+    elements[node.element].first_variable = node.next;
   }
 
-  // Check if the dependency exists already
-  int dep = nodes[dep_gui_node].first_dep;
-  while (dep != -1) {
-    if (dep_nodes[dep].variable_node == variable_node) {
-      return; // Already have a dependency to the given variable_node
+  if (node.next != -1) {
+    variables[node.next].prev = node.prev;
+  }
+
+  variables.pop(variable);
+}
+
+void Tree::variable_mutate(int variable) {
+  variables[variable].modified = true;
+  queue_rerender_.push_back(variables[variable].element);
+}
+
+void Tree::set_revisit(int element) {
+  // Set revisit = true on the node and all it's ancestors
+  int iter = element;
+  while (iter != -1) {
+    elements[iter].revisit = true;
+    iter = elements[iter].parent;
+  }
+}
+
+void Tree::set_rerender(int element) {
+  // Revisit this node
+  set_revisit(element);
+
+  // Set revisit = true and rerender = true on all the descendants
+  std::stack<int> stack;
+  stack.push(element);
+  while (!stack.empty()) {
+    int element = stack.top();
+    stack.pop();
+    elements[element].revisit = true;
+    elements[element].rerender = true;
+    elements[element].version++;
+
+    int child = elements[element].first_child;
+    while (child != -1) {
+      stack.push(child);
+      child = elements[child].next;
     }
-    dep = dep_nodes[dep].next;
-  }
-
-  // Create new dependency
-  int new_dep = dep_nodes.emplace(dep_gui_node, variable_node, immutable);
-
-  // Insert at front of dependencies linked list
-  dep_nodes[new_dep].next = variable_nodes[variable_node].first_dep;
-  if (variable_nodes[variable_node].first_dep != -1) {
-    dep_nodes[variable_nodes[variable_node].first_dep].prev = new_dep;
-  }
-  variable_nodes[variable_node].first_dep = new_dep;
-
-  // Insert at front of gui node linked list
-  dep_nodes[new_dep].node_next = nodes[dep_gui_node].first_dep;
-  if (nodes[dep_gui_node].first_dep != -1) {
-    dep_nodes[nodes[dep_gui_node].first_dep].node_prev = new_dep;
-  }
-  nodes[dep_gui_node].first_dep = new_dep;
-}
-
-void Tree::variable_mutate(int variable_node) {
-  variable_nodes[variable_node].modified = true;
-  int dep = variable_nodes[variable_node].first_dep;
-  while (dep != -1) {
-    queue_triggered.emplace_back(dep_nodes[dep].node, dep_nodes[dep].immutable);
-    dep = dep_nodes[dep].next;
   }
 }
 
-void Tree::remove_variable_node(int variable_node) {
-  int dep = variable_nodes[variable_node].first_dep;
-  while (dep != -1) {
-    int next = dep_nodes[dep].node_next;
-    remove_dep_node(dep);
-    dep = next;
-  }
-
-  if (variable_nodes[variable_node].prev != -1) {
-    variable_nodes[variable_nodes[variable_node].prev].next =
-        variable_nodes[variable_node].next;
-  } else {
-    nodes[variable_nodes[variable_node].node].first_variable =
-        variable_nodes[variable_node].next;
-  }
-
-  if (variable_nodes[variable_node].next != -1) {
-    variable_nodes[variable_nodes[variable_node].next].prev =
-        variable_nodes[variable_node].prev;
-  }
-
-  variable_nodes.pop(variable_node);
-}
-
-void Tree::remove_dep_node(int dep_node) {
-  if (dep_nodes[dep_node].prev != -1) {
-    dep_nodes[dep_nodes[dep_node].prev].next = dep_nodes[dep_node].next;
-  } else {
-    variable_nodes[dep_nodes[dep_node].variable_node].first_dep =
-        dep_nodes[dep_node].next;
-  }
-  if (dep_nodes[dep_node].next != -1) {
-    dep_nodes[dep_nodes[dep_node].next].prev = dep_nodes[dep_node].prev;
-  }
-
-  if (dep_nodes[dep_node].node_prev != -1) {
-    dep_nodes[dep_nodes[dep_node].node_prev].node_next =
-        dep_nodes[dep_node].node_next;
-  } else {
-    nodes[dep_nodes[dep_node].node].first_dep = dep_nodes[dep_node].node_next;
-  }
-  if (dep_nodes[dep_node].node_next != -1) {
-    dep_nodes[dep_nodes[dep_node].node_next].node_prev =
-        dep_nodes[dep_node].node_prev;
-  }
-
-  dep_nodes.pop(dep_node);
-}
-
-void Tree::remove_node_variable_nodes(int node) {
-  int data = nodes[node].first_variable;
-
-  while (data != -1) {
-    int next = variable_nodes[data].next;
-    remove_variable_node(data);
-    data = next;
-  }
-}
-
-void Tree::remove_node_dep_nodes(int node) {
-  int dep = nodes[node].first_dep;
-
-  while (dep != -1) {
-    int next = dep_nodes[dep].node_next;
-    remove_dep_node(dep);
-    dep = next;
-  }
-}
-
-std::string Tree::node_debug(int node) const {
+std::string Tree::element_debug(int element) const {
   std::string result = "";
-  result += "Node: " + std::to_string(node);
-  result += "\nVersion: " + std::to_string(nodes[node].version);
-  if (nodes[node].first_variable != -1) {
+  result += "Element: " + std::to_string(element);
+  result += "\nVersion: " + std::to_string(elements[element].version);
+
+  int variable = elements[element].first_variable;
+  if (variable != -1) {
     result += "\nVariables:";
-    for (int var = nodes[node].first_variable; var != -1;
-         var = variable_nodes[var].next) {
-      result += " " + std::to_string(var) + ", ";
-    }
-  }
-  if (nodes[node].first_dep != -1) {
-    result += "\nDeps:";
-    for (int dep = nodes[node].first_dep; dep != -1;
-         dep = dep_nodes[dep].node_next) {
-      result += " " + std::to_string(dep_nodes[dep].variable_node) + ", ";
+    while (variable != -1) {
+      result += " " + std::to_string(variable) + ", ";
+      variable = variables[variable].next;
     }
   }
   return result;
