@@ -165,8 +165,8 @@ void Tree::up() {
 int Tree::create_element(int parent, int prev, int type) {
   int data_index = 1;
   if (type != -1) {
-    assert(data_containers.contains(type));
-    data_index = data_containers.at(type)->emplace();
+    assert(type < data_containers.size());
+    data_index = data_containers[type]->emplace();
   }
 
   int element = elements.emplace(type, data_index);
@@ -194,9 +194,9 @@ void Tree::rerender_element(int element, int type) {
   auto& node = elements[element];
 
   if (node.type != -1) {
-    assert(node.data_index);
-    assert(data_containers.contains(node.type));
-    data_containers.at(node.type)->pop(node.data_index);
+    assert(node.data_index != -1);
+    assert(node.type < data_containers.size());
+    data_containers[node.type]->pop(node.data_index);
   }
 
   node.type = type;

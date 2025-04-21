@@ -10,7 +10,7 @@ class ElementSystems;
 
 class ElementSystem {
 public:
-  virtual int type() const;
+  virtual int type() const = 0;
   virtual void register_type(Tree& tree, ElementSystems& systems) = 0;
 
   virtual void set_layout_input(Element element) const = 0;

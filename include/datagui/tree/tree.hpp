@@ -258,8 +258,11 @@ public:
   template <typename Data>
   std::conditional_t<IsConst, const Data&, Data&> data() const {
     const auto& element = tree->elements[index];
-    auto container = tree->data_containers[int(element.type)];
-    auto container_t = dynamic_cast<DataContainerImpl<Data>>(container);
+    auto container = tree->data_containers[int(element.type)].get();
+    auto container_t = dynamic_cast<std::conditional_t<
+        IsConst,
+        const DataContainerImpl<Data>*,
+        DataContainerImpl<Data>*>>(container);
     assert(container_t);
     return container_t->get(element.data_index);
   }
@@ -267,8 +270,11 @@ public:
   template <typename Data>
   std::conditional_t<IsConst, const Data&, Data&> data_if() const {
     const auto& element = tree->elements[index];
-    auto container = tree->element_containers[int(element.type)];
-    auto container_t = dynamic_cast<DataContainerImpl<Data>>(container);
+    auto container = tree->element_containers[int(element.type)].get();
+    auto container_t = dynamic_cast<std::conditional_t<
+        IsConst,
+        const DataContainerImpl<Data>*,
+        DataContainerImpl<Data>*>>(container);
     if (!container_t) {
       return nullptr;
     }
@@ -279,7 +285,7 @@ public:
     return tree->elements[index].visible;
   }
   std::string debug() const {
-    return tree->node_debug(index);
+    return tree->element_debug(index);
   }
 
   void trigger() const {
@@ -324,6 +330,9 @@ private:
   int index;
 
   friend class Tree;
+
+  template <bool OtherConst>
+  friend class Element_;
 };
 
 template <typename T>

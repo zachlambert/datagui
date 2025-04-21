@@ -205,9 +205,9 @@ void Gui::calculate_sizes() {
         continue;
       }
 
-      element_systems.at(element.type())->set_child_layout_output(element);
+      systems.set_child_layout_output(element);
 
-      auto child = node.first_child();
+      auto child = element.first_child();
       while (child) {
         stack.push(child);
         child = child.next();
