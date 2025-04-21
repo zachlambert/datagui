@@ -3,31 +3,41 @@
 
 namespace datagui {
 
-void TextBoxSystem::visit(Element element, const std::string& text) {}
+void TextBoxSystem::visit(
+    Element element,
+    const std::string& text,
+    const SetTextBoxStyle& set_style) {
+  auto& data = element.data<TextBoxData>();
+  if (element.rerender()) {
+    data.text = text;
+    set_style(data.style);
+  }
+}
 
-void TextBoxSystem::set_layout_input(Tree::Ptr node) const {
-  const auto& element = elements[node->element_index];
-  const auto& style = element.style;
+void TextBoxSystem::set_layout_input(Element element) const {
+  const auto& data = element.data<TextBoxData>();
+  const auto& style = data.style;
 
-  node->fixed_size =
-      (element.style.border_width + element.style.padding).size();
+  element->fixed_size = (style.border_width + style.padding).size();
 
-  Vecf text_size = font_manager.text_size(element.text, element.style);
-  node->fixed_size.y += text_size.y;
+  Vecf text_size = font_manager.text_size(data.text, style);
+  element->fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&element.style.text_width)) {
-    node->fixed_size.x += width->value;
+  if (auto width = std::get_if<LengthFixed>(&style.text_width)) {
+    element->fixed_size.x += width->value;
   } else {
-    node->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&element.style.text_width)) {
-      node->dynamic_size.x = width->weight;
+    element->fixed_size.x += text_size.x;
+    if (auto width = std::get_if<LengthDynamic>(&style.text_width)) {
+      element->dynamic_size.x = width->weight;
     }
   }
 }
 
-void TextBoxSystem::render(Tree::ConstPtr node) const {
-  const auto& element = elements[node->element_index];
-  text_renderer.queue_text(node->position, element.text, element.style);
+void TextBoxSystem::render(ConstElement element) const {
+  const auto& data = element.data<TextBoxData>();
+  const auto& style = data.style;
+
+  text_renderer.queue_text(element->position, data.text, style);
 }
 
 } // namespace datagui

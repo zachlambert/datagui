@@ -2,20 +2,29 @@
 
 namespace datagui {
 
-void HorizontalLayoutSystem::set_layout_input(Tree::Ptr node) const {
-  auto& element = elements[node->element_index];
-  const auto& style = element.style;
+void HorizontalLayoutSystem::visit(
+    Element element,
+    const SetHorizontalLayoutStyle& set_style) {
+  auto& data = element.data<HorizontalLayoutData>();
+  if (element.rerender()) {
+    set_style(data.style);
+  }
+}
 
-  node->fixed_size = Vecf::Zero();
-  node->dynamic_size = Vecf::Zero();
+void HorizontalLayoutSystem::set_layout_input(Element element) const {
+  auto& data = element.data<HorizontalLayoutData>();
+  auto& style = data.style;
+
+  element->fixed_size = Vecf::Zero();
+  element->dynamic_size = Vecf::Zero();
 
   // Primary direction (X)
 
-  if (auto length = std::get_if<LengthFixed>(&element.style.length)) {
-    node->fixed_size.x = length->value;
+  if (auto length = std::get_if<LengthFixed>(&style.length)) {
+    element->fixed_size.x = length->value;
 
   } else {
-    auto child = node.first_child();
+    auto child = element.first_child();
     int count = 0;
     while (child) {
       if (!child.visible()) {
@@ -23,67 +32,67 @@ void HorizontalLayoutSystem::set_layout_input(Tree::Ptr node) const {
         continue;
       }
 
-      node->fixed_size.x += child->fixed_size.x;
-      node->dynamic_size.x += child->dynamic_size.x;
+      element->fixed_size.x += child->fixed_size.x;
+      element->dynamic_size.x += child->dynamic_size.x;
 
       child = child.next();
       count++;
     }
 
-    node->fixed_size.x += (count - 1) * element.style.inner_padding;
+    element->fixed_size.x += (count - 1) * style.inner_padding;
 
-    if (auto length = std::get_if<LengthDynamic>(&element.style.length)) {
-      node->dynamic_size.x = length->weight;
+    if (auto length = std::get_if<LengthDynamic>(&style.length)) {
+      element->dynamic_size.x = length->weight;
     }
   }
 
   // Secondary direction (Y)
 
-  if (auto width = std::get_if<LengthFixed>(&element.style.width)) {
-    node->fixed_size.y = width->value;
+  if (auto width = std::get_if<LengthFixed>(&style.width)) {
+    element->fixed_size.y = width->value;
   } else {
-    auto child = node.first_child();
+    auto child = element.first_child();
     while (child) {
       if (!child.visible()) {
         child = child.next();
         continue;
       }
 
-      node->fixed_size.y = std::max(node->fixed_size.y, child->fixed_size.y);
-      node->dynamic_size.y =
-          std::max(node->dynamic_size.y, child->dynamic_size.y);
+      element->fixed_size.y =
+          std::max(element->fixed_size.y, child->fixed_size.y);
+      element->dynamic_size.y =
+          std::max(element->dynamic_size.y, child->dynamic_size.y);
 
       child = child.next();
     }
 
-    if (auto width = std::get_if<LengthDynamic>(&element.style.width)) {
-      node->dynamic_size.y = width->weight;
+    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
+      element->dynamic_size.y = width->weight;
     }
   }
 
-  node->fixed_size +=
-      (element.style.padding + element.style.border_width).size();
+  element->fixed_size += (style.padding + style.border_width).size();
 }
 
-void HorizontalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
-  const auto& element = elements[node->element_index];
-  const auto& style = element.style;
+void HorizontalLayoutSystem::set_child_layout_output(Element element) const {
+  const auto& data = element.data<HorizontalLayoutData>();
+  const auto& style = data.style;
 
-  Vecf available = node->size - node->fixed_size;
+  Vecf available = element->size - element->fixed_size;
   float offset_x = style.padding.left + style.border_width.left;
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
   Vecf children_dynamic_size = Vecf::Zero();
   {
-    auto child = node.first_child();
+    auto child = element.first_child();
     while (child) {
       children_dynamic_size += child->dynamic_size;
       child = child.next();
     }
   }
 
-  auto child = node.first_child();
+  auto child = element.first_child();
   while (child) {
     if (!child.visible()) {
       child = child.next();
@@ -98,23 +107,24 @@ void HorizontalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
     }
     if (child->dynamic_size.y > 0) {
       child->size.y =
-          node->size.y - (style.padding + style.border_width).size().y;
+          element->size.y - (style.padding + style.border_width).size().y;
     }
 
-    child->position.x = node->position.x + offset_x;
+    child->position.x = element->position.x + offset_x;
     offset_x += child->size.x + style.inner_padding;
 
     switch (style.vertical_alignment) {
     case AlignmentY::Top:
       child->position.y =
-          node->position.y + style.padding.top + style.border_width.top;
+          element->position.y + style.padding.top + style.border_width.top;
       break;
     case AlignmentY::Center:
       child->position.y =
-          node->position.y + node->size.y / 2 - child->size.y / 2;
+          element->position.y + element->size.y / 2 - child->size.y / 2;
       break;
     case AlignmentY::Bottom:
-      child->position.y = node->position.y + node->size.y - child->size.y -
+      child->position.y = element->position.y + element->size.y -
+                          child->size.y -
                           (style.padding.bottom + style.border_width.bottom);
       break;
     }
@@ -123,11 +133,11 @@ void HorizontalLayoutSystem::set_child_layout_output(Tree::Ptr node) const {
   }
 }
 
-void HorizontalLayoutSystem::render(Tree::ConstPtr node) const {
-  const auto& element = elements[node->element_index];
-  const auto& style = element.style;
+void HorizontalLayoutSystem::render(ConstElement element) const {
+  const auto& data = element.data<HorizontalLayoutData>();
+  const auto& style = data.style;
 
-  geometry_renderer.queue_box(node->box(), style);
+  geometry_renderer.queue_box(element->box(), style);
 }
 
 } // namespace datagui

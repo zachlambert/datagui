@@ -41,9 +41,9 @@ public:
 
   const std::string* visit(
       Element element,
-      const std::string& initial_value,
+      const std::string& initial_text,
       const SetTextInputStyle& set_style);
-  const std::string* visit(
+  void visit(
       Element element,
       const Variable<std::string>& variable,
       const SetTextInputStyle& set_style);

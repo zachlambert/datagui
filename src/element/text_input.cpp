@@ -2,74 +2,109 @@
 
 namespace datagui {
 
-void TextInputSystem::set_layout_input(Tree::Ptr node) const {
-  const auto& element = elements[node->element_index];
+const std::string* TextInputSystem::visit(
+    Element element,
+    const std::string& initial_value,
+    const SetTextInputStyle& set_style) {
+  auto& data = element.data<TextInputData>();
+  if (element.is_new()) {
+    data.text = initial_value;
+  }
+  if (element.rerender()) {
+    set_style(data.style);
+  }
+  if (data.changed) {
+    data.changed = false;
+    return &data.text;
+  }
+  return nullptr;
+}
 
-  node->fixed_size =
-      (element.style.border_width + element.style.padding).size();
+void TextInputSystem::visit(
+    Element element,
+    const Variable<std::string>& variable,
+    const SetTextInputStyle& set_style) {
+  auto& data = element.data<TextInputData>();
 
-  Vecf text_size = font_manager.text_size(element.text, element.style);
-  node->fixed_size.y += text_size.y;
+  if (element.is_new()) {
+    data.text = *variable;
+  }
+  if (element.rerender()) {
+    set_style(data.style);
+  }
+  if (data.changed) {
+    data.changed = false;
+    variable.mut() = data.text;
+  } else if (variable.modified()) {
+    data.text = *variable;
+  }
+}
 
-  if (auto width = std::get_if<LengthFixed>(&element.style.text_width)) {
-    node->fixed_size.x += width->value;
+void TextInputSystem::set_layout_input(Element element) const {
+  const auto& data = element.data<TextInputData>();
+  const auto& style = data.style;
+
+  element->fixed_size = (style.border_width + style.padding).size();
+
+  Vecf text_size = font_manager.text_size(data.text, style);
+  element->fixed_size.y += text_size.y;
+
+  if (auto width = std::get_if<LengthFixed>(&style.text_width)) {
+    element->fixed_size.x += width->value;
   } else {
-    node->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&element.style.text_width)) {
-      node->dynamic_size.x = width->weight;
+    element->fixed_size.x += text_size.x;
+    if (auto width = std::get_if<LengthDynamic>(&style.text_width)) {
+      element->dynamic_size.x = width->weight;
     }
   }
 }
 
-void TextInputSystem::render(Tree::ConstPtr node) const {
-  const auto& element = elements[node->element_index];
-  const std::string& text = node == node->focused ? active_text : element.text;
+void TextInputSystem::render(ConstElement element) const {
+  const auto& data = element.data<TextInputData>();
+  const auto& style = data.style;
+
+  const std::string& text = element->focused ? active_text : data.text;
 
   geometry_renderer.queue_box(
-      node->box(),
-      element.style.bg_color,
-      element.style.border_width,
-      node->in_focus_tree ? element.style.focus_color
-                          : element.style.border_color,
-      element.style.radius);
+      element->box(),
+      style.bg_color,
+      style.border_width,
+      element->in_focus_tree ? style.focus_color : style.border_color,
+      style.radius);
 
   Vecf text_position =
-      node->position +
-      (element.style.border_width + element.style.padding).offset();
+      element->position + (style.border_width + style.padding).offset();
 
-  if (node->focused) {
+  if (element->focused) {
     render_selection(
-        font_manager.font_structure(
-            element.style.font,
-            element.style.font_size),
-        element.style,
+        font_manager.font_structure(style.font, style.font_size),
+        style,
         text,
         text_position,
         active_selection,
         geometry_renderer);
   }
 
-  text_renderer.queue_text(text_position, text, element.style);
+  text_renderer.queue_text(text_position, text, style);
 }
 
-void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
-  const auto& element = elements[node->element_index];
+void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
+  const auto& data = element.data<TextInputData>();
+  const auto& style = data.style;
 
   Vecf text_origin =
-      node->position +
-      (element.style.border_width + element.style.padding).offset();
+      element->position + (style.border_width + style.padding).offset();
 
-  const auto& font =
-      font_manager.font_structure(element.style.font, element.style.font_size);
+  const auto& font = font_manager.font_structure(style.font, style.font_size);
 
   if (event.action == MouseAction::Press) {
-    active_text = element.text;
+    active_text = data.text;
   }
 
   std::size_t cursor_pos = find_cursor(
       font,
       active_text,
-      element.style.text_width,
+      style.text_width,
       event.position - text_origin);
 
   if (event.action == MouseAction::Press) {
@@ -79,39 +114,39 @@ void TextInputSystem::mouse_event(Tree::Ptr node, const MouseEvent& event) {
   }
 }
 
-void TextInputSystem::key_event(Tree::Ptr node, const KeyEvent& event) {
-  auto& element = elements[node->element_index];
+void TextInputSystem::key_event(Element element, const KeyEvent& event) {
+  auto& data = element.data<TextInputData>();
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
-    element.text = active_text;
-    element.changed = true;
-    node.trigger();
+    data.text = active_text;
+    data.changed = true;
+    element.trigger();
     return;
   }
   selection_key_event(active_text, active_selection, true, event);
 }
 
-void TextInputSystem::text_event(Tree::Ptr node, const TextEvent& event) {
+void TextInputSystem::text_event(Element element, const TextEvent& event) {
   selection_text_event(active_text, active_selection, true, event);
 }
 
-void TextInputSystem::focus_enter(Tree::Ptr node) {
-  auto& element = elements[node->element_index];
+void TextInputSystem::focus_enter(Element element) {
+  auto& data = element.data<TextInputData>();
 
   active_selection.reset(0);
-  active_text = element.text;
+  active_text = data.text;
 }
 
 void TextInputSystem::focus_leave(
-    Tree::Ptr node,
+    Element element,
     bool success,
-    Tree::ConstPtr new_node) {
+    ConstElement new_element) {
 
-  auto& element = elements[node->element_index];
-  if (success && element.text != active_text) {
-    element.text = active_text;
-    element.changed = true;
-    node.trigger();
+  auto& data = element.data<TextInputData>();
+  if (success && data.text != active_text) {
+    data.text = active_text;
+    data.changed = true;
+    element.trigger();
   }
 }
 

@@ -286,6 +286,10 @@ public:
     tree->queue_revisit_.emplace_back(index);
   }
 
+  bool is_new() const {
+    return tree->elements[index].is_new;
+  }
+
   bool rerender() const {
     return tree->elements[index].rerender;
   }
