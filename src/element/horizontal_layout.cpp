@@ -7,7 +7,9 @@ void HorizontalLayoutSystem::visit(
     const SetHorizontalLayoutStyle& set_style) {
   auto& data = element.data<HorizontalLayoutData>();
   if (element.rerender()) {
-    set_style(data.style);
+    if (set_style) {
+      set_style(data.style);
+    }
   }
 }
 

@@ -9,7 +9,9 @@ bool ButtonSystem::visit(
   auto& data = element.data<ButtonData>();
   if (element.rerender()) {
     data.text = text;
-    set_style(data.style);
+    if (set_style) {
+      set_style(data.style);
+    }
   }
   if (data.released) {
     data.released = false;
@@ -23,6 +25,7 @@ void ButtonSystem::set_layout_input(Element element) const {
   const auto& style = data.style;
 
   element->fixed_size = (style.border_width + style.padding).size();
+  element->dynamic_size = Vecf::Zero();
 
   Vecf text_size = font_manager.text_size(data.text, style);
   element->fixed_size.y += text_size.y;

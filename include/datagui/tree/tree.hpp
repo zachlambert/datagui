@@ -149,10 +149,13 @@ private:
   int parent_ = -1;
   int current_ = -1;
   int variable_current_ = -1;
+
   std::stack<int> variable_stack_;
   std::vector<int> queue_revisit_;
   std::vector<int> queue_rerender_;
   std::vector<int> queue_remove_;
+
+  int external_first_variable_ = -1;
 
   template <typename T, bool IsConst>
   friend class Variable_;
@@ -258,7 +261,8 @@ public:
   template <typename Data>
   std::conditional_t<IsConst, const Data&, Data&> data() const {
     const auto& element = tree->elements[index];
-    auto container = tree->data_containers[int(element.type)].get();
+    assert(element.type != -1);
+    auto container = tree->data_containers[element.type].get();
     auto container_t = dynamic_cast<std::conditional_t<
         IsConst,
         const DataContainerImpl<Data>*,
@@ -270,7 +274,8 @@ public:
   template <typename Data>
   std::conditional_t<IsConst, const Data&, Data&> data_if() const {
     const auto& element = tree->elements[index];
-    auto container = tree->element_containers[int(element.type)].get();
+    assert(element.type != -1);
+    auto container = tree->element_containers[element.type].get();
     auto container_t = dynamic_cast<std::conditional_t<
         IsConst,
         const DataContainerImpl<Data>*,
@@ -337,21 +342,38 @@ private:
 
 template <typename T>
 Var<T> Tree::variable(const std::function<T()>& construct) {
-  if (parent_ == -1) {
-    throw UsageError("Cannot create a variable outside of a container");
-  }
   int variable;
-  if (variable_current_ == -1) {
-    variable = elements[parent_].first_variable;
-  } else {
-    variable = variables[variable_current_].next;
-  }
-  if (variable == -1) {
-    if (!elements[parent_].is_new) {
-      throw UsageError("Changed the number of variable nodes");
+
+  if (parent_ == -1) {
+    // Variables are "external" - not within any container element
+    if (variable_current_ == -1) {
+      variable = external_first_variable_;
+    } else {
+      variable = variables[external_first_variable_].next;
     }
-    variable = create_variable(parent_);
-    variables[variable].data = construct();
+  } else {
+    // Variables are within a container element
+    if (variable_current_ == -1) {
+      variable = elements[parent_].first_variable;
+    } else {
+      variable = variables[variable_current_].next;
+    }
+  }
+
+  if (variable == -1) {
+    if (parent_ == -1) {
+      if (!is_new) {
+        throw UsageError("Changed the number of variable nodes");
+      }
+      variable = create_variable(-1);
+      variables[variable].data = construct();
+    } else {
+      if (!elements[parent_].is_new) {
+        throw UsageError("Changed the number of variable nodes");
+      }
+      variable = create_variable(parent_);
+      variables[variable].data = construct();
+    }
   }
   variable_current_ = variable;
   return Variable<T>(this, variable);

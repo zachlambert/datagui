@@ -174,7 +174,8 @@ int Tree::create_element(int parent, int prev, int type) {
   node.parent = parent;
 
   node.prev = prev;
-  int next = (prev == -1) ? elements[parent].first_child : elements[prev].next;
+  int next = (prev == -1) ? parent == -1 ? root_ : elements[parent].first_child
+                          : elements[prev].next;
   node.next = next;
 
   if (prev != -1) {
@@ -253,11 +254,21 @@ void Tree::remove_element(int element) {
 int Tree::create_variable(int element) {
   int variable = variables.emplace(element);
 
-  int prev = elements[element].first_variable;
-  if (prev == -1) {
-    elements[element].first_variable = variable;
-    return variable;
+  int prev;
+  if (element == -1) {
+    if (external_first_variable_ == -1) {
+      external_first_variable_ = variable;
+      return variable;
+    }
+    prev = external_first_variable_;
+  } else {
+    if (elements[element].first_variable == -1) {
+      elements[element].first_variable = variable;
+      return variable;
+    }
+    prev = elements[element].first_variable;
   }
+
   while (variables[prev].next != -1) {
     prev = variables[prev].next;
   }
@@ -287,6 +298,10 @@ void Tree::variable_mutate(int variable) {
 }
 
 void Tree::set_revisit(int element) {
+  if (element == -1) {
+    return;
+  }
+
   // Set revisit = true on the node and all it's ancestors
   int iter = element;
   while (iter != -1) {
@@ -305,6 +320,11 @@ void Tree::set_rerender(int element) {
   while (!stack.empty()) {
     int element = stack.top();
     stack.pop();
+    if (element == -1) {
+      stack.push(root_);
+      continue;
+    }
+
     elements[element].revisit = true;
     elements[element].rerender = true;
     elements[element].version++;

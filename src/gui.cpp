@@ -29,7 +29,7 @@ bool Gui::running() const {
 }
 
 bool Gui::horizontal_layout(const SetHorizontalLayoutStyle& set_style) {
-  auto element = tree.next();
+  auto element = tree.next(horizontal_layout_system.type());
   horizontal_layout_system.visit(element, set_style);
   return tree.down_if();
 }
@@ -191,6 +191,7 @@ void Gui::calculate_sizes() {
   {
     std::stack<Element> stack;
     stack.emplace(tree.root());
+    tree.root()->position = Vecf::Zero();
     tree.root()->size = window.size();
 
     while (!stack.empty()) {

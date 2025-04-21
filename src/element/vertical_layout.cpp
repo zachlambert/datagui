@@ -6,7 +6,9 @@ void VerticalLayoutSystem::visit(
     Element element,
     const SetVerticalLayoutStyle& set_style) {
   if (element.rerender()) {
-    set_style(element.data<VerticalLayoutData>().style);
+    if (set_style) {
+      set_style(element.data<VerticalLayoutData>().style);
+    }
   }
 }
 
