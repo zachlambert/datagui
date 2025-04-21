@@ -2,7 +2,7 @@
 
 #include "datagui/input/text_selection.hpp"
 #include "datagui/style.hpp"
-#include "datagui/tree/element.hpp"
+#include "datagui/tree/element_system.hpp"
 #include "datagui/visual/font.hpp"
 #include "datagui/visual/geometry_renderer.hpp"
 #include "datagui/visual/text_renderer.hpp"
@@ -20,15 +20,16 @@ struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
     text_width = LengthDynamic(1.0);
   }
 };
+using SetTextInputStyle = SetStyle<TextInputStyle>;
 
-struct TextInputElement {
+struct TextInputData {
   using Style = TextInputStyle;
   std::string text;
   bool changed = false;
   Style style;
 };
 
-class TextInputSystem : public ElementSystemBase<TextInputElement> {
+class TextInputSystem : public ElementSystemImpl<TextInputData> {
 public:
   TextInputSystem(
       FontManager& font_manager,
@@ -38,16 +39,24 @@ public:
       text_renderer(text_renderer),
       geometry_renderer(geometry_renderer) {}
 
-  void init(const std::function<void(TextInputStyle&)> set_style = nullptr);
-  void set_layout_input(Tree::Ptr node) const override;
-  void render(Tree::ConstPtr node) const override;
+  const std::string* visit(
+      Element element,
+      const std::string& initial_value,
+      const SetTextInputStyle& set_style);
+  const std::string* visit(
+      Element element,
+      const Variable<std::string>& variable,
+      const SetTextInputStyle& set_style);
 
-  void mouse_event(Tree::Ptr node, const MouseEvent& event) override;
-  void key_event(Tree::Ptr node, const KeyEvent& event) override;
-  void text_event(Tree::Ptr node, const TextEvent& event) override;
+  void set_layout_input(Element element) const override;
+  void render(ConstElement element) const override;
 
-  void focus_enter(Tree::Ptr node) override;
-  void focus_leave(Tree::Ptr node, bool success, Tree::ConstPtr new_node)
+  void mouse_event(Element element, const MouseEvent& event) override;
+  void key_event(Element element, const KeyEvent& event) override;
+  void text_event(Element element, const TextEvent& event) override;
+
+  void focus_enter(Element element) override;
+  void focus_leave(Element element, bool success, ConstElement new_element)
       override;
 
 private:

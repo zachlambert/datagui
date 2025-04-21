@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/style.hpp"
-#include "datagui/tree/element.hpp"
+#include "datagui/tree/element_system.hpp"
 #include "datagui/visual/font.hpp"
 #include "datagui/visual/geometry_renderer.hpp"
 #include "datagui/visual/text_renderer.hpp"
@@ -18,8 +18,9 @@ struct ButtonStyle : public BoxStyle, public TextStyle {
     padding = 10;
   }
 };
+using SetButtonStyle = SetStyle<ButtonStyle>;
 
-struct ButtonElement {
+struct ButtonData {
   using Style = ButtonStyle;
   std::string text;
   bool released = false;
@@ -27,7 +28,7 @@ struct ButtonElement {
   Style style;
 };
 
-class ButtonSystem : public ElementSystemBase<ButtonElement> {
+class ButtonSystem : public ElementSystemImpl<ButtonData> {
 public:
   ButtonSystem(
       FontManager& font_manager,
@@ -37,12 +38,16 @@ public:
       geometry_renderer(geometry_renderer),
       text_renderer(text_renderer) {}
 
-  void init(const std::function<void(TextStyle&)> set_style);
-  void set_layout_input(Tree::Ptr node) const override;
-  void render(Tree::ConstPtr node) const override;
+  bool visit(
+      Element element,
+      const std::string& text,
+      const SetButtonStyle& set_style);
 
-  void mouse_event(Tree::Ptr node, const MouseEvent& event) override;
-  void key_event(Tree::Ptr node, const KeyEvent& event) override;
+  void set_layout_input(Element element) const override;
+  void render(ConstElement element) const override;
+
+  void mouse_event(Element element, const MouseEvent& event) override;
+  void key_event(Element element, const KeyEvent& event) override;
 
 private:
   FontManager& font_manager;

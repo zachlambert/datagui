@@ -12,8 +12,14 @@ Gui::Gui(const Window::Config& config) :
     vertical_layout_system(geometry_renderer),
     text_box_system(font_manager, text_renderer),
     text_input_system(font_manager, text_renderer, geometry_renderer),
-    button_system(font_manager, geometry_renderer, text_renderer),
-    tree(std::bind(&Gui::deinit_node, this, std::placeholders::_1)) {
+    button_system(font_manager, geometry_renderer, text_renderer) {
+
+  horizontal_layout_system.register_type(tree, systems);
+  vertical_layout_system.register_type(tree, systems);
+  text_box_system.register_type(tree, systems);
+  text_input_system.register_type(tree, systems);
+  button_system.register_type(tree, systems);
+
   geometry_renderer.init();
   text_renderer.init();
 }
@@ -22,34 +28,17 @@ bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::horizontal_layout(
-    const std::function<void(HorizontalLayoutStyle&)>& set_style) {
-  tree.container_next([&](State& state) {
-    state.element_type = ElementType::HorizontalLayout;
-    state.element_index = horizontal_layout_system.emplace();
-    if (set_style) {
-      set_style(horizontal_layout_system[state.element_index].style);
-    }
-  });
-  if (!tree.container_down()) {
-    return false;
-  }
-  return true;
+bool Gui::horizontal_layout(const SetHorizontalLayoutStyle& set_style) {
+  auto element = tree.next();
+  horizontal_layout_system.visit(element, set_style);
+  return tree.down_if();
 }
 
 bool Gui::vertical_layout(
     const std::function<void(VerticalLayoutStyle&)>& set_style) {
-  tree.container_next([&](State& state) {
-    state.element_type = ElementType::VerticalLayout;
-    state.element_index = vertical_layout_system.emplace();
-    if (set_style) {
-      set_style(vertical_layout_system[state.element_index].style);
-    }
-  });
-  if (!tree.container_down()) {
-    return false;
-  }
-  return true;
+  auto element = tree.next(vertical_layout_system.type());
+  vertical_layout_system.visit(element, set_style);
+  return tree.down_if();
 }
 
 void Gui::layout_end() {
@@ -59,123 +48,29 @@ void Gui::layout_end() {
 void Gui::text_box(
     const std::string& text,
     const std::function<void(TextBoxStyle&)>& set_style) {
-  tree.container_next([&](State& state) {
-    state.element_type = ElementType::TextBox;
-    state.element_index = text_box_system.emplace();
-    if (set_style) {
-      set_style(text_box_system[state.element_index].style);
-    }
-  });
-
-  auto node = tree.current();
-  auto& element = text_box_system[node->element_index];
-  element.text = text;
+  auto element = tree.next(text_box_system.type());
+  text_box_system.visit(element, text, set_style);
 }
-
-#if 0
-void Gui::text_box(
-    const std::function<std::string()>& text,
-    const std::function<void(TextBoxStyle&)>& set_style) {
-
-  tree.container_next([&](State& state) {
-    state.element_type = ElementType::TextBox;
-    state.element_index = text_box_system.emplace();
-    if (set_style) {
-      set_style(text_box_system[state.element_index].style);
-    }
-    text_box_system[state.element_index].text = text();
-  });
-}
-#endif
 
 const std::string* Gui::text_input(
     const std::string& initial_value,
     const std::function<void(TextInputStyle&)>& set_style) {
-  tree.container_next([&](State& state) {
-    state.element_type = ElementType::TextInput;
-    state.element_index = text_input_system.emplace();
-    if (set_style) {
-      set_style(text_input_system[state.element_index].style);
-    }
-    text_input_system[state.element_index].text = initial_value;
-  });
-
-  auto node = tree.current();
-  auto& element = text_input_system[node->element_index];
-  if (element.changed) {
-    element.changed = false;
-    return &element.text;
-  }
-  return nullptr;
+  auto element = tree.next(text_input_system.type());
+  return text_input_system.visit(element, initial_value, set_style);
 }
-
-#if 0
-const std::string* Gui::text_input(
-    const std::function<std::string()>& initial_value,
-    const std::function<void(TextInputStyle&)>& set_style) {
-  tree.container_next([&](State& state) {
-    state.element_type = ElementType::TextInput;
-    state.element_index = text_input_system.emplace();
-    if (set_style) {
-      set_style(text_input_system[state.element_index].style);
-    }
-    text_input_system[state.element_index].text = initial_value();
-  });
-
-  auto node = tree.current();
-  auto& element = text_input_system[node->element_index];
-  if (element.changed) {
-    element.changed = false;
-    return &element.text;
-  }
-  return nullptr;
-}
-#endif
 
 void Gui::text_input(
-    Tree::Variable<std::string>& variable,
+    const Variable<std::string>& variable,
     const std::function<void(TextInputStyle&)>& set_style) {
-  tree.container_next([&](State& state) {
-    state.element_type = ElementType::TextInput;
-    state.element_index = text_input_system.emplace();
-    if (set_style) {
-      set_style(text_input_system[state.element_index].style);
-    }
-    text_input_system[state.element_index].text = *variable;
-  });
-
-  auto node = tree.current();
-  auto& element = text_input_system[node->element_index];
-
-  if (element.changed) {
-    element.changed = false;
-    variable.mut() = element.text;
-  } else if (variable.modified()) {
-    element.text = *variable;
-  }
+  auto element = tree.next(text_input_system.type());
+  text_input_system.visit(element, variable, set_style);
 }
 
 bool Gui::button(
     const std::string& text,
     const std::function<void(ButtonStyle&)>& set_style) {
-
-  tree.container_next([&](State& state) {
-    state.element_type = ElementType::Button;
-    state.element_index = button_system.emplace();
-    if (set_style) {
-      set_style(button_system[state.element_index].style);
-    }
-  });
-
-  auto node = tree.current();
-  button_system[node->element_index].text = text;
-
-  auto& element = button_system[node->element_index];
-  if (element.released) {
-    element.released = false;
-    return true;
-  }
-  return false;
+  auto element = tree.next(button_system.type());
+  return button_system.visit(element, text, set_style);
 }
 
 void Gui::begin() {
@@ -193,37 +88,38 @@ void Gui::render() {
   window.render_begin();
 
   {
-    std::stack<Tree::ConstPtr> stack;
+    std::stack<ConstElement> stack;
     stack.push(tree.root());
 
     while (!stack.empty()) {
-      auto node = stack.top();
+      auto element = stack.top();
       stack.pop();
 
-      if (!node.visible() || node->element_index == -1) {
+      if (!element.visible()) {
         continue;
       }
-      element_system(node->element_type).render(node);
+      systems.render(element);
 
       if (debug_mode_) {
         geometry_renderer.queue_box(
-            Boxf(node->position, node->position + node->size),
+            Boxf(element->position, element->position + element->size),
             Color::Clear(),
             2,
-            node->focused         ? Color::Blue()
-            : node->in_focus_tree ? Color::Red()
-                                  : Color::Green(),
+            element->focused         ? Color::Blue()
+            : element->in_focus_tree ? Color::Red()
+                                     : Color::Green(),
             0);
 
-        if (node->focused) {
+        if (element->focused) {
           std::string debug_text;
-          debug_text += node.debug();
-          debug_text += "\nfixed: " + std::to_string(node->fixed_size.x) +
-                        ", " + std::to_string(node->fixed_size.y);
-          debug_text += "\ndynamic: " + std::to_string(node->dynamic_size.x) +
-                        ", " + std::to_string(node->dynamic_size.y);
-          debug_text += "\nsize: " + std::to_string(node->size.x) + ", " +
-                        std::to_string(node->size.y);
+          debug_text += element.debug();
+          debug_text += "\nfixed: " + std::to_string(element->fixed_size.x) +
+                        ", " + std::to_string(element->fixed_size.y);
+          debug_text +=
+              "\ndynamic: " + std::to_string(element->dynamic_size.x) + ", " +
+              std::to_string(element->dynamic_size.y);
+          debug_text += "\nsize: " + std::to_string(element->size.x) + ", " +
+                        std::to_string(element->size.y);
 
           BoxStyle box_style;
           box_style.bg_color = Color::White();
@@ -244,7 +140,7 @@ void Gui::render() {
         }
       }
 
-      auto child = node.first_child();
+      auto child = element.first_child();
       while (child) {
         stack.push(child);
         child = child.next();
@@ -260,26 +156,26 @@ void Gui::render() {
 void Gui::calculate_sizes() {
   {
     struct State {
-      Tree::Ptr node;
+      Element element;
       bool first_visit;
-      State(Tree::Ptr node) : node(node), first_visit(true) {}
+      State(Element element) : element(element), first_visit(true) {}
     };
     std::stack<State> stack;
     stack.emplace(tree.root());
 
     while (!stack.empty()) {
       State& state = stack.top();
-      auto node = state.node;
+      auto element = state.element;
 
-      if (!node.visible() || node->element_index == -1) {
+      if (!element.visible()) {
         stack.pop();
         continue;
       }
 
       // If the node has children, process these first
-      if (node.first_child() && state.first_visit) {
+      if (element.first_child() && state.first_visit) {
         state.first_visit = false;
-        auto child = node.first_child();
+        auto child = element.first_child();
         while (child) {
           stack.emplace(child);
           child = child.next();
@@ -288,28 +184,28 @@ void Gui::calculate_sizes() {
       }
       stack.pop();
 
-      element_system(node->element_type).set_layout_input(node);
+      systems.set_layout_input(element);
     }
   }
 
   {
-    std::stack<Tree::Ptr> stack;
+    std::stack<Element> stack;
     stack.emplace(tree.root());
     tree.root()->size = window.size();
 
     while (!stack.empty()) {
-      auto node = stack.top();
+      auto element = stack.top();
       stack.pop();
 
-      if (!node.visible() || node->element_index == -1) {
+      if (!element.visible()) {
         continue;
       }
 
-      if (!node.first_child()) {
+      if (!element.first_child()) {
         continue;
       }
 
-      element_system(node->element_type).set_child_layout_output(node);
+      element_systems.at(element.type())->set_child_layout_output(element);
 
       auto child = node.first_child();
       while (child) {
@@ -342,11 +238,10 @@ void Gui::event_handling() {
         handled = true;
         break;
       case Key::Escape:
-        if (node_focus) {
-          element_system(node_focus->element_type)
-              .focus_leave(node_focus, false, Tree::Ptr());
-          set_tree_focus(node_focus, false);
-          node_focus = Tree::Ptr();
+        if (element_focus) {
+          systems.focus_leave(element_focus, false, Element());
+          set_tree_focus(element_focus, false);
+          element_focus = Element();
         }
         handled = true;
         break;
@@ -360,14 +255,14 @@ void Gui::event_handling() {
       }
     }
 
-    if (!handled && node_focus) {
-      element_system(node_focus->element_type).key_event(node_focus, event);
+    if (!handled && element_focus) {
+      systems.key_event(element_focus, event);
     }
   }
 
   for (const auto& event : window.text_events()) {
-    if (node_focus) {
-      element_system(node_focus->element_type).text_event(node_focus, event);
+    if (element_focus) {
+      systems.text_event(element_focus, event);
     }
   }
 }
@@ -377,37 +272,35 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // Pass-through the hold or release event
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
-    if (node_focus) {
-      element_system(node_focus->element_type).mouse_event(node_focus, event);
+    if (element_focus) {
+      systems.mouse_event(element_focus, event);
     }
     return;
   }
 
   // Clicked -> new focused node
 
-  Tree::Ptr prev_node_focus = node_focus;
-  node_focus = Tree::Ptr();
+  Element prev_element_focus = element_focus;
+  element_focus = Element();
 
-  std::stack<Tree::Ptr> stack;
+  std::stack<Element> stack;
   stack.push(tree.root());
 
   // TODO: parse floating nodes first when added
 
-  if (!node_focus) {
+  if (!element_focus) {
     // No floating nodes clicked, process standard nodes
     while (!stack.empty()) {
-      auto node = stack.top();
+      auto element = stack.top();
       stack.pop();
 
-      Boxf box(node->position, node->position + node->size);
-      if (!Boxf(node->position, node->position + node->size)
-               .contains(event.position)) {
+      if (!element->box().contains(event.position)) {
         continue;
       }
-      node->in_focus_tree = true;
-      node_focus = node;
+      element->in_focus_tree = true;
+      element_focus = element;
 
-      auto child = node.first_child();
+      auto child = element.first_child();
       while (child) {
         stack.push(child);
         child = child.next();
@@ -415,30 +308,29 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     }
   }
 
-  if (node_focus != prev_node_focus) {
-    if (prev_node_focus) {
-      element_system(prev_node_focus->element_type)
-          .focus_leave(prev_node_focus, true, node_focus);
-      set_tree_focus(prev_node_focus, false);
+  if (element_focus != prev_element_focus) {
+    if (prev_element_focus) {
+      systems.focus_leave(prev_element_focus, true, element_focus);
+      set_tree_focus(prev_element_focus, false);
     }
-    if (node_focus) {
+    if (element_focus) {
       // Only use focus_enter() for non-click focus enter (ie: tab into the
       // element)
-      set_tree_focus(node_focus, true);
+      set_tree_focus(element_focus, true);
     }
   }
-  if (node_focus) {
-    element_system(node_focus->element_type).mouse_event(node_focus, event);
+  if (element_focus) {
+    systems.mouse_event(element_focus, event);
   }
 }
 
-void Gui::set_tree_focus(Tree::Ptr node, bool value) {
-  node->focused = value;
-  node->in_focus_tree = value;
-  node = node.parent();
-  while (node) {
-    node->in_focus_tree = value;
-    node = node.parent();
+void Gui::set_tree_focus(Element element, bool value) {
+  element->focused = value;
+  element->in_focus_tree = value;
+  element = element.parent();
+  while (element) {
+    element->in_focus_tree = value;
+    element = element.parent();
   }
 }
 
@@ -446,7 +338,7 @@ void Gui::focus_next(bool reverse) {
   if (!tree.root()) {
     return;
   }
-  auto next = node_focus;
+  auto next = element_focus;
 
   do {
     if (!reverse) {
@@ -482,52 +374,21 @@ void Gui::focus_next(bool reverse) {
   } while (next && next != tree.root() && !next.visible());
 
   if (next == tree.root() && !tree.root().visible()) {
-    next = Tree::Ptr();
+    next = Element();
   }
 
-  if (node_focus) {
-    auto prev_node_focus = node_focus;
-    element_system(prev_node_focus->element_type)
-        .focus_leave(prev_node_focus, true, next);
-    set_tree_focus(node_focus, false);
+  if (element_focus) {
+    auto prev_element_focus = element_focus;
+    systems.focus_leave(prev_element_focus, true, next);
+    set_tree_focus(element_focus, false);
   }
 
-  node_focus = next;
+  element_focus = next;
 
-  if (node_focus) {
-    set_tree_focus(node_focus, true);
-    element_system(node_focus->element_type).focus_enter(node_focus);
+  if (element_focus) {
+    set_tree_focus(element_focus, true);
+    systems.focus_enter(element_focus);
   }
-}
-
-void Gui::deinit_node(Tree::ConstPtr node) {
-  if (node == node_focus) {
-    element_system(node_focus->element_type)
-        .focus_leave(node_focus, false, Tree::Ptr());
-    set_tree_focus(node_focus, false);
-    node_focus = Tree::Ptr();
-  }
-  element_system(node->element_type).pop(node->element_index);
-}
-
-ElementSystem& Gui::element_system(ElementType type) {
-  switch (type) {
-  case ElementType::HorizontalLayout:
-    return horizontal_layout_system;
-  case ElementType::VerticalLayout:
-    return vertical_layout_system;
-  case ElementType::TextBox:
-    return text_box_system;
-  case ElementType::TextInput:
-    return text_input_system;
-  case ElementType::Button:
-    return button_system;
-  case ElementType::Undefined:
-    assert(false);
-    return horizontal_layout_system;
-  }
-  assert(false);
-  return horizontal_layout_system;
 }
 
 } // namespace datagui

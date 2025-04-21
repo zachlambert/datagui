@@ -29,42 +29,28 @@ public:
   void begin();
   void end();
 
-  bool horizontal_layout(
-      const std::function<void(HorizontalLayoutStyle&)>& set_style = nullptr);
-  bool vertical_layout(
-      const std::function<void(VerticalLayoutStyle&)>& set_style = nullptr);
+  bool horizontal_layout(const SetHorizontalLayoutStyle& = nullptr);
+  bool vertical_layout(const SetVerticalLayoutStyle& = nullptr);
   void layout_end();
 
   void text_box(
       const std::string& text,
-      const std::function<void(TextBoxStyle&)>& set_style = nullptr);
-
-#if 0
-  void text_box(
-      const std::function<std::string()>& text,
-      const std::function<void(TextBoxStyle&)>& set_style = nullptr);
-#endif
+      const SetTextBoxStyle& set_style = nullptr);
 
   const std::string* text_input(
       const std::string& initial_value = "",
-      const std::function<void(TextInputStyle&)>& set_style = nullptr);
-
-#if 0
-  const std::string* text_input(
-      const std::function<std::string()>& initial_value,
-      const std::function<void(TextInputStyle&)>& set_style = nullptr);
-#endif
+      const SetTextInputStyle& set_style = nullptr);
 
   void text_input(
-      Tree::Variable<std::string>& variable,
-      const std::function<void(TextInputStyle&)>& set_style = nullptr);
+      const Variable<std::string>& variable,
+      const SetTextInputStyle& set_style = nullptr);
 
   bool button(
       const std::string& text,
-      const std::function<void(ButtonStyle&)>& set_style = nullptr);
+      const SetButtonStyle& set_style = nullptr);
 
   template <typename T>
-  Tree::Variable<T> variable(const T& initial_value = T()) {
+  Variable<T> variable(const T& initial_value = T()) {
     // Capture initial_value by value
     return tree.variable<T>([initial_value]() { return initial_value; });
   }
@@ -76,11 +62,8 @@ private:
   void event_handling();
   void event_handling_left_click(const MouseEvent& event);
 
-  void set_tree_focus(Tree::Ptr node, bool value);
+  void set_tree_focus(Element element, bool value);
   void focus_next(bool reverse);
-
-  void deinit_node(Tree::ConstPtr node);
-  ElementSystem& element_system(ElementType type);
 
   Window window;
   Tree tree;
@@ -95,8 +78,9 @@ private:
   TextBoxSystem text_box_system;
   TextInputSystem text_input_system;
   ButtonSystem button_system;
+  ElementSystems systems;
 
-  Tree::Ptr node_focus;
+  Element element_focus;
 };
 
 } // namespace datagui

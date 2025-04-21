@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/style.hpp"
-#include "datagui/tree/element.hpp"
+#include "datagui/tree/element_system.hpp"
 #include "datagui/visual/geometry_renderer.hpp"
 
 namespace datagui {
@@ -9,21 +9,23 @@ namespace datagui {
 struct VerticalLayoutStyle : public LinearLayoutStyle {
   AlignmentX horizontal_alignment = AlignmentX::Left;
 };
+using SetVerticalLayoutStyle = SetStyle<VerticalLayoutStyle>;
 
-struct VerticalLayoutElement {
+struct VerticalLayoutData {
   using Style = VerticalLayoutStyle;
   Style style;
 };
 
-class VerticalLayoutSystem : public ElementSystemBase<VerticalLayoutElement> {
+class VerticalLayoutSystem : public ElementSystemImpl<VerticalLayoutData> {
 public:
   VerticalLayoutSystem(GeometryRenderer& geometry_renderer) :
       geometry_renderer(geometry_renderer) {}
 
-  void init(const std::function<void(VerticalLayoutStyle&)> set_style);
-  void set_layout_input(Tree::Ptr node) const override;
-  void set_child_layout_output(Tree::Ptr node) const override;
-  void render(Tree::ConstPtr node) const override;
+  void visit(Element element, const SetVerticalLayoutStyle& set_style);
+
+  void set_layout_input(Element element) const override;
+  void set_child_layout_output(Element element) const override;
+  void render(ConstElement element) const override;
 
 private:
   GeometryRenderer& geometry_renderer;

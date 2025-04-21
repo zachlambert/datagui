@@ -1,14 +1,13 @@
 #pragma once
 
-#include "datagui/exception.hpp"
 #include "datagui/tree/state.hpp"
 #include "datagui/tree/unique_any.hpp"
 #include "datagui/tree/vector_map.hpp"
 #include <assert.h>
 #include <functional>
 #include <stack>
+#include <stdexcept>
 #include <string>
-#include <unordered_map>
 
 namespace datagui {
 
@@ -99,31 +98,31 @@ class Tree {
   friend class Variable_;
 
 public:
+  class UsageError : public std::runtime_error {
+  public:
+    UsageError(const std::string& message) : std::runtime_error(message) {}
+  };
+
   Tree() {}
 
   void begin();
   void end();
 
-  void next(int type = -1, const std::string& key = "");
+  Element next(int type = -1, const std::string& key = "");
   bool down_if();
   void down();
   void up();
 
   Element root();
   ConstElement root() const;
-  Element current();
-  ConstElement current() const;
 
   template <typename T>
   Var<T> variable(const std::function<T()>& construct = []() { return T(); });
 
   template <typename Data>
-  void register_element_type(int type) {
-    if (data_containers.contains(type)) {
-      throw WindowError(
-          "Registered element " + std::to_string(type) + " twice");
-    }
-    data_containers.emplace(type, std::make_unique<DataContainerImpl<Data>>);
+  int create_element_type() {
+    data_containers.push_back(std::make_unique<DataContainerImpl<Data>>());
+    return data_containers.size() - 1;
   }
 
 private:
@@ -141,10 +140,11 @@ private:
   std::string element_debug(int element) const;
 
   VectorMap<ElementNode> elements;
-  std::unordered_map<int, std::unique_ptr<DataContainer>> data_containers;
+  std::vector<std::unique_ptr<DataContainer>> data_containers;
   VectorMap<VariableNode> variables;
 
   bool is_new = true;
+  bool render_in_progress = false;
   int root_ = -1;
   int parent_ = -1;
   int current_ = -1;
@@ -223,6 +223,10 @@ class Element_ {
   using state_ref_t = std::conditional_t<IsConst, const State&, State&>;
 
 public:
+  int type() const {
+    return tree->elements[index].type;
+  }
+
   Element_ first_child() const {
     assert(index != -1);
     return Element_(tree, tree->elements[index].first_child);
@@ -282,6 +286,10 @@ public:
     tree->queue_revisit_.emplace_back(index);
   }
 
+  bool rerender() const {
+    return tree->elements[index].rerender;
+  }
+
   template <
       bool OtherConst,
       typename = std::enable_if_t<IsConst || !OtherConst>>
@@ -317,7 +325,7 @@ private:
 template <typename T>
 Var<T> Tree::variable(const std::function<T()>& construct) {
   if (parent_ == -1) {
-    throw WindowError("Cannot create a variable outside of a container");
+    throw UsageError("Cannot create a variable outside of a container");
   }
   int variable;
   if (variable_current_ == -1) {
@@ -327,7 +335,7 @@ Var<T> Tree::variable(const std::function<T()>& construct) {
   }
   if (variable == -1) {
     if (!elements[parent_].is_new) {
-      throw WindowError("Changed the number of variable nodes");
+      throw UsageError("Changed the number of variable nodes");
     }
     variable = create_variable(parent_);
     variables[variable].data = construct();
@@ -337,19 +345,19 @@ Var<T> Tree::variable(const std::function<T()>& construct) {
 }
 
 inline Element Tree::root() {
+  if (render_in_progress) {
+    throw UsageError(
+        "Cannot traverse the tree data while rendering is in progress");
+  }
   return Element(this, root_);
 }
 
 inline ConstElement Tree::root() const {
+  if (render_in_progress) {
+    throw UsageError(
+        "Cannot traverse the tree data while rendering is in progress");
+  }
   return ConstElement(this, root_);
-}
-
-inline Element Tree::current() {
-  return Element(this, current_);
-}
-
-inline ConstElement Tree::current() const {
-  return ConstElement(this, current_);
 }
 
 } // namespace datagui

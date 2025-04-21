@@ -3,6 +3,8 @@
 
 namespace datagui {
 
+void TextBoxSystem::visit(Element element, const std::string& text) {}
+
 void TextBoxSystem::set_layout_input(Tree::Ptr node) const {
   const auto& element = elements[node->element_index];
   const auto& style = element.style;

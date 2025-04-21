@@ -2,6 +2,14 @@
 
 namespace datagui {
 
+void VerticalLayoutSystem::visit(
+    Element element,
+    const std::function<void(VerticalLayoutStyle&)> set_style) {
+  if (element.rerender()) {
+    set_style(element.data<VerticalLayoutData>().style);
+  }
+}
+
 void VerticalLayoutSystem::set_layout_input(Tree::Ptr node) const {
   auto& element = elements[node->element_index];
   const auto& style = element.style;

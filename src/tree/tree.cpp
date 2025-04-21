@@ -6,6 +6,7 @@
 namespace datagui {
 
 void Tree::begin() {
+  render_in_progress = true;
   parent_ = -1;
   current_ = -1;
   variable_current_ = -1;
@@ -26,7 +27,7 @@ void Tree::begin() {
 
 void Tree::end() {
   if (parent_ != -1) {
-    throw WindowError(
+    throw UsageError(
         "Didn't call layout_... and layout_end the same number of times");
   }
   if (!variable_stack_.empty()) {
@@ -59,24 +60,25 @@ void Tree::end() {
     }
   }
 
+  render_in_progress = false;
   parent_ = -1;
   variable_current_ = -1;
 }
 
-void Tree::next(int type, const std::string& key) {
+Element Tree::next(int type, const std::string& key) {
   if (parent_ == -1) {
     if (current_ != -1) {
-      throw WindowError("Cannot create more than one root node");
+      throw UsageError("Cannot create more than one root node");
     }
     if (root_ == -1) {
       root_ = create_element(-1, -1, type);
     }
     current_ = root_;
-    return;
+    return Element(this, current_);
   }
 
   if (current_ != -1 && elements[current_].parent == -1) {
-    throw WindowError("Cannot call next on the root node more than once");
+    throw UsageError("Cannot call next on the root node more than once");
   }
 
   int prev = current_;
@@ -88,7 +90,7 @@ void Tree::next(int type, const std::string& key) {
       break;
     }
     if (!elements[parent_].rerender) {
-      throw WindowError("Structure changed outside of a re-render");
+      throw UsageError("Structure changed outside of a re-render");
     }
     if (elements[next].key.empty() && !key.empty()) {
       next = create_element(parent_, prev, type);
@@ -103,19 +105,20 @@ void Tree::next(int type, const std::string& key) {
 
   if (next != -1) {
     if (type != elements[next].type && !elements[next].rerender) {
-      throw WindowError("Structure changed outside of a re-render");
+      throw UsageError("Structure changed outside of a re-render");
     }
     if (elements[next].rerender) {
       rerender_element(next, type);
     }
     current_ = next;
-    return;
+    return Element(this, current_);
   }
 
   if (!elements[parent_].rerender) {
-    throw WindowError("Structure changed outside of a re-render");
+    throw UsageError("Structure changed outside of a re-render");
   }
   current_ = create_element(parent_, prev, type);
+  return Element(this, current_);
 }
 
 bool Tree::down_if() {
@@ -138,14 +141,14 @@ void Tree::down() {
 
 void Tree::up() {
   if (parent_ == -1) {
-    throw WindowError("Called up too many times");
+    throw UsageError("Called up too many times");
   }
 
   int remove_from =
       current_ == -1 ? elements[parent_].first_child : elements[current_].next;
 
   if (remove_from != -1 && elements[parent_].rerender) {
-    throw WindowError("Structure changed outside of a re-render");
+    throw UsageError("Structure changed outside of a re-render");
   }
   while (remove_from != -1) {
     queue_remove_.push_back(remove_from);

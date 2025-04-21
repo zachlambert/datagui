@@ -3,6 +3,7 @@
 #include "datagui/color.hpp"
 #include "datagui/font.hpp"
 #include "datagui/layout.hpp"
+#include <functional>
 
 namespace datagui {
 
@@ -33,5 +34,8 @@ struct SelectableTextStyle : public TextStyle {
   Color highlight_color = Color::Gray(0.7);
   bool disabled = false;
 };
+
+template <typename Style>
+using SetStyle = std::function<void(Style&)>;
 
 } // namespace datagui
