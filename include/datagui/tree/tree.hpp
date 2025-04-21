@@ -8,16 +8,9 @@
 #include <functional>
 #include <stack>
 #include <string>
+#include <unordered_map>
 
 namespace datagui {
-
-enum class ElementType {
-  HorizontalLayout,
-  VerticalLayout,
-  TextBox,
-  TextInput,
-  Button
-};
 
 class DataContainer {
 public:
@@ -47,7 +40,7 @@ protected:
 };
 
 struct ElementNode {
-  ElementType type;
+  int type;
   int data_index;
   State state;
 
@@ -67,8 +60,7 @@ struct ElementNode {
 
   int version = 0; // Debug information
 
-  ElementNode(ElementType type, int data_index) :
-      type(type), data_index(data_index) {}
+  ElementNode(int type, int data_index) : type(type), data_index(data_index) {}
 };
 
 struct VariableNode {
@@ -112,7 +104,7 @@ public:
   void begin();
   void end();
 
-  void next(ElementType type, const std::string& key = "");
+  void next(int type = -1, const std::string& key = "");
   bool down_if();
   void down();
   void up();
@@ -126,17 +118,17 @@ public:
   Var<T> variable(const std::function<T()>& construct = []() { return T(); });
 
   template <typename Data>
-  void set_element_data(const ElementType type) {
-    assert(!data_containers[int(type)]);
-    if (data_containers.size() <= int(type)) {
-      data_containers.resize(int(type) + 1);
+  void register_element_type(int type) {
+    if (data_containers.contains(type)) {
+      throw WindowError(
+          "Registered element " + std::to_string(type) + " twice");
     }
-    data_containers[int(type)] = std::make_unique<DataContainerImpl<Data>>();
+    data_containers.emplace(type, std::make_unique<DataContainerImpl<Data>>);
   }
 
 private:
-  int create_element(int parent, int prev, ElementType type);
-  void rerender_element(int node, ElementType type);
+  int create_element(int parent, int prev, int type);
+  void rerender_element(int node, int type);
   void remove_element(int node);
 
   int create_variable(int element);
@@ -149,7 +141,7 @@ private:
   std::string element_debug(int element) const;
 
   VectorMap<ElementNode> elements;
-  std::vector<std::unique_ptr<DataContainer>> data_containers;
+  std::unordered_map<int, std::unique_ptr<DataContainer>> data_containers;
   VectorMap<VariableNode> variables;
 
   bool is_new = true;

@@ -9,15 +9,15 @@ int main() {
 
   while (true) {
     tree.begin();
-    tree.next(ElementType::HorizontalLayout);
+    tree.next();
 
     if (tree.down_if()) {
       name = tree.variable<std::string>();
 
-      tree.next(ElementType::TextInput);
-      tree.next(ElementType::TextBox);
+      tree.next();
+      tree.next();
       if (tree.down_if()) {
-        tree.next(ElementType::TextBox);
+        tree.next();
         if (name.modified()) {
           std::cout << "Name: " << *name << std::endl;
         }

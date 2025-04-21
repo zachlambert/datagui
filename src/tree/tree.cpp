@@ -3,8 +3,6 @@
 #include <assert.h>
 #include <stack>
 
-#include "datagui/tree/element_system.hpp"
-
 namespace datagui {
 
 void Tree::begin() {
@@ -65,7 +63,7 @@ void Tree::end() {
   variable_current_ = -1;
 }
 
-void Tree::next(ElementType type, const std::string& key) {
+void Tree::next(int type, const std::string& key) {
   if (parent_ == -1) {
     if (current_ != -1) {
       throw WindowError("Cannot create more than one root node");
@@ -161,10 +159,11 @@ void Tree::up() {
   variable_stack_.pop();
 }
 
-int Tree::create_element(int parent, int prev, ElementType type) {
-  int data_index = -1;
-  if (data_containers.size() > int(type) && data_containers[int(type)]) {
-    data_index = data_containers[int(type)]->emplace();
+int Tree::create_element(int parent, int prev, int type) {
+  int data_index = 1;
+  if (type != -1) {
+    assert(data_containers.contains(type));
+    data_index = data_containers.at(type)->emplace();
   }
 
   int element = elements.emplace(type, data_index);
@@ -188,21 +187,18 @@ int Tree::create_element(int parent, int prev, ElementType type) {
   return element;
 }
 
-void Tree::rerender_element(int element, ElementType type) {
+void Tree::rerender_element(int element, int type) {
   auto& node = elements[element];
 
-  // Erase data for old element type if registered
-  if (node.data_index != -1) {
-    assert(
-        data_containers.size() > int(node.type) &&
-        data_containers[int(node.type)]);
-    data_containers[int(node.type)]->pop(node.data_index);
+  if (node.type != -1) {
+    assert(node.data_index);
+    assert(data_containers.contains(node.type));
+    data_containers.at(node.type)->pop(node.data_index);
   }
 
   node.type = type;
-  // Construct data for new element type if registered
-  if (data_containers.size() > int(node.type) && data_containers[int(type)]) {
-    node.data_index = data_containers[int(node.type)]->emplace();
+  if (node.type != -1) {
+    node.data_index = data_containers.at(node.type)->emplace();
   } else {
     node.data_index = -1;
   }
