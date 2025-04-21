@@ -8,12 +8,12 @@ int main() {
   Variable<std::string> name;
 
   while (true) {
-    name = tree.variable<std::string>();
-
     tree.begin();
     tree.next(ElementType::HorizontalLayout);
 
     if (tree.down_if()) {
+      name = tree.variable<std::string>();
+
       tree.next(ElementType::TextInput);
       tree.next(ElementType::TextBox);
       if (tree.down_if()) {

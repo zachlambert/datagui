@@ -11,8 +11,6 @@
 
 namespace datagui {
 
-enum class ElementType;
-#if 0
 enum class ElementType {
   HorizontalLayout,
   VerticalLayout,
@@ -20,10 +18,8 @@ enum class ElementType {
   TextInput,
   Button
 };
-constexpr std::size_t ElementTypeCount = 5;
-#endif
 
-class ElementContainer {
+class DataContainer {
 public:
   virtual int emplace() = 0;
   virtual void pop(int index) = 0;
@@ -31,7 +27,7 @@ public:
 
 template <typename Data>
 requires std::is_default_constructible_v<Data>
-class ElementContainerImpl : public ElementContainer {
+class DataContainerImpl : public DataContainer {
 public:
   int emplace() override final {
     return datas.emplace();
@@ -130,13 +126,12 @@ public:
   Var<T> variable(const std::function<T()>& construct = []() { return T(); });
 
   template <typename Data>
-  void register_element_type(const ElementType type) {
-    assert(!element_containers[int(type)]);
-    if (element_containers.size() <= int(type)) {
-      element_containers.resize(int(type) + 1);
+  void set_element_data(const ElementType type) {
+    assert(!data_containers[int(type)]);
+    if (data_containers.size() <= int(type)) {
+      data_containers.resize(int(type) + 1);
     }
-    element_containers[int(type)] =
-        std::make_unique<ElementContainerImpl<Data>>();
+    data_containers[int(type)] = std::make_unique<DataContainerImpl<Data>>();
   }
 
 private:
@@ -153,8 +148,8 @@ private:
 
   std::string element_debug(int element) const;
 
-  std::vector<std::unique_ptr<ElementContainer>> element_containers;
   VectorMap<ElementNode> elements;
+  std::vector<std::unique_ptr<DataContainer>> data_containers;
   VectorMap<VariableNode> variables;
 
   bool is_new = true;
@@ -166,6 +161,11 @@ private:
   std::vector<int> queue_revisit_;
   std::vector<int> queue_rerender_;
   std::vector<int> queue_remove_;
+
+  template <typename T, bool IsConst>
+  friend class Variable_;
+  template <bool IsConst>
+  friend class Element_;
 };
 
 template <typename T, bool IsConst>
@@ -233,54 +233,54 @@ class Element_ {
 public:
   Element_ first_child() const {
     assert(index != -1);
-    return NodeElement_(tree, tree->nodes[index].first_child);
+    return Element_(tree, tree->elements[index].first_child);
   }
   Element_ last_child() const {
     assert(index != -1);
-    return NodeElement_(tree, tree->nodes[index].last_child);
+    return Element_(tree, tree->elements[index].last_child);
   }
   Element_ next() const {
     assert(index != -1);
-    return NodeElement_(tree, tree->nodes[index].next);
+    return Element_(tree, tree->elements[index].next);
   }
   Element_ prev() const {
     assert(index != -1);
-    return NodeElement_(tree, tree->nodes[index].prev);
+    return Element_(tree, tree->elements[index].prev);
   }
   Element_ parent() const {
     assert(index != -1);
-    return NodeElement_(tree, tree->nodes[index].parent);
+    return Element_(tree, tree->elements[index].parent);
   }
 
   state_ref_t operator*() const {
-    return tree->nodes[index].state;
+    return tree->elements[index].state;
   }
   state_ptr_t operator->() const {
-    return &tree->nodes[index].state;
+    return &tree->elements[index].state;
   }
 
   template <typename Data>
   std::conditional_t<IsConst, const Data&, Data&> data() const {
-    const auto& node = tree->nodes[index];
-    auto container = tree->element_containers[int(node.type)];
-    auto container_cast = dynamic_cast<ElementContainerImpl<Data>>(container);
-    assert(container_cast);
-    return container_cast->get(node.element_index);
+    const auto& element = tree->elements[index];
+    auto container = tree->data_containers[int(element.type)];
+    auto container_t = dynamic_cast<DataContainerImpl<Data>>(container);
+    assert(container_t);
+    return container_t->get(element.data_index);
   }
 
   template <typename Data>
   std::conditional_t<IsConst, const Data&, Data&> data_if() const {
-    const auto& node = tree->nodes[index];
-    auto container = tree->element_containers[int(node.type)];
-    auto container_cast = dynamic_cast<ElementContainerImpl<Data>>(container);
-    if (!container_cast) {
+    const auto& element = tree->elements[index];
+    auto container = tree->element_containers[int(element.type)];
+    auto container_t = dynamic_cast<DataContainerImpl<Data>>(container);
+    if (!container_t) {
       return nullptr;
     }
-    return &container_cast->get(node.element_index);
+    return &container_t->get(element.data_index);
   }
 
   bool visible() const {
-    return tree->nodes[index].visible;
+    return tree->elements[index].visible;
   }
   std::string debug() const {
     return tree->node_debug(index);
@@ -324,7 +324,9 @@ private:
 
 template <typename T>
 Var<T> Tree::variable(const std::function<T()>& construct) {
-  assert(parent_ != -1);
+  if (parent_ == -1) {
+    throw WindowError("Cannot create a variable outside of a container");
+  }
   int variable;
   if (variable_current_ == -1) {
     variable = elements[parent_].first_variable;

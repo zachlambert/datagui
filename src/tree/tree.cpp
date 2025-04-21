@@ -162,8 +162,12 @@ void Tree::up() {
 }
 
 int Tree::create_element(int parent, int prev, ElementType type) {
-  int element =
-      elements.emplace(type, element_containers[int(type)]->emplace());
+  int data_index = -1;
+  if (data_containers.size() > int(type) && data_containers[int(type)]) {
+    data_index = data_containers[int(type)]->emplace();
+  }
+
+  int element = elements.emplace(type, data_index);
   auto& node = elements[element];
   node.parent = parent;
 
@@ -186,11 +190,22 @@ int Tree::create_element(int parent, int prev, ElementType type) {
 
 void Tree::rerender_element(int element, ElementType type) {
   auto& node = elements[element];
-  assert(node.data_index != -1);
-  element_containers[int(node.type)]->pop(node.data_index);
+
+  // Erase data for old element type if registered
+  if (node.data_index != -1) {
+    assert(
+        data_containers.size() > int(node.type) &&
+        data_containers[int(node.type)]);
+    data_containers[int(node.type)]->pop(node.data_index);
+  }
 
   node.type = type;
-  node.data_index = element_containers[int(node.type)]->emplace();
+  // Construct data for new element type if registered
+  if (data_containers.size() > int(node.type) && data_containers[int(type)]) {
+    node.data_index = data_containers[int(node.type)]->emplace();
+  } else {
+    node.data_index = -1;
+  }
 }
 
 void Tree::remove_element(int element) {
@@ -214,8 +229,9 @@ void Tree::remove_element(int element) {
         elements[node.parent].last_child = node.prev;
       }
 
-      assert(node.data_index != -1);
-      element_systems[int(node.type)]->pop(node.data_index);
+      if (node.data_index != -1) {
+        data_containers[int(node.type)]->pop(node.data_index);
+      }
 
       int variable = node.first_variable;
       while (variable != -1) {
