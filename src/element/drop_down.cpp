@@ -60,7 +60,7 @@ void DropDownSystem::set_layout_input(Element element) const {
         font_manager.text_size(choice, style, style.content_width);
     fixed_inner_width = std::max(fixed_inner_width, choice_size.x);
   }
-  if (data.choices.empty() || data.choice == -1) {
+  if (data.choices.empty()) {
     Vecf none_size =
         font_manager.text_size("<none>", style, style.content_width);
     fixed_inner_width = std::max(fixed_inner_width, none_size.x);
@@ -78,7 +78,7 @@ void DropDownSystem::set_layout_input(Element element) const {
   element->fixed_size.y += font_manager.text_height(style);
   element->fixed_size.y += style.padding.size().y;
 
-  if (element->focused && !data.choices.empty()) {
+  if (data.open && !data.choices.empty()) {
     element->hitbox_offset.upper.y +=
         (data.choices.size() - 1) *
         (font_manager.text_height(style) + style.padding.size().y +
@@ -90,10 +90,7 @@ void DropDownSystem::render(ConstElement element) const {
   const auto& data = element.data<DropDownData>();
   const auto& style = data.style;
 
-  if (!element->focused || data.choices.empty()) {
-    const std::string text = data.choices.empty() || data.choice == -1
-                                 ? "<none>"
-                                 : data.choices[data.choice];
+  if (!data.open || data.choices.empty()) {
     geometry_renderer.queue_box(
         element->box(),
         element->z_range.lower,
@@ -101,15 +98,22 @@ void DropDownSystem::render(ConstElement element) const {
         style.border_width,
         style.border_color,
         0);
-    text_renderer.queue_text(
-        element->position + style.border_width.offset() +
-            style.padding.offset(),
-        element->z_range.lower,
-        text,
-        style,
-        LengthFixed(
-            element->size.x - style.border_width.size().x -
-            style.padding.size().x));
+
+    std::string text = !data.open
+                           ? data.choice == -1 ? "" : data.choices[data.choice]
+                           : "<none>";
+
+    if (data.choice != -1) {
+      text_renderer.queue_text(
+          element->position + style.border_width.offset() +
+              style.padding.offset(),
+          element->z_range.lower,
+          text,
+          style,
+          LengthFixed(
+              element->size.x - style.border_width.size().x -
+              style.padding.size().x));
+    }
     return;
   }
 
@@ -170,7 +174,11 @@ void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
   if (event.action != MouseAction::Press) {
     return;
   }
-  if (!element->focused || data.choices.empty()) {
+  if (!data.open) {
+    data.open = true;
+    return;
+  }
+  if (data.choices.empty()) {
     return;
   }
 
@@ -212,11 +220,27 @@ void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
         border->top + style.padding.size().y + font_manager.text_height(style);
   }
 
-  if (clicked != data.choice && clicked != -1) {
-    data.changed = true;
-    data.choice = clicked;
+  if (clicked != -1) {
+    if (data.choice != clicked) {
+      data.changed = true;
+      data.choice = clicked;
+    }
+    data.open = false;
     element.trigger();
   }
+}
+
+void DropDownSystem::focus_enter(Element element) {
+  auto& data = element.data<DropDownData>();
+  data.open = true;
+}
+
+void DropDownSystem::focus_leave(
+    Element element,
+    bool success,
+    ConstElement new_element) {
+  auto& data = element.data<DropDownData>();
+  data.open = false;
 }
 
 } // namespace datagui

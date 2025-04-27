@@ -18,7 +18,9 @@ using SetDropDownStyle = SetStyle<DropDownStyle>;
 struct DropDownData {
   std::vector<std::string> choices;
   int choice = -1;
+  int choice_hovered = -1;
   bool changed = false;
+  bool open = false;
   DropDownStyle style;
 };
 
@@ -46,6 +48,10 @@ public:
   void set_layout_input(Element element) const override;
   void render(ConstElement element) const override;
   void mouse_event(Element element, const MouseEvent& event) override;
+
+  void focus_enter(Element element) override;
+  void focus_leave(Element element, bool success, ConstElement new_element)
+      override;
 
 private:
   FontManager& font_manager;
