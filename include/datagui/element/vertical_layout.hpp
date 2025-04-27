@@ -14,6 +14,8 @@ using SetVerticalLayoutStyle = SetStyle<VerticalLayoutStyle>;
 struct VerticalLayoutData {
   using Style = VerticalLayoutStyle;
   Style style;
+  float overrun = 0;
+  float scroll_pos = 0;
 };
 
 class VerticalLayoutSystem : public ElementSystemImpl<VerticalLayoutData> {
@@ -26,6 +28,7 @@ public:
   void set_layout_input(Element element) const override;
   void set_child_layout_output(Element element) const override;
   void render(ConstElement element) const override;
+  bool scroll_event(Element element, const ScrollEvent& event) override;
 
 private:
   GeometryRenderer& geometry_renderer;

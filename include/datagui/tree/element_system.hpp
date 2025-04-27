@@ -19,6 +19,11 @@ public:
 
   // Mouse press, hold or release inside the element bounding box
   virtual void mouse_event(Element element, const MouseEvent& event) {}
+  virtual void mouse_hover(Element element, const Vecf& mouse_pos) {}
+  // If an element captures the scroll event, process it and return true
+  virtual bool scroll_event(Element element, const ScrollEvent& event) {
+    return false;
+  }
   // Key press, hold or release, while a node is focused
   virtual void key_event(Element element, const KeyEvent& event) {}
   // Text input while a node is focused
@@ -54,6 +59,13 @@ public:
   void mouse_event(Element element, const MouseEvent& event) {
     systems.at(element.type())->mouse_event(element, event);
   }
+  void mouse_hover(Element element, const Vecf& mouse_pos) {
+    systems.at(element.type())->mouse_hover(element, mouse_pos);
+  }
+  bool scroll_event(Element element, const ScrollEvent& scroll_event) {
+    return systems.at(element.type())->scroll_event(element, scroll_event);
+  }
+
   void key_event(Element element, const KeyEvent& event) {
     systems.at(element.type())->key_event(element, event);
   }

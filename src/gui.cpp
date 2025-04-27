@@ -146,7 +146,7 @@ void Gui::render() {
           ss << element.debug();
           ss << "\nfixed: " << element->fixed_size.x << ", "
              << element->fixed_size.y;
-          ss << "dynamic: " << element->dynamic_size.x << ", "
+          ss << "\ndynamic: " << element->dynamic_size.x << ", "
              << element->dynamic_size.y;
           ss << "\nsize: " << element->size.x << ", " << element->size.y;
           ss << "\nz_range: " << element->z_range.lower << ", "
@@ -287,9 +287,10 @@ void Gui::calculate_sizes() {
       element->hitbox.upper =
           element->position + element->size + element->hitbox_offset.upper;
 
+      element->bounding_box = element->hitbox;
       auto child = element.first_child();
       while (child) {
-        element->hitbox = bounding(element->hitbox, child->hitbox);
+        element->bounding_box = bounding(element->bounding_box, child->hitbox);
         child = child.next();
       }
     }
@@ -308,6 +309,12 @@ void Gui::event_handling() {
       break;
     }
   }
+
+  for (const auto& event : window.scroll_events()) {
+    event_handling_scroll(event);
+  }
+
+  event_handling_hover(window.mouse_pos());
 
   for (const auto& event : window.key_events()) {
     bool handled = false;
@@ -347,6 +354,42 @@ void Gui::event_handling() {
   }
 }
 
+Element Gui::get_leaf_node(const Vecf& position) {
+  Element leaf = Element();
+  float leaf_z = 0;
+
+  std::stack<Element> stack;
+  stack.push(tree.root());
+
+  while (!stack.empty()) {
+    auto element = stack.top();
+    stack.pop();
+
+    if (!element->bounding_box.contains(position)) {
+      continue;
+    }
+    if (element->z_range.lower < leaf_z) {
+      continue;
+    }
+
+    // The bounding box for a node can be larger than the hitbox
+    // for this specific node (eg: a child hitbox extends outside the
+    // parent hitbox)
+    if (element->hitbox.contains(position)) {
+      leaf = element;
+      leaf_z = element->z_range.lower;
+    }
+
+    auto child = element.first_child();
+    while (child) {
+      stack.push(child);
+      child = child.next();
+    }
+  }
+
+  return leaf;
+}
+
 void Gui::event_handling_left_click(const MouseEvent& event) {
   if (event.action != MouseAction::Press) {
     // Pass-through the hold or release event
@@ -361,31 +404,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   // Clicked -> new focused node
 
   Element prev_element_focus = element_focus;
-  element_focus = Element();
-  float element_focus_z = 0;
-
-  std::stack<Element> stack;
-  stack.push(tree.root());
-
-  while (!stack.empty()) {
-    auto element = stack.top();
-    stack.pop();
-
-    if (!element->hitbox.contains(event.position)) {
-      continue;
-    }
-    if (element->z_range.lower < element_focus_z) {
-      continue;
-    }
-    element_focus = element;
-    element_focus_z = element->z_range.lower;
-
-    auto child = element.first_child();
-    while (child) {
-      stack.push(child);
-      child = child.next();
-    }
-  }
+  element_focus = get_leaf_node(event.position);
 
   if (element_focus != prev_element_focus) {
     if (prev_element_focus) {
@@ -400,6 +419,29 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   }
   if (element_focus) {
     systems.mouse_event(element_focus, event);
+  }
+}
+
+void Gui::event_handling_hover(const Vecf& mouse_pos) {
+  if (element_hover) {
+    element_hover->hovered = false;
+  }
+
+  element_hover = get_leaf_node(mouse_pos);
+  if (!element_hover) {
+    return;
+  }
+  element_hover->hovered = true;
+  systems.mouse_hover(element_hover, mouse_pos);
+}
+
+void Gui::event_handling_scroll(const ScrollEvent& event) {
+  Element element = get_leaf_node(event.position);
+  while (element) {
+    if (systems.scroll_event(element, event)) {
+      return;
+    }
+    element = element.parent();
   }
 }
 

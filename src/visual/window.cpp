@@ -68,6 +68,23 @@ void glfw_mouse_button_callback(
   window->mouse_events_.push_back(event);
 }
 
+void glfw_scroll_callback(
+    GLFWwindow* glfw_window,
+    double x_offset,
+    double y_offset) {
+  (void)x_offset;
+
+  auto window = lookup_window(glfw_window);
+  if (!window) {
+    return;
+  }
+
+  ScrollEvent event;
+  event.amount = y_offset * -50;
+  // Set position within Gui
+  window->scroll_events_.push_back(event);
+}
+
 void glfw_key_callback(
     GLFWwindow* glfw_window,
     int key,
@@ -225,6 +242,7 @@ void Window::open() {
   glDepthFunc(GL_GEQUAL);
 
   glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
+  glfwSetScrollCallback(window, glfw_scroll_callback);
   glfwSetKeyCallback(window, glfw_key_callback);
   glfwSetCharCallback(window, glfw_char_callback);
 }
@@ -257,15 +275,22 @@ void Window::render_end() {
 
 void Window::poll_events() {
   mouse_events_.clear();
+  scroll_events_.clear();
   key_events_.clear();
   text_events_.clear();
   glfwPollEvents();
 
-  MouseEvent hold_event;
-  hold_event.action = MouseAction::Hold;
   double mx, my;
   glfwGetCursorPos(window, &mx, &my);
-  hold_event.position = Vecf(mx, my);
+  mouse_pos_ = Vecf(mx, my);
+
+  for (auto& event : scroll_events_) {
+    event.position = mouse_pos_;
+  }
+
+  MouseEvent hold_event;
+  hold_event.action = MouseAction::Hold;
+  hold_event.position = mouse_pos_;
 
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     if (!mouse_button_down_[i]) {

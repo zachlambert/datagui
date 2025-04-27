@@ -20,11 +20,13 @@ struct State {
     return Boxf(position, position + size);
   }
   Boxf hitbox;
+  Boxf bounding_box; // Bounds hitbox + child hitboxes
   Rangef z_range;
 
-  // Focus
+  // Event-handling
   bool in_focus_tree = false;
   bool focused = false;
+  bool hovered = false;
 };
 
 } // namespace datagui

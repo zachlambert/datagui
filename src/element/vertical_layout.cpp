@@ -13,7 +13,7 @@ void VerticalLayoutSystem::visit(
 }
 
 void VerticalLayoutSystem::set_layout_input(Element element) const {
-  const auto& data = element.data<VerticalLayoutData>();
+  auto& data = element.data<VerticalLayoutData>();
   const auto& style = data.style;
 
   element->fixed_size = Vecf::Zero();
@@ -22,10 +22,7 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
 
   // Primary direction (Y)
 
-  if (auto length = std::get_if<LengthFixed>(&style.length)) {
-    element->fixed_size.y = length->value;
-
-  } else {
+  {
     auto child = element.first_child();
     int count = 0;
     while (child) {
@@ -42,10 +39,12 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
     }
 
     element->fixed_size.y += (count - 1) * style.inner_padding;
-
-    if (auto length = std::get_if<LengthDynamic>(&style.length)) {
-      element->dynamic_size.y = length->weight;
-    }
+  }
+  if (auto length = std::get_if<LengthFixed>(&style.length)) {
+    data.overrun = std::max(element->fixed_size.y - length->value, 0.f);
+    element->fixed_size.y = length->value;
+  } else if (auto length = std::get_if<LengthDynamic>(&style.length)) {
+    element->dynamic_size.y = length->weight;
   }
 
   // Secondary direction (X)
@@ -80,8 +79,8 @@ void VerticalLayoutSystem::set_child_layout_output(Element element) const {
   const auto& data = element.data<VerticalLayoutData>();
   const auto& style = data.style;
 
-  Vecf available = element->size - element->fixed_size;
-  float offset_y = style.padding.top + style.border_width.top;
+  Vecf available = minimum(element->size - element->fixed_size, Vecf::Zero());
+  float offset_y = style.padding.top + style.border_width.top - data.scroll_pos;
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
@@ -142,6 +141,25 @@ void VerticalLayoutSystem::render(ConstElement element) const {
   const auto& style = data.style;
 
   geometry_renderer.queue_box(element->box(), element->z_range.lower, style);
+}
+
+bool VerticalLayoutSystem::scroll_event(
+    Element element,
+    const ScrollEvent& event) {
+
+  auto& data = element.data<VerticalLayoutData>();
+
+  if (data.overrun == 0) {
+    return false;
+  }
+  if (data.scroll_pos == data.overrun && event.amount > 0 ||
+      data.scroll_pos == 0 && event.amount < 0) {
+    return false;
+  }
+
+  data.scroll_pos =
+      std::clamp(data.scroll_pos + event.amount, 0.f, data.overrun);
+  return true;
 }
 
 } // namespace datagui

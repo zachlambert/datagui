@@ -15,6 +15,11 @@ struct MouseEvent {
   Vecf position;
 };
 
+struct ScrollEvent {
+  Vecf position;
+  float amount;
+};
+
 enum class Key {
   Left,
   Right,

@@ -10,6 +10,11 @@ int main() {
     style.border_width = 2;
     style.padding = 20;
   };
+  auto items_layout = [](datagui::VerticalLayoutStyle& style) {
+    style.border_width = 2;
+    style.padding = 20;
+    style.length = 20.0_fixed;
+  };
 
   while (gui.running()) {
     gui.begin();
@@ -26,7 +31,7 @@ int main() {
         }
         gui.layout_end();
       }
-      if (gui.vertical_layout(boxed_layout)) {
+      if (gui.vertical_layout(items_layout)) {
         std::size_t to_remove = items->size();
         for (std::size_t i = 0; i < items->size(); i++) {
           if (gui.horizontal_layout()) {

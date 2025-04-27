@@ -48,7 +48,9 @@ void ButtonSystem::render(ConstElement element) const {
   geometry_renderer.queue_box(
       element->box(),
       element->z_range.lower,
-      data.down ? style.down_color : style.bg_color,
+      data.down          ? style.down_color
+      : element->hovered ? style.hover_color
+                         : style.bg_color,
       style.border_width,
       element->in_focus_tree ? style.focus_color : style.border_color,
       style.radius);
@@ -76,8 +78,10 @@ void ButtonSystem::mouse_event(Element element, const MouseEvent& event) {
     break;
   case MouseAction::Release:
     data.down = false;
-    data.released = true;
-    element.trigger();
+    if (element->box().contains(event.position)) {
+      data.released = true;
+      element.trigger();
+    }
     break;
   default:
     break;

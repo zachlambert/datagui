@@ -71,7 +71,10 @@ private:
   void calculate_sizes();
 
   void event_handling();
+  Element get_leaf_node(const Vecf& position);
   void event_handling_left_click(const MouseEvent& event);
+  void event_handling_hover(const Vecf& mouse_pos);
+  void event_handling_scroll(const ScrollEvent& event);
 
   void set_tree_focus(Element element, bool value);
   void focus_next(bool reverse);
@@ -93,6 +96,7 @@ private:
   ElementSystems systems;
 
   Element element_focus;
+  Element element_hover;
 };
 
 } // namespace datagui
