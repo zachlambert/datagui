@@ -221,8 +221,8 @@ void GeometryRenderer::queue_box(
     float radius) {
 
   Element element;
-  element.offset = box.lower + border_width.offset();
-  element.size = box.size() - border_width.size();
+  element.offset = box.lower; //  + border_width.offset();
+  element.size = box.size();  //  - border_width.size();
   element.radius = radius;
   element.bg_color = bg_color;
   element.border_color = border_color;

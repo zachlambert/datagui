@@ -8,12 +8,16 @@
 
 namespace datagui {
 
-struct DropDownStyle : public BoxStyle, public TextStyle {};
+struct DropDownStyle : public BoxStyle, public TextStyle {
+  Length content_width = LengthWrap();
+  float inner_border_width = 0;
+  Color choice_color = Color::Gray(0.9);
+};
 using SetDropDownStyle = SetStyle<DropDownStyle>;
 
 struct DropDownData {
   std::vector<std::string> choices;
-  int choice;
+  int choice = -1;
   bool changed = false;
   DropDownStyle style;
 };
@@ -28,23 +32,20 @@ public:
       text_renderer(text_renderer),
       geometry_renderer(geometry_renderer) {}
 
-  bool visit_begin(
+  const int* visit(
       Element element,
       const std::vector<std::string>& choices,
       int initial_choice,
       const SetDropDownStyle& set_style);
-  void visit_end(Element element, int choice);
+  void visit(
+      Element element,
+      const std::vector<std::string>& choices,
+      const Variable<int>& choice,
+      const SetDropDownStyle& set_style);
 
   void set_layout_input(Element element) const override;
   void render(ConstElement element) const override;
-
   void mouse_event(Element element, const MouseEvent& event) override;
-  void key_event(Element element, const KeyEvent& event) override;
-  void text_event(Element element, const TextEvent& event) override;
-
-  void focus_enter(Element element) override;
-  void focus_leave(Element element, bool success, ConstElement new_element)
-      override;
 
 private:
   FontManager& font_manager;

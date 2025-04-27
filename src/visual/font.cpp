@@ -367,4 +367,9 @@ Vecf FontManager::text_size(
   }
 }
 
+float FontManager::text_height(const TextStyle& style) {
+  const auto& fs = font_structure(style.font, style.font_size);
+  return fs.line_height;
+}
+
 } // namespace datagui

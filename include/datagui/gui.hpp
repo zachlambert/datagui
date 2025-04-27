@@ -11,6 +11,7 @@
 #include "datagui/visual/text_renderer.hpp"
 
 #include "datagui/element/button.hpp"
+#include "datagui/element/drop_down.hpp"
 #include "datagui/element/horizontal_layout.hpp"
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
@@ -38,16 +39,26 @@ public:
       const SetTextBoxStyle& set_style = nullptr);
 
   const std::string* text_input(
-      const std::string& initial_value = "",
+      const std::string& initial_text = "",
       const SetTextInputStyle& set_style = nullptr);
 
   void text_input(
-      const Variable<std::string>& variable,
+      const Variable<std::string>& text,
       const SetTextInputStyle& set_style = nullptr);
 
   bool button(
       const std::string& text,
       const SetButtonStyle& set_style = nullptr);
+
+  const int* drop_down(
+      const std::vector<std::string>& choices,
+      int initial_choice = -1,
+      const SetDropDownStyle& set_style = nullptr);
+
+  void drop_down(
+      const std::vector<std::string>& choices,
+      const Variable<int>& choice,
+      const SetDropDownStyle& set_style = nullptr);
 
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
@@ -78,6 +89,7 @@ private:
   TextBoxSystem text_box_system;
   TextInputSystem text_input_system;
   ButtonSystem button_system;
+  DropDownSystem drop_down_system;
   ElementSystems systems;
 
   Element element_focus;

@@ -12,13 +12,15 @@ Gui::Gui(const Window::Config& config) :
     vertical_layout_system(geometry_renderer),
     text_box_system(font_manager, text_renderer),
     text_input_system(font_manager, text_renderer, geometry_renderer),
-    button_system(font_manager, geometry_renderer, text_renderer) {
+    button_system(font_manager, geometry_renderer, text_renderer),
+    drop_down_system(font_manager, text_renderer, geometry_renderer) {
 
   horizontal_layout_system.register_type(tree, systems);
   vertical_layout_system.register_type(tree, systems);
   text_box_system.register_type(tree, systems);
   text_input_system.register_type(tree, systems);
   button_system.register_type(tree, systems);
+  drop_down_system.register_type(tree, systems);
 
   geometry_renderer.init();
   text_renderer.init();
@@ -53,17 +55,17 @@ void Gui::text_box(
 }
 
 const std::string* Gui::text_input(
-    const std::string& initial_value,
+    const std::string& initial_text,
     const std::function<void(TextInputStyle&)>& set_style) {
   auto element = tree.next(text_input_system.type());
-  return text_input_system.visit(element, initial_value, set_style);
+  return text_input_system.visit(element, initial_text, set_style);
 }
 
 void Gui::text_input(
-    const Variable<std::string>& variable,
+    const Variable<std::string>& text,
     const std::function<void(TextInputStyle&)>& set_style) {
   auto element = tree.next(text_input_system.type());
-  text_input_system.visit(element, variable, set_style);
+  text_input_system.visit(element, text, set_style);
 }
 
 bool Gui::button(
@@ -71,6 +73,22 @@ bool Gui::button(
     const std::function<void(ButtonStyle&)>& set_style) {
   auto element = tree.next(button_system.type());
   return button_system.visit(element, text, set_style);
+}
+
+const int* Gui::drop_down(
+    const std::vector<std::string>& choices,
+    int initial_choice,
+    const SetDropDownStyle& set_style) {
+  auto element = tree.next(drop_down_system.type());
+  return drop_down_system.visit(element, choices, initial_choice, set_style);
+}
+
+void Gui::drop_down(
+    const std::vector<std::string>& choices,
+    const Variable<int>& choice,
+    const SetDropDownStyle& set_style) {
+  auto element = tree.next(drop_down_system.type());
+  drop_down_system.visit(element, choices, choice, set_style);
 }
 
 void Gui::begin() {
