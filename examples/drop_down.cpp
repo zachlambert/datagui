@@ -12,9 +12,9 @@ int main() {
   };
 
   auto style_drop_down = [](datagui::DropDownStyle& style) {
-    style.padding = 20;
-    style.border_width = 10;
-    style.inner_border_width = 5;
+    style.padding = 5;
+    style.border_width = 2;
+    style.inner_border_width = 2;
     style.bg_color = datagui::Color::Gray(0.7);
     style.border_color = datagui::Color::Black();
   };
@@ -28,6 +28,7 @@ int main() {
       if (auto choice = gui.drop_down(choices, -1, style_drop_down)) {
         std::cout << "Selected '" << choices[*choice] << "'" << std::endl;
       }
+      gui.drop_down({}, -1, style_drop_down);
       gui.text_box("Text below");
       gui.layout_end();
     }

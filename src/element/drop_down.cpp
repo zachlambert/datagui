@@ -103,17 +103,15 @@ void DropDownSystem::render(ConstElement element) const {
                            ? data.choice == -1 ? "" : data.choices[data.choice]
                            : "<none>";
 
-    if (data.choice != -1) {
-      text_renderer.queue_text(
-          element->position + style.border_width.offset() +
-              style.padding.offset(),
-          element->z_range.lower,
-          text,
-          style,
-          LengthFixed(
-              element->size.x - style.border_width.size().x -
-              style.padding.size().x));
-    }
+    text_renderer.queue_text(
+        element->position + style.border_width.offset() +
+            style.padding.offset(),
+        element->z_range.lower,
+        text,
+        style,
+        LengthFixed(
+            element->size.x - style.border_width.size().x -
+            style.padding.size().x));
     return;
   }
 
