@@ -11,6 +11,7 @@ const static std::string vertex_shader = R"(
 // Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 uv;
+layout(location = 2) in float z_pos;
 
 uniform vec2 viewport_size;
 out vec2 fs_uv;
@@ -19,7 +20,7 @@ void main(){
   gl_Position = vec4(
     -1.f + 2 * vertex_pos.x / viewport_size.x,
     1.f - 2 * vertex_pos.y / viewport_size.y,
-    0,
+    z_pos,
     1
   );
   fs_uv = uv;
@@ -74,12 +75,22 @@ void TextRenderer::init() {
       (void*)offsetof(Vertex, uv));
   glEnableVertexAttribArray(1);
 
+  glVertexAttribPointer(
+      2,
+      1,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, z_pos));
+  glEnableVertexAttribArray(2);
+
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 }
 
 void TextRenderer::queue_text(
     const Vecf& origin,
+    float z_pos,
     const std::string& text,
     Font font,
     int font_size,
@@ -129,12 +140,12 @@ void TextRenderer::queue_text(
     Boxf box(pos, pos + c.size);
     const Boxf& uv = c.uv;
 
-    vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
-    vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
-    vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
-    vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
-    vertices.push_back(Vertex{box.top_right(), uv.bottom_right()});
-    vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
+    vertices.push_back(Vertex{box.bottom_left(), uv.top_left(), z_pos});
+    vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), z_pos});
+    vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), z_pos});
+    vertices.push_back(Vertex{box.bottom_right(), uv.top_right(), z_pos});
+    vertices.push_back(Vertex{box.top_right(), uv.bottom_right(), z_pos});
+    vertices.push_back(Vertex{box.top_left(), uv.bottom_left(), z_pos});
 
     offset.x += c.advance;
   }

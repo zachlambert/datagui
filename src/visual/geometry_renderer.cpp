@@ -13,10 +13,11 @@ const static std::string rect_vs = R"(
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 offset;
 layout(location = 2) in vec2 size;
-layout(location = 3) in float radius;
-layout(location = 4) in vec4 bg_color;
-layout(location = 5) in vec4 border_color;
-layout(location = 6) in vec4 border_width;
+layout(location = 3) in float z_pos;
+layout(location = 4) in float radius;
+layout(location = 5) in vec4 bg_color;
+layout(location = 6) in vec4 border_color;
+layout(location = 7) in vec4 border_width;
 
 uniform vec2 viewport_size;
 
@@ -34,7 +35,7 @@ void main(){
   gl_Position = vec4(
     -1 + 2*fs_pos.x/viewport_size.x,
     1 - 2*fs_pos.y/viewport_size.y,
-    0,
+    z_pos,
     1);
 
   fs_box_outer_lower = offset;
@@ -172,6 +173,17 @@ void GeometryRenderer::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
+      (void*)offsetof(Element, z_pos));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      1,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
       (void*)offsetof(Element, radius));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
@@ -215,14 +227,16 @@ void GeometryRenderer::init() {
 
 void GeometryRenderer::queue_box(
     const Boxf& box,
+    float z_pos,
     const Color& bg_color,
     BoxDims border_width,
     Color border_color,
     float radius) {
 
   Element element;
-  element.offset = box.lower; //  + border_width.offset();
-  element.size = box.size();  //  - border_width.size();
+  element.offset = box.lower;
+  element.size = box.size();
+  element.z_pos = z_pos;
   element.radius = radius;
   element.bg_color = bg_color;
   element.border_color = border_color;

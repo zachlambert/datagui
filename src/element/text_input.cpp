@@ -50,6 +50,7 @@ void TextInputSystem::set_layout_input(Element element) const {
 
   element->fixed_size = (style.border_width + style.padding).size();
   element->dynamic_size = Vecf::Zero();
+  element->hitbox_offset = Boxf();
 
   Vecf text_size = font_manager.text_size(data.text, style, style.width);
   element->fixed_size.y += text_size.y;
@@ -72,6 +73,7 @@ void TextInputSystem::render(ConstElement element) const {
 
   geometry_renderer.queue_box(
       element->box(),
+      element->z_range.lower,
       style.bg_color,
       style.border_width,
       element->in_focus_tree ? style.focus_color : style.border_color,
@@ -87,11 +89,17 @@ void TextInputSystem::render(ConstElement element) const {
         style.width,
         text,
         text_position,
+        element->z_range.lower,
         active_selection,
         geometry_renderer);
   }
 
-  text_renderer.queue_text(text_position, text, style, style.width);
+  text_renderer.queue_text(
+      text_position,
+      element->z_range.lower,
+      text,
+      style,
+      style.width);
 }
 
 void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {

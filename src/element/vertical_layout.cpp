@@ -18,6 +18,7 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
 
   element->fixed_size = Vecf::Zero();
   element->dynamic_size = Vecf::Zero();
+  element->hitbox_offset = Boxf();
 
   // Primary direction (Y)
 
@@ -130,6 +131,8 @@ void VerticalLayoutSystem::set_child_layout_output(Element element) const {
       break;
     }
 
+    child->z_range = element->z_range;
+
     child = child.next();
   }
 }
@@ -138,7 +141,7 @@ void VerticalLayoutSystem::render(ConstElement element) const {
   const auto& data = element.data<VerticalLayoutData>();
   const auto& style = data.style;
 
-  geometry_renderer.queue_box(element->box(), style);
+  geometry_renderer.queue_box(element->box(), element->z_range.lower, style);
 }
 
 } // namespace datagui

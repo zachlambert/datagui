@@ -11,6 +11,7 @@ struct State {
   // Layout input
   Vecf fixed_size;
   Vecf dynamic_size;
+  Boxf hitbox_offset;
 
   // Layout output
   Vecf position;
@@ -18,6 +19,8 @@ struct State {
   Boxf box() const {
     return Boxf(position, position + size);
   }
+  Boxf hitbox;
+  Rangef z_range;
 
   // Focus
   bool in_focus_tree = false;

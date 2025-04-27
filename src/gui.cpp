@@ -1,4 +1,5 @@
 #include "datagui/gui.hpp"
+#include <sstream>
 #include <stack>
 
 namespace datagui {
@@ -121,6 +122,7 @@ void Gui::render() {
       if (debug_mode_) {
         geometry_renderer.queue_box(
             Boxf(element->position, element->position + element->size),
+            1,
             Color::Clear(),
             2,
             element->focused         ? Color::Blue()
@@ -129,15 +131,27 @@ void Gui::render() {
             0);
 
         if (element->focused) {
-          std::string debug_text;
-          debug_text += element.debug();
-          debug_text += "\nfixed: " + std::to_string(element->fixed_size.x) +
-                        ", " + std::to_string(element->fixed_size.y);
-          debug_text +=
-              "\ndynamic: " + std::to_string(element->dynamic_size.x) + ", " +
-              std::to_string(element->dynamic_size.y);
-          debug_text += "\nsize: " + std::to_string(element->size.x) + ", " +
-                        std::to_string(element->size.y);
+          geometry_renderer.queue_box(
+              element->hitbox,
+              1,
+              Color::Clear(),
+              2,
+              Color(1, 0, 1),
+              0);
+        }
+
+        if (element->focused) {
+          std::stringstream ss;
+
+          ss << element.debug();
+          ss << "\nfixed: " << element->fixed_size.x << ", "
+             << element->fixed_size.y;
+          ss << "dynamic: " << element->dynamic_size.x << ", "
+             << element->dynamic_size.y;
+          ss << "\nsize: " << element->size.x << ", " << element->size.y;
+          ss << "\nz_range: " << element->z_range.lower << ", "
+             << element->z_range.upper;
+          std::string debug_text = ss.str();
 
           BoxStyle box_style;
           box_style.bg_color = Color::White();
@@ -151,9 +165,11 @@ void Gui::render() {
               Boxf(
                   window.size() - text_size - Vecf::Constant(15),
                   window.size() - Vecf::Constant(5)),
+              1,
               box_style);
           text_renderer.queue_text(
               window.size() - text_size - Vecf::Constant(10),
+              1,
               debug_text,
               text_style,
               LengthWrap());
@@ -213,6 +229,7 @@ void Gui::calculate_sizes() {
     stack.emplace(tree.root());
     tree.root()->position = Vecf::Zero();
     tree.root()->size = window.size();
+    tree.root()->z_range = Rangef(0, 1);
 
     while (!stack.empty()) {
       auto element = stack.top();
@@ -231,6 +248,48 @@ void Gui::calculate_sizes() {
       auto child = element.first_child();
       while (child) {
         stack.push(child);
+        child = child.next();
+      }
+    }
+  }
+
+  {
+    struct State {
+      Element element;
+      bool first_visit;
+      State(Element element) : element(element), first_visit(true) {}
+    };
+    std::stack<State> stack;
+    stack.emplace(tree.root());
+
+    while (!stack.empty()) {
+      State& state = stack.top();
+      auto element = state.element;
+
+      if (!element.visible()) {
+        stack.pop();
+        continue;
+      }
+
+      // If the node has children, process these first
+      if (state.first_visit && element.first_child()) {
+        state.first_visit = false;
+        auto child = element.first_child();
+        while (child) {
+          stack.emplace(child);
+          child = child.next();
+        }
+        continue;
+      }
+      stack.pop();
+
+      element->hitbox.lower = element->position + element->hitbox_offset.lower;
+      element->hitbox.upper =
+          element->position + element->size + element->hitbox_offset.upper;
+
+      auto child = element.first_child();
+      while (child) {
+        element->hitbox = bounding(element->hitbox, child->hitbox);
         child = child.next();
       }
     }
@@ -303,29 +362,28 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
 
   Element prev_element_focus = element_focus;
   element_focus = Element();
+  float element_focus_z = 0;
 
   std::stack<Element> stack;
   stack.push(tree.root());
 
-  // TODO: parse floating nodes first when added
+  while (!stack.empty()) {
+    auto element = stack.top();
+    stack.pop();
 
-  if (!element_focus) {
-    // No floating nodes clicked, process standard nodes
-    while (!stack.empty()) {
-      auto element = stack.top();
-      stack.pop();
+    if (!element->hitbox.contains(event.position)) {
+      continue;
+    }
+    if (element->z_range.lower < element_focus_z) {
+      continue;
+    }
+    element_focus = element;
+    element_focus_z = element->z_range.lower;
 
-      if (!element->box().contains(event.position)) {
-        continue;
-      }
-      element->in_focus_tree = true;
-      element_focus = element;
-
-      auto child = element.first_child();
-      while (child) {
-        stack.push(child);
-        child = child.next();
-      }
+    auto child = element.first_child();
+    while (child) {
+      stack.push(child);
+      child = child.next();
     }
   }
 

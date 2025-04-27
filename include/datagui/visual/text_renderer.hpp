@@ -15,6 +15,7 @@ public:
 
   void queue_text(
       const Vecf& origin,
+      float z_pos,
       const std::string& text,
       Font font,
       int font_size,
@@ -23,11 +24,13 @@ public:
 
   void queue_text(
       const Vecf& origin,
+      float z_pos,
       const std::string& text,
       const TextStyle& style,
       Length width) {
     queue_text(
         origin,
+        z_pos,
         text,
         style.font,
         style.font_size,
@@ -41,6 +44,7 @@ private:
   struct Vertex {
     Vecf pos;
     Vecf uv;
+    float z_pos;
   };
 
   struct Command {

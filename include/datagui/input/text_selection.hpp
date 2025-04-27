@@ -60,6 +60,7 @@ void render_selection(
     Length width,
     const std::string& text,
     const Vecf& origin,
+    float z_pos,
     const TextSelection& selection,
     GeometryRenderer& geometry_renderer);
 
