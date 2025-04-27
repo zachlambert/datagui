@@ -27,14 +27,14 @@ void ButtonSystem::set_layout_input(Element element) const {
   element->fixed_size = (style.border_width + style.padding).size();
   element->dynamic_size = Vecf::Zero();
 
-  Vecf text_size = font_manager.text_size(data.text, style);
+  Vecf text_size = font_manager.text_size(data.text, style, style.width);
   element->fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&style.text_width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.width)) {
     element->fixed_size.x += width->value;
   } else {
     element->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&style.text_width)) {
+    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
       element->dynamic_size.x = width->weight;
     }
   }
@@ -54,7 +54,7 @@ void ButtonSystem::render(ConstElement element) const {
   Vecf text_position =
       element->position + (style.border_width + style.padding).offset();
 
-  text_renderer.queue_text(text_position, data.text, style);
+  text_renderer.queue_text(text_position, data.text, style, style.width);
 }
 
 void ButtonSystem::mouse_event(Element element, const MouseEvent& event) {

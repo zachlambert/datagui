@@ -10,14 +10,16 @@
 namespace datagui {
 
 struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
-  Color focus_color = Color(0.0, 1.0, 1.0);
+  Color focus_color;
+  Length width;
 
   TextInputStyle() {
     bg_color = Color::White();
     border_color = Color::Gray(0.5);
     border_width = 2;
     padding = 5;
-    text_width = LengthDynamic(1.0);
+    focus_color = Color(0.0, 1.0, 1.0);
+    width = LengthDynamic(1.0);
   }
 };
 using SetTextInputStyle = SetStyle<TextInputStyle>;

@@ -126,7 +126,8 @@ void Gui::render() {
           box_style.border_width = 2;
           TextStyle text_style;
           text_style.font_size = 24;
-          auto text_size = font_manager.text_size(debug_text, text_style);
+          auto text_size =
+              font_manager.text_size(debug_text, text_style, LengthWrap());
 
           geometry_renderer.queue_box(
               Boxf(
@@ -136,7 +137,8 @@ void Gui::render() {
           text_renderer.queue_text(
               window.size() - text_size - Vecf::Constant(10),
               debug_text,
-              text_style);
+              text_style,
+              LengthWrap());
         }
       }
 

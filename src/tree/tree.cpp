@@ -1,5 +1,4 @@
 #include "datagui/tree/tree.hpp"
-#include "datagui/exception.hpp"
 #include <assert.h>
 #include <stack>
 

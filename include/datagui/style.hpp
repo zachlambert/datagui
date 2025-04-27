@@ -25,7 +25,6 @@ struct TextStyle {
   Font font = Font::DejaVuSans;
   int font_size = 24;
   Color text_color = Color::Black();
-  Length text_width = literals::_wrap;
 };
 
 struct SelectableTextStyle : public TextStyle {

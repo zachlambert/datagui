@@ -2,7 +2,7 @@
 
 namespace datagui {
 
-const int* DropDownSystem::visit(
+bool DropDownSystem::visit_begin(
     Element element,
     const std::vector<std::string>& choices,
     int initial_choice,
@@ -18,38 +18,20 @@ const int* DropDownSystem::visit(
       set_style(data.style);
     }
   }
-  if (data.changed) {
-    data.changed = false;
-    return &data.choice;
-  }
-  return nullptr;
+  return element->focused;
 }
 
-void DropDownSystem::visit(
-    Element element,
-    const std::vector<std::string>& choices,
-    const Variable<int>& choice,
-    const SetDropDownStyle& set_style) {
+void DropDownSystem::visit_end(Element element, int choice) {
   auto& data = element.data<DropDownData>();
 
-  if (element.is_new()) {
-    data.choice = *choice;
-  }
-  if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
-  }
-  if (data.changed) {
-    data.changed = false;
-    choice.set(data.choice);
-  } else if (choice.modified()) {
-    data.choice = *choice;
+  if (choice != data.choice) {
+    element.trigger();
+    data.choice = choice;
   }
 }
 
 void DropDownSystem::set_layout_input(Element element) const {
-  const auto& data = element.data<TextInputData>();
+  const auto& data = element.data<DropDownData>();
   const auto& style = data.style;
 
   element->fixed_size = (style.border_width + style.padding).size();
@@ -69,7 +51,7 @@ void DropDownSystem::set_layout_input(Element element) const {
 }
 
 void DropDownSystem::render(ConstElement element) const {
-  const auto& data = element.data<TextInputData>();
+  const auto& data = element.data<DropDownData>();
   const auto& style = data.style;
 
   const std::string& text = element->focused ? active_text : data.text;
@@ -98,7 +80,7 @@ void DropDownSystem::render(ConstElement element) const {
 }
 
 void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
-  const auto& data = element.data<TextInputData>();
+  const auto& data = element.data<DropDownData>();
   const auto& style = data.style;
 
   Vecf text_origin =
@@ -124,7 +106,7 @@ void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
 }
 
 void DropDownSystem::key_event(Element element, const KeyEvent& event) {
-  auto& data = element.data<TextInputData>();
+  auto& data = element.data<DropDownData>();
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
     if (data.text != active_text) {
@@ -142,7 +124,7 @@ void DropDownSystem::text_event(Element element, const TextEvent& event) {
 }
 
 void DropDownSystem::focus_enter(Element element) {
-  auto& data = element.data<TextInputData>();
+  auto& data = element.data<DropDownData>();
 
   active_selection.reset(0);
   active_text = data.text;
@@ -153,7 +135,7 @@ void DropDownSystem::focus_leave(
     bool success,
     ConstElement new_element) {
 
-  auto& data = element.data<TextInputData>();
+  auto& data = element.data<DropDownData>();
   if (success && data.text != active_text) {
     data.text = active_text;
     data.changed = true;

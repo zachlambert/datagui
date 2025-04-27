@@ -28,16 +28,12 @@ public:
       text_renderer(text_renderer),
       geometry_renderer(geometry_renderer) {}
 
-  const int* visit(
+  bool visit_begin(
       Element element,
       const std::vector<std::string>& choices,
       int initial_choice,
       const SetDropDownStyle& set_style);
-  void visit(
-      Element element,
-      const std::vector<std::string>& choices,
-      const Variable<int>& choice,
-      const SetDropDownStyle& set_style);
+  void visit_end(Element element, int choice);
 
   void set_layout_input(Element element) const override;
   void render(ConstElement element) const override;

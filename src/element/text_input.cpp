@@ -51,14 +51,14 @@ void TextInputSystem::set_layout_input(Element element) const {
   element->fixed_size = (style.border_width + style.padding).size();
   element->dynamic_size = Vecf::Zero();
 
-  Vecf text_size = font_manager.text_size(data.text, style);
+  Vecf text_size = font_manager.text_size(data.text, style, style.width);
   element->fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&style.text_width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.width)) {
     element->fixed_size.x += width->value;
   } else {
     element->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&style.text_width)) {
+    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
       element->dynamic_size.x = width->weight;
     }
   }
@@ -84,13 +84,14 @@ void TextInputSystem::render(ConstElement element) const {
     render_selection(
         font_manager.font_structure(style.font, style.font_size),
         style,
+        style.width,
         text,
         text_position,
         active_selection,
         geometry_renderer);
   }
 
-  text_renderer.queue_text(text_position, text, style);
+  text_renderer.queue_text(text_position, text, style, style.width);
 }
 
 void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
@@ -106,11 +107,8 @@ void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
     active_text = data.text;
   }
 
-  std::size_t cursor_pos = find_cursor(
-      font,
-      active_text,
-      style.text_width,
-      event.position - text_origin);
+  std::size_t cursor_pos =
+      find_cursor(font, active_text, style.width, event.position - text_origin);
 
   if (event.action == MouseAction::Press) {
     active_selection.reset(cursor_pos);

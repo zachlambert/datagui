@@ -31,7 +31,6 @@ int main() {
   };
 
   auto style_text_input = [](datagui::TextInputStyle& style) {
-    style.text_width = 1.0_dynamic;
     style.font_size = 40;
   };
 

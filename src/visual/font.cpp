@@ -329,10 +329,13 @@ const FontStructure& FontManager::font_structure(Font font, int font_size) {
   return new_font.first->second;
 };
 
-Vecf FontManager::text_size(const std::string& text, const TextStyle& style) {
+Vecf FontManager::text_size(
+    const std::string& text,
+    const TextStyle& style,
+    Length width) {
   const auto& fs = font_structure(style.font, style.font_size);
 
-  auto fixed_width = std::get_if<LengthFixed>(&style.text_width);
+  auto fixed_width = std::get_if<LengthFixed>(&width);
 
   Vecf pos = Vecf::Zero();
   pos.y += fs.line_height;

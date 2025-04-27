@@ -19,19 +19,20 @@ public:
       Font font,
       int font_size,
       Color text_color,
-      Length text_width);
+      Length width);
 
   void queue_text(
       const Vecf& origin,
       const std::string& text,
-      const TextStyle& style) {
+      const TextStyle& style,
+      Length width) {
     queue_text(
         origin,
         text,
         style.font,
         style.font_size,
         style.text_color,
-        style.text_width);
+        width);
   }
 
   void render(const Vecf& viewport_size);

@@ -5,6 +5,9 @@
 namespace datagui {
 
 struct State {
+  // System id
+  int system_id;
+
   // Layout input
   Vecf fixed_size;
   Vecf dynamic_size;

@@ -7,7 +7,9 @@
 
 namespace datagui {
 
-struct TextBoxStyle : public BoxStyle, public SelectableTextStyle {};
+struct TextBoxStyle : public BoxStyle, public SelectableTextStyle {
+  Length width = literals::_wrap;
+};
 using SetTextBoxStyle = SetStyle<TextBoxStyle>;
 
 struct TextBoxData {

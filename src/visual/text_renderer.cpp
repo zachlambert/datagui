@@ -84,7 +84,7 @@ void TextRenderer::queue_text(
     Font font,
     int font_size,
     Color text_color,
-    Length text_width) {
+    Length width) {
 
   const auto& fs = font_manager.font_structure(font, font_size);
 
@@ -102,7 +102,7 @@ void TextRenderer::queue_text(
   }
   auto& vertices = commands[command_i].vertices;
 
-  auto fixed_width = std::get_if<LengthFixed>(&text_width);
+  auto fixed_width = std::get_if<LengthFixed>(&width);
   Vecf offset = Vecf::Zero();
   offset.y += fs.line_height;
 

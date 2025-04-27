@@ -266,6 +266,7 @@ void selection_key_event(
 void render_selection(
     const FontStructure& font,
     const SelectableTextStyle& style,
+    Length width,
     const std::string& text,
     const Vecf& origin,
     const TextSelection& selection,
@@ -277,7 +278,7 @@ void render_selection(
     if (style.disabled) {
       return;
     }
-    Vecf offset = cursor_offset(font, text, style.text_width, selection.begin);
+    Vecf offset = cursor_offset(font, text, width, selection.begin);
     geometry_renderer.queue_box(
         Boxf(
             origin + offset - Vecf(float(style.cursor_width) / 2, 0),
@@ -289,13 +290,13 @@ void render_selection(
     return;
   }
 
-  auto fixed_width = std::get_if<LengthFixed>(&style.text_width);
+  auto fixed_width = std::get_if<LengthFixed>(&width);
 
   // Render higlighlight
 
   std::size_t from = selection.from();
   std::size_t to = selection.to();
-  Vecf offset = cursor_offset(font, text, style.text_width, from);
+  Vecf offset = cursor_offset(font, text, width, from);
   Vecf from_offset = offset;
 
   for (std::size_t i = from; i < to; i++) {
