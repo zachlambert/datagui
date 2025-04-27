@@ -1,14 +1,17 @@
-#include "datagui/element/text_input.hpp"
+#include "datagui/element/drop_down.hpp"
 
 namespace datagui {
 
-const std::string* TextInputSystem::visit(
+const int* DropDownSystem::visit(
     Element element,
-    const std::string& initial_value,
-    const SetTextInputStyle& set_style) {
-  auto& data = element.data<TextInputData>();
+    const std::vector<std::string>& choices,
+    int initial_choice,
+    const SetDropDownStyle& set_style) {
+
+  auto& data = element.data<DropDownData>();
   if (element.is_new()) {
-    data.text = initial_value;
+    data.choices = choices;
+    data.choice = initial_choice;
   }
   if (element.rerender()) {
     if (set_style) {
@@ -17,19 +20,20 @@ const std::string* TextInputSystem::visit(
   }
   if (data.changed) {
     data.changed = false;
-    return &data.text;
+    return &data.choice;
   }
   return nullptr;
 }
 
-void TextInputSystem::visit(
+void DropDownSystem::visit(
     Element element,
-    const Variable<std::string>& text,
-    const SetTextInputStyle& set_style) {
-  auto& data = element.data<TextInputData>();
+    const std::vector<std::string>& choices,
+    const Variable<int>& choice,
+    const SetDropDownStyle& set_style) {
+  auto& data = element.data<DropDownData>();
 
   if (element.is_new()) {
-    data.text = *text;
+    data.choice = *choice;
   }
   if (element.rerender()) {
     if (set_style) {
@@ -38,13 +42,13 @@ void TextInputSystem::visit(
   }
   if (data.changed) {
     data.changed = false;
-    text.set(data.text);
-  } else if (text.modified()) {
-    data.text = *text;
+    choice.set(data.choice);
+  } else if (choice.modified()) {
+    data.choice = *choice;
   }
 }
 
-void TextInputSystem::set_layout_input(Element element) const {
+void DropDownSystem::set_layout_input(Element element) const {
   const auto& data = element.data<TextInputData>();
   const auto& style = data.style;
 
@@ -64,7 +68,7 @@ void TextInputSystem::set_layout_input(Element element) const {
   }
 }
 
-void TextInputSystem::render(ConstElement element) const {
+void DropDownSystem::render(ConstElement element) const {
   const auto& data = element.data<TextInputData>();
   const auto& style = data.style;
 
@@ -93,7 +97,7 @@ void TextInputSystem::render(ConstElement element) const {
   text_renderer.queue_text(text_position, text, style);
 }
 
-void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
+void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
   const auto& data = element.data<TextInputData>();
   const auto& style = data.style;
 
@@ -119,7 +123,7 @@ void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
   }
 }
 
-void TextInputSystem::key_event(Element element, const KeyEvent& event) {
+void DropDownSystem::key_event(Element element, const KeyEvent& event) {
   auto& data = element.data<TextInputData>();
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
@@ -133,18 +137,18 @@ void TextInputSystem::key_event(Element element, const KeyEvent& event) {
   selection_key_event(active_text, active_selection, true, event);
 }
 
-void TextInputSystem::text_event(Element element, const TextEvent& event) {
+void DropDownSystem::text_event(Element element, const TextEvent& event) {
   selection_text_event(active_text, active_selection, true, event);
 }
 
-void TextInputSystem::focus_enter(Element element) {
+void DropDownSystem::focus_enter(Element element) {
   auto& data = element.data<TextInputData>();
 
   active_selection.reset(0);
   active_text = data.text;
 }
 
-void TextInputSystem::focus_leave(
+void DropDownSystem::focus_leave(
     Element element,
     bool success,
     ConstElement new_element) {

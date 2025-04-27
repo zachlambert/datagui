@@ -1,6 +1,5 @@
 #pragma once
 
-#include "datagui/input/text_selection.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
 #include "datagui/visual/font.hpp"
@@ -9,29 +8,19 @@
 
 namespace datagui {
 
-struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
-  Color focus_color = Color(0.0, 1.0, 1.0);
+struct DropDownStyle : public BoxStyle, public TextStyle {};
+using SetDropDownStyle = SetStyle<DropDownStyle>;
 
-  TextInputStyle() {
-    bg_color = Color::White();
-    border_color = Color::Gray(0.5);
-    border_width = 2;
-    padding = 5;
-    text_width = LengthDynamic(1.0);
-  }
-};
-using SetTextInputStyle = SetStyle<TextInputStyle>;
-
-struct TextInputData {
-  using Style = TextInputStyle;
-  std::string text;
+struct DropDownData {
+  std::vector<std::string> choices;
+  int choice;
   bool changed = false;
-  Style style;
+  DropDownStyle style;
 };
 
-class TextInputSystem : public ElementSystemImpl<TextInputData> {
+class DropDownSystem : public ElementSystemImpl<DropDownData> {
 public:
-  TextInputSystem(
+  DropDownSystem(
       FontManager& font_manager,
       TextRenderer& text_renderer,
       GeometryRenderer& geometry_renderer) :
@@ -39,14 +28,16 @@ public:
       text_renderer(text_renderer),
       geometry_renderer(geometry_renderer) {}
 
-  const std::string* visit(
+  const int* visit(
       Element element,
-      const std::string& initial_text,
-      const SetTextInputStyle& set_style);
+      const std::vector<std::string>& choices,
+      int initial_choice,
+      const SetDropDownStyle& set_style);
   void visit(
       Element element,
-      const Variable<std::string>& text,
-      const SetTextInputStyle& set_style);
+      const std::vector<std::string>& choices,
+      const Variable<int>& choice,
+      const SetDropDownStyle& set_style);
 
   void set_layout_input(Element element) const override;
   void render(ConstElement element) const override;
@@ -63,9 +54,6 @@ private:
   FontManager& font_manager;
   TextRenderer& text_renderer;
   GeometryRenderer& geometry_renderer;
-
-  std::string active_text;
-  TextSelection active_selection;
 };
 
 } // namespace datagui
