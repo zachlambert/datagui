@@ -18,6 +18,8 @@ layout(location = 4) in float radius;
 layout(location = 5) in vec4 bg_color;
 layout(location = 6) in vec4 border_color;
 layout(location = 7) in vec4 border_width;
+layout(location = 8) in vec2 mask_lower;
+layout(location = 9) in vec2 mask_upper;
 
 uniform vec2 viewport_size;
 
@@ -29,6 +31,8 @@ out vec2 fs_box_inner_upper;
 out float fs_radius;
 out vec4 fs_bg_color;
 out vec4 fs_border_color;
+out vec2 fs_mask_lower;
+out vec2 fs_mask_upper;
 
 void main(){
   fs_pos = offset + vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
@@ -42,6 +46,8 @@ void main(){
   fs_box_outer_upper = offset + size;
   fs_box_inner_lower = offset + vec2(border_width[0], border_width[1]);
   fs_box_inner_upper = offset + size - vec2(border_width[2], border_width[3]);
+  fs_mask_lower = mask_lower;
+  fs_mask_upper = mask_upper;
 
   fs_radius = radius;
   fs_bg_color = bg_color;
@@ -60,12 +66,20 @@ in vec2 fs_box_inner_upper;
 in float fs_radius;
 in vec4 fs_bg_color;
 in vec4 fs_border_color;
+in vec2 fs_mask_lower;
+in vec2 fs_mask_upper;
 
 uniform vec2 viewport_size;
 
 out vec4 color;
 
 void main(){
+    if (fs_pos.x < fs_mask_lower.x
+        || fs_pos.y < fs_mask_lower.y
+        || fs_pos.x > fs_mask_upper.x
+        || fs_pos.y > fs_mask_upper.y) {
+      discard;
+    }
     vec2 delta_outer_lower = fs_pos - fs_box_outer_lower;
     vec2 delta_outer_upper = fs_box_outer_upper - fs_pos;
     vec2 delta_outer = vec2(
@@ -222,6 +236,28 @@ void GeometryRenderer::init() {
   glEnableVertexAttribArray(index);
   index++;
 
+  glVertexAttribPointer(
+      index,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)(offsetof(Element, mask) + offsetof(Boxf, lower)));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)(offsetof(Element, mask) + offsetof(Boxf, upper)));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -241,6 +277,11 @@ void GeometryRenderer::queue_box(
   element.bg_color = bg_color;
   element.border_color = border_color;
   element.border_width = border_width;
+  if (masks.empty()) {
+    element.mask = box;
+  } else {
+    element.mask = masks.top();
+  }
   elements.push_back(element);
 }
 

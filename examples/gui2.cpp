@@ -13,7 +13,8 @@ int main() {
   auto items_layout = [](datagui::VerticalLayoutStyle& style) {
     style.border_width = 2;
     style.padding = 20;
-    style.length = 20.0_fixed;
+    style.length = 100.0_fixed;
+    style.width = 1.0_dynamic;
   };
 
   while (gui.running()) {
@@ -72,13 +73,8 @@ int main() {
         auto bar = gui.variable<std::string>("Bar");
         gui.text_input(foo);
         gui.text_input(bar);
-#if 0
-        gui.text_box([&]() { return "Foo: " + *foo; });
-        gui.text_box([&]() { return "Bar: " + *bar; });
-#else
         gui.text_box("Foo: " + *foo);
         gui.text_box("Bar: " + *bar);
-#endif
         gui.layout_end();
       }
       gui.layout_end();

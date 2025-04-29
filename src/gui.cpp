@@ -107,12 +107,24 @@ void Gui::render() {
   window.render_begin();
 
   {
-    std::stack<ConstElement> stack;
-    stack.push(tree.root());
+    struct State {
+      ConstElement element;
+      bool first_visit;
+      State(ConstElement element) : element(element), first_visit(true) {}
+    };
+    std::stack<State> stack;
+    stack.emplace(tree.root());
 
     while (!stack.empty()) {
-      auto element = stack.top();
-      stack.pop();
+      auto& state = stack.top();
+      const auto& element = state.element;
+
+      if (!state.first_visit) {
+        geometry_renderer.pop_mask();
+        stack.pop();
+        continue;
+      }
+      state.first_visit = false;
 
       if (!element.visible()) {
         continue;
@@ -175,6 +187,8 @@ void Gui::render() {
               LengthWrap());
         }
       }
+
+      geometry_renderer.push_mask(element->box());
 
       auto child = element.first_child();
       while (child) {

@@ -4,6 +4,7 @@
 #include "datagui/geometry.hpp"
 #include "datagui/layout.hpp"
 #include "datagui/style.hpp"
+#include <stack>
 #include <vector>
 
 namespace datagui {
@@ -33,6 +34,17 @@ public:
 
   void render(const Vecf& viewport_size);
 
+  void push_mask(const Boxf& mask) {
+    if (masks.empty()) {
+      masks.push(mask);
+    } else {
+      masks.push(intersection(masks.top(), mask));
+    }
+  }
+  void pop_mask() {
+    masks.pop();
+  }
+
 private:
   struct {
     // Shader
@@ -51,8 +63,11 @@ private:
     Color bg_color;
     Color border_color;
     BoxDims border_width;
+    Boxf mask;
   };
   std::vector<Element> elements;
+
+  std::stack<Boxf> masks;
 };
 
 } // namespace datagui
