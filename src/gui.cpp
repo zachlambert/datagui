@@ -240,56 +240,51 @@ void Gui::calculate_sizes() {
       stack.pop();
 
       systems.set_layout_input(element);
-      element->max_layer = 0;
-      for (auto child = element.first_child(); child; child = child.next()) {
-        if (child->layer_offset < 0) {
-          continue;
-        }
-        element->max_layer = std::max(
-            element->max_layer,
-            child->max_layer + child->layer_offset);
-      }
     }
   }
 
   {
-    std::stack<Element> stack;
-    stack.emplace(tree.root());
-    tree.root()->position = Vecf::Zero();
-    tree.root()->size = window.size();
-    tree.root()->layer = 0;
-    tree.root()->layer_offset = -1;
-    int max_layer = 0;
-
     struct Compare {
       bool operator()(const Element& lhs, const Element& rhs) const {
-        return lhs->window_priority < rhs->window_priority;
+        return lhs->float_priority < rhs->float_priority;
       }
     };
-    struct Window {
-      std::priority_queue<Element, std::vector<Element>, Compare> child_windows;
+    struct Layer {
+      ConstElement root;
+      std::priority_queue<Element, std::vector<Element>, Compare> floating;
+      Layer(ConstElement root) : root(root) {}
     };
-    std::stack<Window> windows;
-    windows.emplace();
-    bool at_window_root = true;
+
+    std::stack<Layer> layers;
+    std::stack<Element> stack;
+    {
+      auto root = tree.root();
+      root->position = Vecf::Zero();
+      root->size = window.size();
+      root->layer = 0;
+      stack.push(root);
+      layers.emplace(root);
+    }
 
     while (true) {
       if (stack.empty()) {
-        if (windows.empty()) {
+        if (layers.empty()) {
           break;
         }
-        auto& window = windows.top();
-        if (window.child_windows.empty()) {
-          windows.pop();
-          break;
+        Layer& layer = layers.top();
+        if (layer.floating.empty()) {
+          layers.pop();
+          continue;
         }
-        Element next_child_window = window.child_windows.top();
-        window.child_windows.pop();
 
-        next_child_window->layer = max_layer + 1;
-        stack.push(next_child_window);
-        windows.emplace();
-        at_window_root = true;
+        Element next_floating = layer.floating.top();
+        systems.set_float_box(layer.root, next_floating);
+
+        next_floating->layer = layer.root->layer + 1;
+        stack.push(next_floating);
+        layers.emplace(next_floating);
+
+        layer.floating.pop();
       }
 
       auto element = stack.top();
@@ -299,27 +294,18 @@ void Gui::calculate_sizes() {
         continue;
       }
 
-      // Skip over this if at_window_root = true, so that only
-      // child windows are added to the windoe child windows queue
-      if (element->layer_offset < 0 && !at_window_root) {
+      if (element->floating && element != layers.top().root) {
         if (element.is_new()) {
-          element->window_priority = next_window_priority++;
+          element->float_priority = next_float_priority++;
         }
-        windows.top().child_windows.push(element);
-        continue;
-      }
-
-      at_window_root = false;
-      max_layer = std::max(element->max_layer, max_layer);
-
-      if (!element.first_child()) {
+        layers.top().floating.push(element);
         continue;
       }
 
       systems.set_child_layout_output(element);
 
       for (auto child = element.first_child(); child; child = child.next()) {
-        child->layer = element->layer + child->layer_offset;
+        child->layer = element->layer;
         stack.push(child);
       }
     }
@@ -354,7 +340,11 @@ void Gui::calculate_sizes() {
       }
       stack.pop();
 
-      systems.set_hitbox(element);
+      if (element->floating) {
+        element->hitbox = element->float_box;
+      } else {
+        element->hitbox = element->box();
+      }
       element->hitbox_bounds = element->hitbox;
       for (auto child = element.first_child(); child; child = child.next()) {
         element->hitbox_bounds =
@@ -510,13 +500,13 @@ void Gui::set_tree_focus(Element element, bool value) {
   element->focused = value;
   element->in_focus_tree = value;
   element = element.parent();
-  if (element->layer_offset < 0) {
-    element->window_priority = next_window_priority++;
+  if (element->floating) {
+    element->float_priority = next_float_priority++;
   }
   while (element) {
     element->in_focus_tree = value;
-    if (element->layer_offset < 0) {
-      element->window_priority = next_window_priority++;
+    if (element->floating) {
+      element->float_priority = next_float_priority++;
     }
     element = element.parent();
   }

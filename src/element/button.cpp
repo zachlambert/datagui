@@ -26,7 +26,7 @@ void ButtonSystem::set_layout_input(Element element) const {
 
   element->fixed_size = (style.border_width + style.padding).size();
   element->dynamic_size = Vecf::Zero();
-  element->layer_offset = 0;
+  element->floating = false;
 
   Vecf text_size = font_manager.text_size(data.text, style, style.width);
   element->fixed_size.y += text_size.y;

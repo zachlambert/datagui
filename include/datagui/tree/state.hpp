@@ -16,14 +16,13 @@ struct State {
     return Boxf(position, position + size);
   }
 
-  // Layer calculation
-  int layer_offset = 0; // If -1, then this is a window
-  int max_layer = 0;
   int layer = 0;
-  int window_priority = 0; // Only used if a window
+  bool floating = false;
+  Boxf float_box;
+  int float_priority = 0;
 
   // Event handling
-  Boxf hitbox;
+  Boxf hitbox; // = box or float_box
   Boxf hitbox_bounds;
   bool in_focus_tree = false;
   bool focused = false;

@@ -77,18 +77,18 @@ void DropDownSystem::set_layout_input(Element element) const {
   element->fixed_size.y += font_manager.text_height(style);
   element->fixed_size.y += style.padding.size().y;
 
-  element->layer_offset = data.open && !data.choices.empty() ? 1 : 0;
+  element->floating = data.open && !data.choices.empty();
 }
 
-void DropDownSystem::set_hitbox(Element element) const {
-  element->hitbox = element->box();
-  if (element->layer_offset == 0) {
+void DropDownSystem::set_float_box(ConstElement root, Element element) const {
+  element->float_box = element->box();
+  if (!element->floating) {
     return;
   }
 
   const auto& data = element.data<DropDownData>();
   const auto& style = data.style;
-  element->hitbox.upper.y +=
+  element->float_box.upper.y +=
       (data.choices.size() - 1) *
       (font_manager.text_height(style) + style.padding.size().y +
        style.inner_border_width);

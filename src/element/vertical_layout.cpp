@@ -18,7 +18,7 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
 
   element->fixed_size = Vecf::Zero();
   element->dynamic_size = Vecf::Zero();
-  element->layer_offset = 0;
+  element->floating = 0;
 
   // Primary direction (Y)
 
