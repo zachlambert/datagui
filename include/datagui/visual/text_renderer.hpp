@@ -3,6 +3,7 @@
 #include "datagui/color.hpp"
 #include "datagui/geometry.hpp"
 #include "datagui/visual/font.hpp"
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -15,7 +16,6 @@ public:
 
   void queue_text(
       const Vecf& origin,
-      float z_pos,
       const std::string& text,
       Font font,
       int font_size,
@@ -24,13 +24,11 @@ public:
 
   void queue_text(
       const Vecf& origin,
-      float z_pos,
       const std::string& text,
       const TextStyle& style,
       Length width) {
     queue_text(
         origin,
-        z_pos,
         text,
         style.font,
         style.font_size,
@@ -40,11 +38,18 @@ public:
 
   void render(const Vecf& viewport_size);
 
+  void push_mask(const Boxf& mask) {
+    masks.push(mask);
+  }
+
+  void pop_mask() {
+    masks.pop();
+  }
+
 private:
   struct Vertex {
     Vecf pos;
     Vecf uv;
-    float z_pos;
   };
 
   struct Command {
@@ -58,6 +63,7 @@ private:
 
   FontManager& font_manager;
   std::vector<Command> commands;
+  std::stack<Boxf> masks;
 
   struct {
     // Shader

@@ -16,16 +16,14 @@ public:
 
   void queue_box(
       const Boxf& box,
-      float z_pos,
       const Color& bg_color,
       BoxDims border_width,
       Color border_color,
       float radius);
 
-  void queue_box(const Boxf& box, float z_pos, const BoxStyle& style) {
+  void queue_box(const Boxf& box, const BoxStyle& style) {
     queue_box(
         box,
-        z_pos,
         style.bg_color,
         style.border_width,
         style.border_color,
@@ -35,11 +33,7 @@ public:
   void render(const Vecf& viewport_size);
 
   void push_mask(const Boxf& mask) {
-    if (masks.empty()) {
-      masks.push(mask);
-    } else {
-      masks.push(intersection(masks.top(), mask));
-    }
+    masks.push(mask);
   }
   void pop_mask() {
     masks.pop();
@@ -58,7 +52,6 @@ private:
   struct Element {
     Vecf offset;
     Vecf size;
-    float z_pos;
     float radius;
     Color bg_color;
     Color border_color;

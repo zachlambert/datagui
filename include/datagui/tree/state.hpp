@@ -5,13 +5,9 @@
 namespace datagui {
 
 struct State {
-  // System id
-  int system_id;
-
   // Layout input
   Vecf fixed_size;
   Vecf dynamic_size;
-  Boxf hitbox_offset;
 
   // Layout output
   Vecf position;
@@ -19,11 +15,16 @@ struct State {
   Boxf box() const {
     return Boxf(position, position + size);
   }
-  Boxf hitbox;
-  Boxf bounding_box; // Bounds hitbox + child hitboxes
-  Rangef z_range;
 
-  // Event-handling
+  // Layer calculation
+  int layer_offset = 0; // If -1, then this is a window
+  int max_layer = 0;
+  int layer = 0;
+  int window_priority = 0; // Only used if a window
+
+  // Event handling
+  Boxf hitbox;
+  Boxf hitbox_bounds;
   bool in_focus_tree = false;
   bool focused = false;
   bool hovered = false;

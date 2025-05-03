@@ -97,6 +97,7 @@ private:
 
   Element element_focus;
   Element element_hover;
+  int next_window_priority = 0;
 };
 
 } // namespace datagui

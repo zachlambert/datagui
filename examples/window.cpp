@@ -22,10 +22,9 @@ int main() {
   while (window.running()) {
     window.render_begin();
 
-    geometry.queue_box(box, 0, Color::Red(), 5, Color::Black(), 0);
+    geometry.queue_box(box, Color::Red(), 5, Color::Black(), 0);
     text.queue_text(
         Vecf(400, 100),
-        0,
         "Hello",
         Font::DejaVuSans,
         20,
@@ -33,7 +32,6 @@ int main() {
         _wrap);
     text.queue_text(
         Vecf(400, 150),
-        0,
         "Hello",
         Font::DejaVuSansMono,
         40,
@@ -41,7 +39,6 @@ int main() {
         _wrap);
     text.queue_text(
         Vecf(400, 220),
-        0,
         "Hello",
         Font::DejaVuSerif,
         60,

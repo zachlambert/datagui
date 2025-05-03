@@ -69,7 +69,6 @@ void DropDownSystem::set_layout_input(Element element) const {
   element->fixed_size = style.border_width.size();
   element->fixed_size.x += fixed_inner_width + style.padding.size().x;
   element->dynamic_size = Vecf::Zero();
-  element->hitbox_offset = Boxf();
 
   if (auto width = std::get_if<LengthDynamic>(&style.content_width)) {
     element->dynamic_size.x = width->weight;
@@ -78,12 +77,21 @@ void DropDownSystem::set_layout_input(Element element) const {
   element->fixed_size.y += font_manager.text_height(style);
   element->fixed_size.y += style.padding.size().y;
 
-  if (data.open && !data.choices.empty()) {
-    element->hitbox_offset.upper.y +=
-        (data.choices.size() - 1) *
-        (font_manager.text_height(style) + style.padding.size().y +
-         style.inner_border_width);
+  element->layer_offset = data.open && !data.choices.empty() ? 1 : 0;
+}
+
+void DropDownSystem::set_hitbox(Element element) const {
+  element->hitbox = element->box();
+  if (element->layer_offset == 0) {
+    return;
   }
+
+  const auto& data = element.data<DropDownData>();
+  const auto& style = data.style;
+  element->hitbox.upper.y +=
+      (data.choices.size() - 1) *
+      (font_manager.text_height(style) + style.padding.size().y +
+       style.inner_border_width);
 }
 
 void DropDownSystem::render(ConstElement element) const {
@@ -93,7 +101,6 @@ void DropDownSystem::render(ConstElement element) const {
   if (!data.open || data.choices.empty()) {
     geometry_renderer.queue_box(
         element->box(),
-        element->z_range.lower,
         style.bg_color,
         style.border_width,
         style.border_color,
@@ -106,7 +113,6 @@ void DropDownSystem::render(ConstElement element) const {
     text_renderer.queue_text(
         element->position + style.border_width.offset() +
             style.padding.offset(),
-        element->z_range.lower,
         text,
         style,
         LengthFixed(
@@ -145,7 +151,6 @@ void DropDownSystem::render(ConstElement element) const {
 
     geometry_renderer.queue_box(
         Boxf(position, position + size),
-        element->z_range.upper,
         i == data.choice ? style.choice_color : style.bg_color,
         *border,
         style.border_color,
@@ -153,7 +158,6 @@ void DropDownSystem::render(ConstElement element) const {
 
     text_renderer.queue_text(
         position + border->offset() + style.padding.offset(),
-        element->z_range.upper,
         data.choices[i],
         style,
         LengthFixed(

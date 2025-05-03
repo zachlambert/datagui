@@ -26,7 +26,7 @@ void ButtonSystem::set_layout_input(Element element) const {
 
   element->fixed_size = (style.border_width + style.padding).size();
   element->dynamic_size = Vecf::Zero();
-  element->hitbox_offset = Boxf();
+  element->layer_offset = 0;
 
   Vecf text_size = font_manager.text_size(data.text, style, style.width);
   element->fixed_size.y += text_size.y;
@@ -47,7 +47,6 @@ void ButtonSystem::render(ConstElement element) const {
 
   geometry_renderer.queue_box(
       element->box(),
-      element->z_range.lower,
       data.down          ? style.down_color
       : element->hovered ? style.hover_color
                          : style.bg_color,
@@ -58,12 +57,7 @@ void ButtonSystem::render(ConstElement element) const {
   Vecf text_position =
       element->position + (style.border_width + style.padding).offset();
 
-  text_renderer.queue_text(
-      text_position,
-      element->z_range.lower,
-      data.text,
-      style,
-      style.width);
+  text_renderer.queue_text(text_position, data.text, style, style.width);
 }
 
 void ButtonSystem::mouse_event(Element element, const MouseEvent& event) {

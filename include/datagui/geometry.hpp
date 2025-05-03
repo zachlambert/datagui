@@ -186,6 +186,13 @@ Box<T> bounding(const Box<T>& a, const Box<T>& b) {
   return Box<T>(minimum(a.lower, b.lower), maximum(a.upper, b.upper));
 }
 
+// Returns true if outer_box containers inner_box
+template <typename T>
+bool contains(const Box<T>& outer_box, const Box<T>& inner_box) {
+  return inner_box.lower >= outer_box.lower &&
+         inner_box.upper <= outer_box.upper;
+}
+
 template <typename T>
 struct Range {
   T lower; // inclusive

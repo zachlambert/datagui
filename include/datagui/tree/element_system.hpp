@@ -15,6 +15,9 @@ public:
 
   virtual void set_layout_input(Element element) const = 0;
   virtual void set_child_layout_output(Element element) const {}
+  virtual void set_hitbox(Element element) const {
+    element->hitbox = element->box();
+  }
   virtual void render(ConstElement element) const = 0;
 
   // Mouse press, hold or release inside the element bounding box
@@ -51,6 +54,9 @@ public:
   }
   void set_child_layout_output(Element element) const {
     systems.at(element.type())->set_child_layout_output(element);
+  }
+  void set_hitbox(Element element) const {
+    systems.at(element.type())->set_hitbox(element);
   }
   void render(ConstElement element) const {
     systems.at(element.type())->render(element);

@@ -22,7 +22,7 @@ void TextBoxSystem::set_layout_input(Element element) const {
 
   element->fixed_size = (style.border_width + style.padding).size();
   element->dynamic_size = Vecf::Zero();
-  element->hitbox_offset = Boxf();
+  element->layer_offset = false;
 
   Vecf text_size = font_manager.text_size(data.text, style, style.width);
   element->fixed_size.y += text_size.y;
@@ -41,12 +41,7 @@ void TextBoxSystem::render(ConstElement element) const {
   const auto& data = element.data<TextBoxData>();
   const auto& style = data.style;
 
-  text_renderer.queue_text(
-      element->position,
-      element->z_range.lower,
-      data.text,
-      style,
-      style.width);
+  text_renderer.queue_text(element->position, data.text, style, style.width);
 }
 
 } // namespace datagui

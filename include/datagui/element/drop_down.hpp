@@ -46,6 +46,7 @@ public:
       const SetDropDownStyle& set_style);
 
   void set_layout_input(Element element) const override;
+  void set_hitbox(Element element) const override;
   void render(ConstElement element) const override;
   void mouse_event(Element element, const MouseEvent& event) override;
 

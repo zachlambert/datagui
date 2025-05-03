@@ -1,4 +1,5 @@
 #include "datagui/gui.hpp"
+#include <queue>
 #include <sstream>
 #include <stack>
 
@@ -106,100 +107,105 @@ void Gui::end() {
 void Gui::render() {
   window.render_begin();
 
-  {
-    struct State {
-      ConstElement element;
-      bool first_visit;
-      State(ConstElement element) : element(element), first_visit(true) {}
-    };
-    std::stack<State> stack;
-    stack.emplace(tree.root());
+  struct State {
+    ConstElement element;
+    bool first_visit;
+    State(ConstElement element) : element(element), first_visit(true) {}
+  };
+  std::stack<State> layer_stack;
+  layer_stack.emplace(tree.root());
 
-    while (!stack.empty()) {
-      auto& state = stack.top();
-      const auto& element = state.element;
+  struct Compare {
+    bool operator()(const ConstElement& lhs, const ConstElement& rhs) {
+      return lhs->layer <= rhs->layer;
+    }
+  };
+  std::priority_queue<ConstElement, std::vector<ConstElement>, Compare>
+      queued_elements;
+  int current_layer = layer_stack.top().element->layer;
 
-      if (!state.first_visit) {
-        geometry_renderer.pop_mask();
-        stack.pop();
-        continue;
+  while (true) {
+    if (layer_stack.empty()) {
+      geometry_renderer.render(window.size());
+      text_renderer.render(window.size());
+      if (queued_elements.empty()) {
+        break;
       }
-      state.first_visit = false;
+      current_layer = queued_elements.top()->layer;
+      layer_stack.emplace(queued_elements.top());
+      queued_elements.pop();
+    }
+    auto& state = layer_stack.top();
+    const auto& element = state.element;
 
-      if (!element.visible()) {
-        continue;
-      }
-      systems.render(element);
+    if (!state.first_visit) {
+      geometry_renderer.pop_mask();
+      text_renderer.pop_mask();
+      layer_stack.pop();
+      continue;
+    }
+    state.first_visit = false;
 
-      if (debug_mode_) {
+    if (!element.visible()) {
+      continue;
+    }
+    systems.render(element);
+
+    if (debug_mode_) {
+      geometry_renderer.queue_box(
+          Boxf(element->position, element->position + element->size),
+          Color::Clear(),
+          2,
+          element->focused         ? Color::Blue()
+          : element->in_focus_tree ? Color::Red()
+                                   : Color::Green(),
+          0);
+
+      if (element->focused) {
+        std::stringstream ss;
+
+        ss << element.debug();
+        ss << "\nfixed: " << element->fixed_size.x << ", "
+           << element->fixed_size.y;
+        ss << "\ndynamic: " << element->dynamic_size.x << ", "
+           << element->dynamic_size.y;
+        ss << "\nsize: " << element->size.x << ", " << element->size.y;
+        ss << "\nlayer: " << element->layer;
+        std::string debug_text = ss.str();
+
+        BoxStyle box_style;
+        box_style.bg_color = Color::White();
+        box_style.border_width = 2;
+        TextStyle text_style;
+        text_style.font_size = 24;
+        auto text_size =
+            font_manager.text_size(debug_text, text_style, LengthWrap());
+
         geometry_renderer.queue_box(
-            Boxf(element->position, element->position + element->size),
-            1,
-            Color::Clear(),
-            2,
-            element->focused         ? Color::Blue()
-            : element->in_focus_tree ? Color::Red()
-                                     : Color::Green(),
-            0);
-
-        if (element->focused) {
-          geometry_renderer.queue_box(
-              element->hitbox,
-              1,
-              Color::Clear(),
-              2,
-              Color(1, 0, 1),
-              0);
-        }
-
-        if (element->focused) {
-          std::stringstream ss;
-
-          ss << element.debug();
-          ss << "\nfixed: " << element->fixed_size.x << ", "
-             << element->fixed_size.y;
-          ss << "\ndynamic: " << element->dynamic_size.x << ", "
-             << element->dynamic_size.y;
-          ss << "\nsize: " << element->size.x << ", " << element->size.y;
-          ss << "\nz_range: " << element->z_range.lower << ", "
-             << element->z_range.upper;
-          std::string debug_text = ss.str();
-
-          BoxStyle box_style;
-          box_style.bg_color = Color::White();
-          box_style.border_width = 2;
-          TextStyle text_style;
-          text_style.font_size = 24;
-          auto text_size =
-              font_manager.text_size(debug_text, text_style, LengthWrap());
-
-          geometry_renderer.queue_box(
-              Boxf(
-                  window.size() - text_size - Vecf::Constant(15),
-                  window.size() - Vecf::Constant(5)),
-              1,
-              box_style);
-          text_renderer.queue_text(
-              window.size() - text_size - Vecf::Constant(10),
-              1,
-              debug_text,
-              text_style,
-              LengthWrap());
-        }
+            Boxf(
+                window.size() - text_size - Vecf::Constant(15),
+                window.size() - Vecf::Constant(5)),
+            box_style);
+        text_renderer.queue_text(
+            window.size() - text_size - Vecf::Constant(10),
+            debug_text,
+            text_style,
+            LengthWrap());
       }
+    }
 
-      geometry_renderer.push_mask(element->box());
+    geometry_renderer.push_mask(element->box());
+    text_renderer.push_mask(element->box());
 
-      auto child = element.first_child();
-      while (child) {
-        stack.push(child);
-        child = child.next();
+    for (auto child = element.first_child(); child; child = child.next()) {
+      if (child->layer == current_layer) {
+        layer_stack.push(child);
+      } else {
+        queued_elements.push(child);
       }
     }
   }
 
-  geometry_renderer.render(window.size());
-  text_renderer.render(window.size());
   window.render_end();
 }
 
@@ -210,6 +216,7 @@ void Gui::calculate_sizes() {
       bool first_visit;
       State(Element element) : element(element), first_visit(true) {}
     };
+
     std::stack<State> stack;
     stack.emplace(tree.root());
 
@@ -225,16 +232,23 @@ void Gui::calculate_sizes() {
       // If the node has children, process these first
       if (element.first_child() && state.first_visit) {
         state.first_visit = false;
-        auto child = element.first_child();
-        while (child) {
+        for (auto child = element.first_child(); child; child = child.next()) {
           stack.emplace(child);
-          child = child.next();
         }
         continue;
       }
       stack.pop();
 
       systems.set_layout_input(element);
+      element->max_layer = 0;
+      for (auto child = element.first_child(); child; child = child.next()) {
+        if (child->layer_offset < 0) {
+          continue;
+        }
+        element->max_layer = std::max(
+            element->max_layer,
+            child->max_layer + child->layer_offset);
+      }
     }
   }
 
@@ -243,9 +257,41 @@ void Gui::calculate_sizes() {
     stack.emplace(tree.root());
     tree.root()->position = Vecf::Zero();
     tree.root()->size = window.size();
-    tree.root()->z_range = Rangef(0, 1);
+    tree.root()->layer = 0;
+    tree.root()->layer_offset = -1;
+    int max_layer = 0;
 
-    while (!stack.empty()) {
+    struct Compare {
+      bool operator()(const Element& lhs, const Element& rhs) const {
+        return lhs->window_priority < rhs->window_priority;
+      }
+    };
+    struct Window {
+      std::priority_queue<Element, std::vector<Element>, Compare> child_windows;
+    };
+    std::stack<Window> windows;
+    windows.emplace();
+    bool at_window_root = true;
+
+    while (true) {
+      if (stack.empty()) {
+        if (windows.empty()) {
+          break;
+        }
+        auto& window = windows.top();
+        if (window.child_windows.empty()) {
+          windows.pop();
+          break;
+        }
+        Element next_child_window = window.child_windows.top();
+        window.child_windows.pop();
+
+        next_child_window->layer = max_layer + 1;
+        stack.push(next_child_window);
+        windows.emplace();
+        at_window_root = true;
+      }
+
       auto element = stack.top();
       stack.pop();
 
@@ -253,16 +299,28 @@ void Gui::calculate_sizes() {
         continue;
       }
 
+      // Skip over this if at_window_root = true, so that only
+      // child windows are added to the windoe child windows queue
+      if (element->layer_offset < 0 && !at_window_root) {
+        if (element.is_new()) {
+          element->window_priority = next_window_priority++;
+        }
+        windows.top().child_windows.push(element);
+        continue;
+      }
+
+      at_window_root = false;
+      max_layer = std::max(element->max_layer, max_layer);
+
       if (!element.first_child()) {
         continue;
       }
 
       systems.set_child_layout_output(element);
 
-      auto child = element.first_child();
-      while (child) {
+      for (auto child = element.first_child(); child; child = child.next()) {
+        child->layer = element->layer + child->layer_offset;
         stack.push(child);
-        child = child.next();
       }
     }
   }
@@ -273,6 +331,7 @@ void Gui::calculate_sizes() {
       bool first_visit;
       State(Element element) : element(element), first_visit(true) {}
     };
+
     std::stack<State> stack;
     stack.emplace(tree.root());
 
@@ -286,26 +345,20 @@ void Gui::calculate_sizes() {
       }
 
       // If the node has children, process these first
-      if (state.first_visit && element.first_child()) {
+      if (element.first_child() && state.first_visit) {
         state.first_visit = false;
-        auto child = element.first_child();
-        while (child) {
+        for (auto child = element.first_child(); child; child = child.next()) {
           stack.emplace(child);
-          child = child.next();
         }
         continue;
       }
       stack.pop();
 
-      element->hitbox.lower = element->position + element->hitbox_offset.lower;
-      element->hitbox.upper =
-          element->position + element->size + element->hitbox_offset.upper;
-
-      element->bounding_box = element->hitbox;
-      auto child = element.first_child();
-      while (child) {
-        element->bounding_box = bounding(element->bounding_box, child->hitbox);
-        child = child.next();
+      systems.set_hitbox(element);
+      element->hitbox_bounds = element->hitbox;
+      for (auto child = element.first_child(); child; child = child.next()) {
+        element->hitbox_bounds =
+            bounding(element->hitbox_bounds, child->hitbox);
       }
     }
   }
@@ -370,7 +423,7 @@ void Gui::event_handling() {
 
 Element Gui::get_leaf_node(const Vecf& position) {
   Element leaf = Element();
-  float leaf_z = 0;
+  int leaf_layer = -1;
 
   std::stack<Element> stack;
   stack.push(tree.root());
@@ -379,19 +432,13 @@ Element Gui::get_leaf_node(const Vecf& position) {
     auto element = stack.top();
     stack.pop();
 
-    if (!element->bounding_box.contains(position)) {
-      continue;
-    }
-    if (element->z_range.lower < leaf_z) {
+    if (!element->hitbox_bounds.contains(position)) {
       continue;
     }
 
-    // The bounding box for a node can be larger than the hitbox
-    // for this specific node (eg: a child hitbox extends outside the
-    // parent hitbox)
-    if (element->hitbox.contains(position)) {
+    if (element->hitbox.contains(position) && element->layer >= leaf_layer) {
       leaf = element;
-      leaf_z = element->z_range.lower;
+      leaf_layer = element->layer;
     }
 
     auto child = element.first_child();
@@ -463,8 +510,14 @@ void Gui::set_tree_focus(Element element, bool value) {
   element->focused = value;
   element->in_focus_tree = value;
   element = element.parent();
+  if (element->layer_offset < 0) {
+    element->window_priority = next_window_priority++;
+  }
   while (element) {
     element->in_focus_tree = value;
+    if (element->layer_offset < 0) {
+      element->window_priority = next_window_priority++;
+    }
     element = element.parent();
   }
 }

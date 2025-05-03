@@ -1,5 +1,4 @@
 #include "datagui/element/horizontal_layout.hpp"
-#include "datagui/input/event.hpp"
 
 namespace datagui {
 
@@ -20,7 +19,7 @@ void HorizontalLayoutSystem::set_layout_input(Element element) const {
 
   element->fixed_size = Vecf::Zero();
   element->dynamic_size = Vecf::Zero();
-  element->hitbox_offset = Boxf();
+  element->layer_offset = 0;
 
   // Primary direction (X)
 
@@ -133,8 +132,6 @@ void HorizontalLayoutSystem::set_child_layout_output(Element element) const {
       break;
     }
 
-    child->z_range = element->z_range;
-
     child = child.next();
   }
 }
@@ -143,7 +140,7 @@ void HorizontalLayoutSystem::render(ConstElement element) const {
   const auto& data = element.data<HorizontalLayoutData>();
   const auto& style = data.style;
 
-  geometry_renderer.queue_box(element->box(), element->z_range.lower, style);
+  geometry_renderer.queue_box(element->box(), style);
 }
 
 } // namespace datagui
