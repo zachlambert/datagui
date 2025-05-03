@@ -15,7 +15,8 @@ Gui::Gui(const Window::Config& config) :
     text_box_system(font_manager, text_renderer),
     text_input_system(font_manager, text_renderer, geometry_renderer),
     button_system(font_manager, geometry_renderer, text_renderer),
-    drop_down_system(font_manager, text_renderer, geometry_renderer) {
+    drop_down_system(font_manager, text_renderer, geometry_renderer),
+    window_system(geometry_renderer, text_renderer, font_manager) {
 
   horizontal_layout_system.register_type(tree, systems);
   vertical_layout_system.register_type(tree, systems);
@@ -23,6 +24,7 @@ Gui::Gui(const Window::Config& config) :
   text_input_system.register_type(tree, systems);
   button_system.register_type(tree, systems);
   drop_down_system.register_type(tree, systems);
+  window_system.register_type(tree, systems);
 
   geometry_renderer.init();
   text_renderer.init();
@@ -91,6 +93,12 @@ void Gui::drop_down(
     const SetDropDownStyle& set_style) {
   auto element = tree.next(drop_down_system.type());
   drop_down_system.visit(element, choices, choice, set_style);
+}
+
+bool Gui::floating(const std::string& title, const SetWindowStyle& set_style) {
+  auto element = tree.next(window_system.type());
+  window_system.visit(element, title, set_style);
+  return tree.down_if();
 }
 
 void Gui::begin() {

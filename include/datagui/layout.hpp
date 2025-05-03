@@ -59,6 +59,9 @@ public:
   Vecf offset() const {
     return Vecf(left, top);
   }
+  Vecf offset_opposite() const {
+    return Vecf(right, bottom);
+  }
 
   BoxDims& operator+=(const BoxDims& rhs) {
     left += rhs.left;

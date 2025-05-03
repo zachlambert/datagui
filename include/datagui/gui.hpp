@@ -16,6 +16,7 @@
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
 #include "datagui/element/vertical_layout.hpp"
+#include "datagui/element/window.hpp"
 
 namespace datagui {
 
@@ -60,6 +61,10 @@ public:
       const Variable<int>& choice,
       const SetDropDownStyle& set_style = nullptr);
 
+  bool floating(
+      const std::string& title,
+      const SetWindowStyle& set_style = nullptr);
+
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
     // Capture initial_value by value
@@ -93,6 +98,7 @@ private:
   TextInputSystem text_input_system;
   ButtonSystem button_system;
   DropDownSystem drop_down_system;
+  WindowSystem window_system;
   ElementSystems systems;
 
   Element element_focus;
