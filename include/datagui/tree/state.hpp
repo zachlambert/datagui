@@ -8,6 +8,9 @@ struct State {
   // Layout input
   Vecf fixed_size;
   Vecf dynamic_size;
+  bool zero_size() const {
+    return fixed_size == Vecf::Zero() && dynamic_size == Vecf::Zero();
+  }
 
   // Layout output
   Vecf position;

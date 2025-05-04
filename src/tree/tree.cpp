@@ -80,7 +80,7 @@ Element Tree::next(int type, const std::string& key) {
       throw UsageError("Cannot create more than one root node");
     }
     if (root_ == -1) {
-      root_ = create_element(-1, -1, type);
+      root_ = create_element(-1, -1, type, "");
     }
     current_ = root_;
     return Element(this, current_);
@@ -102,7 +102,7 @@ Element Tree::next(int type, const std::string& key) {
       throw UsageError("Structure changed outside of a re-render");
     }
     if (elements[next].key.empty() && !key.empty()) {
-      next = create_element(parent_, prev, type);
+      next = create_element(parent_, prev, type, key);
       break;
     }
     if (!elements[parent_].retain) {
@@ -123,7 +123,7 @@ Element Tree::next(int type, const std::string& key) {
   if (!elements[parent_].rerender) {
     throw UsageError("Structure changed outside of a re-render");
   }
-  current_ = create_element(parent_, prev, type);
+  current_ = create_element(parent_, prev, type, key);
   return Element(this, current_);
 }
 
@@ -168,7 +168,11 @@ void Tree::up() {
   variable_stack_.pop();
 }
 
-int Tree::create_element(int parent, int prev, int type) {
+int Tree::create_element(
+    int parent,
+    int prev,
+    int type,
+    const std::string& key) {
   int data_index = 1;
   if (type != -1) {
     assert(type < data_containers.size());
@@ -178,6 +182,7 @@ int Tree::create_element(int parent, int prev, int type) {
   int element = elements.emplace(type, data_index);
   auto& node = elements[element];
   node.parent = parent;
+  node.key = key;
 
   node.prev = prev;
   int next = (prev == -1) ? parent == -1 ? root_ : elements[parent].first_child

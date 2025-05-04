@@ -18,7 +18,7 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
 
   element->fixed_size = Vecf::Zero();
   element->dynamic_size = Vecf::Zero();
-  element->floating = 0;
+  element->floating = false;
 
   // Primary direction (Y)
 
@@ -26,7 +26,7 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
     auto child = element.first_child();
     int count = 0;
     while (child) {
-      if (!child.visible()) {
+      if (!child.visible() || child->zero_size()) {
         child = child.next();
         continue;
       }
@@ -54,7 +54,7 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
   } else {
     auto child = element.first_child();
     while (child) {
-      if (!child.visible()) {
+      if (!child.visible() || child->zero_size()) {
         child = child.next();
         continue;
       }
@@ -95,7 +95,7 @@ void VerticalLayoutSystem::set_child_layout_output(Element element) const {
 
   auto child = element.first_child();
   while (child) {
-    if (!child.visible()) {
+    if (!child.visible() || child->zero_size()) {
       child = child.next();
       continue;
     }

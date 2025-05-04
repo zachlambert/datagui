@@ -153,6 +153,10 @@ struct Box {
     return (upper.x - lower.x) * (upper.y - lower.y);
   }
 
+  bool empty() const {
+    return lower == upper;
+  }
+
   Vec<T> bottom_left() const {
     return lower;
   }

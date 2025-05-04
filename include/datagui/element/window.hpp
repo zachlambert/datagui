@@ -40,6 +40,8 @@ using SetWindowStyle = SetStyle<WindowStyle>;
 struct WindowData {
   WindowStyle style;
   std::string title;
+  bool open = false;
+  bool open_changed = false;
 };
 
 class WindowSystem : public ElementSystemImpl<WindowData> {
@@ -54,6 +56,7 @@ public:
 
   void visit(
       Element element,
+      Variable<bool> open,
       const std::string& title,
       const SetWindowStyle& set_style);
 
@@ -61,6 +64,7 @@ public:
   void set_child_layout_output(Element elment) const override;
   void set_float_box(ConstElement window, Element element) const override;
   void render(ConstElement element) const override;
+  void mouse_event(Element element, const MouseEvent& event) override;
 
 private:
   GeometryRenderer& geometry_renderer;

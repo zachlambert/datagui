@@ -20,9 +20,25 @@ int main() {
     style.border_color = datagui::Color::Black();
   };
 
-  auto style_window = [](datagui::WindowStyle& style) {
+  auto style_input = [](datagui::TextInputStyle& style) {
+    style.width = datagui::LengthDynamic(1.0);
+  };
+
+  auto style_window_1 = [](datagui::WindowStyle& style) {
     datagui::WindowPositionAbsolute position;
-    position.margin = 100;
+    position.margin = 150;
+    position.margin.left = 50;
+    style.position = position;
+    style.bg_color = datagui::Color::Hsl(270, 0.9, 0.6);
+
+    datagui::TitleBarStyle title_bar;
+    style.title_bar = title_bar;
+  };
+
+  auto style_window_2 = [](datagui::WindowStyle& style) {
+    datagui::WindowPositionAbsolute position;
+    position.margin = 200;
+    position.margin.right = 50;
     style.position = position;
     style.bg_color = datagui::Color::Hsl(270, 0.9, 0.6);
 
@@ -35,9 +51,24 @@ int main() {
   while (gui.running()) {
     gui.begin();
     if (gui.vertical_layout(style_root)) {
-      if (gui.floating("Pop-up", style_window)) {
+      auto window_1_open = gui.variable<bool>(false);
+      if (gui.button("Open window 1") && !*window_1_open) {
+        window_1_open.set(true);
+      }
+      if (gui.floating(window_1_open, "Window 1", style_window_1)) {
+        gui.text_input("Input", style_input);
+        gui.text_box("Here is some text");
         gui.layout_end();
       }
+
+      auto window_2_open = gui.variable<bool>(false);
+      if (gui.button("Open window 2") && !*window_2_open) {
+        window_2_open.set(true);
+      }
+      if (gui.floating(window_2_open, "Window 2", style_window_2)) {
+        gui.layout_end();
+      }
+
       gui.text_box("Select color");
       if (auto choice = gui.drop_down(choices, -1, style_drop_down)) {
         std::cout << "Selected '" << choices[*choice] << "'" << std::endl;

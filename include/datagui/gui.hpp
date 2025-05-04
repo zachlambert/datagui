@@ -62,6 +62,7 @@ public:
       const SetDropDownStyle& set_style = nullptr);
 
   bool floating(
+      const Variable<bool>& open,
       const std::string& title,
       const SetWindowStyle& set_style = nullptr);
 
@@ -81,7 +82,7 @@ private:
   void event_handling_hover(const Vecf& mouse_pos);
   void event_handling_scroll(const ScrollEvent& event);
 
-  void set_tree_focus(Element element, bool value);
+  void set_tree_focus(Element element, bool focused);
   void focus_next(bool reverse);
 
   Window window;

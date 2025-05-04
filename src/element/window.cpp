@@ -4,14 +4,25 @@ namespace datagui {
 
 void WindowSystem::visit(
     Element element,
+    Variable<bool> open,
     const std::string& title,
     const SetWindowStyle& set_style) {
   auto& data = element.data<WindowData>();
+
+  if (element.is_new()) {
+    data.open = *open;
+  }
   if (element.rerender()) {
     data.title = title;
     if (set_style) {
       set_style(data.style);
     }
+  }
+  if (data.open_changed) {
+    data.open_changed = false;
+    open.set(data.open);
+  } else if (open.modified()) {
+    data.open = *open;
   }
 }
 
@@ -81,7 +92,6 @@ void WindowSystem::render(ConstElement element) const {
   float title_width = element->float_box.size().x - bar.border_width.size().x -
                       bar.padding.size().x;
 
-#if 1
   if (bar.close_button) {
     Vecf text_size = font_manager.text_size("close", bar, LengthWrap());
     Vecf button_size = text_size + bar.padding.size();
@@ -110,7 +120,39 @@ void WindowSystem::render(ConstElement element) const {
       bar.font_size,
       bar.text_color,
       LengthFixed(title_width));
-#endif
+}
+
+void WindowSystem::mouse_event(Element element, const MouseEvent& event) {
+  if (event.action != MouseAction::Release) {
+    return;
+  }
+  auto& data = element.data<WindowData>();
+  const auto& style = data.style;
+  if (!style.title_bar) {
+    return;
+  }
+
+  const auto& bar = *style.title_bar;
+  if (!bar.close_button) {
+    return;
+  }
+
+  float title_width = element->float_box.size().x - bar.border_width.size().x -
+                      bar.padding.size().x;
+
+  Vecf text_size = font_manager.text_size("close", bar, LengthWrap());
+  Vecf button_size = text_size + bar.padding.size();
+  Vecf button_pos;
+  button_pos.x =
+      element->float_box.upper.x - bar.border_width.right - button_size.x;
+  button_pos.y = element->float_box.lower.y + bar.border_width.top;
+
+  if (!Boxf(button_pos, button_pos + button_size).contains(event.position)) {
+    return;
+  }
+  data.open = false;
+  data.open_changed = true;
+  element.trigger();
 }
 
 } // namespace datagui

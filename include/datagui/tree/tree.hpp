@@ -127,7 +127,7 @@ public:
   }
 
 private:
-  int create_element(int parent, int prev, int type);
+  int create_element(int parent, int prev, int type, const std::string& key);
   void remove_element(int node);
 
   int create_variable(int element);
