@@ -24,6 +24,7 @@ add_library(datagui SHARED
   src/element/text_input.cpp
   src/element/vertical_layout.cpp
   src/element/window.cpp
+  src/element/checkbox.cpp
 
   src/input/text_selection.cpp
 
