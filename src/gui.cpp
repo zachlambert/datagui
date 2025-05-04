@@ -16,7 +16,8 @@ Gui::Gui(const Window::Config& config) :
     text_input_system(font_manager, text_renderer, geometry_renderer),
     button_system(font_manager, geometry_renderer, text_renderer),
     drop_down_system(font_manager, text_renderer, geometry_renderer),
-    window_system(geometry_renderer, text_renderer, font_manager) {
+    window_system(geometry_renderer, text_renderer, font_manager),
+    checkbox_system(geometry_renderer) {
 
   horizontal_layout_system.register_type(tree, systems);
   vertical_layout_system.register_type(tree, systems);
@@ -25,6 +26,7 @@ Gui::Gui(const Window::Config& config) :
   button_system.register_type(tree, systems);
   drop_down_system.register_type(tree, systems);
   window_system.register_type(tree, systems);
+  checkbox_system.register_type(tree, systems);
 
   geometry_renderer.init();
   text_renderer.init();
@@ -109,6 +111,20 @@ bool Gui::floating(
     return false;
   }
   return tree.down_if();
+}
+
+const bool* Gui::checkbox(
+    const bool& initial_checked,
+    const SetCheckboxStyle& set_style) {
+  auto element = tree.next(checkbox_system.type());
+  return checkbox_system.visit(element, initial_checked, set_style);
+}
+
+void Gui::checkbox(
+    const Variable<bool>& checked,
+    const SetCheckboxStyle& set_style) {
+  auto element = tree.next(checkbox_system.type());
+  checkbox_system.visit(element, checked, set_style);
 }
 
 void Gui::begin() {

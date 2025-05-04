@@ -1,5 +1,6 @@
 #include <chrono>
 #include <datagui/gui.hpp>
+#include <iostream>
 
 int main() {
   using namespace datagui::literals;
@@ -38,6 +39,8 @@ int main() {
   using clock_t = std::chrono::high_resolution_clock;
   auto next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
 
+  auto timer_paused = gui.variable<bool>(false);
+
   while (gui.running()) {
     gui.begin();
     if (gui.vertical_layout(style_root)) {
@@ -49,6 +52,9 @@ int main() {
         gui.text_box("Name: ", style_text);
         gui.text_input(name, style_text_input);
         gui.layout_end();
+      }
+      if (auto value = gui.checkbox()) {
+        std::cout << "Checked: " << *value << std::endl;
       }
 
       if (name->empty()) {
@@ -64,12 +70,20 @@ int main() {
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
       }
 
+      if (gui.horizontal_layout()) {
+        gui.checkbox(timer_paused);
+        gui.text_box("Paused");
+        gui.layout_end();
+      }
+
       gui.layout_end();
     }
     gui.end();
 
     if (clock_t::now() > next_t) {
-      timer.set(*timer + 1);
+      if (!*timer_paused) {
+        timer.set(*timer + 1);
+      }
       next_t += clock_t::duration(std::chrono::seconds(1));
     }
   }

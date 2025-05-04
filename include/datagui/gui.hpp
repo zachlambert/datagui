@@ -11,6 +11,7 @@
 #include "datagui/visual/text_renderer.hpp"
 
 #include "datagui/element/button.hpp"
+#include "datagui/element/checkbox.hpp"
 #include "datagui/element/drop_down.hpp"
 #include "datagui/element/horizontal_layout.hpp"
 #include "datagui/element/text_box.hpp"
@@ -66,6 +67,14 @@ public:
       const std::string& title,
       const SetWindowStyle& set_style = nullptr);
 
+  const bool* checkbox(
+      const bool& initial_checked = false,
+      const SetCheckboxStyle& set_style = nullptr);
+
+  void checkbox(
+      const Variable<bool>& checked,
+      const SetCheckboxStyle& set_style = nullptr);
+
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
     // Capture initial_value by value
@@ -100,6 +109,7 @@ private:
   ButtonSystem button_system;
   DropDownSystem drop_down_system;
   WindowSystem window_system;
+  CheckboxSystem checkbox_system;
   ElementSystems systems;
 
   Element element_focus;
