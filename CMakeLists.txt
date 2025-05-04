@@ -17,21 +17,25 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-    src/element/button.cpp
-    src/element/checkbox.cpp
-    src/element/linear_layout.cpp
-    src/element/selection.cpp
-    src/element/text.cpp
-    src/element/text_input.cpp
-    src/element/wrapper.cpp
-    src/internal/geometry_renderer.cpp
-    # src/internal/reader.cpp
-    src/internal/text_selection.cpp
-    src/internal/shader.cpp
-    src/internal/text.cpp
-    src/internal/text_renderer.cpp
-    src/internal/tree.cpp
-    src/window.cpp
+  src/element/button.cpp
+  src/element/drop_down.cpp
+  src/element/horizontal_layout.cpp
+  src/element/text_box.cpp
+  src/element/text_input.cpp
+  src/element/vertical_layout.cpp
+  src/element/window.cpp
+
+  src/input/text_selection.cpp
+
+  src/tree/tree.cpp
+
+  src/visual/font.cpp
+  src/visual/geometry_renderer.cpp
+  src/visual/shader.cpp
+  src/visual/text_renderer.cpp
+  src/visual/window.cpp
+
+  src/gui.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
@@ -48,14 +52,20 @@ if (NOT BUILD_ADDITIONAL_TARGETS)
     return()
 endif()
 
-add_executable(example1 examples/example1.cpp)
-target_link_libraries(example1 datagui)
+add_executable(example_tree examples/tree.cpp)
+target_link_libraries(example_tree datagui)
 
-# add_executable(example2 examples/example2.cpp)
-# target_link_libraries(example2 datagui)
+add_executable(example_window examples/window.cpp)
+target_link_libraries(example_window datagui)
 
-add_executable(example3 examples/example3.cpp)
-target_link_libraries(example3 datagui)
+add_executable(example_gui examples/gui.cpp)
+target_link_libraries(example_gui datagui)
+
+add_executable(example_gui2 examples/gui2.cpp)
+target_link_libraries(example_gui2 datagui)
+
+add_executable(example_drop_down examples/drop_down.cpp)
+target_link_libraries(example_drop_down datagui)
 
 # Create install target
 

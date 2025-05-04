@@ -1,6 +1,5 @@
 #pragma once
 
-#include "datagui/input/text_selection.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
 #include "datagui/visual/font.hpp"
@@ -9,31 +8,25 @@
 
 namespace datagui {
 
-struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
-  Color focus_color;
-  Length width;
-
-  TextInputStyle() {
-    bg_color = Color::White();
-    border_color = Color::Gray(0.5);
-    border_width = 2;
-    padding = 5;
-    focus_color = Color(0.0, 1.0, 1.0);
-    width = LengthDynamic(1.0);
-  }
+struct DropDownStyle : public BoxStyle, public TextStyle {
+  Length content_width = LengthWrap();
+  float inner_border_width = 0;
+  Color choice_color = Color::Gray(0.9);
 };
-using SetTextInputStyle = SetStyle<TextInputStyle>;
+using SetDropDownStyle = SetStyle<DropDownStyle>;
 
-struct TextInputData {
-  using Style = TextInputStyle;
-  std::string text;
+struct DropDownData {
+  std::vector<std::string> choices;
+  int choice = -1;
+  int choice_hovered = -1;
   bool changed = false;
-  Style style;
+  bool open = false;
+  DropDownStyle style;
 };
 
-class TextInputSystem : public ElementSystemImpl<TextInputData> {
+class DropDownSystem : public ElementSystemImpl<DropDownData> {
 public:
-  TextInputSystem(
+  DropDownSystem(
       FontManager& font_manager,
       TextRenderer& text_renderer,
       GeometryRenderer& geometry_renderer) :
@@ -41,21 +34,21 @@ public:
       text_renderer(text_renderer),
       geometry_renderer(geometry_renderer) {}
 
-  const std::string* visit(
+  const int* visit(
       Element element,
-      const std::string& initial_text,
-      const SetTextInputStyle& set_style);
+      const std::vector<std::string>& choices,
+      int initial_choice,
+      const SetDropDownStyle& set_style);
   void visit(
       Element element,
-      const Variable<std::string>& text,
-      const SetTextInputStyle& set_style);
+      const std::vector<std::string>& choices,
+      const Variable<int>& choice,
+      const SetDropDownStyle& set_style);
 
   void set_layout_input(Element element) const override;
+  void set_float_box(ConstElement root, Element element) const override;
   void render(ConstElement element) const override;
-
   void mouse_event(Element element, const MouseEvent& event) override;
-  void key_event(Element element, const KeyEvent& event) override;
-  void text_event(Element element, const TextEvent& event) override;
 
   void focus_enter(Element element) override;
   void focus_leave(Element element, bool success, ConstElement new_element)
@@ -65,9 +58,6 @@ private:
   FontManager& font_manager;
   TextRenderer& text_renderer;
   GeometryRenderer& geometry_renderer;
-
-  std::string active_text;
-  TextSelection active_selection;
 };
 
 } // namespace datagui

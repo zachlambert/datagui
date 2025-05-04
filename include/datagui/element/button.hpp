@@ -1,45 +1,60 @@
 #pragma once
 
-#include "datagui/internal/element.hpp"
-#include "datagui/internal/text.hpp"
-#include "datagui/internal/tree.hpp"
-#include "datagui/internal/vector_map.hpp"
 #include "datagui/style.hpp"
-#include <string>
+#include "datagui/tree/element_system.hpp"
+#include "datagui/visual/font.hpp"
+#include "datagui/visual/geometry_renderer.hpp"
+#include "datagui/visual/text_renderer.hpp"
 
 namespace datagui {
 
-struct Button {
-  std::string text;
-  float max_width;
+struct ButtonStyle : public BoxStyle, public TextStyle {
+  Color focus_color = Color(0, 1, 1);
+  Color down_color = Color::Gray(0.4);
+  Color hover_color = Color::Gray(0.6);
+  Length width = literals::_wrap;
+  ButtonStyle() {
+    bg_color = Color::Gray(0.8);
+    border_width = 2;
+    border_color = Color::Gray(0.5);
+    padding = 10;
+  }
+};
+using SetButtonStyle = SetStyle<ButtonStyle>;
 
-  Button(const std::string& text, float max_width) :
-      text(text), max_width(max_width) {}
+struct ButtonData {
+  using Style = ButtonStyle;
+  std::string text;
+  bool released = false;
+  bool down = false;
+  Style style;
 };
 
-class ButtonSystem : public ElementSystem {
+class ButtonSystem : public ElementSystemImpl<ButtonData> {
 public:
-  ButtonSystem(const Style& style, const FontStructure& font) :
-      style(style), font(font) {}
+  ButtonSystem(
+      FontManager& font_manager,
+      GeometryRenderer& geometry_renderer,
+      TextRenderer& text_renderer) :
+      font_manager(font_manager),
+      geometry_renderer(geometry_renderer),
+      text_renderer(text_renderer) {}
 
-  int create(const std::string& text, float max_width) {
-    return elements.emplace(text, max_width);
-  }
+  bool visit(
+      Element element,
+      const std::string& text,
+      const SetButtonStyle& set_style);
 
-  void pop(int index) override { elements.pop(index); }
+  void set_layout_input(Element element) const override;
+  void render(ConstElement element) const override;
 
-  void calculate_size_components(Node& node, const Tree& tree) const override;
-
-  void render(const Node& node, const NodeState& state, Renderers& renderers)
-      const override;
-
-  bool release(const Node& node, const Vecf& mouse_pos) override;
-  bool key_event(const Node& node, const KeyEvent& event) override;
+  void mouse_event(Element element, const MouseEvent& event) override;
+  void key_event(Element element, const KeyEvent& event) override;
 
 private:
-  const Style& style;
-  const FontStructure& font;
-  VectorMap<Button> elements;
+  FontManager& font_manager;
+  GeometryRenderer& geometry_renderer;
+  TextRenderer& text_renderer;
 };
 
 } // namespace datagui

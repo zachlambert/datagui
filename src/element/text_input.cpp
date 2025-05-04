@@ -1,95 +1,159 @@
 #include "datagui/element/text_input.hpp"
-#include "datagui/internal/text_renderer.hpp"
 
 namespace datagui {
 
-void TextInputSystem::calculate_size_components(Node& node, const Tree& tree) const {
-  const auto& element = elements[node.element_index];
-
-  node.fixed_size = Vecf::Constant(2 * (style.element.border_width + style.element.padding));
-
-  if (element.max_width >= 0) {
-    node.fixed_size += text_size(font, *element.text, element.max_width);
-  } else {
-    node.fixed_size.y += font.line_height;
-    node.dynamic_size.x = -element.max_width;
+const std::string* TextInputSystem::visit(
+    Element element,
+    const std::string& initial_value,
+    const SetTextInputStyle& set_style) {
+  auto& data = element.data<TextInputData>();
+  if (element.is_new()) {
+    data.text = initial_value;
   }
-}
-
-void TextInputSystem::render(const Node& node, const NodeState& state, Renderers& renderers) const {
-  const auto& element = elements[node.element_index];
-
-  renderers.geometry.queue_box(
-      Boxf(node.origin, node.origin + node.size),
-      style.text_input.bg_color,
-      style.element.border_width,
-      state.in_focus_tree ? style.element.focus_color : style.element.border_color);
-  Vecf text_origin =
-      node.origin + Vecf::Constant(style.element.border_width + style.element.padding);
-
-  if (state.focused) {
-    render_selection(
-        style,
-        font,
-        *element.text,
-        element.max_width,
-        text_origin,
-        text_selection,
-        true,
-        renderers.geometry);
-  }
-
-  renderers.text
-      .queue_text(font, style.text.font_color, *element.text, element.max_width, text_origin);
-}
-
-bool TextInputSystem::press(const Node& node, const Vecf& mouse_pos) {
-  const auto& element = elements[node.element_index];
-  Vecf text_origin =
-      node.origin + Vecf::Constant(style.element.border_width + style.element.padding);
-  text_selection.reset(
-      find_cursor(font, *element.text, element.max_width, mouse_pos - text_origin));
-  return false;
-}
-
-bool TextInputSystem::held(const Node& node, const Vecf& mouse_pos) {
-  const auto& element = elements[node.element_index];
-  Vecf text_origin =
-      node.origin + Vecf::Constant(style.element.border_width + style.element.padding);
-  text_selection.end = find_cursor(font, *element.text, element.max_width, mouse_pos - text_origin);
-  return false;
-}
-
-bool TextInputSystem::focus_enter(const Node& node) {
-  text_selection.reset(0);
-  return false;
-}
-
-bool TextInputSystem::focus_leave(const Tree& tree, const Node& node, bool success, int new_focus) {
-  auto& element = elements[node.element_index];
-  if (!success) {
-    *element.text = element.initial_text;
-  } else if (element.initial_text != *element.text) {
-    element.initial_text = *element.text;
-    // TODO: Fix so don't need const cast
-    element.text.mutate(const_cast<Tree&>(tree));
-    return true;
-  }
-  return false;
-}
-
-bool TextInputSystem::key_event(const Node& node, const KeyEvent& event) {
-  auto& element = elements[node.element_index];
-
-  if (!event.is_text && !event.key_release && event.key_value == KeyValue::Enter) {
-    if (element.initial_text != *element.text) {
-      element.initial_text = *element.text;
-      return true;
+  if (element.rerender()) {
+    if (set_style) {
+      set_style(data.style);
     }
-  } else {
-    selection_key_event(*element.text, text_selection, true, event);
   }
-  return false;
+  if (data.changed) {
+    data.changed = false;
+    return &data.text;
+  }
+  return nullptr;
+}
+
+void TextInputSystem::visit(
+    Element element,
+    const Variable<std::string>& text,
+    const SetTextInputStyle& set_style) {
+  auto& data = element.data<TextInputData>();
+
+  if (element.is_new()) {
+    data.text = *text;
+  }
+  if (element.rerender()) {
+    if (set_style) {
+      set_style(data.style);
+    }
+  }
+  if (data.changed) {
+    data.changed = false;
+    text.set(data.text);
+  } else if (text.modified()) {
+    data.text = *text;
+  }
+}
+
+void TextInputSystem::set_layout_input(Element element) const {
+  const auto& data = element.data<TextInputData>();
+  const auto& style = data.style;
+
+  element->fixed_size = (style.border_width + style.padding).size();
+  element->dynamic_size = Vecf::Zero();
+  element->floating = 0;
+
+  Vecf text_size = font_manager.text_size(data.text, style, style.width);
+  element->fixed_size.y += text_size.y;
+
+  if (auto width = std::get_if<LengthFixed>(&style.width)) {
+    element->fixed_size.x += width->value;
+  } else {
+    element->fixed_size.x += text_size.x;
+    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
+      element->dynamic_size.x = width->weight;
+    }
+  }
+}
+
+void TextInputSystem::render(ConstElement element) const {
+  const auto& data = element.data<TextInputData>();
+  const auto& style = data.style;
+
+  const std::string& text = element->focused ? active_text : data.text;
+
+  geometry_renderer.queue_box(
+      element->box(),
+      style.bg_color,
+      style.border_width,
+      element->in_focus_tree ? style.focus_color : style.border_color,
+      style.radius);
+
+  Vecf text_position =
+      element->position + (style.border_width + style.padding).offset();
+
+  if (element->focused) {
+    render_selection(
+        font_manager.font_structure(style.font, style.font_size),
+        style,
+        style.width,
+        text,
+        text_position,
+        active_selection,
+        geometry_renderer);
+  }
+
+  text_renderer.queue_text(text_position, text, style, style.width);
+}
+
+void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
+  const auto& data = element.data<TextInputData>();
+  const auto& style = data.style;
+
+  Vecf text_origin =
+      element->position + (style.border_width + style.padding).offset();
+
+  const auto& font = font_manager.font_structure(style.font, style.font_size);
+
+  if (event.action == MouseAction::Press) {
+    active_text = data.text;
+  }
+
+  std::size_t cursor_pos =
+      find_cursor(font, active_text, style.width, event.position - text_origin);
+
+  if (event.action == MouseAction::Press) {
+    active_selection.reset(cursor_pos);
+  } else if (event.action == MouseAction::Hold) {
+    active_selection.end = cursor_pos;
+  }
+}
+
+void TextInputSystem::key_event(Element element, const KeyEvent& event) {
+  auto& data = element.data<TextInputData>();
+
+  if (event.action == KeyAction::Press && event.key == Key::Enter) {
+    if (data.text != active_text) {
+      data.text = active_text;
+      data.changed = true;
+      element.trigger();
+    }
+    return;
+  }
+  selection_key_event(active_text, active_selection, true, event);
+}
+
+void TextInputSystem::text_event(Element element, const TextEvent& event) {
+  selection_text_event(active_text, active_selection, true, event);
+}
+
+void TextInputSystem::focus_enter(Element element) {
+  auto& data = element.data<TextInputData>();
+
+  active_selection.reset(0);
+  active_text = data.text;
+}
+
+void TextInputSystem::focus_leave(
+    Element element,
+    bool success,
+    ConstElement new_element) {
+
+  auto& data = element.data<TextInputData>();
+  if (success && data.text != active_text) {
+    data.text = active_text;
+    data.changed = true;
+    element.trigger();
+  }
 }
 
 } // namespace datagui

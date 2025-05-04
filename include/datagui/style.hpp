@@ -1,54 +1,40 @@
 #pragma once
 
 #include "datagui/color.hpp"
+#include "datagui/font.hpp"
+#include "datagui/layout.hpp"
+#include <functional>
 
 namespace datagui {
 
-enum class Font { DejaVuSans, DejaVuSerif, DejaVuSansMono };
-
-struct Style {
-  struct Text {
-    Font font = Font::DejaVuSans;
-    float font_size = 16;
-    float padding = 4;
-    float line_height = 1;
-    Color font_color = Color::Black();
-  };
-
-  struct Element {
-    Color bg_color = Color::Gray(0.8);
-    float padding = 4;
-    float border_width = 4;
-    Color border_color = Color::Black();
-    Color focus_color = Color(0, 1, 1);
-    Color hovered_bg_color = Color::Gray(0.65);
-    Color pressed_bg_color = Color::Gray(0.5);
-  };
-
-  struct TextInput {
-    Color bg_color = Color::White();
-    int cursor_width = 2;
-    float cursor_blink_period = 0.5;
-    Color cursor_color = Color::Gray(0.25);
-    Color highlight_color = Color::Gray(0.7);
-  };
-
-  struct Checkbox {
-    float size = 1;
-    float check_padding = 1;
-    Color check_color = Color::Black();
-  };
-
-  struct Selection {
-    Color choice_color = Color::Gray(0.5);
-  };
-
-  Color bg_color = Color::Gray(0.9);
-  Text text;
-  Element element;
-  TextInput text_input;
-  Checkbox checkbox;
-  Selection selection;
+struct BoxStyle {
+  BoxDims padding = BoxDims();
+  BoxDims border_width = BoxDims();
+  Color border_color = Color::Black();
+  Color bg_color = Color::Clear();
+  float radius = 0;
 };
+
+struct LinearLayoutStyle : public BoxStyle {
+  Length length = literals::_wrap;
+  Length width = literals::_wrap;
+  float inner_padding;
+};
+
+struct TextStyle {
+  Font font = Font::DejaVuSans;
+  int font_size = 24;
+  Color text_color = Color::Black();
+};
+
+struct SelectableTextStyle : public TextStyle {
+  float cursor_width = 2;
+  Color cursor_color = Color::Gray(0.5);
+  Color highlight_color = Color::Gray(0.7);
+  bool disabled = false;
+};
+
+template <typename Style>
+using SetStyle = std::function<void(Style&)>;
 
 } // namespace datagui

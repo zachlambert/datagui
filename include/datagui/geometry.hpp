@@ -12,11 +12,17 @@ struct Vec {
   Vec() {}
   Vec(T x, T y) : x(x), y(y) {}
 
-  static Vec Zero() { return Vec(0, 0); }
+  static Vec Zero() {
+    return Vec(0, 0);
+  }
 
-  static Vec One() { return Vec(1, 1); }
+  static Vec One() {
+    return Vec(1, 1);
+  }
 
-  static Vec Constant(T value) { return Vec(value, value); }
+  static Vec Constant(T value) {
+    return Vec(value, value);
+  }
 
   Vec& operator+=(const Vec& rhs) {
     x += rhs.x;
@@ -42,9 +48,13 @@ struct Vec {
     return *this;
   }
 
-  T length() const { return std::hypot(x, y); }
+  T length() const {
+    return std::hypot(x, y);
+  }
 
-  Vec abs() const { return Vec(std::abs(x), std::abs(y)); }
+  Vec abs() const {
+    return Vec(std::abs(x), std::abs(y));
+  }
 };
 
 using Veci = Vec<int>;
@@ -123,7 +133,7 @@ struct Box {
   Vec<T> lower; // inclusive
   Vec<T> upper; // exclusive
 
-  Box() {}
+  Box() : lower(Vec<T>::Zero()), upper(Vec<T>::Zero()) {}
   Box(const Vec<T>& lower, const Vec<T>& upper) : lower(lower), upper(upper) {}
 
   bool contains(const Vec<T>& point) const {
@@ -139,12 +149,26 @@ struct Box {
     return Vec<T>((upper.x - lower.x), (upper.y - lower.y));
   }
 
-  T area() const { return (upper.x - lower.x) * (upper.y - lower.y); }
+  T area() const {
+    return (upper.x - lower.x) * (upper.y - lower.y);
+  }
 
-  Vec<T> bottom_left() const { return lower; }
-  Vec<T> bottom_right() const { return Vec<T>(upper.x, lower.y); }
-  Vec<T> top_left() const { return Vec<T>(lower.x, upper.y); }
-  Vec<T> top_right() const { return upper; }
+  bool empty() const {
+    return lower == upper;
+  }
+
+  Vec<T> bottom_left() const {
+    return lower;
+  }
+  Vec<T> bottom_right() const {
+    return Vec<T>(upper.x, lower.y);
+  }
+  Vec<T> top_left() const {
+    return Vec<T>(lower.x, upper.y);
+  }
+  Vec<T> top_right() const {
+    return upper;
+  }
 };
 
 using Boxi = Box<int>;
@@ -164,6 +188,54 @@ Box<T> intersection(const Box<T>& a, const Box<T>& b) {
 template <typename T>
 Box<T> bounding(const Box<T>& a, const Box<T>& b) {
   return Box<T>(minimum(a.lower, b.lower), maximum(a.upper, b.upper));
+}
+
+// Returns true if outer_box containers inner_box
+template <typename T>
+bool contains(const Box<T>& outer_box, const Box<T>& inner_box) {
+  return inner_box.lower >= outer_box.lower &&
+         inner_box.upper <= outer_box.upper;
+}
+
+template <typename T>
+struct Range {
+  T lower; // inclusive
+  T upper; // exclusive
+
+  Range() : lower(T(0)), upper(T(0)) {}
+  Range(const T& lower, const T& upper) : lower(lower), upper(upper) {}
+
+  bool contains(const T& point) const {
+    return point.x >= lower.x && point.x < upper.x && point.y >= lower.y &&
+           point.y < upper.y;
+  }
+
+  T center() const {
+    return (lower + upper) / 2;
+  }
+
+  T size() const {
+    return upper - lower;
+  }
+};
+
+using Rangei = Range<int>;
+using Rangef = Range<float>;
+using Ranged = Range<double>;
+
+template <typename T>
+bool intersects(const Range<T>& a, const Range<T>& b) {
+  return b.upper >= a.lower && b.lower <= a.upper;
+}
+
+template <typename T>
+Range<T> intersection(const Range<T>& a, const Range<T>& b) {
+  return Range<T>(std::max(a.lower, b.lower), std::min(a.upper, b.upper));
+}
+
+template <typename T>
+Range<T> bounding(const Range<T>& a, const Range<T>& b) {
+  return Range<T>(std::min(a.lower, b.lower), std::max(a.upper, b.upper));
 }
 
 } // namespace datagui
