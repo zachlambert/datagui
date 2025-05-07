@@ -6,16 +6,16 @@ int main() {
 
   datagui::Gui gui;
 
-  auto boxed_layout = [](datagui::VerticalLayoutStyle& style) {
-    style.border_width = 2;
-    style.padding = 20;
-  };
-  auto items_layout = [](datagui::VerticalLayoutStyle& style) {
-    style.border_width = 2;
-    style.padding = 20;
-    style.length = 100.0_fixed;
-    style.width = 1.0_dynamic;
-  };
+  datagui::Style boxed_layout;
+  boxed_layout.border_width(2);
+  boxed_layout.padding(20);
+
+  datagui::Style items_layout;
+  items_layout.border_width(2);
+  items_layout.padding(20);
+  items_layout.layout_direction(datagui::LayoutDirection::Vertical);
+  items_layout.height(100.0_fixed);
+  items_layout.width(1.0_dynamic);
 
   while (gui.running()) {
     gui.begin();

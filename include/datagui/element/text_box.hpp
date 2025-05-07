@@ -6,10 +6,6 @@
 
 namespace datagui {
 
-struct TextBoxStyle : public BoxStyle, public SelectableTextStyle {
-  Length width = literals::_wrap;
-};
-
 struct TextBoxData {
   TextBoxStyle style;
   std::string text;

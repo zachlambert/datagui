@@ -6,10 +6,6 @@
 
 namespace datagui {
 
-struct VerticalLayoutStyle : public LinearLayoutStyle {
-  AlignmentX horizontal_alignment = AlignmentX::Left;
-};
-
 struct VerticalLayoutData {
   VerticalLayoutStyle style;
   float overrun = 0;

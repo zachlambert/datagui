@@ -6,10 +6,6 @@
 
 namespace datagui {
 
-struct HorizontalLayoutStyle : public LinearLayoutStyle {
-  AlignmentY vertical_alignment = AlignmentY::Top;
-};
-
 struct HorizontalLayoutData {
   HorizontalLayoutStyle style;
 };

@@ -7,16 +7,6 @@
 
 namespace datagui {
 
-struct CheckboxStyle {
-  Color bg_color = Color::Gray(0.8);
-  Color border_color = Color::Gray(0.2);
-  Color check_color = Color::Gray(0.2);
-  BoxDims border_width = 2;
-  BoxDims check_padding = 2;
-  float radius = 0;
-  float size = 24;
-};
-
 struct CheckboxData {
   CheckboxStyle style;
   bool checked = false;

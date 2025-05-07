@@ -7,20 +7,6 @@
 
 namespace datagui {
 
-struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
-  Color focus_color;
-  Length width;
-
-  TextInputStyle() {
-    bg_color = Color::White();
-    border_color = Color::Gray(0.5);
-    border_width = 2;
-    padding = 5;
-    focus_color = Color(0.0, 1.0, 1.0);
-    width = LengthDynamic(1.0);
-  }
-};
-
 struct TextInputData {
   TextInputStyle style;
   std::string text;

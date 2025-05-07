@@ -6,12 +6,6 @@
 
 namespace datagui {
 
-struct DropDownStyle : public BoxStyle, public TextStyle {
-  Length content_width = LengthWrap();
-  float inner_border_width = 0;
-  Color choice_color = Color::Gray(0.9);
-};
-
 struct DropDownData {
   DropDownStyle style;
   std::vector<std::string> choices;

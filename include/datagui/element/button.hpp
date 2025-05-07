@@ -6,19 +6,6 @@
 
 namespace datagui {
 
-struct ButtonStyle : public BoxStyle, public TextStyle {
-  Color focus_color = Color(0, 1, 1);
-  Color down_color = Color::Gray(0.4);
-  Color hover_color = Color::Gray(0.6);
-  Length width = literals::_wrap;
-  ButtonStyle() {
-    bg_color = Color::Gray(0.8);
-    border_width = 2;
-    border_color = Color::Gray(0.5);
-    padding = 10;
-  }
-};
-
 struct ButtonData {
   ButtonStyle style;
   std::string text;
