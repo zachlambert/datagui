@@ -32,48 +32,44 @@ public:
   void begin();
   void end();
 
-  bool horizontal_layout(const SetHorizontalLayoutStyle& = nullptr);
-  bool vertical_layout(const SetVerticalLayoutStyle& = nullptr);
+  bool horizontal_layout(const StyleRule& = StyleRule());
+  bool vertical_layout(const StyleRule& = StyleRule());
   void layout_end();
 
-  void text_box(
-      const std::string& text,
-      const SetTextBoxStyle& set_style = nullptr);
+  void text_box(const std::string& text, const StyleRule& style = StyleRule());
 
   const std::string* text_input(
       const std::string& initial_text = "",
-      const SetTextInputStyle& set_style = nullptr);
+      const StyleRule& style = StyleRule());
 
   void text_input(
       const Variable<std::string>& text,
-      const SetTextInputStyle& set_style = nullptr);
+      const StyleRule& style = StyleRule());
 
-  bool button(
-      const std::string& text,
-      const SetButtonStyle& set_style = nullptr);
+  bool button(const std::string& text, const StyleRule& style = StyleRule());
 
   const int* drop_down(
       const std::vector<std::string>& choices,
       int initial_choice = -1,
-      const SetDropDownStyle& set_style = nullptr);
+      const StyleRule& style = StyleRule());
 
   void drop_down(
       const std::vector<std::string>& choices,
       const Variable<int>& choice,
-      const SetDropDownStyle& set_style = nullptr);
+      const StyleRule& style = StyleRule());
 
   bool floating(
       const Variable<bool>& open,
       const std::string& title,
-      const SetWindowStyle& set_style = nullptr);
+      const StyleRule& style = StyleRule());
 
   const bool* checkbox(
       const bool& initial_checked = false,
-      const SetCheckboxStyle& set_style = nullptr);
+      const StyleRule& style = StyleRule());
 
   void checkbox(
       const Variable<bool>& checked,
-      const SetCheckboxStyle& set_style = nullptr);
+      const StyleRule& style = StyleRule());
 
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
@@ -98,9 +94,7 @@ private:
   Tree tree;
   bool debug_mode_ = false;
 
-  FontManager font_manager;
-  GeometryRenderer geometry_renderer;
-  TextRenderer text_renderer;
+  Resources res;
 
   HorizontalLayoutSystem horizontal_layout_system;
   VerticalLayoutSystem vertical_layout_system;

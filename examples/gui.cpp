@@ -7,16 +7,24 @@ int main() {
 
   datagui::Gui gui;
 
-  auto style_root = [](datagui::VerticalLayoutStyle& style) {
-    style.padding = {40, 10};
-    style.inner_padding = 10;
-    style.horizontal_alignment = datagui::AlignmentX::Center;
-  };
+  datagui::StyleRuleT<datagui::VerticalLayoutStyle> style_root =
+      [](datagui::VerticalLayoutStyle& style) {
+        style.padding = {40, 10};
+        style.inner_padding = 10;
+        style.horizontal_alignment = datagui::AlignmentX::Center;
+      };
+  auto style_root =
+      datagui::StyleRule().join([](datagui::VerticalLayoutStyle& style) {
+        style.padding = {40, 10};
+        style.inner_padding = 10;
+        style.horizontal_alignment = datagui::AlignmentX::Center;
+      });
 
-  auto style_h1 = [](datagui::TextStyle& style) {
-    style.text_color = datagui::Color::Red();
-    style.font_size = 40;
-  };
+  datagui::StyleRuleT<datagui::TextStyle> style_h1 =
+      [](datagui::TextStyle& style) {
+        style.text_color = datagui::Color::Red();
+        style.font_size = 40;
+      };
 
   auto style_text = [](datagui::TextStyle& style) { style.font_size = 30; };
 

@@ -2,13 +2,10 @@
 
 namespace datagui {
 
-void VerticalLayoutSystem::visit(
-    Element element,
-    const SetVerticalLayoutStyle& set_style) {
+void VerticalLayoutSystem::visit(Element element) {
+  auto& data = element.data<VerticalLayoutData>();
   if (element.rerender()) {
-    if (set_style) {
-      set_style(element.data<VerticalLayoutData>().style);
-    }
+    res.style_manager.apply(data.style);
   }
 }
 
@@ -138,7 +135,7 @@ void VerticalLayoutSystem::render(ConstElement element) const {
   const auto& data = element.data<VerticalLayoutData>();
   const auto& style = data.style;
 
-  geometry_renderer.queue_box(element->box(), style);
+  res.geometry_renderer.queue_box(element->box(), style);
 }
 
 bool VerticalLayoutSystem::scroll_event(

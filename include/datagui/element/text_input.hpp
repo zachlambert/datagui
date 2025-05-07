@@ -1,11 +1,9 @@
 #pragma once
 
 #include "datagui/input/text_selection.hpp"
+#include "datagui/resources.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
-#include "datagui/visual/font.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/text_renderer.hpp"
 
 namespace datagui {
 
@@ -22,33 +20,19 @@ struct TextInputStyle : public BoxStyle, public SelectableTextStyle {
     width = LengthDynamic(1.0);
   }
 };
-using SetTextInputStyle = SetStyle<TextInputStyle>;
 
 struct TextInputData {
-  using Style = TextInputStyle;
+  TextInputStyle style;
   std::string text;
   bool changed = false;
-  Style style;
 };
 
 class TextInputSystem : public ElementSystemImpl<TextInputData> {
 public:
-  TextInputSystem(
-      FontManager& font_manager,
-      TextRenderer& text_renderer,
-      GeometryRenderer& geometry_renderer) :
-      font_manager(font_manager),
-      text_renderer(text_renderer),
-      geometry_renderer(geometry_renderer) {}
+  TextInputSystem(Resources& res) : res(res) {}
 
-  const std::string* visit(
-      Element element,
-      const std::string& initial_text,
-      const SetTextInputStyle& set_style);
-  void visit(
-      Element element,
-      const Variable<std::string>& text,
-      const SetTextInputStyle& set_style);
+  const std::string* visit(Element element, const std::string& initial_text);
+  void visit(Element element, const Variable<std::string>& text);
 
   void set_layout_input(Element element) const override;
   void render(ConstElement element) const override;
@@ -62,9 +46,7 @@ public:
       override;
 
 private:
-  FontManager& font_manager;
-  TextRenderer& text_renderer;
-  GeometryRenderer& geometry_renderer;
+  Resources& res;
 
   std::string active_text;
   TextSelection active_selection;

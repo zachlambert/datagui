@@ -1,9 +1,9 @@
 #pragma once
 
 #include "datagui/input/text_selection.hpp"
+#include "datagui/resources.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
 
 namespace datagui {
 
@@ -16,27 +16,19 @@ struct CheckboxStyle {
   float radius = 0;
   float size = 24;
 };
-using SetCheckboxStyle = SetStyle<CheckboxStyle>;
 
 struct CheckboxData {
+  CheckboxStyle style;
   bool checked = false;
   bool changed = false;
-  CheckboxStyle style;
 };
 
 class CheckboxSystem : public ElementSystemImpl<CheckboxData> {
 public:
-  CheckboxSystem(GeometryRenderer& geometry_renderer) :
-      geometry_renderer(geometry_renderer) {}
+  CheckboxSystem(Resources& res) : res(res) {}
 
-  const bool* visit(
-      Element element,
-      const bool& initial_checked,
-      const SetCheckboxStyle& set_style);
-  void visit(
-      Element element,
-      const Variable<bool>& checked,
-      const SetCheckboxStyle& set_style);
+  const bool* visit(Element element, const bool& initial_checked);
+  void visit(Element element, const Variable<bool>& checked);
 
   void set_layout_input(Element element) const override;
   void render(ConstElement element) const override;
@@ -45,7 +37,7 @@ public:
   void key_event(Element element, const KeyEvent& event) override;
 
 private:
-  GeometryRenderer& geometry_renderer;
+  Resources& res;
 
   std::string active_text;
   TextSelection active_selection;

@@ -1,10 +1,8 @@
 #pragma once
 
+#include "datagui/resources.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
-#include "datagui/visual/font.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/text_renderer.hpp"
 
 namespace datagui {
 
@@ -20,30 +18,19 @@ struct ButtonStyle : public BoxStyle, public TextStyle {
     padding = 10;
   }
 };
-using SetButtonStyle = SetStyle<ButtonStyle>;
 
 struct ButtonData {
-  using Style = ButtonStyle;
+  ButtonStyle style;
   std::string text;
   bool released = false;
   bool down = false;
-  Style style;
 };
 
 class ButtonSystem : public ElementSystemImpl<ButtonData> {
 public:
-  ButtonSystem(
-      FontManager& font_manager,
-      GeometryRenderer& geometry_renderer,
-      TextRenderer& text_renderer) :
-      font_manager(font_manager),
-      geometry_renderer(geometry_renderer),
-      text_renderer(text_renderer) {}
+  ButtonSystem(Resources& res) : res(res) {}
 
-  bool visit(
-      Element element,
-      const std::string& text,
-      const SetButtonStyle& set_style);
+  bool visit(Element element, const std::string& text);
 
   void set_layout_input(Element element) const override;
   void render(ConstElement element) const override;
@@ -52,9 +39,7 @@ public:
   void key_event(Element element, const KeyEvent& event) override;
 
 private:
-  FontManager& font_manager;
-  GeometryRenderer& geometry_renderer;
-  TextRenderer& text_renderer;
+  Resources& res;
 };
 
 } // namespace datagui

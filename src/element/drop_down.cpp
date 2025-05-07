@@ -5,8 +5,7 @@ namespace datagui {
 const int* DropDownSystem::visit(
     Element element,
     const std::vector<std::string>& choices,
-    int initial_choice,
-    const SetDropDownStyle& set_style) {
+    int initial_choice) {
 
   auto& data = element.data<DropDownData>();
   if (element.is_new()) {
@@ -14,9 +13,7 @@ const int* DropDownSystem::visit(
     data.choice = initial_choice;
   }
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    res.style_manager.apply(data.style);
   }
   if (data.changed) {
     data.changed = false;
@@ -28,8 +25,7 @@ const int* DropDownSystem::visit(
 void DropDownSystem::visit(
     Element element,
     const std::vector<std::string>& choices,
-    const Variable<int>& choice,
-    const SetDropDownStyle& set_style) {
+    const Variable<int>& choice) {
 
   auto& data = element.data<DropDownData>();
   if (element.is_new()) {
@@ -37,9 +33,7 @@ void DropDownSystem::visit(
     data.choice = *choice;
   }
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    res.style_manager.apply(data.style);
   }
   if (choice.modified()) {
     data.choice = *choice;
@@ -57,12 +51,12 @@ void DropDownSystem::set_layout_input(Element element) const {
   float fixed_inner_width = 0;
   for (const auto& choice : data.choices) {
     Vecf choice_size =
-        font_manager.text_size(choice, style, style.content_width);
+        res.font_manager.text_size(choice, style, style.content_width);
     fixed_inner_width = std::max(fixed_inner_width, choice_size.x);
   }
   if (data.choices.empty()) {
     Vecf none_size =
-        font_manager.text_size("<none>", style, style.content_width);
+        res.font_manager.text_size("<none>", style, style.content_width);
     fixed_inner_width = std::max(fixed_inner_width, none_size.x);
   }
 
@@ -74,7 +68,7 @@ void DropDownSystem::set_layout_input(Element element) const {
     element->dynamic_size.x = width->weight;
   }
 
-  element->fixed_size.y += font_manager.text_height(style);
+  element->fixed_size.y += res.font_manager.text_height(style);
   element->fixed_size.y += style.padding.size().y;
 
   element->floating = data.open && !data.choices.empty();
@@ -90,7 +84,7 @@ void DropDownSystem::set_float_box(ConstElement root, Element element) const {
   const auto& style = data.style;
   element->float_box.upper.y +=
       (data.choices.size() - 1) *
-      (font_manager.text_height(style) + style.padding.size().y +
+      (res.font_manager.text_height(style) + style.padding.size().y +
        style.inner_border_width);
 }
 
@@ -99,7 +93,7 @@ void DropDownSystem::render(ConstElement element) const {
   const auto& style = data.style;
 
   if (!data.open || data.choices.empty()) {
-    geometry_renderer.queue_box(
+    res.geometry_renderer.queue_box(
         element->box(),
         style.bg_color,
         style.border_width,
@@ -110,7 +104,7 @@ void DropDownSystem::render(ConstElement element) const {
                            ? data.choice == -1 ? "" : data.choices[data.choice]
                            : "<none>";
 
-    text_renderer.queue_text(
+    res.text_renderer.queue_text(
         element->position + style.border_width.offset() +
             style.padding.offset(),
         text,
@@ -146,17 +140,17 @@ void DropDownSystem::render(ConstElement element) const {
     Vecf position = element->position + offset;
     Vecf size = Vecf(
         element->size.x,
-        font_manager.text_height(style) + style.padding.size().y +
+        res.font_manager.text_height(style) + style.padding.size().y +
             border->size().y);
 
-    geometry_renderer.queue_box(
+    res.geometry_renderer.queue_box(
         Boxf(position, position + size),
         i == data.choice ? style.choice_color : style.bg_color,
         *border,
         style.border_color,
         0);
 
-    text_renderer.queue_text(
+    res.text_renderer.queue_text(
         position + border->offset() + style.padding.offset(),
         data.choices[i],
         style,
@@ -164,8 +158,8 @@ void DropDownSystem::render(ConstElement element) const {
             element->size.x - style.border_width.size().x -
             style.padding.size().x));
 
-    offset.y +=
-        border->top + style.padding.size().y + font_manager.text_height(style);
+    offset.y += border->top + style.padding.size().y +
+                res.font_manager.text_height(style);
   }
 }
 
@@ -210,7 +204,7 @@ void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
     Vecf position = element->position + offset;
     Vecf size = Vecf(
         element->size.x,
-        font_manager.text_height(style) + style.padding.size().y +
+        res.font_manager.text_height(style) + style.padding.size().y +
             border->size().y);
 
     if (Boxf(position, position + size).contains(event.position)) {
@@ -218,8 +212,8 @@ void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
       break;
     }
 
-    offset.y +=
-        border->top + style.padding.size().y + font_manager.text_height(style);
+    offset.y += border->top + style.padding.size().y +
+                res.font_manager.text_height(style);
   }
 
   if (clicked != -1) {

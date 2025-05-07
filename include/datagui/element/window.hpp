@@ -1,9 +1,8 @@
 #pragma once
 
+#include "datagui/resources.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/text_renderer.hpp"
 #include <optional>
 #include <variant>
 
@@ -35,7 +34,6 @@ struct WindowStyle {
   Color bg_color = Color::White();
   std::optional<TitleBarStyle> title_bar;
 };
-using SetWindowStyle = SetStyle<WindowStyle>;
 
 struct WindowData {
   WindowStyle style;
@@ -46,19 +44,9 @@ struct WindowData {
 
 class WindowSystem : public ElementSystemImpl<WindowData> {
 public:
-  WindowSystem(
-      GeometryRenderer& geometry_renderer,
-      TextRenderer& text_renderer,
-      FontManager& font_manager) :
-      geometry_renderer(geometry_renderer),
-      text_renderer(text_renderer),
-      font_manager(font_manager) {}
+  WindowSystem(Resources& res) : res(res) {}
 
-  void visit(
-      Element element,
-      Variable<bool> open,
-      const std::string& title,
-      const SetWindowStyle& set_style);
+  void visit(Element element, Variable<bool> open, const std::string& title);
 
   void set_layout_input(Element element) const override;
   void set_child_layout_output(Element elment) const override;
@@ -67,9 +55,7 @@ public:
   void mouse_event(Element element, const MouseEvent& event) override;
 
 private:
-  GeometryRenderer& geometry_renderer;
-  TextRenderer& text_renderer;
-  FontManager& font_manager;
+  Resources& res;
 };
 
 } // namespace datagui

@@ -1,29 +1,26 @@
 #pragma once
 
+#include "datagui/resources.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
 
 namespace datagui {
 
 struct VerticalLayoutStyle : public LinearLayoutStyle {
   AlignmentX horizontal_alignment = AlignmentX::Left;
 };
-using SetVerticalLayoutStyle = SetStyle<VerticalLayoutStyle>;
 
 struct VerticalLayoutData {
-  using Style = VerticalLayoutStyle;
-  Style style;
+  VerticalLayoutStyle style;
   float overrun = 0;
   float scroll_pos = 0;
 };
 
 class VerticalLayoutSystem : public ElementSystemImpl<VerticalLayoutData> {
 public:
-  VerticalLayoutSystem(GeometryRenderer& geometry_renderer) :
-      geometry_renderer(geometry_renderer) {}
+  VerticalLayoutSystem(Resources& res) : res(res) {}
 
-  void visit(Element element, const SetVerticalLayoutStyle& set_style);
+  void visit(Element element);
 
   void set_layout_input(Element element) const override;
   void set_child_layout_output(Element element) const override;
@@ -31,7 +28,7 @@ public:
   bool scroll_event(Element element, const ScrollEvent& event) override;
 
 private:
-  GeometryRenderer& geometry_renderer;
+  Resources& res;
 };
 
 } // namespace datagui

@@ -2,14 +2,11 @@
 
 namespace datagui {
 
-void HorizontalLayoutSystem::visit(
-    Element element,
-    const SetHorizontalLayoutStyle& set_style) {
+void HorizontalLayoutSystem::visit(Element element) {
   auto& data = element.data<HorizontalLayoutData>();
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    res.style_manager.apply(data.style);
+    ;
   }
 }
 
@@ -140,7 +137,7 @@ void HorizontalLayoutSystem::render(ConstElement element) const {
   const auto& data = element.data<HorizontalLayoutData>();
   const auto& style = data.style;
 
-  geometry_renderer.queue_box(element->box(), style);
+  res.geometry_renderer.queue_box(element->box(), style);
 }
 
 } // namespace datagui

@@ -9,15 +9,14 @@ using namespace std::placeholders;
 
 Gui::Gui(const Window::Config& config) :
     window(config),
-    text_renderer(font_manager),
-    horizontal_layout_system(geometry_renderer),
-    vertical_layout_system(geometry_renderer),
-    text_box_system(font_manager, text_renderer),
-    text_input_system(font_manager, text_renderer, geometry_renderer),
-    button_system(font_manager, geometry_renderer, text_renderer),
-    drop_down_system(font_manager, text_renderer, geometry_renderer),
-    window_system(geometry_renderer, text_renderer, font_manager),
-    checkbox_system(geometry_renderer) {
+    horizontal_layout_system(res),
+    vertical_layout_system(res),
+    text_box_system(res),
+    text_input_system(res),
+    button_system(res),
+    drop_down_system(res),
+    window_system(res),
+    checkbox_system(res) {
 
   horizontal_layout_system.register_type(tree, systems);
   vertical_layout_system.register_type(tree, systems);
@@ -28,103 +27,133 @@ Gui::Gui(const Window::Config& config) :
   window_system.register_type(tree, systems);
   checkbox_system.register_type(tree, systems);
 
-  geometry_renderer.init();
-  text_renderer.init();
+  res.geometry_renderer.init();
+  res.text_renderer.init();
 }
 
 bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::horizontal_layout(const SetHorizontalLayoutStyle& set_style) {
+bool Gui::horizontal_layout(const StyleRule& style) {
   auto element = tree.next(horizontal_layout_system.type());
-  horizontal_layout_system.visit(element, set_style);
-  return tree.down_if();
+  res.style_manager.push(style);
+  horizontal_layout_system.visit(element);
+  res.style_manager.pop();
+  if (tree.down_if()) {
+    res.style_manager.down();
+    return true;
+  }
+  return false;
 }
 
-bool Gui::vertical_layout(
-    const std::function<void(VerticalLayoutStyle&)>& set_style) {
+bool Gui::vertical_layout(const StyleRule& style) {
   auto element = tree.next(vertical_layout_system.type());
-  vertical_layout_system.visit(element, set_style);
-  return tree.down_if();
+  res.style_manager.push(style);
+  vertical_layout_system.visit(element);
+  res.style_manager.pop();
+  if (tree.down_if()) {
+    res.style_manager.down();
+    return true;
+  }
+  return false;
 }
 
 void Gui::layout_end() {
+  res.style_manager.up();
   tree.up();
 }
 
-void Gui::text_box(
-    const std::string& text,
-    const std::function<void(TextBoxStyle&)>& set_style) {
+void Gui::text_box(const std::string& text, const StyleRule& style) {
   auto element = tree.next(text_box_system.type());
-  text_box_system.visit(element, text, set_style);
+  res.style_manager.push(style);
+  text_box_system.visit(element, text);
+  res.style_manager.pop();
 }
 
 const std::string* Gui::text_input(
     const std::string& initial_text,
-    const std::function<void(TextInputStyle&)>& set_style) {
+    const StyleRule& style) {
   auto element = tree.next(text_input_system.type());
-  return text_input_system.visit(element, initial_text, set_style);
+  res.style_manager.push(style);
+  auto result = text_input_system.visit(element, initial_text);
+  res.style_manager.pop();
+  return result;
 }
 
 void Gui::text_input(
     const Variable<std::string>& text,
-    const std::function<void(TextInputStyle&)>& set_style) {
+    const StyleRule& style) {
   auto element = tree.next(text_input_system.type());
-  text_input_system.visit(element, text, set_style);
+  res.style_manager.push(style);
+  text_input_system.visit(element, text);
+  res.style_manager.pop();
 }
 
-bool Gui::button(
-    const std::string& text,
-    const std::function<void(ButtonStyle&)>& set_style) {
+bool Gui::button(const std::string& text, const StyleRule& style) {
   auto element = tree.next(button_system.type());
-  return button_system.visit(element, text, set_style);
+  res.style_manager.push(style);
+  auto result = button_system.visit(element, text);
+  res.style_manager.pop();
+  return result;
 }
 
 const int* Gui::drop_down(
     const std::vector<std::string>& choices,
     int initial_choice,
-    const SetDropDownStyle& set_style) {
+    const StyleRule& style) {
   auto element = tree.next(drop_down_system.type());
-  return drop_down_system.visit(element, choices, initial_choice, set_style);
+  res.style_manager.push(style);
+  auto result = drop_down_system.visit(element, choices, initial_choice);
+  res.style_manager.pop();
+  return result;
 }
 
 void Gui::drop_down(
     const std::vector<std::string>& choices,
     const Variable<int>& choice,
-    const SetDropDownStyle& set_style) {
+    const StyleRule& style) {
   auto element = tree.next(drop_down_system.type());
-  drop_down_system.visit(element, choices, choice, set_style);
+  res.style_manager.push(style);
+  drop_down_system.visit(element, choices, choice);
+  res.style_manager.pop();
 }
 
 bool Gui::floating(
     const Variable<bool>& open,
     const std::string& title,
-    const SetWindowStyle& set_style) {
+    const StyleRule& style) {
   if (!*open) {
     return false;
   }
 
   auto element = tree.next(window_system.type(), "floating");
-  window_system.visit(element, open, title, set_style);
+  res.style_manager.push(style);
+  window_system.visit(element, open, title);
+  res.style_manager.pop();
   if (!*open) {
     return false;
   }
-  return tree.down_if();
+  if (tree.down_if()) {
+    res.style_manager.down();
+    return true;
+  }
+  return false;
 }
 
-const bool* Gui::checkbox(
-    const bool& initial_checked,
-    const SetCheckboxStyle& set_style) {
+const bool* Gui::checkbox(const bool& initial_checked, const StyleRule& style) {
   auto element = tree.next(checkbox_system.type());
-  return checkbox_system.visit(element, initial_checked, set_style);
+  res.style_manager.push(style);
+  auto result = checkbox_system.visit(element, initial_checked);
+  res.style_manager.pop();
+  return result;
 }
 
-void Gui::checkbox(
-    const Variable<bool>& checked,
-    const SetCheckboxStyle& set_style) {
+void Gui::checkbox(const Variable<bool>& checked, const StyleRule& style) {
   auto element = tree.next(checkbox_system.type());
-  checkbox_system.visit(element, checked, set_style);
+  res.style_manager.push(style);
+  checkbox_system.visit(element, checked);
+  res.style_manager.pop();
 }
 
 void Gui::begin() {

@@ -1,10 +1,8 @@
 #pragma once
 
+#include "datagui/resources.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
-#include "datagui/visual/font.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/text_renderer.hpp"
 
 namespace datagui {
 
@@ -13,37 +11,28 @@ struct DropDownStyle : public BoxStyle, public TextStyle {
   float inner_border_width = 0;
   Color choice_color = Color::Gray(0.9);
 };
-using SetDropDownStyle = SetStyle<DropDownStyle>;
 
 struct DropDownData {
+  DropDownStyle style;
   std::vector<std::string> choices;
   int choice = -1;
   int choice_hovered = -1;
   bool changed = false;
   bool open = false;
-  DropDownStyle style;
 };
 
 class DropDownSystem : public ElementSystemImpl<DropDownData> {
 public:
-  DropDownSystem(
-      FontManager& font_manager,
-      TextRenderer& text_renderer,
-      GeometryRenderer& geometry_renderer) :
-      font_manager(font_manager),
-      text_renderer(text_renderer),
-      geometry_renderer(geometry_renderer) {}
+  DropDownSystem(Resources& res) : res(res) {}
 
   const int* visit(
       Element element,
       const std::vector<std::string>& choices,
-      int initial_choice,
-      const SetDropDownStyle& set_style);
+      int initial_choice);
   void visit(
       Element element,
       const std::vector<std::string>& choices,
-      const Variable<int>& choice,
-      const SetDropDownStyle& set_style);
+      const Variable<int>& choice);
 
   void set_layout_input(Element element) const override;
   void set_float_box(ConstElement root, Element element) const override;
@@ -55,9 +44,7 @@ public:
       override;
 
 private:
-  FontManager& font_manager;
-  TextRenderer& text_renderer;
-  GeometryRenderer& geometry_renderer;
+  Resources& res;
 };
 
 } // namespace datagui

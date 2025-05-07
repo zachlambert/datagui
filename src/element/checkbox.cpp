@@ -4,17 +4,14 @@ namespace datagui {
 
 const bool* CheckboxSystem::visit(
     Element element,
-    const bool& initial_checked,
-    const SetCheckboxStyle& set_style) {
+    const bool& initial_checked) {
   auto& data = element.data<CheckboxData>();
   if (element.is_new()) {
     data.checked = initial_checked;
     printf("Creating with checked = %i\n", data.checked);
   }
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    res.style_manager.apply(data.style);
   }
   if (data.changed) {
     data.changed = false;
@@ -23,19 +20,14 @@ const bool* CheckboxSystem::visit(
   return nullptr;
 }
 
-void CheckboxSystem::visit(
-    Element element,
-    const Variable<bool>& checked,
-    const SetCheckboxStyle& set_style) {
+void CheckboxSystem::visit(Element element, const Variable<bool>& checked) {
   auto& data = element.data<CheckboxData>();
 
   if (element.is_new()) {
     data.checked = *checked;
   }
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    res.style_manager.apply(data.style);
   }
   if (data.changed) {
     data.changed = false;
@@ -58,7 +50,7 @@ void CheckboxSystem::render(ConstElement element) const {
   const auto& data = element.data<CheckboxData>();
   const auto& style = data.style;
 
-  geometry_renderer.queue_box(
+  res.geometry_renderer.queue_box(
       element->box(),
       style.bg_color,
       style.border_width,
@@ -79,7 +71,7 @@ void CheckboxSystem::render(ConstElement element) const {
           style.check_padding.offset_opposite(),
       element->box().center());
 
-  geometry_renderer
+  res.geometry_renderer
       .queue_box(checked_box, style.check_color, 0, Color::Black(), 0);
 }
 
