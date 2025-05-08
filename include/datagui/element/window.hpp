@@ -7,7 +7,7 @@
 namespace datagui {
 
 struct WindowData {
-  WindowStyle style;
+  FloatStyle style;
   std::string title;
   bool open = false;
   bool open_changed = false;

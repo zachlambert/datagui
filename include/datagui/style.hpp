@@ -19,14 +19,10 @@ struct BoxStyle {
   Length height = literals::_wrap;
 };
 
-enum class LayoutDirection { Vertical, Horizontal };
-
-enum class LayoutAlignment { Top, Bottom, Left, Right };
-
 struct LayoutStyle : public BoxStyle {
   float inner_padding;
-  LayoutDirection direction;
-  LayoutAlignment alignment;
+  Direction direction;
+  Alignment alignment;
 };
 
 struct TextStyle {
@@ -38,6 +34,8 @@ struct TextStyle {
   Color cursor_color = Color::Gray(0.5);
 };
 
+struct TextBoxStyle : public TextStyle, public BoxStyle {};
+
 struct InputStyle {
   Color focus_color = Color(0, 1, 1);
   Color active_color = Color::Gray(0.4);
@@ -47,11 +45,12 @@ struct InputStyle {
 struct ButtonStyle : public BoxStyle, public TextStyle, public InputStyle {};
 
 struct CheckboxStyle : public BoxStyle, InputStyle {
+  float size = 24;
   Color check_color = Color::Gray(0.2);
   BoxDims check_padding = 2;
 };
 
-struct DropdownStyle : public BoxStyle, public TextStyle {
+struct DropdownStyle : public BoxStyle, public TextStyle, public InputStyle {
   float inner_border_width = 0;
 };
 
@@ -71,7 +70,7 @@ struct FloatTypeRelative {
 
 using FloatType = std::variant<FloatTypeAbsolute, FloatTypeRelative>;
 
-struct BarStyle : public TextStyle {
+struct TitleBarStyle : public TextStyle {
   Color bg_color = Color::Gray(0.8);
   bool close_button_enable = true;
   Color close_button_color = Color::Gray(0.6);
@@ -80,10 +79,10 @@ struct BarStyle : public TextStyle {
   Color border_color = Color::Black();
 };
 
-struct FloatStyle : public TextStyle {
-  FloatType type;
-  bool bar_enable = false;
-  BarStyle bar;
+struct FloatStyle : public BoxStyle {
+  FloatType float_type;
+  bool title_bar_enable = false;
+  TitleBarStyle title_bar;
 };
 
 class StyleRuleTBase {
@@ -167,6 +166,7 @@ public:
   STYLE_PROPERTY(input_hover_color, InputStyle, hover_color)
 
   // CheckboxStyle
+  STYLE_PROPERTY(checkbox_size, CheckboxStyle, size)
   STYLE_PROPERTY(checkbox_check_color, CheckboxStyle, check_color)
   STYLE_PROPERTY(checkbox_check_padding, CheckboxStyle, check_padding)
 
@@ -178,7 +178,7 @@ public:
   Style& float_absolute(const BoxDims& margin) {
     styles.push_back(
         std::make_unique<StyleRuleT<FloatStyle>>([margin](FloatStyle& style) {
-          style.type = FloatTypeAbsolute(margin);
+          style.float_type = FloatTypeAbsolute(margin);
         }));
     return *this;
   }
@@ -186,25 +186,33 @@ public:
   Style& float_relative(const Vecf& offset, const Vecf& size) {
     styles.push_back(std::make_unique<StyleRuleT<FloatStyle>>(
         [offset, size](FloatStyle& style) {
-          style.type = FloatTypeRelative(offset, size);
+          style.float_type = FloatTypeRelative(offset, size);
         }));
     return *this;
   }
 
-  STYLE_SUB_PROPERTY(float_bar_bg_color, FloatStyle, bar, bg_color)
+  STYLE_SUB_PROPERTY(float_bar_bg_color, FloatStyle, title_bar, bg_color)
   STYLE_SUB_PROPERTY(
       float_bar_close_button_enable,
       FloatStyle,
-      bar,
+      title_bar,
       close_button_enable)
   STYLE_SUB_PROPERTY(
       float_bar_close_button_color,
       FloatStyle,
-      bar,
+      title_bar,
       close_button_color)
-  STYLE_SUB_PROPERTY(float_bar_padding, FloatStyle, bar, padding)
-  STYLE_SUB_PROPERTY(float_bar_border_width, FloatStyle, bar, border_width)
-  STYLE_SUB_PROPERTY(float_bar_border_color, FloatStyle, bar, border_color)
+  STYLE_SUB_PROPERTY(float_bar_padding, FloatStyle, title_bar, padding)
+  STYLE_SUB_PROPERTY(
+      float_bar_border_width,
+      FloatStyle,
+      title_bar,
+      border_width)
+  STYLE_SUB_PROPERTY(
+      float_bar_border_color,
+      FloatStyle,
+      title_bar,
+      border_color)
 
 private:
   std::vector<std::unique_ptr<StyleRuleTBase>> styles;

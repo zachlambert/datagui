@@ -7,7 +7,7 @@
 namespace datagui {
 
 struct HorizontalLayoutData {
-  HorizontalLayoutStyle style;
+  LayoutStyle style;
 };
 
 class HorizontalLayoutSystem : public ElementSystemImpl<HorizontalLayoutData> {

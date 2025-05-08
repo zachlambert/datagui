@@ -7,7 +7,7 @@
 namespace datagui {
 
 struct VerticalLayoutData {
-  VerticalLayoutStyle style;
+  LayoutStyle style;
   float overrun = 0;
   float scroll_pos = 0;
 };

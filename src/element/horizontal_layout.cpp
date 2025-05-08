@@ -20,7 +20,7 @@ void HorizontalLayoutSystem::set_layout_input(Element element) const {
 
   // Primary direction (X)
 
-  if (auto length = std::get_if<LengthFixed>(&style.length)) {
+  if (auto length = std::get_if<LengthFixed>(&style.width)) {
     element->fixed_size.x = length->value;
 
   } else {
@@ -41,14 +41,14 @@ void HorizontalLayoutSystem::set_layout_input(Element element) const {
 
     element->fixed_size.x += (count - 1) * style.inner_padding;
 
-    if (auto length = std::get_if<LengthDynamic>(&style.length)) {
+    if (auto length = std::get_if<LengthDynamic>(&style.width)) {
       element->dynamic_size.x = length->weight;
     }
   }
 
   // Secondary direction (Y)
 
-  if (auto width = std::get_if<LengthFixed>(&style.width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.height)) {
     element->fixed_size.y = width->value;
   } else {
     auto child = element.first_child();
@@ -66,7 +66,7 @@ void HorizontalLayoutSystem::set_layout_input(Element element) const {
       child = child.next();
     }
 
-    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
+    if (auto width = std::get_if<LengthDynamic>(&style.height)) {
       element->dynamic_size.y = width->weight;
     }
   }
@@ -77,6 +77,7 @@ void HorizontalLayoutSystem::set_layout_input(Element element) const {
 void HorizontalLayoutSystem::set_child_layout_output(Element element) const {
   const auto& data = element.data<HorizontalLayoutData>();
   const auto& style = data.style;
+  assert(style.direction == Direction::Horizontal);
 
   Vecf available = element->size - element->fixed_size;
   float offset_x = style.padding.left + style.border_width.left;
@@ -113,20 +114,22 @@ void HorizontalLayoutSystem::set_child_layout_output(Element element) const {
     child->position.x = element->position.x + offset_x;
     offset_x += child->size.x + style.inner_padding;
 
-    switch (style.vertical_alignment) {
-    case AlignmentY::Top:
+    switch (style.alignment) {
+    case Alignment::Top:
       child->position.y =
           element->position.y + style.padding.top + style.border_width.top;
       break;
-    case AlignmentY::Center:
+    case Alignment::Center:
       child->position.y =
           element->position.y + element->size.y / 2 - child->size.y / 2;
       break;
-    case AlignmentY::Bottom:
+    case Alignment::Bottom:
       child->position.y = element->position.y + element->size.y -
                           child->size.y -
                           (style.padding.bottom + style.border_width.bottom);
       break;
+    default:
+      assert(false);
     }
 
     child = child.next();

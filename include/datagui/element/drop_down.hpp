@@ -7,7 +7,7 @@
 namespace datagui {
 
 struct DropDownData {
-  DropDownStyle style;
+  DropdownStyle style;
   std::vector<std::string> choices;
   int choice = -1;
   int choice_hovered = -1;

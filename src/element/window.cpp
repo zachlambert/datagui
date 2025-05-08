@@ -35,10 +35,10 @@ void WindowSystem::set_child_layout_output(Element element) const {
 
   Vecf position = element->float_box.lower;
   Vecf size = element->float_box.size();
-  if (style.title_bar) {
-    position.y += style.title_bar->border_width.size().y +
-                  style.title_bar->padding.size().y +
-                  res.font_manager.text_height(*style.title_bar);
+  if (style.title_bar_enable) {
+    const auto& bar = style.title_bar;
+    position.y += bar.border_width.size().y + bar.padding.size().y +
+                  res.font_manager.text_height(bar);
   }
 
   // Expected to only use one child, but allow for multiple children and
@@ -54,14 +54,14 @@ void WindowSystem::set_child_layout_output(Element element) const {
 void WindowSystem::set_float_box(ConstElement window, Element element) const {
   const auto& data = element.data<WindowData>();
   const auto& style = data.style;
-  if (auto position = std::get_if<WindowPositionAbsolute>(&style.position)) {
-    element->float_box.lower = window->box().lower + position->margin.offset();
+  if (auto type = std::get_if<FloatTypeAbsolute>(&style.float_type)) {
+    element->float_box.lower = window->box().lower + type->margin.offset();
     element->float_box.upper =
-        window->box().upper - position->margin.offset_opposite();
+        window->box().upper - type->margin.offset_opposite();
   }
-  if (auto position = std::get_if<WindowPositionRelative>(&style.position)) {
-    element->float_box.lower = element->box().lower + position->offset;
-    element->float_box.upper = element->float_box.lower + position->size;
+  if (auto type = std::get_if<FloatTypeRelative>(&style.float_type)) {
+    element->float_box.lower = element->box().lower + type->offset;
+    element->float_box.upper = element->float_box.lower + type->size;
   }
 }
 
@@ -72,10 +72,10 @@ void WindowSystem::render(ConstElement element) const {
   res.geometry_renderer
       .queue_box(element->float_box, style.bg_color, 0, Color::Black(), 0);
 
-  if (!style.title_bar) {
+  if (!style.title_bar_enable) {
     return;
   }
-  const auto& bar = *style.title_bar;
+  const auto& bar = style.title_bar;
 
   Boxf bar_box;
   bar_box.lower = element->float_box.lower;
@@ -90,8 +90,8 @@ void WindowSystem::render(ConstElement element) const {
   float title_width = element->float_box.size().x - bar.border_width.size().x -
                       bar.padding.size().x;
 
-  if (bar.close_button) {
-    Vecf text_size = font_manager.text_size("close", bar, LengthWrap());
+  if (bar.close_button_enable) {
+    Vecf text_size = res.font_manager.text_size("close", bar, LengthWrap());
     Vecf button_size = text_size + bar.padding.size();
     title_width -= (button_size.x + bar.padding.left);
     title_width = std::max(0.f, title_width);
@@ -126,12 +126,12 @@ void WindowSystem::mouse_event(Element element, const MouseEvent& event) {
   }
   auto& data = element.data<WindowData>();
   const auto& style = data.style;
-  if (!style.title_bar) {
+  if (!style.title_bar_enable) {
     return;
   }
 
-  const auto& bar = *style.title_bar;
-  if (!bar.close_button) {
+  const auto& bar = style.title_bar;
+  if (!bar.close_button_enable) {
     return;
   }
 

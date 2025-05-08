@@ -37,10 +37,10 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
 
     element->fixed_size.y += (count - 1) * style.inner_padding;
   }
-  if (auto length = std::get_if<LengthFixed>(&style.length)) {
+  if (auto length = std::get_if<LengthFixed>(&style.height)) {
     data.overrun = std::max(element->fixed_size.y - length->value, 0.f);
     element->fixed_size.y = length->value;
-  } else if (auto length = std::get_if<LengthDynamic>(&style.length)) {
+  } else if (auto length = std::get_if<LengthDynamic>(&style.height)) {
     element->dynamic_size.y = length->weight;
   }
 
@@ -111,19 +111,22 @@ void VerticalLayoutSystem::set_child_layout_output(Element element) const {
     child->position.y = element->position.y + offset_y;
     offset_y += child->size.y + style.inner_padding;
 
-    switch (style.horizontal_alignment) {
-    case AlignmentX::Left:
+    switch (style.alignment) {
+    case Alignment::Left:
       child->position.x =
           element->position.x + style.padding.left + style.border_width.left;
       break;
-    case AlignmentX::Center:
+    case Alignment::Center:
       child->position.x =
           element->position.x + element->size.x / 2 - child->size.x / 2;
       break;
-    case AlignmentX::Right:
+    case Alignment::Right:
       child->position.x = element->position.x + element->size.x -
                           child->size.x -
                           (style.padding.right + style.border_width.right);
+      break;
+    default:
+      assert(false);
       break;
     }
 

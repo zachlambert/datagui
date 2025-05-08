@@ -42,7 +42,7 @@ void ButtonSystem::render(ConstElement element) const {
 
   res.geometry_renderer.queue_box(
       element->box(),
-      data.down          ? style.down_color
+      data.down          ? style.active_color
       : element->hovered ? style.hover_color
                          : style.bg_color,
       style.border_width,
