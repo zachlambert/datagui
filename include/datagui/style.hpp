@@ -81,25 +81,29 @@ struct TitleBarStyle : public TextStyle {
 
 struct FloatingStyle : public BoxStyle {
   FloatType float_type;
-  bool title_bar_enable = false;
+  bool title_bar_enable;
   TitleBarStyle title_bar;
+
+  FloatingStyle() :
+      float_type(FloatTypeRelative(Vecf::Zero(), Vecf::Zero())),
+      title_bar_enable(false) {}
 };
 
-class StyleRuleTBase {
+class StyleFuncBase {
 public:
-  virtual ~StyleRuleTBase() = 0;
+  virtual ~StyleFuncBase() {}
 };
 
 template <typename Style>
-class StyleRuleT : public StyleRuleTBase {
+class StyleFunc : public StyleFuncBase {
 public:
   template <typename Functor>
-  StyleRuleT(const Functor& func) : func(func) {}
+  StyleFunc(const Functor& func) : func(func) {}
   template <typename Functor>
-  StyleRuleT(Functor&& func) : func(std::move(func)) {}
+  StyleFunc(Functor&& func) : func(std::move(func)) {}
 
-  StyleRuleT(const std::function<void(Style&)>& func) : func(func) {}
-  StyleRuleT(std::function<void(Style&)>&& func) : func(std::move(func)) {}
+  StyleFunc(const std::function<void(Style&)>& func) : func(func) {}
+  StyleFunc(std::function<void(Style&)>&& func) : func(std::move(func)) {}
 
   void apply(Style& style) const {
     func(style);
@@ -111,14 +115,14 @@ private:
 
 #define STYLE_PROPERTY(label, StyleT, name)                                    \
   Style& label(const typeof(StyleT::name)& name) {                             \
-    styles.push_back(std::make_unique<StyleRuleT<StyleT>>(                     \
+    styles.push_back(std::make_shared<StyleFunc<StyleT>>(                      \
         [name](StyleT& style) { style.name = name; }));                        \
     return *this;                                                              \
   }
 
 #define STYLE_SUB_PROPERTY(label, StyleT, name, subname)                       \
   Style& label(const typeof(StyleT::name.subname)& name##_##subname) {         \
-    styles.push_back(std::make_unique<StyleRuleT<StyleT>>(                     \
+    styles.push_back(std::make_shared<StyleFunc<StyleT>>(                      \
         [name##_##subname](StyleT& style) {                                    \
           style.name##_##enable = true;                                        \
           style.name.subname = name##_##subname;                               \
@@ -128,12 +132,12 @@ private:
 
 class Style {
 public:
-  template <typename Style>
-  void apply(Style& style) const {
+  template <typename StyleT>
+  void apply(StyleT& style_data) const {
     for (const auto& style : styles) {
-      auto style_t = dynamic_cast<const StyleRuleT<Style>*>(style.get());
+      auto style_t = dynamic_cast<const StyleFunc<StyleT>*>(style.get());
       if (style_t) {
-        style_t->apply(style);
+        style_t->apply(style_data);
       }
     }
   }
@@ -176,7 +180,7 @@ public:
   // FloatingStyle
 
   Style& float_absolute(const BoxDims& margin) {
-    styles.push_back(std::make_unique<StyleRuleT<FloatingStyle>>(
+    styles.push_back(std::make_shared<StyleFunc<FloatingStyle>>(
         [margin](FloatingStyle& style) {
           style.float_type = FloatTypeAbsolute(margin);
         }));
@@ -184,7 +188,7 @@ public:
   }
 
   Style& float_relative(const Vecf& offset, const Vecf& size) {
-    styles.push_back(std::make_unique<StyleRuleT<FloatingStyle>>(
+    styles.push_back(std::make_shared<StyleFunc<FloatingStyle>>(
         [offset, size](FloatingStyle& style) {
           style.float_type = FloatTypeRelative(offset, size);
         }));
@@ -215,7 +219,7 @@ public:
       border_color)
 
 private:
-  std::vector<std::unique_ptr<StyleRuleTBase>> styles;
+  std::vector<std::shared_ptr<StyleFuncBase>> styles;
 };
 
 class StyleManager {

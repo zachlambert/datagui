@@ -65,8 +65,8 @@ target_link_libraries(example_gui datagui)
 add_executable(example_gui2 examples/gui2.cpp)
 target_link_libraries(example_gui2 datagui)
 
-# add_executable(example_drop_down examples/drop_down.cpp)
-# target_link_libraries(example_drop_down datagui)
+add_executable(example_gui_layers examples/gui_layers.cpp)
+target_link_libraries(example_gui_layers datagui)
 
 # Create install target
 

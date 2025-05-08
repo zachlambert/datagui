@@ -13,7 +13,7 @@ int main() {
   datagui::Style items_layout;
   items_layout.border_width(2);
   items_layout.padding(20);
-  items_layout.layout_direction(datagui::LayoutDirection::Vertical);
+  items_layout.layout_direction(datagui::Direction::Vertical);
   items_layout.height(100.0_fixed);
   items_layout.width(1.0_dynamic);
 

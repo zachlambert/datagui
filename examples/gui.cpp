@@ -9,7 +9,7 @@ int main() {
 
   datagui::Style style_root;
   style_root.padding({40, 10});
-  style_root.layout_direction(datagui::LayoutDirection::Vertical);
+  style_root.layout_direction(datagui::Direction::Vertical);
   style_root.layout_inner_padding(10);
 
   datagui::Style style_h1;
@@ -20,11 +20,11 @@ int main() {
   style_text.font_size(30);
 
   datagui::Style style_horiz_expand;
-  style_horiz_expand.layout_direction(datagui::LayoutDirection::Horizontal);
+  style_horiz_expand.layout_direction(datagui::Direction::Horizontal);
   style_horiz_expand.width(1.0_dynamic);
   style_horiz_expand.padding({10, 50, 10, 20});
   style_horiz_expand.bg_color({10, 50, 10, 20});
-  style_horiz_expand.layout_alignment(datagui::LayoutAlignment::Bottom);
+  style_horiz_expand.layout_alignment(datagui::Alignment::Bottom);
   style_horiz_expand.border_width({4, 12});
   style_horiz_expand.border_color(datagui::Color::Hsl(260, 0.4, 0.7));
 
