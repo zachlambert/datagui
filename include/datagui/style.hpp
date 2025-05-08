@@ -79,7 +79,7 @@ struct TitleBarStyle : public TextStyle {
   Color border_color = Color::Black();
 };
 
-struct FloatStyle : public BoxStyle {
+struct FloatingStyle : public BoxStyle {
   FloatType float_type;
   bool title_bar_enable = false;
   TitleBarStyle title_bar;
@@ -173,44 +173,44 @@ public:
   // CheckboxStyle
   STYLE_PROPERTY(dropdown_inner_border_width, DropdownStyle, inner_border_width)
 
-  // FloatStyle
+  // FloatingStyle
 
   Style& float_absolute(const BoxDims& margin) {
-    styles.push_back(
-        std::make_unique<StyleRuleT<FloatStyle>>([margin](FloatStyle& style) {
+    styles.push_back(std::make_unique<StyleRuleT<FloatingStyle>>(
+        [margin](FloatingStyle& style) {
           style.float_type = FloatTypeAbsolute(margin);
         }));
     return *this;
   }
 
   Style& float_relative(const Vecf& offset, const Vecf& size) {
-    styles.push_back(std::make_unique<StyleRuleT<FloatStyle>>(
-        [offset, size](FloatStyle& style) {
+    styles.push_back(std::make_unique<StyleRuleT<FloatingStyle>>(
+        [offset, size](FloatingStyle& style) {
           style.float_type = FloatTypeRelative(offset, size);
         }));
     return *this;
   }
 
-  STYLE_SUB_PROPERTY(float_bar_bg_color, FloatStyle, title_bar, bg_color)
+  STYLE_SUB_PROPERTY(float_bar_bg_color, FloatingStyle, title_bar, bg_color)
   STYLE_SUB_PROPERTY(
       float_bar_close_button_enable,
-      FloatStyle,
+      FloatingStyle,
       title_bar,
       close_button_enable)
   STYLE_SUB_PROPERTY(
       float_bar_close_button_color,
-      FloatStyle,
+      FloatingStyle,
       title_bar,
       close_button_color)
-  STYLE_SUB_PROPERTY(float_bar_padding, FloatStyle, title_bar, padding)
+  STYLE_SUB_PROPERTY(float_bar_padding, FloatingStyle, title_bar, padding)
   STYLE_SUB_PROPERTY(
       float_bar_border_width,
-      FloatStyle,
+      FloatingStyle,
       title_bar,
       border_width)
   STYLE_SUB_PROPERTY(
       float_bar_border_color,
-      FloatStyle,
+      FloatingStyle,
       title_bar,
       border_color)
 

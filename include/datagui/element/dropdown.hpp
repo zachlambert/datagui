@@ -6,7 +6,7 @@
 
 namespace datagui {
 
-struct DropDownData {
+struct DropdownData {
   DropdownStyle style;
   std::vector<std::string> choices;
   int choice = -1;
@@ -15,9 +15,9 @@ struct DropDownData {
   bool open = false;
 };
 
-class DropDownSystem : public ElementSystemImpl<DropDownData> {
+class DropdownSystem : public ElementSystemImpl<DropdownData> {
 public:
-  DropDownSystem(Resources& res) : res(res) {}
+  DropdownSystem(Resources& res) : res(res) {}
 
   const int* visit(
       Element element,

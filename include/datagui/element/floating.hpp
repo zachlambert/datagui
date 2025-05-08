@@ -6,16 +6,16 @@
 
 namespace datagui {
 
-struct WindowData {
-  FloatStyle style;
+struct FloatingData {
+  FloatingStyle style;
   std::string title;
   bool open = false;
   bool open_changed = false;
 };
 
-class WindowSystem : public ElementSystemImpl<WindowData> {
+class FloatingSystem : public ElementSystemImpl<FloatingData> {
 public:
-  WindowSystem(Resources& res) : res(res) {}
+  FloatingSystem(Resources& res) : res(res) {}
 
   void visit(Element element, Variable<bool> open, const std::string& title);
 

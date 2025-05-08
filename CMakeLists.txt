@@ -18,13 +18,13 @@ find_package(Freetype REQUIRED)
 
 add_library(datagui SHARED
   src/element/button.cpp
-  src/element/drop_down.cpp
+  src/element/checkbox.cpp
+  src/element/dropdown.cpp
+  src/element/floating.cpp
   src/element/horizontal_layout.cpp
   src/element/text_box.cpp
   src/element/text_input.cpp
   src/element/vertical_layout.cpp
-  src/element/window.cpp
-  src/element/checkbox.cpp
 
   src/input/text_selection.cpp
 

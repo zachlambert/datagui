@@ -1,12 +1,12 @@
-#include "datagui/element/window.hpp"
+#include "datagui/element/floating.hpp"
 
 namespace datagui {
 
-void WindowSystem::visit(
+void FloatingSystem::visit(
     Element element,
     Variable<bool> open,
     const std::string& title) {
-  auto& data = element.data<WindowData>();
+  auto& data = element.data<FloatingData>();
 
   if (element.is_new()) {
     data.open = *open;
@@ -23,14 +23,14 @@ void WindowSystem::visit(
   }
 }
 
-void WindowSystem::set_layout_input(Element element) const {
+void FloatingSystem::set_layout_input(Element element) const {
   element->fixed_size = Vecf::Zero();
   element->dynamic_size = Vecf::Zero();
   element->floating = true;
 }
 
-void WindowSystem::set_child_layout_output(Element element) const {
-  const auto& data = element.data<WindowData>();
+void FloatingSystem::set_child_layout_output(Element element) const {
+  const auto& data = element.data<FloatingData>();
   const auto& style = data.style;
 
   Vecf position = element->float_box.lower;
@@ -51,8 +51,8 @@ void WindowSystem::set_child_layout_output(Element element) const {
   }
 }
 
-void WindowSystem::set_float_box(ConstElement window, Element element) const {
-  const auto& data = element.data<WindowData>();
+void FloatingSystem::set_float_box(ConstElement window, Element element) const {
+  const auto& data = element.data<FloatingData>();
   const auto& style = data.style;
   if (auto type = std::get_if<FloatTypeAbsolute>(&style.float_type)) {
     element->float_box.lower = window->box().lower + type->margin.offset();
@@ -65,8 +65,8 @@ void WindowSystem::set_float_box(ConstElement window, Element element) const {
   }
 }
 
-void WindowSystem::render(ConstElement element) const {
-  const auto& data = element.data<WindowData>();
+void FloatingSystem::render(ConstElement element) const {
+  const auto& data = element.data<FloatingData>();
   const auto& style = data.style;
 
   res.geometry_renderer
@@ -120,11 +120,11 @@ void WindowSystem::render(ConstElement element) const {
       LengthFixed(title_width));
 }
 
-void WindowSystem::mouse_event(Element element, const MouseEvent& event) {
+void FloatingSystem::mouse_event(Element element, const MouseEvent& event) {
   if (event.action != MouseAction::Release) {
     return;
   }
-  auto& data = element.data<WindowData>();
+  auto& data = element.data<FloatingData>();
   const auto& style = data.style;
   if (!style.title_bar_enable) {
     return;

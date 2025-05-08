@@ -1,13 +1,13 @@
-#include "datagui/element/drop_down.hpp"
+#include "datagui/element/dropdown.hpp"
 
 namespace datagui {
 
-const int* DropDownSystem::visit(
+const int* DropdownSystem::visit(
     Element element,
     const std::vector<std::string>& choices,
     int initial_choice) {
 
-  auto& data = element.data<DropDownData>();
+  auto& data = element.data<DropdownData>();
   if (element.is_new()) {
     data.choices = choices;
     data.choice = initial_choice;
@@ -22,12 +22,12 @@ const int* DropDownSystem::visit(
   return nullptr;
 }
 
-void DropDownSystem::visit(
+void DropdownSystem::visit(
     Element element,
     const std::vector<std::string>& choices,
     const Variable<int>& choice) {
 
-  auto& data = element.data<DropDownData>();
+  auto& data = element.data<DropdownData>();
   if (element.is_new()) {
     data.choices = choices;
     data.choice = *choice;
@@ -44,8 +44,8 @@ void DropDownSystem::visit(
   }
 }
 
-void DropDownSystem::set_layout_input(Element element) const {
-  const auto& data = element.data<DropDownData>();
+void DropdownSystem::set_layout_input(Element element) const {
+  const auto& data = element.data<DropdownData>();
   const auto& style = data.style;
 
   float max_item_width = 0;
@@ -76,13 +76,13 @@ void DropDownSystem::set_layout_input(Element element) const {
   element->floating = data.open && !data.choices.empty();
 }
 
-void DropDownSystem::set_float_box(ConstElement root, Element element) const {
+void DropdownSystem::set_float_box(ConstElement root, Element element) const {
   element->float_box = element->box();
   if (!element->floating) {
     return;
   }
 
-  const auto& data = element.data<DropDownData>();
+  const auto& data = element.data<DropdownData>();
   const auto& style = data.style;
   element->float_box.upper.y +=
       (data.choices.size() - 1) *
@@ -90,8 +90,8 @@ void DropDownSystem::set_float_box(ConstElement root, Element element) const {
        style.inner_border_width);
 }
 
-void DropDownSystem::render(ConstElement element) const {
-  const auto& data = element.data<DropDownData>();
+void DropdownSystem::render(ConstElement element) const {
+  const auto& data = element.data<DropdownData>();
   const auto& style = data.style;
 
   if (!data.open || data.choices.empty()) {
@@ -165,8 +165,8 @@ void DropDownSystem::render(ConstElement element) const {
   }
 }
 
-void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
-  auto& data = element.data<DropDownData>();
+void DropdownSystem::mouse_event(Element element, const MouseEvent& event) {
+  auto& data = element.data<DropdownData>();
   const auto& style = data.style;
 
   if (event.action != MouseAction::Press) {
@@ -228,16 +228,16 @@ void DropDownSystem::mouse_event(Element element, const MouseEvent& event) {
   }
 }
 
-void DropDownSystem::focus_enter(Element element) {
-  auto& data = element.data<DropDownData>();
+void DropdownSystem::focus_enter(Element element) {
+  auto& data = element.data<DropdownData>();
   data.open = true;
 }
 
-void DropDownSystem::focus_leave(
+void DropdownSystem::focus_leave(
     Element element,
     bool success,
     ConstElement new_element) {
-  auto& data = element.data<DropDownData>();
+  auto& data = element.data<DropdownData>();
   data.open = false;
 }
 

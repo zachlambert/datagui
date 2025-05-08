@@ -3,21 +3,18 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "datagui/resources.hpp"
 #include "datagui/tree/tree.hpp"
 #include "datagui/visual/window.hpp"
 
-#include "datagui/visual/font.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/text_renderer.hpp"
-
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
-#include "datagui/element/drop_down.hpp"
+#include "datagui/element/dropdown.hpp"
+#include "datagui/element/floating.hpp"
 #include "datagui/element/horizontal_layout.hpp"
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
 #include "datagui/element/vertical_layout.hpp"
-#include "datagui/element/window.hpp"
 
 namespace datagui {
 
@@ -32,44 +29,42 @@ public:
   void begin();
   void end();
 
-  bool horizontal_layout(const StyleRule& = StyleRule());
-  bool vertical_layout(const StyleRule& = StyleRule());
+  bool horizontal_layout(const Style& = Style());
+  bool vertical_layout(const Style& = Style());
   void layout_end();
 
-  void text_box(const std::string& text, const StyleRule& style = StyleRule());
+  bool button(const std::string& text, const Style& style = Style());
+
+  const bool* checkbox(
+      const bool& initial_checked = false,
+      const Style& style = Style());
+
+  void checkbox(const Variable<bool>& checked, const Style& style = Style());
+
+  void text_box(const std::string& text, const Style& style = Style());
 
   const std::string* text_input(
       const std::string& initial_text = "",
-      const StyleRule& style = StyleRule());
+      const Style& style = Style());
 
   void text_input(
       const Variable<std::string>& text,
-      const StyleRule& style = StyleRule());
+      const Style& style = Style());
 
-  bool button(const std::string& text, const StyleRule& style = StyleRule());
-
-  const int* drop_down(
+  const int* dropdown(
       const std::vector<std::string>& choices,
       int initial_choice = -1,
-      const StyleRule& style = StyleRule());
+      const Style& style = Style());
 
-  void drop_down(
+  void dropdown(
       const std::vector<std::string>& choices,
       const Variable<int>& choice,
-      const StyleRule& style = StyleRule());
+      const Style& style = Style());
 
   bool floating(
       const Variable<bool>& open,
       const std::string& title,
-      const StyleRule& style = StyleRule());
-
-  const bool* checkbox(
-      const bool& initial_checked = false,
-      const StyleRule& style = StyleRule());
-
-  void checkbox(
-      const Variable<bool>& checked,
-      const StyleRule& style = StyleRule());
+      const Style& style = Style());
 
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
@@ -101,8 +96,8 @@ private:
   TextBoxSystem text_box_system;
   TextInputSystem text_input_system;
   ButtonSystem button_system;
-  DropDownSystem drop_down_system;
-  WindowSystem window_system;
+  DropdownSystem dropdown_system;
+  FloatingSystem floating_system;
   CheckboxSystem checkbox_system;
   ElementSystems systems;
 
