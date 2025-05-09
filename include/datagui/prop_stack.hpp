@@ -9,8 +9,10 @@
 
 namespace datagui {
 
+template <typename E>
 class PropIterator;
 
+template <typename E>
 class PropStack {
   class HandlerBase {
   public:
@@ -44,10 +46,8 @@ class PropStack {
   };
 
 public:
-  using id_t = int;
-
   template <typename T>
-  void push(id_t id, T&& value) {
+  void push(E id, T&& value) {
     auto iter = handlers.find(std::type_index(typeid(T)));
     if (iter == handlers.end()) {
       iter = handlers
@@ -62,6 +62,25 @@ public:
     handler->push(data, std::forward<T>(value));
   }
 
+  template <typename T>
+  const T* get(E id) const {
+    auto iter = id_offsets.find(id);
+    if (iter == id_offsets.end()) {
+      return nullptr;
+    }
+    std::size_t offset = iter->second;
+
+    const auto& header = *((const Header*)(data.data() + offset));
+    if (header.type != std::type_index(typeid(T))) {
+      return nullptr;
+    }
+    auto handler_iter = handlers.find(header.type);
+    assert(handler_iter != handlers.end());
+    auto handler = dynamic_cast<Handler<T>*>(handler_iter->second.get());
+    assert(handler);
+    return handler->get(data, offset + sizeof(Header));
+  }
+
   void push_checkpoint() {
     checkpoints.push_back(data.size());
   }
@@ -73,39 +92,49 @@ public:
 
   class Iterator;
 
-  PropIterator begin() const;
-  PropIterator end() const;
+  PropIterator<E> begin() const;
+  PropIterator<E> end() const;
 
   ~PropStack() {
     destruct_from(0);
   }
 
 private:
-  void push_header(id_t id, const std::type_index& type) {
-    data.resize(data.size() + sizeof(id_t) + sizeof(std::type_index));
-    *((id_t*)(data.data() + data.size() - sizeof(id_t) -
-              sizeof(std::type_index))) = id;
-    new ((std::type_index*)(data.data() + data.size() -
-                            sizeof(std::type_index))) std::type_index{type};
-  }
+  struct Header {
+    std::type_index type;
+    int id_prev;
+    E id; // Assume this is an integer, so most efficient to pack this way
+    Header(E id, std::type_index type) : id(id), type(type), id_prev(-1) {}
+  };
 
-  void destruct_header(std::size_t offset) {
-    assert(offset + sizeof(id_t) + sizeof(std::type_index) <= data.size());
-    // No need to destruct id
-    ((std::type_index*)(data.data() + offset + sizeof(id_t)))->~type_index();
+  void push_header(E id, const std::type_index& type) {
+    Header header(id, type);
+    auto prev = id_offsets.find(id);
+    if (prev != id_offsets.end()) {
+      header.id_prev = prev->second;
+    }
+    id_offsets[id] = data.size();
+
+    data.resize(data.size() + sizeof(Header));
+    new ((Header*)(data.data() + data.size() - sizeof(Header)))
+        Header(std::move(header));
   }
 
   void destruct_from(std::size_t start_offset) {
     std::size_t offset = start_offset;
     while (offset < data.size()) {
-      const auto& type =
-          *((const std::type_index*)(data.data() + offset + sizeof(id_t)));
-      auto iter = handlers.find(type);
+      auto& header = *((Header*)(data.data() + offset));
+      auto iter = handlers.find(header.type);
       assert(iter != handlers.end());
       const auto& handler = *iter->second;
 
-      destruct_header(offset);
-      offset += sizeof(int) + sizeof(std::type_index);
+      if (header.id_prev >= 0) {
+        id_offsets[header.id] = header.id_prev;
+      } else {
+        id_offsets.erase(header.id);
+      }
+      header.~Header();
+      offset += sizeof(header);
 
       handler.destruct(data, offset);
       offset += handler.size();
@@ -117,60 +146,71 @@ private:
   std::unordered_map<std::type_index, std::unique_ptr<HandlerBase>> handlers;
   std::vector<std::uint8_t> data;
   std::vector<std::size_t> checkpoints;
+  std::unordered_map<E, std::size_t> id_offsets;
 
+  template <typename E_>
   friend class Prop;
+  template <typename E_>
   friend class PropIterator;
 };
 
+template <typename E>
 class Prop {
+  using Header = typename PropStack<E>::Header;
+
 public:
-  id_t id() const {
-    return *((id_t*)(parent->data.data() + offset));
+  E id() const {
+    return header().id;
   }
+
   template <typename T>
   const T* as() {
-    const auto& type = *(
-        (const std::type_index*)(parent->data.data() + offset + sizeof(id_t)));
-    if (type != std::type_index(typeid(T))) {
+    if (header().type != std::type_index(typeid(T))) {
       return nullptr;
     }
 
-    auto iter = parent->handlers.find(type);
+    auto iter = parent->handlers.find(header().type);
     assert(iter != parent->handlers.end());
     const auto* handler =
-        dynamic_cast<PropStack::Handler<T>*>(iter->second.get());
+        dynamic_cast<PropStack<E>::template Handler<T>*>(iter->second.get());
     assert(handler);
 
-    return handler->get(
-        parent->data,
-        offset + sizeof(id_t) + sizeof(std::type_index));
+    return handler->get(parent->data, offset + sizeof(Header));
   }
 
 private:
-  Prop(const PropStack* parent, std::size_t offset) :
+  Prop(const PropStack<E>* parent, std::size_t offset) :
       parent(parent), offset(offset) {}
   std::size_t offset;
-  const PropStack* parent;
+  const PropStack<E>* parent;
 
-  friend class PropIterator;
+  const Header& header() const {
+    return *((Header*)(parent->data.data() + offset));
+  }
+
+  friend class PropIterator<E>;
 };
 
 // Const only
+template <typename E>
 class PropIterator {
+  using Header = typename PropStack<E>::Header;
+
 public:
-  Prop operator*() {
+  Prop<E> operator*() {
     return Prop(parent, offset);
   }
 
   // Prefix
   PropIterator& operator++() {
-    const auto& type = *(
-        (const std::type_index*)(parent->data.data() + offset + sizeof(id_t)));
-    offset += sizeof(id_t) + sizeof(std::type_index);
-    auto iter = parent->handlers.find(type);
+    const auto& header = *((Header*)(parent->data.data() + offset));
+    offset += sizeof(Header);
+
+    auto iter = parent->handlers.find(header.type);
     assert(iter != parent->handlers.end());
     const auto& handler = *iter->second;
     offset += handler.size();
+
     return *this;
   }
 
@@ -189,17 +229,20 @@ public:
   }
 
 private:
-  PropIterator(const PropStack* parent, std::size_t offset) :
+  PropIterator(const PropStack<E>* parent, std::size_t offset) :
       parent(parent), offset(offset) {}
   std::size_t offset;
-  const PropStack* parent;
-  friend class PropStack;
+  const PropStack<E>* parent;
+  friend class PropStack<E>;
 };
 
-PropIterator PropStack::begin() const {
+template <typename E>
+inline PropIterator<E> PropStack<E>::begin() const {
   return PropIterator(this, 0);
 }
-PropIterator PropStack::end() const {
+
+template <typename E>
+inline PropIterator<E> PropStack<E>::end() const {
   return PropIterator(this, data.size());
 }
 
