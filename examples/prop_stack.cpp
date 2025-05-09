@@ -1,31 +1,32 @@
-#include <datagui/prop_stack.hpp>
+#include <datagui/types/prop_stack.hpp>
 #include <iostream>
 
+enum class Prop { Count, Name };
+const char* prop_name(const Prop& prop) {
+  switch (prop) {
+  case Prop::Count:
+    return "Count";
+    break;
+  case Prop::Name:
+    return "Name";
+    break;
+  }
+  return "unknown";
+};
+
 int main() {
-  enum class PropType { Count, Name };
-  auto type_name = [](PropType type) -> const char* {
-    switch (type) {
-    case PropType::Count:
-      return "Count";
-      break;
-    case PropType::Name:
-      return "Name";
-      break;
-    }
-    return "unknown";
-  };
 
-  datagui::PropStack<PropType> props;
-  props.push<int>(PropType::Count, 10);
-  props.push<std::string>(PropType::Name, "hello");
+  datagui::PropSet<Prop> props;
+  props.insert<int>(Prop::Count, 10);
+  props.insert<std::string>(Prop::Name, "hello");
+  props.insert<int>(Prop::Count, 20);
 
-  std::cout << "Count: " << *props.get<int>(PropType::Count) << std::endl;
-  std::cout << "Name:  " << *props.get<std::string>(PropType::Name)
-            << std::endl;
+  std::cout << "Count: " << *props.get<int>(Prop::Count) << std::endl;
+  std::cout << "Name:  " << *props.get<std::string>(Prop::Name) << std::endl;
 
   std::cout << "All values" << std::endl;
-  for (datagui::Prop prop : props) {
-    std::cout << "- Type:  " << type_name(prop.id()) << std::endl;
+  for (auto prop : props) {
+    std::cout << "- Type:  " << prop_name(prop.key()) << std::endl;
     std::cout << "  Value: ";
     if (auto value = prop.as<int>()) {
       std::cout << *value << std::endl;
