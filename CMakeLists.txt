@@ -68,6 +68,9 @@ target_link_libraries(example_gui2 datagui)
 add_executable(example_gui_layers examples/gui_layers.cpp)
 target_link_libraries(example_gui_layers datagui)
 
+add_executable(example_prop_stack examples/prop_stack.cpp)
+target_link_libraries(example_prop_stack datagui)
+
 # Create install target
 
 include(CMakePackageConfigHelpers)
