@@ -9,6 +9,8 @@
 
 namespace datagui {
 
+class PropIterator;
+
 class PropStack {
   class HandlerBase {
   public:
@@ -71,85 +73,8 @@ public:
 
   class Iterator;
 
-  class Value {
-  public:
-    id_t id() const {
-      return *((id_t*)(parent->data.data() + offset));
-    }
-    template <typename T>
-    const T* as() {
-      const auto& type = *((const std::type_index*)(parent->data.data() +
-                                                    offset + sizeof(id_t)));
-      if (type != std::type_index(typeid(T))) {
-        return nullptr;
-      }
-
-      auto iter = parent->handlers.find(type);
-      assert(iter != parent->handlers.end());
-      const auto* handler = dynamic_cast<Handler<T>*>(iter->second.get());
-      assert(handler);
-
-      return handler->get(
-          parent->data,
-          offset + sizeof(id_t) + sizeof(std::type_index));
-    }
-
-  private:
-    Value(const PropStack* parent, std::size_t offset) :
-        parent(parent), offset(offset) {}
-    std::size_t offset;
-    const PropStack* parent;
-
-    friend class Iterator;
-  };
-
-  // Const only
-  class Iterator {
-  public:
-    Value operator*() {
-      return Value(parent, offset);
-    }
-
-    // Prefix
-    Iterator& operator++() {
-      const auto& type = *((const std::type_index*)(parent->data.data() +
-                                                    offset + sizeof(id_t)));
-      offset += sizeof(id_t) + sizeof(std::type_index);
-      auto iter = parent->handlers.find(type);
-      assert(iter != parent->handlers.end());
-      const auto& handler = *iter->second;
-      offset += handler.size();
-      return *this;
-    }
-
-    // Postfix
-    Iterator operator++(int) {
-      Iterator tmp = *this;
-      ++(*this);
-      return tmp;
-    }
-
-    friend bool operator==(const Iterator& lhs, const Iterator& rhs) {
-      return lhs.parent == rhs.parent && lhs.offset == rhs.offset;
-    }
-    friend bool operator!=(const Iterator& lhs, const Iterator& rhs) {
-      return !(lhs == rhs);
-    }
-
-  private:
-    Iterator(const PropStack* parent, std::size_t offset) :
-        parent(parent), offset(offset) {}
-    std::size_t offset;
-    const PropStack* parent;
-    friend class PropStack;
-  };
-
-  Iterator begin() const {
-    return Iterator(this, 0);
-  }
-  Iterator end() const {
-    return Iterator(this, data.size());
-  }
+  PropIterator begin() const;
+  PropIterator end() const;
 
   ~PropStack() {
     destruct_from(0);
@@ -192,6 +117,90 @@ private:
   std::unordered_map<std::type_index, std::unique_ptr<HandlerBase>> handlers;
   std::vector<std::uint8_t> data;
   std::vector<std::size_t> checkpoints;
+
+  friend class Prop;
+  friend class PropIterator;
 };
+
+class Prop {
+public:
+  id_t id() const {
+    return *((id_t*)(parent->data.data() + offset));
+  }
+  template <typename T>
+  const T* as() {
+    const auto& type = *(
+        (const std::type_index*)(parent->data.data() + offset + sizeof(id_t)));
+    if (type != std::type_index(typeid(T))) {
+      return nullptr;
+    }
+
+    auto iter = parent->handlers.find(type);
+    assert(iter != parent->handlers.end());
+    const auto* handler =
+        dynamic_cast<PropStack::Handler<T>*>(iter->second.get());
+    assert(handler);
+
+    return handler->get(
+        parent->data,
+        offset + sizeof(id_t) + sizeof(std::type_index));
+  }
+
+private:
+  Prop(const PropStack* parent, std::size_t offset) :
+      parent(parent), offset(offset) {}
+  std::size_t offset;
+  const PropStack* parent;
+
+  friend class PropIterator;
+};
+
+// Const only
+class PropIterator {
+public:
+  Prop operator*() {
+    return Prop(parent, offset);
+  }
+
+  // Prefix
+  PropIterator& operator++() {
+    const auto& type = *(
+        (const std::type_index*)(parent->data.data() + offset + sizeof(id_t)));
+    offset += sizeof(id_t) + sizeof(std::type_index);
+    auto iter = parent->handlers.find(type);
+    assert(iter != parent->handlers.end());
+    const auto& handler = *iter->second;
+    offset += handler.size();
+    return *this;
+  }
+
+  // Postfix
+  PropIterator operator++(int) {
+    PropIterator tmp = *this;
+    ++(*this);
+    return tmp;
+  }
+
+  friend bool operator==(const PropIterator& lhs, const PropIterator& rhs) {
+    return lhs.parent == rhs.parent && lhs.offset == rhs.offset;
+  }
+  friend bool operator!=(const PropIterator& lhs, const PropIterator& rhs) {
+    return !(lhs == rhs);
+  }
+
+private:
+  PropIterator(const PropStack* parent, std::size_t offset) :
+      parent(parent), offset(offset) {}
+  std::size_t offset;
+  const PropStack* parent;
+  friend class PropStack;
+};
+
+PropIterator PropStack::begin() const {
+  return PropIterator(this, 0);
+}
+PropIterator PropStack::end() const {
+  return PropIterator(this, data.size());
+}
 
 } // namespace datagui
