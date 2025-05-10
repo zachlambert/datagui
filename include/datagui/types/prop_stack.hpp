@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
@@ -36,12 +37,6 @@ class PropHandler {
     }
 
     void destruct(std::uint8_t* ptr) const override {
-      printf(
-          "Destructing at %p, size %zu, aligned %zu, 8 remainder %zu\n",
-          ptr,
-          sizeof(T),
-          aligned_size<T>,
-          std::size_t(ptr) % 8);
       ((T*)ptr)->~T();
     }
 
@@ -72,7 +67,6 @@ public:
     types.at(type)->copy(from, to);
   }
 
-  template <typename T>
   void move(std::type_index type, std::uint8_t* from, std::uint8_t* to) {
     types.at(type)->move(from, to);
   }
@@ -110,22 +104,22 @@ public:
     if (header().type != std::type_index(typeid(T))) {
       return nullptr;
     }
-    return (const T*)(data->data() + offset + aligned_size<Header>);
+    return (const T*)(data.data() + offset + aligned_size<Header>);
   }
 
 private:
   PropValue(
-      const std::vector<std::uint8_t>* data,
+      std::span<const std::uint8_t> data,
       std::size_t offset,
       const PropHandler* handler) :
       data(data), offset(offset), handler(handler) {}
 
-  const std::vector<std::uint8_t>* data;
+  std::span<const std::uint8_t> data;
   std::size_t offset;
   const PropHandler* handler;
 
   const Header& header() const {
-    return *((Header*)(data->data() + offset));
+    return *((Header*)(data.data() + offset));
   }
 
   template <typename K_>
@@ -145,7 +139,7 @@ public:
 
   // Prefix
   PropIterator& operator++() {
-    const auto& header = *((Header*)(data->data() + offset));
+    const auto& header = *((Header*)(data.data() + offset));
     offset += aligned_size<Header>;
     offset += handler->size(header.type);
     return *this;
@@ -159,7 +153,7 @@ public:
   }
 
   friend bool operator==(const PropIterator& lhs, const PropIterator& rhs) {
-    return lhs.data == rhs.data && lhs.offset == rhs.offset;
+    return lhs.data.data() == rhs.data.data() && lhs.offset == rhs.offset;
   }
   friend bool operator!=(const PropIterator& lhs, const PropIterator& rhs) {
     return !(lhs == rhs);
@@ -167,12 +161,12 @@ public:
 
 private:
   PropIterator(
-      const std::vector<std::uint8_t>* data,
+      std::span<const std::uint8_t> data,
       std::size_t offset,
       const PropHandler* handler) :
       data(data), offset(offset), handler(handler) {}
 
-  const std::vector<std::uint8_t>* data;
+  std::span<const std::uint8_t> data;
   std::size_t offset;
   const PropHandler* handler;
 
@@ -185,86 +179,73 @@ class PropContainer {
   using Header = PropHeader<K>;
 
 public:
-  PropContainer() = default;
+  PropContainer() : data_(nullptr), size_(0), alloc_size_(0) {}
 
   ~PropContainer() {
     clear_from(0);
-  }
-
-  PropContainer(const PropContainer& other) : data(), handler(other.handler) {
-    std::size_t offset = 0;
-    data.resize(other.data.size());
-    while (offset < other.data.size()) {
-      const auto& header = *((const Header*)(other.data.data() + offset));
-      offset += aligned_size<Header>;
-      handler.copy(
-          header.type,
-          other.data.data() + offset,
-          data.data() + offset);
-      offset += handler.size(header.type);
+    if (data_) {
+      free(data_);
     }
   }
 
-  PropContainer(PropContainer&& other) = default;
-
-  PropContainer& operator=(const PropContainer& other) {
-    clear_from(0);
-    handler = other.handler;
-
+  PropContainer(const PropContainer& other) : handler(other.handler) {
     std::size_t offset = 0;
-    data.resize(other.data.size());
-
-    while (offset < other.data.size()) {
-      const auto& header = *((const Header*)(other.data.data() + offset));
+    resize(other.size_);
+    while (offset < other.size_) {
+      const auto* header_from = ((const Header*)(other.data_ + offset));
+      auto* header_to = ((Header*)(other.data_ + offset));
+      new (header_to) Header(*header_from);
       offset += aligned_size<Header>;
-      handler.copy(
-          header.type,
-          other.data.data() + offset,
-          data.data() + offset);
-      offset += handler.size(header.type);
+
+      handler.copy(header_from->type, other.data_ + offset, data_ + offset);
+      offset += handler.size(header_from->type);
     }
-
-    return *this;
   }
 
-  PropContainer& operator==(PropContainer&& other) {
-    clear_from(0);
-    handler = std::move(other.handler);
-    data = std::move(other.data);
+  PropContainer(PropContainer&& other) : handler(std::move(other.handler)) {
+    std::size_t offset = 0;
+    resize(other.size_);
+    while (offset < other.size_) {
+      const auto* header_from = ((const Header*)(other.data_ + offset));
+      auto* header_to = ((Header*)(other.data_ + offset));
+      new (header_to) Header(std::move(*header_from));
+      offset += aligned_size<Header>;
+
+      handler.move(header_to->type, other.data_ + offset, data_ + offset);
+      offset += handler.size(header_to->type);
+    }
   }
+
+  // TODO: Implement if required
+  PropContainer& operator=(const PropContainer& other) = delete;
+  PropContainer& operator==(PropContainer&& other) = delete;
 
   void clear_from(std::size_t start_offset) {
     std::size_t offset = start_offset;
-    while (offset < data.size()) {
-      auto& header = *((Header*)(data.data() + offset));
+    while (offset < size_) {
+      auto& header = *((Header*)(data_ + offset));
       std::type_index type = header.type;
 
       header.~Header();
       offset += aligned_size<Header>;
-      static_assert(sizeof(std::type_index) == 8);
-      static_assert(sizeof(Header) == 16);
-      static_assert(aligned_size<Header> == 16);
 
-      handler.destruct(type, data.data() + offset);
+      handler.destruct(type, data_ + offset);
       offset += handler.size(type);
     }
-    assert(offset <= data.size());
-    data.resize(start_offset);
+    assert(offset == size_);
+    size_ = start_offset;
   }
 
   template <typename T>
   std::size_t push(const K& key, T&& value) {
-    std::size_t start_offset = data.size();
+    std::size_t start_offset = size_;
 
     Header header(key, std::type_index(typeid(T)));
 
-    data.resize(data.size() + aligned_size<Header>);
-    new ((Header*)(data.data() + data.size() - aligned_size<Header>))
+    resize(size_ + aligned_size<Header> + aligned_size<T>);
+    new ((Header*)(data_ + size_ - aligned_size<Header> - aligned_size<T>))
         Header(std::move(header));
-
-    data.resize(data.size() + aligned_size<T>);
-    new ((T*)(data.data() + data.size() - aligned_size<T>))
-        T(std::forward<T>(value));
+    new ((T*)(data_ + size_ - aligned_size<T>)) T(std::forward<T>(value));
 
     handler.require<T>();
 
@@ -272,61 +253,105 @@ public:
   }
 
   std::size_t push(const PropValue<K>& value) {
-    std::size_t start_offset = data.size();
+    std::size_t start_offset = size_;
 
     const auto& value_header =
-        *((const Header*)(value.data->data() + value.offset));
+        *((const Header*)(value.data.data() + value.offset));
     handler.require(*value.handler, value_header.type);
 
     std::size_t type_size = handler.size(value_header.type);
 
-    data.resize(data.size() + aligned_size<Header>);
-    new ((Header*)(data.data() + data.size() - aligned_size<Header>))
+    resize(size_ + aligned_size<Header> + type_size);
+    new ((Header*)(data_ + size_ - aligned_size<Header> - type_size))
         Header(value_header);
-
-    data.resize(data.size() + type_size);
     handler.copy(
         value_header.type,
-        value.data->data() + value.offset + aligned_size<Header>,
-        data.data() + data.size() - type_size);
+        value.data.data() + value.offset + aligned_size<Header>,
+        data_ + size_ - type_size);
 
     return start_offset;
   }
 
   template <typename T>
   void replace(std::size_t offset, const K& key, T&& value) {
-    assert(offset + aligned_size<Header> + aligned_size<T> <= data.size());
-    const auto& header = *((Header*)(data.data() + offset));
+    assert(offset + aligned_size<Header> + aligned_size<T> <= size_);
+    const auto& header = *((Header*)(data_ + offset));
     assert(header.key == key);
     assert(header.type == std::type_index(typeid(T)));
-    *((std::decay_t<T>*)(data.data() + offset + aligned_size<Header>)) =
+    *((std::decay_t<T>*)(data_ + offset + aligned_size<Header>)) =
         std::forward<T>(value);
   }
 
   template <typename T>
   const T* get(std::size_t offset, const K& key) const {
-    const auto& header = *((const Header*)(data.data() + offset));
+    const auto& header = *((const Header*)(data_ + offset));
     if (header.key != key) {
       return nullptr;
     }
     assert(header.type == std::type_index(typeid(T)));
-    return (const T*)(data.data() + offset + aligned_size<Header>);
+    return (const T*)(data_ + offset + aligned_size<Header>);
   }
 
   std::size_t size() const {
-    return data.size();
+    return size_;
   }
 
   PropIterator<K> begin() const {
-    return PropIterator<K>(&data, 0, &handler);
+    return PropIterator<K>(std::span<std::uint8_t>(data_, size_), 0, &handler);
   }
 
   PropIterator<K> end() const {
-    return PropIterator<K>(&data, data.size(), &handler);
+    return PropIterator<K>(
+        std::span<const std::uint8_t>(data_, size_),
+        size_,
+        &handler);
   }
 
 private:
-  std::vector<std::uint8_t> data;
+  void resize(std::size_t new_size) {
+    if (new_size <= alloc_size_) {
+      size_ = new_size;
+      return;
+    }
+    if (!data_) {
+      if (new_size % alignment == 0) {
+        alloc_size_ = new_size;
+      } else {
+        alloc_size_ = alignment * (new_size / alignment + 1);
+      }
+      data_ = (std::uint8_t*)malloc(alloc_size_);
+      size_ = new_size;
+      return;
+    }
+
+    std::size_t new_alloc_size = alloc_size_ * 2;
+    while (new_alloc_size < new_size) {
+      new_alloc_size *= 2;
+    }
+
+    // Cannot just realloc the memory since some data-types aren't trivially
+    // relocatable
+    std::uint8_t* new_data = (std::uint8_t*)malloc(new_alloc_size);
+    std::size_t offset = 0;
+    while (offset < size_) {
+      const auto* header_from = ((Header*)(data_ + offset));
+      auto* header_to = ((Header*)(new_data + offset));
+      new (header_to) Header(std::move(*header_from));
+      offset += aligned_size<Header>;
+
+      handler.move(header_from->type, data_ + offset, new_data + offset);
+      offset += handler.size(header_from->type);
+    }
+    free(data_);
+
+    data_ = new_data;
+    size_ = new_size;
+    alloc_size_ = new_alloc_size;
+  }
+
+  std::uint8_t* data_;
+  std::size_t size_;
+  std::size_t alloc_size_;
   PropHandler handler;
 };
 
@@ -410,12 +435,20 @@ public:
   }
 
   void pop_checkpoint() {
+    std::vector<K> to_remove;
     for (auto& pair : key_offsets) {
       auto& stack = pair.second;
       while (!stack.empty() && stack.back() >= checkpoints.back()) {
         stack.pop_back();
+        if (stack.empty()) {
+          to_remove.push_back(pair.first);
+        }
       }
     }
+    for (const auto& key : to_remove) {
+      key_offsets.erase(key);
+    }
+
     props.clear_from(checkpoints.back());
     checkpoints.pop_back();
   }

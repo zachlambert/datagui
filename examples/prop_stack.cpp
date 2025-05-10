@@ -42,7 +42,6 @@ void print_props(const Container& props) {
     for (auto number : list) {
       std::cout << number << ", ";
     }
-    std::cout << std::endl;
   } else {
     std::cout << "<none>";
   }
@@ -70,35 +69,28 @@ void print_props(const Container& props) {
 int main() {
 
   datagui::PropSet<Prop> props;
-  // props.insert<std::vector<int>>(Prop::Numbers, {1, 2, 3});
   props.insert<int>(Prop::Count, 10);
   props.insert<std::string>(Prop::Text, "adsf");
-#if 0
+  props.insert<std::vector<int>>(Prop::Numbers, {1, 2, 3});
   props.insert<std::string>(Prop::Text, "hello");
-  props.insert<int>(Prop::Count, 20);
-#endif
 
-  std::cout << "========" << std::endl;
   print_props(props);
+  std::cout << "========" << std::endl;
 
-#if 0
   datagui::PropStack<Prop> stack;
   stack.push<std::string>(Prop::Text, "foo");
 
-  std::cout << "========" << std::endl;
   print_props(stack);
-
   std::cout << "========" << std::endl;
-  // stack.push_checkpoint();
+
+  stack.push_checkpoint();
   stack.push(props);
   print_props(stack);
-
   std::cout << "========" << std::endl;
-#if 0
+
   stack.pop_checkpoint();
-  stack.push(props);
-#endif
-#endif
+  print_props(stack);
+  std::cout << "========" << std::endl;
 
   return 0;
 }
