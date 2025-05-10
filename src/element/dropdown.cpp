@@ -51,12 +51,12 @@ void DropdownSystem::set_layout_input(Element element) const {
   float max_item_width = 0;
   for (const auto& choice : data.choices) {
     Vecf choice_size =
-        res.font_manager.text_size(choice, style.text, literals::_wrap);
+        res.font_manager.text_size(choice, style.text, LengthWrap());
     max_item_width = std::max(max_item_width, choice_size.x);
   }
   if (data.choices.empty()) {
     Vecf none_size =
-        res.font_manager.text_size("<none>", style.text, literals::_wrap);
+        res.font_manager.text_size("<none>", style.text, LengthWrap());
     max_item_width = std::max(max_item_width, none_size.x);
   }
 

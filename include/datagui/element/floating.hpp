@@ -10,7 +10,7 @@ struct TitleBarStyle {
   Color bg_color = Color::Gray(0.8);
   BoxDims padding = 5;
   BoxDims border_width = 0;
-  Color border_color;
+  Color border_color = Color::Black();
 
   void apply(const StyleManager& style) {
     style.title_bar_bg_color(bg_color);

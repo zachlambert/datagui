@@ -2,8 +2,6 @@
 #include <iostream>
 
 int main() {
-  using namespace datagui::literals;
-
   datagui::Gui gui;
 
   datagui::Style style_root;

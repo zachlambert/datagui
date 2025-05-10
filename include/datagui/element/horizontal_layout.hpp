@@ -8,9 +8,9 @@ namespace datagui {
 
 struct HorizontalLayoutStyle {
   BoxStyle box;
-  Direction direction;
-  Alignment alignment;
-  float inner_padding;
+  Direction direction = Direction::Horizontal;
+  Alignment alignment = Alignment::Center;
+  float inner_padding = 0;
 
   void apply(const StyleManager& style) {
     box.apply(style);

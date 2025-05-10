@@ -2,8 +2,6 @@
 #include <vector>
 
 int main() {
-  using namespace datagui::literals;
-
   datagui::Gui gui;
 
   datagui::Style boxed_layout;

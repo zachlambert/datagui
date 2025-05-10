@@ -9,9 +9,10 @@ namespace datagui {
 struct ButtonStyle {
   BoxStyle box;
   TextStyle text;
-  Color active_color;
-  Color hover_color;
-  Color focus_color;
+  Color active_color = Color::Clear();
+  Color hover_color = Color::Clear();
+  Color focus_color = Color::Clear();
+
   void apply(const StyleManager& style) {
     box.apply(style);
     text.apply(style);

@@ -132,7 +132,7 @@ public:
 
   STYLE_PROP(title_bar_enable, Prop::TitleBarEnable, bool)
   STYLE_PROP(title_bar_bg_color, Prop::TitleBarBgColor, Color)
-  STYLE_PROP(title_bar_bg_padding, Prop::TitleBarPadding, BoxDims)
+  STYLE_PROP(title_bar_padding, Prop::TitleBarPadding, BoxDims)
   STYLE_PROP(title_bar_border_width, Prop::TitleBarBorderWidth, BoxDims)
   STYLE_PROP(title_bar_border_color, Prop::TitleBarBorderColor, Color)
 
@@ -228,13 +228,13 @@ private:
 #undef STYLE_PROP
 
 struct BoxStyle {
-  BoxDims padding = BoxDims();
-  BoxDims border_width = BoxDims();
+  BoxDims padding = 0;
+  BoxDims border_width = 0;
   Color border_color = Color::Black();
   Color bg_color = Color::Clear();
   float radius = 0;
-  Length width = literals::_wrap;
-  Length height = literals::_wrap;
+  Length width = LengthWrap();
+  Length height = LengthWrap();
 
   void apply(const StyleManager& style) {
     style.padding(padding);
@@ -251,9 +251,9 @@ struct TextStyle {
   Font font = Font::DejaVuSans;
   int font_size = 24;
   Color text_color = Color::Black();
-  Color highlight_color = Color::Gray(0.7);
+  Color highlight_color = Color::Clear();
   float cursor_width = 2;
-  Color cursor_color = Color::Gray(0.5);
+  Color cursor_color = Color::Clear();
 
   void apply(const StyleManager& style) {
     style.font(font);

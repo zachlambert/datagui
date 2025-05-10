@@ -24,18 +24,6 @@ struct LengthWrap {};
 
 using Length = std::variant<LengthFixed, LengthDynamic, LengthWrap>;
 
-namespace literals {
-
-static constexpr Length _wrap = LengthWrap();
-inline Length operator""_fixed(long double value) {
-  return LengthFixed(value);
-}
-inline Length operator""_dynamic(long double weight) {
-  return LengthDynamic(weight);
-}
-
-} // namespace literals
-
 class BoxDims {
 public:
   // Use same ordering as CSS

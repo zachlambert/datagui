@@ -9,8 +9,8 @@ namespace datagui {
 struct DropdownStyle {
   BoxStyle box;
   TextStyle text;
-  float inner_border_width;
-  Color active_color;
+  float inner_border_width = 0;
+  Color active_color = Color::Gray(0.5);
 
   void apply(const StyleManager& style) {
     box.apply(style);

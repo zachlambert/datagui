@@ -8,9 +8,9 @@ namespace datagui {
 
 struct VerticalLayoutStyle {
   BoxStyle box;
-  Direction direction;
-  Alignment alignment;
-  float inner_padding;
+  Direction direction = Direction::Vertical;
+  Alignment alignment = Alignment::Center;
+  float inner_padding = 0;
 
   void apply(const StyleManager& style) {
     box.apply(style);

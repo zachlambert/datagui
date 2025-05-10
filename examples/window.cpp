@@ -6,7 +6,6 @@
 
 int main() {
   using namespace datagui;
-  using namespace datagui::literals;
 
   Window window;
   FontManager font_manager;
@@ -29,21 +28,21 @@ int main() {
         Font::DejaVuSans,
         20,
         Color::Blue(),
-        _wrap);
+        LengthWrap());
     text.queue_text(
         Vecf(400, 150),
         "Hello",
         Font::DejaVuSansMono,
         40,
         Color::Blue(),
-        _wrap);
+        LengthWrap());
     text.queue_text(
         Vecf(400, 220),
         "Hello",
         Font::DejaVuSerif,
         60,
         Color::Blue(),
-        _wrap);
+        LengthWrap());
 
     geometry.render(window.size());
     text.render(window.size());
