@@ -6,6 +6,54 @@
 
 namespace datagui {
 
+struct TitleBarStyle {
+  Color bg_color = Color::Gray(0.8);
+  BoxDims padding = 5;
+  BoxDims border_width = 0;
+  Color border_color;
+
+  void apply(const StyleManager& style) {
+    style.title_bar_bg_color(bg_color);
+    style.title_bar_padding(padding);
+    style.title_bar_border_width(border_width);
+    style.title_bar_border_color(border_color);
+  }
+};
+
+struct CloseButtonStyle {
+  Color color;
+  BoxDims padding;
+
+  void apply(const StyleManager& style) {
+    style.close_button_color(color);
+    style.close_button_padding(padding);
+  }
+};
+
+struct FloatingStyle {
+  TextStyle text;
+  FloatType float_type = FloatTypeAbsolute(BoxDims());
+  Color bg_color;
+
+  bool title_bar_enable = false;
+  TitleBarStyle title_bar;
+
+  bool close_button_enable = false;
+  CloseButtonStyle close_button;
+
+  void apply(const StyleManager& style) {
+    text.apply(style);
+    style.float_type(float_type);
+    style.float_bg_color(bg_color);
+
+    style.title_bar_enable(title_bar_enable);
+    title_bar.apply(style);
+
+    style.close_button_enable(close_button_enable);
+    close_button.apply(style);
+  }
+};
+
 struct FloatingData {
   FloatingStyle style;
   std::string title;

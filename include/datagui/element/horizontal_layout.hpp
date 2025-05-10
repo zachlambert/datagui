@@ -6,8 +6,22 @@
 
 namespace datagui {
 
+struct HorizontalLayoutStyle {
+  BoxStyle box;
+  Direction direction;
+  Alignment alignment;
+  float inner_padding;
+
+  void apply(const StyleManager& style) {
+    box.apply(style);
+    style.layout_direction(direction);
+    style.layout_alignment(alignment);
+    style.layout_inner_padding(inner_padding);
+  }
+};
+
 struct HorizontalLayoutData {
-  LayoutStyle style;
+  HorizontalLayoutStyle style;
 };
 
 class HorizontalLayoutSystem : public ElementSystemImpl<HorizontalLayoutData> {

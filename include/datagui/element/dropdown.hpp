@@ -6,6 +6,20 @@
 
 namespace datagui {
 
+struct DropdownStyle {
+  BoxStyle box;
+  TextStyle text;
+  float inner_border_width;
+  Color active_color;
+
+  void apply(const StyleManager& style) {
+    box.apply(style);
+    text.apply(style);
+    style.dropdown_inner_border_width(inner_border_width);
+    style.active_color(active_color);
+  }
+};
+
 struct DropdownData {
   DropdownStyle style;
   std::vector<std::string> choices;

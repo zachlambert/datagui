@@ -37,9 +37,9 @@ bool Gui::running() const {
 
 bool Gui::horizontal_layout(const Style& style) {
   auto element = tree.next(horizontal_layout_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   horizontal_layout_system.visit(element);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
   if (tree.down_if()) {
     res.style_manager.down();
     return true;
@@ -49,9 +49,9 @@ bool Gui::horizontal_layout(const Style& style) {
 
 bool Gui::vertical_layout(const Style& style) {
   auto element = tree.next(vertical_layout_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   vertical_layout_system.visit(element);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
   if (tree.down_if()) {
     res.style_manager.down();
     return true;
@@ -66,33 +66,33 @@ void Gui::layout_end() {
 
 void Gui::text_box(const std::string& text, const Style& style) {
   auto element = tree.next(text_box_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   text_box_system.visit(element, text);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
 }
 
 const std::string* Gui::text_input(
     const std::string& initial_text,
     const Style& style) {
   auto element = tree.next(text_input_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   auto result = text_input_system.visit(element, initial_text);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
   return result;
 }
 
 void Gui::text_input(const Variable<std::string>& text, const Style& style) {
   auto element = tree.next(text_input_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   text_input_system.visit(element, text);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
 }
 
 bool Gui::button(const std::string& text, const Style& style) {
   auto element = tree.next(button_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   auto result = button_system.visit(element, text);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
   return result;
 }
 
@@ -101,9 +101,9 @@ const int* Gui::dropdown(
     int initial_choice,
     const Style& style) {
   auto element = tree.next(dropdown_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   auto result = dropdown_system.visit(element, choices, initial_choice);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
   return result;
 }
 
@@ -112,9 +112,9 @@ void Gui::dropdown(
     const Variable<int>& choice,
     const Style& style) {
   auto element = tree.next(dropdown_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   dropdown_system.visit(element, choices, choice);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
 }
 
 bool Gui::floating(
@@ -126,9 +126,9 @@ bool Gui::floating(
   }
 
   auto element = tree.next(floating_system.type(), "floating");
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   floating_system.visit(element, open, title);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
   if (!*open) {
     return false;
   }
@@ -141,17 +141,17 @@ bool Gui::floating(
 
 const bool* Gui::checkbox(const bool& initial_checked, const Style& style) {
   auto element = tree.next(checkbox_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   auto result = checkbox_system.visit(element, initial_checked);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
   return result;
 }
 
 void Gui::checkbox(const Variable<bool>& checked, const Style& style) {
   auto element = tree.next(checkbox_system.type());
-  res.style_manager.push(style);
+  res.style_manager.push_temp(style);
   checkbox_system.visit(element, checked);
-  res.style_manager.pop();
+  res.style_manager.pop_temp();
 }
 
 void Gui::begin() {

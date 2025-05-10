@@ -13,7 +13,7 @@ void FloatingSystem::visit(
   }
   if (element.rerender()) {
     data.title = title;
-    res.style_manager.apply(data.style);
+    data.style.apply(res.style_manager);
   }
   if (data.open_changed) {
     data.open_changed = false;
@@ -38,7 +38,7 @@ void FloatingSystem::set_child_layout_output(Element element) const {
   if (style.title_bar_enable) {
     const auto& bar = style.title_bar;
     position.y += bar.border_width.size().y + bar.padding.size().y +
-                  res.font_manager.text_height(bar);
+                  res.font_manager.text_height(style.text);
   }
 
   // Expected to only use one child, but allow for multiple children and
@@ -81,7 +81,7 @@ void FloatingSystem::render(ConstElement element) const {
   bar_box.lower = element->float_box.lower;
   bar_box.upper.x = element->float_box.upper.x;
   bar_box.upper.y = element->float_box.lower.y +
-                    res.font_manager.text_height(bar) +
+                    res.font_manager.text_height(style.text) +
                     bar.border_width.size().y + bar.padding.size().y;
 
   res.geometry_renderer
@@ -90,9 +90,12 @@ void FloatingSystem::render(ConstElement element) const {
   float title_width = element->float_box.size().x - bar.border_width.size().x -
                       bar.padding.size().x;
 
-  if (bar.close_button_enable) {
-    Vecf text_size = res.font_manager.text_size("close", bar, LengthWrap());
-    Vecf button_size = text_size + bar.padding.size();
+  if (style.close_button_enable) {
+    const auto& button = style.close_button;
+
+    Vecf text_size =
+        res.font_manager.text_size("close", style.text, LengthWrap());
+    Vecf button_size = text_size + button.padding.size() + bar.padding.size();
     title_width -= (button_size.x + bar.padding.left);
     title_width = std::max(0.f, title_width);
 
@@ -100,23 +103,23 @@ void FloatingSystem::render(ConstElement element) const {
     button_box.upper = bar_box.upper - bar.border_width.offset_opposite();
     button_box.lower = button_box.upper - button_size;
     res.geometry_renderer
-        .queue_box(button_box, bar.close_button_color, 0, Color::Black(), 0);
+        .queue_box(button_box, button.color, 0, Color::Black(), 0);
 
     res.text_renderer.queue_text(
         button_box.lower + bar.padding.offset(),
         "close",
-        bar.font,
-        bar.font_size,
-        bar.text_color,
+        style.text.font,
+        style.text.font_size,
+        style.text.text_color,
         LengthWrap());
   }
 
   res.text_renderer.queue_text(
       element->float_box.lower + bar.padding.offset(),
       data.title,
-      bar.font,
-      bar.font_size,
-      bar.text_color,
+      style.text.font,
+      style.text.font_size,
+      style.text.text_color,
       LengthFixed(title_width));
 }
 
@@ -130,15 +133,17 @@ void FloatingSystem::mouse_event(Element element, const MouseEvent& event) {
     return;
   }
 
-  const auto& bar = style.title_bar;
-  if (!bar.close_button_enable) {
+  if (!style.title_bar_enable || !style.close_button_enable) {
     return;
   }
+
+  const auto& bar = style.title_bar;
 
   float title_width = element->float_box.size().x - bar.border_width.size().x -
                       bar.padding.size().x;
 
-  Vecf text_size = res.font_manager.text_size("close", bar, LengthWrap());
+  Vecf text_size =
+      res.font_manager.text_size("close", style.text, LengthWrap());
   Vecf button_size = text_size + bar.padding.size();
   Vecf button_pos;
   button_pos.x =

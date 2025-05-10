@@ -7,6 +7,23 @@
 
 namespace datagui {
 
+struct CheckboxStyle {
+  float size;
+  Color bg_color;
+  Color border_color;
+  BoxDims border_width;
+  Color icon_color;
+  BoxDims inner_padding;
+
+  void apply(const StyleManager& style) {
+    style.checkbox_size(size);
+    style.checkbox_border_color(border_color);
+    style.checkbox_border_width(border_width);
+    style.checkbox_icon_color(icon_color);
+    style.checkbox_inner_padding(inner_padding);
+  }
+};
+
 struct CheckboxData {
   CheckboxStyle style;
   bool checked = false;

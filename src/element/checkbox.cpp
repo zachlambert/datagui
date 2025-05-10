@@ -8,10 +8,9 @@ const bool* CheckboxSystem::visit(
   auto& data = element.data<CheckboxData>();
   if (element.is_new()) {
     data.checked = initial_checked;
-    printf("Creating with checked = %i\n", data.checked);
   }
   if (element.rerender()) {
-    res.style_manager.apply(data.style);
+    data.style.apply(res.style_manager);
   }
   if (data.changed) {
     data.changed = false;
@@ -27,7 +26,7 @@ void CheckboxSystem::visit(Element element, const Variable<bool>& checked) {
     data.checked = *checked;
   }
   if (element.rerender()) {
-    res.style_manager.apply(data.style);
+    data.style.apply(res.style_manager);
   }
   if (data.changed) {
     data.changed = false;
@@ -55,7 +54,7 @@ void CheckboxSystem::render(ConstElement element) const {
       style.bg_color,
       style.border_width,
       style.border_color,
-      style.radius);
+      0);
 
   if (!data.checked) {
     return;
@@ -64,15 +63,15 @@ void CheckboxSystem::render(ConstElement element) const {
   Boxf checked_box;
   checked_box.lower = minimum(
       element->position + style.border_width.offset() +
-          style.check_padding.offset(),
+          style.inner_padding.offset(),
       element->box().center());
   checked_box.upper = maximum(
       element->position + element->size - style.border_width.offset_opposite() -
-          style.check_padding.offset_opposite(),
+          style.inner_padding.offset_opposite(),
       element->box().center());
 
   res.geometry_renderer
-      .queue_box(checked_box, style.check_color, 0, Color::Black(), 0);
+      .queue_box(checked_box, style.icon_color, 0, Color::Black(), 0);
 }
 
 void CheckboxSystem::mouse_event(Element element, const MouseEvent& event) {

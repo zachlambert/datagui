@@ -6,7 +6,7 @@ bool ButtonSystem::visit(Element element, const std::string& text) {
   auto& data = element.data<ButtonData>();
   if (element.rerender()) {
     data.text = text;
-    res.style_manager.apply(data.style);
+    data.style.apply(res.style_manager);
   }
   if (data.released) {
     data.released = false;
@@ -19,18 +19,19 @@ void ButtonSystem::set_layout_input(Element element) const {
   const auto& data = element.data<ButtonData>();
   const auto& style = data.style;
 
-  element->fixed_size = (style.border_width + style.padding).size();
+  element->fixed_size = (style.box.border_width + style.box.padding).size();
   element->dynamic_size = Vecf::Zero();
   element->floating = false;
 
-  Vecf text_size = res.font_manager.text_size(data.text, style, style.width);
+  Vecf text_size =
+      res.font_manager.text_size(data.text, style.text, style.box.width);
   element->fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&style.width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.box.width)) {
     element->fixed_size.x += width->value;
   } else {
     element->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
+    if (auto width = std::get_if<LengthDynamic>(&style.box.width)) {
       element->dynamic_size.x = width->weight;
     }
   }
@@ -44,15 +45,16 @@ void ButtonSystem::render(ConstElement element) const {
       element->box(),
       data.down          ? style.active_color
       : element->hovered ? style.hover_color
-                         : style.bg_color,
-      style.border_width,
-      element->in_focus_tree ? style.focus_color : style.border_color,
-      style.radius);
+                         : style.box.bg_color,
+      style.box.border_width,
+      element->in_focus_tree ? style.focus_color : style.box.border_color,
+      style.box.radius);
 
   Vecf text_position =
-      element->position + (style.border_width + style.padding).offset();
+      element->position + (style.box.border_width + style.box.padding).offset();
 
-  res.text_renderer.queue_text(text_position, data.text, style, style.width);
+  res.text_renderer
+      .queue_text(text_position, data.text, style.text, style.box.width);
 }
 
 void ButtonSystem::mouse_event(Element element, const MouseEvent& event) {

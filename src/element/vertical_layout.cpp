@@ -5,7 +5,7 @@ namespace datagui {
 void VerticalLayoutSystem::visit(Element element) {
   auto& data = element.data<VerticalLayoutData>();
   if (element.rerender()) {
-    res.style_manager.apply(data.style);
+    data.style.apply(res.style_manager);
   }
 }
 
@@ -37,16 +37,16 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
 
     element->fixed_size.y += (count - 1) * style.inner_padding;
   }
-  if (auto length = std::get_if<LengthFixed>(&style.height)) {
+  if (auto length = std::get_if<LengthFixed>(&style.box.height)) {
     data.overrun = std::max(element->fixed_size.y - length->value, 0.f);
     element->fixed_size.y = length->value;
-  } else if (auto length = std::get_if<LengthDynamic>(&style.height)) {
+  } else if (auto length = std::get_if<LengthDynamic>(&style.box.height)) {
     element->dynamic_size.y = length->weight;
   }
 
   // Secondary direction (X)
 
-  if (auto width = std::get_if<LengthFixed>(&style.width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.box.width)) {
     element->fixed_size.x = width->value;
   } else {
     auto child = element.first_child();
@@ -64,12 +64,12 @@ void VerticalLayoutSystem::set_layout_input(Element element) const {
       child = child.next();
     }
 
-    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
+    if (auto width = std::get_if<LengthDynamic>(&style.box.width)) {
       element->dynamic_size.x = width->weight;
     }
   }
 
-  element->fixed_size += (style.padding + style.border_width).size();
+  element->fixed_size += (style.box.padding + style.box.border_width).size();
 }
 
 void VerticalLayoutSystem::set_child_layout_output(Element element) const {
@@ -77,7 +77,8 @@ void VerticalLayoutSystem::set_child_layout_output(Element element) const {
   const auto& style = data.style;
 
   Vecf available = minimum(element->size - element->fixed_size, Vecf::Zero());
-  float offset_y = style.padding.top + style.border_width.top - data.scroll_pos;
+  float offset_y =
+      style.box.padding.top + style.box.border_width.top - data.scroll_pos;
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
@@ -104,8 +105,8 @@ void VerticalLayoutSystem::set_child_layout_output(Element element) const {
           (child->dynamic_size.y / children_dynamic_size.y) * available.y;
     }
     if (child->dynamic_size.x > 0) {
-      child->size.x =
-          element->size.x - (style.padding + style.border_width).size().x;
+      child->size.x = element->size.x -
+                      (style.box.padding + style.box.border_width).size().x;
     }
 
     child->position.y = element->position.y + offset_y;
@@ -113,17 +114,17 @@ void VerticalLayoutSystem::set_child_layout_output(Element element) const {
 
     switch (style.alignment) {
     case Alignment::Left:
-      child->position.x =
-          element->position.x + style.padding.left + style.border_width.left;
+      child->position.x = element->position.x + style.box.padding.left +
+                          style.box.border_width.left;
       break;
     case Alignment::Center:
       child->position.x =
           element->position.x + element->size.x / 2 - child->size.x / 2;
       break;
     case Alignment::Right:
-      child->position.x = element->position.x + element->size.x -
-                          child->size.x -
-                          (style.padding.right + style.border_width.right);
+      child->position.x =
+          element->position.x + element->size.x - child->size.x -
+          (style.box.padding.right + style.box.border_width.right);
       break;
     default:
       assert(false);
@@ -138,7 +139,7 @@ void VerticalLayoutSystem::render(ConstElement element) const {
   const auto& data = element.data<VerticalLayoutData>();
   const auto& style = data.style;
 
-  res.geometry_renderer.queue_box(element->box(), style);
+  res.geometry_renderer.queue_box(element->box(), style.box);
 }
 
 bool VerticalLayoutSystem::scroll_event(

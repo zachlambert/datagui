@@ -365,7 +365,7 @@ public:
   void insert(const K& key, T&& value) {
     auto iter = key_offsets.find(key);
     if (iter == key_offsets.end()) {
-      std::size_t offset = props.push(key, std::forward<T>(value));
+      std::size_t offset = props.template push<T>(key, std::forward<T>(value));
       key_offsets.emplace(key, offset);
     } else {
       props.replace(iter->second, key, value);

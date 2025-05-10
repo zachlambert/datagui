@@ -6,6 +6,21 @@
 
 namespace datagui {
 
+struct ButtonStyle {
+  BoxStyle box;
+  TextStyle text;
+  Color active_color;
+  Color hover_color;
+  Color focus_color;
+  void apply(const StyleManager& style) {
+    box.apply(style);
+    text.apply(style);
+    style.active_color(active_color);
+    style.hover_color(hover_color);
+    style.focus_color(focus_color);
+  }
+};
+
 struct ButtonData {
   ButtonStyle style;
   std::string text;

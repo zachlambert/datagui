@@ -7,6 +7,18 @@
 
 namespace datagui {
 
+struct TextInputStyle {
+  BoxStyle box;
+  TextStyle text;
+  Color focus_color;
+
+  void apply(const StyleManager& style) {
+    box.apply(style);
+    text.apply(style);
+    style.focus_color(focus_color);
+  }
+};
+
 struct TextInputData {
   TextInputStyle style;
   std::string text;

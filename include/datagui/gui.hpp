@@ -72,6 +72,10 @@ public:
     return tree.variable<T>([initial_value]() { return initial_value; });
   }
 
+  void style(const Style& style) {
+    res.style_manager.push(style);
+  }
+
 private:
   void render();
   void calculate_sizes();

@@ -7,7 +7,7 @@ void TextBoxSystem::visit(Element element, const std::string& text) {
   auto& data = element.data<TextBoxData>();
   if (element.rerender()) {
     data.text = text;
-    res.style_manager.apply(data.style);
+    data.style.apply(res.style_manager);
   }
 }
 
@@ -15,18 +15,19 @@ void TextBoxSystem::set_layout_input(Element element) const {
   const auto& data = element.data<TextBoxData>();
   const auto& style = data.style;
 
-  element->fixed_size = (style.border_width + style.padding).size();
+  element->fixed_size = (style.box.border_width + style.box.padding).size();
   element->dynamic_size = Vecf::Zero();
   element->floating = false;
 
-  Vecf text_size = res.font_manager.text_size(data.text, style, style.width);
+  Vecf text_size =
+      res.font_manager.text_size(data.text, style.text, style.box.width);
   element->fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&style.width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.box.width)) {
     element->fixed_size.x += width->value;
   } else {
     element->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
+    if (auto width = std::get_if<LengthDynamic>(&style.box.width)) {
       element->dynamic_size.x = width->weight;
     }
   }
@@ -37,7 +38,7 @@ void TextBoxSystem::render(ConstElement element) const {
   const auto& style = data.style;
 
   res.text_renderer
-      .queue_text(element->position, data.text, style, style.width);
+      .queue_text(element->position, data.text, style.text, style.box.width);
 }
 
 } // namespace datagui

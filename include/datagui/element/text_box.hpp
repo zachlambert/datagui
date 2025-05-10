@@ -6,6 +6,16 @@
 
 namespace datagui {
 
+struct TextBoxStyle {
+  BoxStyle box;
+  TextStyle text;
+
+  void apply(const StyleManager& style) {
+    box.apply(style);
+    text.apply(style);
+  }
+};
+
 struct TextBoxData {
   TextBoxStyle style;
   std::string text;

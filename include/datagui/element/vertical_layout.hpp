@@ -6,8 +6,22 @@
 
 namespace datagui {
 
+struct VerticalLayoutStyle {
+  BoxStyle box;
+  Direction direction;
+  Alignment alignment;
+  float inner_padding;
+
+  void apply(const StyleManager& style) {
+    box.apply(style);
+    style.layout_direction(direction);
+    style.layout_alignment(alignment);
+    style.layout_inner_padding(inner_padding);
+  }
+};
+
 struct VerticalLayoutData {
-  LayoutStyle style;
+  VerticalLayoutStyle style;
   float overrun = 0;
   float scroll_pos = 0;
 };

@@ -13,7 +13,7 @@ const int* DropdownSystem::visit(
     data.choice = initial_choice;
   }
   if (element.rerender()) {
-    res.style_manager.apply(data.style);
+    data.style.apply(res.style_manager);
   }
   if (data.changed) {
     data.changed = false;
@@ -33,7 +33,7 @@ void DropdownSystem::visit(
     data.choice = *choice;
   }
   if (element.rerender()) {
-    res.style_manager.apply(data.style);
+    data.style.apply(res.style_manager);
   }
   if (choice.modified()) {
     data.choice = *choice;
@@ -51,27 +51,28 @@ void DropdownSystem::set_layout_input(Element element) const {
   float max_item_width = 0;
   for (const auto& choice : data.choices) {
     Vecf choice_size =
-        res.font_manager.text_size(choice, style, literals::_wrap);
+        res.font_manager.text_size(choice, style.text, literals::_wrap);
     max_item_width = std::max(max_item_width, choice_size.x);
   }
   if (data.choices.empty()) {
     Vecf none_size =
-        res.font_manager.text_size("<none>", style, literals::_wrap);
+        res.font_manager.text_size("<none>", style.text, literals::_wrap);
     max_item_width = std::max(max_item_width, none_size.x);
   }
 
   element->fixed_size = Vecf::Zero();
   element->dynamic_size = Vecf::Zero();
 
-  if (auto width = std::get_if<LengthFixed>(&style.width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.box.width)) {
     element->fixed_size.x = std::min(max_item_width, width->value);
-  } else if (std::get_if<LengthWrap>(&style.width)) {
+  } else if (std::get_if<LengthWrap>(&style.box.width)) {
     element->fixed_size.x = max_item_width;
-  } else if (auto width = std::get_if<LengthDynamic>(&style.width)) {
+  } else if (auto width = std::get_if<LengthDynamic>(&style.box.width)) {
     element->dynamic_size.x = width->weight;
   }
-  element->fixed_size += style.border_width.size() + style.padding.size();
-  element->fixed_size.y += res.font_manager.text_height(style);
+  element->fixed_size +=
+      style.box.border_width.size() + style.box.padding.size();
+  element->fixed_size.y += res.font_manager.text_height(style.text);
 
   element->floating = data.open && !data.choices.empty();
 }
@@ -86,7 +87,7 @@ void DropdownSystem::set_float_box(ConstElement root, Element element) const {
   const auto& style = data.style;
   element->float_box.upper.y +=
       (data.choices.size() - 1) *
-      (res.font_manager.text_height(style) + style.padding.size().y +
+      (res.font_manager.text_height(style.text) + style.box.padding.size().y +
        style.inner_border_width);
 }
 
@@ -97,9 +98,9 @@ void DropdownSystem::render(ConstElement element) const {
   if (!data.open || data.choices.empty()) {
     res.geometry_renderer.queue_box(
         element->box(),
-        style.bg_color,
-        style.border_width,
-        style.border_color,
+        style.box.bg_color,
+        style.box.border_width,
+        style.box.border_color,
         0);
 
     std::string text = !data.open
@@ -107,22 +108,22 @@ void DropdownSystem::render(ConstElement element) const {
                            : "<none>";
 
     res.text_renderer.queue_text(
-        element->position + style.border_width.offset() +
-            style.padding.offset(),
+        element->position + style.box.border_width.offset() +
+            style.box.padding.offset(),
         text,
-        style,
+        style.text,
         LengthFixed(
-            element->size.x - style.border_width.size().x -
-            style.padding.size().x));
+            element->size.x - style.box.border_width.size().x -
+            style.box.padding.size().x));
     return;
   }
 
-  BoxDims top_border = style.border_width;
+  BoxDims top_border = style.box.border_width;
   top_border.bottom = style.inner_border_width;
-  BoxDims inner_border = style.border_width;
+  BoxDims inner_border = style.box.border_width;
   inner_border.top = style.inner_border_width;
   inner_border.bottom = style.inner_border_width;
-  BoxDims bottom_border = style.border_width;
+  BoxDims bottom_border = style.box.border_width;
   bottom_border.top = style.inner_border_width;
 
   Vecf offset = Vecf::Zero();
@@ -130,7 +131,7 @@ void DropdownSystem::render(ConstElement element) const {
   for (int i = 0; i < data.choices.size(); i++) {
     const BoxDims* border;
     if (data.choices.size() == 1) {
-      border = &style.border_width;
+      border = &style.box.border_width;
     } else if (i == 0) {
       border = &top_border;
     } else if (i == data.choices.size() - 1) {
@@ -142,26 +143,26 @@ void DropdownSystem::render(ConstElement element) const {
     Vecf position = element->position + offset;
     Vecf size = Vecf(
         element->size.x,
-        res.font_manager.text_height(style) + style.padding.size().y +
+        res.font_manager.text_height(style.text) + style.box.padding.size().y +
             border->size().y);
 
     res.geometry_renderer.queue_box(
         Boxf(position, position + size),
-        i == data.choice ? style.active_color : style.bg_color,
+        i == data.choice ? style.active_color : style.box.bg_color,
         *border,
-        style.border_color,
+        style.box.border_color,
         0);
 
     res.text_renderer.queue_text(
-        position + border->offset() + style.padding.offset(),
+        position + border->offset() + style.box.padding.offset(),
         data.choices[i],
-        style,
+        style.text,
         LengthFixed(
-            element->size.x - style.border_width.size().x -
-            style.padding.size().x));
+            element->size.x - style.box.border_width.size().x -
+            style.box.padding.size().x));
 
-    offset.y += border->top + style.padding.size().y +
-                res.font_manager.text_height(style);
+    offset.y += border->top + style.box.padding.size().y +
+                res.font_manager.text_height(style.text);
   }
 }
 
@@ -180,12 +181,12 @@ void DropdownSystem::mouse_event(Element element, const MouseEvent& event) {
     return;
   }
 
-  BoxDims top_border = style.border_width;
+  BoxDims top_border = style.box.border_width;
   top_border.bottom = style.inner_border_width;
-  BoxDims inner_border = style.border_width;
+  BoxDims inner_border = style.box.border_width;
   inner_border.top = style.inner_border_width;
   inner_border.bottom = style.inner_border_width;
-  BoxDims bottom_border = style.border_width;
+  BoxDims bottom_border = style.box.border_width;
   bottom_border.top = style.inner_border_width;
 
   Vecf offset = Vecf::Zero();
@@ -194,7 +195,7 @@ void DropdownSystem::mouse_event(Element element, const MouseEvent& event) {
   for (int i = 0; i < data.choices.size(); i++) {
     const BoxDims* border;
     if (data.choices.size() == 1) {
-      border = &style.border_width;
+      border = &style.box.border_width;
     } else if (i == 0) {
       border = &top_border;
     } else if (i == data.choices.size() - 1) {
@@ -206,7 +207,7 @@ void DropdownSystem::mouse_event(Element element, const MouseEvent& event) {
     Vecf position = element->position + offset;
     Vecf size = Vecf(
         element->size.x,
-        res.font_manager.text_height(style) + style.padding.size().y +
+        res.font_manager.text_height(style.text) + style.box.padding.size().y +
             border->size().y);
 
     if (Boxf(position, position + size).contains(event.position)) {
@@ -214,8 +215,8 @@ void DropdownSystem::mouse_event(Element element, const MouseEvent& event) {
       break;
     }
 
-    offset.y += border->top + style.padding.size().y +
-                res.font_manager.text_height(style);
+    offset.y += border->top + style.box.padding.size().y +
+                res.font_manager.text_height(style.text);
   }
 
   if (clicked != -1) {
