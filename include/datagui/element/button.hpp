@@ -7,12 +7,12 @@
 namespace datagui {
 
 struct ButtonStyle {
-  Length width;
-  BoxDims padding;
-  Color bg_color;
-  BoxDims border_width;
-  Color border_color;
-  float radius;
+  Length width = LengthWrap();
+  BoxDims padding = 5;
+  Color bg_color = Color::Gray(0.8);
+  BoxDims border_width = 2;
+  Color border_color = Color::Black();
+  float radius = 0;
   TextStyle text;
   InputStyle input;
 

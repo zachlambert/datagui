@@ -9,11 +9,11 @@ namespace datagui {
 struct SeriesStyle {
   Direction direction = Direction::Vertical;
   Alignment alignment = Alignment::Center;
-  Length length;
-  Length width;
-  Color bg_color;
-  BoxDims outer_padding;
-  float inner_padding;
+  Length length = LengthWrap();
+  Length width = LengthDynamic();
+  Color bg_color = Color::Clear();
+  BoxDims outer_padding = 5;
+  float inner_padding = 5;
 
   void apply(const StyleManager& style) {
     style.series_direction(direction);

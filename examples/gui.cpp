@@ -6,9 +6,9 @@ int main() {
   datagui::Gui gui;
 
   datagui::Style style_root;
-  style_root.padding({40, 10});
-  style_root.layout_direction(datagui::Direction::Vertical);
-  style_root.layout_inner_padding(10);
+  style_root.series_vertical();
+  style_root.series_outer_padding({40, 10});
+  style_root.series_inner_padding(10);
 
   datagui::Style style_h1;
   style_h1.text_color(datagui::Color::Red());
@@ -17,14 +17,12 @@ int main() {
   datagui::Style style_text;
   style_text.font_size(30);
 
-  datagui::Style style_horiz_expand;
-  style_horiz_expand.layout_direction(datagui::Direction::Horizontal);
-  style_horiz_expand.width_dynamic();
-  style_horiz_expand.padding({10, 50, 10, 20});
-  style_horiz_expand.bg_color({10, 50, 10, 20});
-  style_horiz_expand.layout_alignment(datagui::Alignment::Bottom);
-  style_horiz_expand.border_width({4, 12});
-  style_horiz_expand.border_color(datagui::Color::Hsl(260, 0.4, 0.7));
+  datagui::Style style_box;
+  style_box.series_horizontal();
+  style_box.series_width_dynamic();
+  style_box.series_outer_padding({10, 50, 10, 20});
+  style_box.series_bg_color({10, 50, 10, 20});
+  style_box.series_align_max();
 
   datagui::Style style_text_input;
   style_text_input.font_size(40);
@@ -37,15 +35,15 @@ int main() {
 
   while (gui.running()) {
     gui.begin();
-    if (gui.vertical_layout(style_root)) {
+    if (gui.series_begin(style_root)) {
       gui.text_box("Welcome Screen!", style_h1);
 
       auto name = gui.variable<std::string>("");
 
-      if (gui.horizontal_layout(style_horiz_expand)) {
+      if (gui.series_begin(style_box)) {
         gui.text_box("Name: ", style_text);
         gui.text_input(name, style_text_input);
-        gui.layout_end();
+        gui.series_end();
       }
       if (auto value = gui.checkbox()) {
         std::cout << "Checked: " << *value << std::endl;
@@ -64,13 +62,13 @@ int main() {
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
       }
 
-      if (gui.horizontal_layout()) {
+      if (gui.series_begin()) {
         gui.checkbox(timer_paused);
         gui.text_box("Paused");
-        gui.layout_end();
+        gui.series_end();
       }
 
-      gui.layout_end();
+      gui.series_end();
     }
     gui.end();
 

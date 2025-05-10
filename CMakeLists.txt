@@ -21,10 +21,9 @@ add_library(datagui SHARED
   src/element/checkbox.cpp
   src/element/dropdown.cpp
   src/element/floating.cpp
-  src/element/horizontal_layout.cpp
+  src/element/series.cpp
   src/element/text_box.cpp
   src/element/text_input.cpp
-  src/element/vertical_layout.cpp
 
   src/input/text_selection.cpp
 

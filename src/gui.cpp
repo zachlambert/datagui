@@ -9,8 +9,7 @@ using namespace std::placeholders;
 
 Gui::Gui(const Window::Config& config) :
     window(config),
-    horizontal_layout_system(res),
-    vertical_layout_system(res),
+    series_system(res),
     text_box_system(res),
     text_input_system(res),
     button_system(res),
@@ -18,8 +17,7 @@ Gui::Gui(const Window::Config& config) :
     floating_system(res),
     checkbox_system(res) {
 
-  horizontal_layout_system.register_type(tree, systems);
-  vertical_layout_system.register_type(tree, systems);
+  series_system.register_type(tree, systems);
   text_box_system.register_type(tree, systems);
   text_input_system.register_type(tree, systems);
   button_system.register_type(tree, systems);
@@ -35,10 +33,10 @@ bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::horizontal_layout(const Style& style) {
-  auto element = tree.next(horizontal_layout_system.type());
+bool Gui::series_begin(const Style& style) {
+  auto element = tree.next(series_system.type());
   res.style_manager.push_temp(style);
-  horizontal_layout_system.visit(element);
+  series_system.visit(element);
   res.style_manager.pop_temp();
   if (tree.down_if()) {
     res.style_manager.down();
@@ -47,19 +45,7 @@ bool Gui::horizontal_layout(const Style& style) {
   return false;
 }
 
-bool Gui::vertical_layout(const Style& style) {
-  auto element = tree.next(vertical_layout_system.type());
-  res.style_manager.push_temp(style);
-  vertical_layout_system.visit(element);
-  res.style_manager.pop_temp();
-  if (tree.down_if()) {
-    res.style_manager.down();
-    return true;
-  }
-  return false;
-}
-
-void Gui::layout_end() {
+void Gui::series_end() {
   res.style_manager.up();
   tree.up();
 }
@@ -117,7 +103,7 @@ void Gui::dropdown(
   res.style_manager.pop_temp();
 }
 
-bool Gui::floating(
+bool Gui::floating_begin(
     const Variable<bool>& open,
     const std::string& title,
     const Style& style) {
@@ -137,6 +123,11 @@ bool Gui::floating(
     return true;
   }
   return false;
+}
+
+void Gui::floating_end() {
+  res.style_manager.up();
+  tree.up();
 }
 
 const bool* Gui::checkbox(const bool& initial_checked, const Style& style) {
@@ -243,9 +234,6 @@ void Gui::render() {
         ss << "\nlayer: " << element->layer;
         std::string debug_text = ss.str();
 
-        BoxStyle box_style;
-        box_style.bg_color = Color::White();
-        box_style.border_width = 2;
         TextStyle text_style;
         text_style.font_size = 24;
         auto text_size =
@@ -255,7 +243,10 @@ void Gui::render() {
             Boxf(
                 window.size() - text_size - Vecf::Constant(15),
                 window.size() - Vecf::Constant(5)),
-            box_style);
+            Color::White(),
+            2,
+            Color::Black(),
+            0);
         res.text_renderer.queue_text(
             window.size() - text_size - Vecf::Constant(10),
             debug_text,

@@ -9,7 +9,7 @@ namespace datagui {
 struct TitleBarStyle {
   Color bg_color = Color::Gray(0.8);
   BoxDims padding = 5;
-  BoxDims border_width = 0;
+  BoxDims border_width = 2;
   Color border_color = Color::Black();
 
   void apply(const StyleManager& style) {
@@ -21,8 +21,8 @@ struct TitleBarStyle {
 };
 
 struct CloseButtonStyle {
-  Color color;
-  BoxDims padding;
+  Color color = Color::Gray(0.6);
+  BoxDims padding = 5;
 
   void apply(const StyleManager& style) {
     style.close_button_color(color);

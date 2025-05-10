@@ -15,7 +15,7 @@ struct LengthFixed {
 };
 
 struct LengthDynamic {
-  float weight = 0;
+  float weight = 1;
   LengthDynamic() = default;
   LengthDynamic(float weight) : weight(weight) {}
 };

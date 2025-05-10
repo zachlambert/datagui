@@ -109,7 +109,7 @@ void SeriesSystem::set_child_layout_output(Element element) const {
   const auto& data = element.data<SeriesData>();
   const auto& style = data.style;
 
-  Vecf available = minimum(element->size - element->fixed_size, Vecf::Zero());
+  Vecf available = maximum(element->size - element->fixed_size, Vecf::Zero());
   float offset;
   if (style.direction == Direction::Horizontal) {
     offset = style.outer_padding.left - data.scroll_pos;

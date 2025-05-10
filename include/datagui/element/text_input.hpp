@@ -8,11 +8,11 @@
 namespace datagui {
 
 struct TextInputStyle {
-  Length width = LengthDynamic(1);
-  BoxDims padding;
-  Color bg_color;
-  BoxDims border_width;
-  Color border_color;
+  Length width = LengthDynamic();
+  BoxDims padding = 5;
+  Color bg_color = Color::White();
+  BoxDims border_width = 2;
+  Color border_color = Color::Black();
   TextStyle text;
   InputStyle input;
 

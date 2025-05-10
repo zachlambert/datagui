@@ -11,10 +11,9 @@
 #include "datagui/element/checkbox.hpp"
 #include "datagui/element/dropdown.hpp"
 #include "datagui/element/floating.hpp"
-#include "datagui/element/horizontal_layout.hpp"
+#include "datagui/element/series.hpp"
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
-#include "datagui/element/vertical_layout.hpp"
 
 namespace datagui {
 
@@ -29,9 +28,8 @@ public:
   void begin();
   void end();
 
-  bool horizontal_layout(const Style& = Style());
-  bool vertical_layout(const Style& = Style());
-  void layout_end();
+  bool series_begin(const Style& = Style());
+  void series_end();
 
   bool button(const std::string& text, const Style& style = Style());
 
@@ -61,10 +59,12 @@ public:
       const Variable<int>& choice,
       const Style& style = Style());
 
-  bool floating(
+  bool floating_begin(
       const Variable<bool>& open,
       const std::string& title,
       const Style& style = Style());
+
+  void floating_end();
 
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
@@ -95,8 +95,7 @@ private:
 
   Resources res;
 
-  HorizontalLayoutSystem horizontal_layout_system;
-  VerticalLayoutSystem vertical_layout_system;
+  SeriesSystem series_system;
   TextBoxSystem text_box_system;
   TextInputSystem text_input_system;
   ButtonSystem button_system;

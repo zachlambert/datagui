@@ -4,6 +4,9 @@ namespace datagui {
 
 Style default_theme() {
   Style style;
+
+  // TODO
+#if 0
   style.padding(5);
   style.border_color(Color::Black());
   style.bg_color(Color::White());
@@ -35,6 +38,7 @@ Style default_theme() {
 
   style.close_button_color(Color::Gray(0.5));
   style.close_button_padding(5);
+#endif
 
   return style;
 }

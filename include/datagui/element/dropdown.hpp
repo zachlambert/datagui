@@ -7,12 +7,12 @@
 namespace datagui {
 
 struct DropdownStyle {
-  Length width;
-  Color bg_color;
-  BoxDims border_width;
-  Color border_color;
-  BoxDims padding;
-  float inner_border_width = 0;
+  Length width = LengthWrap();
+  Color bg_color = Color::Gray(0.8);
+  BoxDims border_width = 2;
+  Color border_color = Color::Black();
+  BoxDims padding = 5;
+  float inner_border_width = 2;
   Color inner_border_color = Color::Black();
   TextStyle text;
   InputStyle input;

@@ -154,8 +154,8 @@ public:
       Prop::SeriesAlignment,
       Alignment,
       Alignment::Max)
-  STYLE_LENGTH(layout_length, Prop::SeriesLength)
-  STYLE_LENGTH(layout_width, Prop::SeriesWidth)
+  STYLE_LENGTH(series_length, Prop::SeriesLength)
+  STYLE_LENGTH(series_width, Prop::SeriesWidth)
   STYLE_PROP(series_bg_color, Prop::SeriesBgColor, Color)
   STYLE_PROP(series_outer_padding, Prop::SeriesOuterPadding, BoxDims)
   STYLE_PROP(series_inner_padding, Prop::SeriesInnerPadding, float)
@@ -194,17 +194,17 @@ public:
 
   // Floating
 
-  void float_absolute(const BoxDims& margin) {
+  void floating_absolute(const BoxDims& margin) {
     props.insert<FloatingType>(
         Prop::FloatingType,
         FloatingTypeAbsolute(margin));
   }
-  void float_relative(const Vecf& offset, const Vecf& size) {
+  void floating_relative(const Vecf& offset, const Vecf& size) {
     props.insert<FloatingType>(
         Prop::FloatingType,
         FloatingTypeRelative(offset, size));
   }
-  STYLE_PROP(float_bg_color, Prop::FloatingBgColor, Color)
+  STYLE_PROP(floating_bg_color, Prop::FloatingBgColor, Color)
 
   STYLE_PROP(title_bar_enable, Prop::TitleBarEnable, bool)
   STYLE_PROP(title_bar_bg_color, Prop::TitleBarBgColor, Color)
@@ -327,9 +327,9 @@ struct TextStyle {
   Font font = Font::DejaVuSans;
   int font_size = 24;
   Color text_color = Color::Black();
-  Color highlight_color = Color::Clear();
+  Color highlight_color = Color::Gray(0.8);
   float cursor_width = 2;
-  Color cursor_color = Color::Clear();
+  Color cursor_color = Color::Gray(0.3);
 
   void apply(const StyleManager& style) {
     style.font(font);
@@ -342,9 +342,9 @@ struct TextStyle {
 };
 
 struct InputStyle {
-  float active_color_factor = 1;
-  float hover_color_factor = 1;
-  float focus_color_factor = 1;
+  float active_color_factor = 0.6;
+  float hover_color_factor = 0.8;
+  float focus_color_factor = 0.8;
 
   void apply(const StyleManager& style) {
     style.active_color_factor(active_color_factor);

@@ -7,7 +7,7 @@
 namespace datagui {
 
 struct TextBoxStyle {
-  BoxDims padding;
+  BoxDims padding = 5;
   TextStyle text;
 
   void apply(const StyleManager& style) {
