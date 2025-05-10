@@ -9,6 +9,12 @@
 
 namespace datagui {
 
+static constexpr std::size_t alignment = 8;
+template <typename T>
+static constexpr std::size_t aligned_size =
+    sizeof(T) % alignment == 0 ? sizeof(T)
+                               : alignment * (sizeof(T) / alignment + 1);
+
 class PropHandler {
   class TypeBase {
   public:
@@ -30,11 +36,17 @@ class PropHandler {
     }
 
     void destruct(std::uint8_t* ptr) const override {
+      printf(
+          "Destructing at %p, size %zu, aligned %zu, 8 remainder %zu\n",
+          ptr,
+          sizeof(T),
+          aligned_size<T>,
+          std::size_t(ptr) % 8);
       ((T*)ptr)->~T();
     }
 
     std::size_t size() const override {
-      return sizeof(T);
+      return aligned_size<T>;
     }
   };
 
@@ -98,7 +110,7 @@ public:
     if (header().type != std::type_index(typeid(T))) {
       return nullptr;
     }
-    return (const T*)(data->data() + offset + sizeof(Header));
+    return (const T*)(data->data() + offset + aligned_size<Header>);
   }
 
 private:
@@ -134,7 +146,7 @@ public:
   // Prefix
   PropIterator& operator++() {
     const auto& header = *((Header*)(data->data() + offset));
-    offset += sizeof(Header);
+    offset += aligned_size<Header>;
     offset += handler->size(header.type);
     return *this;
   }
@@ -184,7 +196,7 @@ public:
     data.resize(other.data.size());
     while (offset < other.data.size()) {
       const auto& header = *((const Header*)(other.data.data() + offset));
-      offset += sizeof(Header);
+      offset += aligned_size<Header>;
       handler.copy(
           header.type,
           other.data.data() + offset,
@@ -204,7 +216,7 @@ public:
 
     while (offset < other.data.size()) {
       const auto& header = *((const Header*)(other.data.data() + offset));
-      offset += sizeof(Header);
+      offset += aligned_size<Header>;
       handler.copy(
           header.type,
           other.data.data() + offset,
@@ -228,7 +240,10 @@ public:
       std::type_index type = header.type;
 
       header.~Header();
-      offset += sizeof(header);
+      offset += aligned_size<Header>;
+      static_assert(sizeof(std::type_index) == 8);
+      static_assert(sizeof(Header) == 16);
+      static_assert(aligned_size<Header> == 16);
 
       handler.destruct(type, data.data() + offset);
       offset += handler.size(type);
@@ -243,12 +258,13 @@ public:
 
     Header header(key, std::type_index(typeid(T)));
 
-    data.resize(data.size() + sizeof(Header));
-    new ((Header*)(data.data() + data.size() - sizeof(Header)))
+    data.resize(data.size() + aligned_size<Header>);
+    new ((Header*)(data.data() + data.size() - aligned_size<Header>))
         Header(std::move(header));
 
-    data.resize(data.size() + sizeof(T));
-    new ((T*)(data.data() + data.size() - sizeof(T))) T(std::forward<T>(value));
+    data.resize(data.size() + aligned_size<T>);
+    new ((T*)(data.data() + data.size() - aligned_size<T>))
+        T(std::forward<T>(value));
 
     handler.require<T>();
 
@@ -264,14 +280,14 @@ public:
 
     std::size_t type_size = handler.size(value_header.type);
 
-    data.resize(data.size() + sizeof(Header));
-    new ((Header*)(data.data() + data.size() - sizeof(Header)))
+    data.resize(data.size() + aligned_size<Header>);
+    new ((Header*)(data.data() + data.size() - aligned_size<Header>))
         Header(value_header);
 
     data.resize(data.size() + type_size);
     handler.copy(
         value_header.type,
-        value.data->data() + value.offset + sizeof(Header),
+        value.data->data() + value.offset + aligned_size<Header>,
         data.data() + data.size() - type_size);
 
     return start_offset;
@@ -279,11 +295,11 @@ public:
 
   template <typename T>
   void replace(std::size_t offset, const K& key, T&& value) {
-    assert(offset + sizeof(Header) + sizeof(T) <= data.size());
+    assert(offset + aligned_size<Header> + aligned_size<T> <= data.size());
     const auto& header = *((Header*)(data.data() + offset));
     assert(header.key == key);
     assert(header.type == std::type_index(typeid(T)));
-    *((std::decay_t<T>*)(data.data() + offset + sizeof(Header))) =
+    *((std::decay_t<T>*)(data.data() + offset + aligned_size<Header>)) =
         std::forward<T>(value);
   }
 
@@ -294,7 +310,7 @@ public:
       return nullptr;
     }
     assert(header.type == std::type_index(typeid(T)));
-    return (const T*)(data.data() + offset + sizeof(Header));
+    return (const T*)(data.data() + offset + aligned_size<Header>);
   }
 
   std::size_t size() const {

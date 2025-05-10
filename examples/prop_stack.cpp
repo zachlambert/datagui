@@ -1,7 +1,7 @@
 #include <datagui/types/prop_stack.hpp>
 #include <iostream>
 
-enum class Prop { Count, Text };
+enum class Prop { Count, Text, Numbers };
 const char* prop_name(const Prop& prop) {
   switch (prop) {
   case Prop::Count:
@@ -9,6 +9,9 @@ const char* prop_name(const Prop& prop) {
     break;
   case Prop::Text:
     return "Text";
+    break;
+  case Prop::Numbers:
+    return "Numbers";
     break;
   }
   return "unknown";
@@ -33,6 +36,18 @@ void print_props(const Container& props) {
   }
   std::cout << std::endl;
 
+  std::cout << "Numbers: ";
+  if (auto value = props.template get<std::vector<int>>(Prop::Numbers)) {
+    const auto& list = *props.template get<std::vector<int>>(Prop::Numbers);
+    for (auto number : list) {
+      std::cout << number << ", ";
+    }
+    std::cout << std::endl;
+  } else {
+    std::cout << "<none>";
+  }
+  std::cout << std::endl;
+
   std::cout << "All values" << std::endl;
   for (auto prop : props) {
     std::cout << "- Type:  " << prop_name(prop.key()) << std::endl;
@@ -41,6 +56,11 @@ void print_props(const Container& props) {
       std::cout << *value << std::endl;
     } else if (auto value = prop.template as<std::string>()) {
       std::cout << *value << std::endl;
+    } else if (auto value = prop.template as<std::vector<int>>()) {
+      for (auto number : *value) {
+        std::cout << number << ", ";
+      }
+      std::cout << std::endl;
     } else {
       std::cout << "<unknown>" << std::endl;
     }
@@ -50,10 +70,13 @@ void print_props(const Container& props) {
 int main() {
 
   datagui::PropSet<Prop> props;
-  props.insert<std::string>(Prop::Text, "adsf");
+  // props.insert<std::vector<int>>(Prop::Numbers, {1, 2, 3});
   props.insert<int>(Prop::Count, 10);
+  props.insert<std::string>(Prop::Text, "adsf");
+#if 0
   props.insert<std::string>(Prop::Text, "hello");
   props.insert<int>(Prop::Count, 20);
+#endif
 
   std::cout << "========" << std::endl;
   print_props(props);
