@@ -3,11 +3,327 @@
 #include "datagui/color.hpp"
 #include "datagui/font.hpp"
 #include "datagui/layout.hpp"
-#include <assert.h>
-#include <functional>
-#include <memory>
+#include "datagui/types/prop_stack.hpp"
 
 namespace datagui {
+
+enum class Prop {
+  // Dimensions
+  Width,
+  Height,
+
+  // Box
+  Padding,
+  BorderWidth,
+  BorderColor,
+  BgColor,
+  Radius,
+
+  // Text
+  Font,
+  FontSize,
+  TextColor,
+  HighlightColor,
+  CursorWidth,
+  CursorColor,
+
+  // Layout
+  LayoutInnerPadding,
+  LayoutDirection,
+  LayoutAlignment,
+
+  // Input
+  FocusColor,
+  ActiveColor,
+  HoverColor,
+
+  // Checkbox
+  CheckboxSize,
+  CheckboxBorderWidth,
+  CheckboxBorderColor,
+  CheckboxIconColor,
+  CheckboxInnerPadding,
+
+  // Dropdown
+  DropdownInnerBorderWidth,
+
+  // Float
+  FloatType,
+
+  // TitleBar
+  TitleBarEnable,
+  TitleBarBgColor,
+  TitleBarPadding,
+  TitleBarBorderWidth,
+  TitleBarBorderColor,
+
+  // CloseButton
+  CloseButtonEnable,
+  CloseButtonColor,
+  CloseButtonPadding,
+};
+
+class Style {
+public:
+  void width_fixed(float value) {
+    props.insert<Length>(Prop::Width, LengthFixed(value));
+  }
+  void width_wrap() {
+    props.insert<Length>(Prop::Width, LengthWrap());
+  }
+  void width_dynamic(float weight = 1) {
+    props.insert<Length>(Prop::Width, LengthDynamic(weight));
+  }
+
+  void height_fixed(float value) {
+    props.insert<Length>(Prop::Height, LengthFixed(value));
+  }
+  void height_wrap() {
+    props.insert<Length>(Prop::Height, LengthWrap());
+  }
+  void height_dynamic(float weight = 1) {
+    props.insert<Length>(Prop::Height, LengthDynamic(weight));
+  }
+
+  void padding(const BoxDims& value) {
+    props.insert(Prop::Padding, value);
+  }
+  void border_width(const BoxDims& value) {
+    props.insert(Prop::BorderWidth, value);
+  }
+  void border_color(const Color& value) {
+    props.insert(Prop::BorderColor, value);
+  }
+  void bg_color(const Color& value) {
+    props.insert(Prop::BgColor, value);
+  }
+  void radius(float value) {
+    props.insert(Prop::Radius, value);
+  }
+
+  void font(Font value) {
+    props.insert(Prop::Font, value);
+  }
+  void font_size(int value) {
+    props.insert(Prop::FontSize, value);
+  }
+  void text_color(const Color& value) {
+    props.insert(Prop::TextColor, value);
+  }
+  void highlight_color(const Color& value) {
+    props.insert(Prop::TextColor, value);
+  }
+  void cursor_width(int value) {
+    props.insert(Prop::CursorWidth, value);
+  }
+  void cursor_color(const Color& value) {
+    props.insert(Prop::CursorColor, value);
+  }
+
+  void layout_inner_padding(float value) {
+    props.insert(Prop::LayoutInnerPadding, value);
+  }
+  void layout_direction(Direction value) {
+    props.insert(Prop::LayoutDirection, value);
+  }
+  void layout_alignment(Alignment value) {
+    props.insert(Prop::LayoutAlignment, value);
+  }
+
+  void focus_color(const Color& value) {
+    props.insert(Prop::FocusColor, value);
+  }
+  void active_color(const Color& value) {
+    props.insert(Prop::ActiveColor, value);
+  }
+  void hover_color(const Color& value) {
+    props.insert(Prop::HoverColor, value);
+  }
+
+  void checkbox_size(float value) {
+    props.insert(Prop::CheckboxSize, value);
+  }
+  void checkbox_border_width(const BoxDims& value) {
+    props.insert(Prop::CheckboxBorderWidth, value);
+  }
+  void checkbox_border_color(const Color& value) {
+    props.insert(Prop::CheckboxBorderColor, value);
+  }
+  void checkbox_icon_color(const Color& value) {
+    props.insert(Prop::CheckboxIconColor, value);
+  }
+  void checkbox_inner_padding(const BoxDims& value) {
+    props.insert(Prop::CheckboxInnerPadding, value);
+  }
+
+  void dropdown_inner_border_width(float value) {
+    props.insert(Prop::DropdownInnerBorderWidth, value);
+  }
+
+  void float_type(FloatType value) {
+    props.insert(Prop::FloatType, value);
+  }
+
+  void title_bar_enable(bool value) {
+    props.insert(Prop::TitleBarEnable, value);
+  }
+  void title_bar_bg_color(const Color& value) {
+    props.insert(Prop::TitleBarBgColor, value);
+  }
+  void title_bar_padding(const BoxDims& value) {
+    props.insert(Prop::TitleBarPadding, value);
+  }
+  void title_bar_border_width(const BoxDims& value) {
+    props.insert(Prop::TitleBarBorderWidth, value);
+  }
+  void title_bar_border_color(const Color& value) {
+    props.insert(Prop::TitleBarBorderColor, value);
+  }
+
+  void close_button_enable(bool value) {
+    props.insert(Prop::TitleBarEnable, value);
+  }
+  void close_button_color(const Color& value) {
+    props.insert(Prop::CloseButtonColor, value);
+  }
+  void close_button_padding(const BoxDims& value) {
+    props.insert(Prop::CloseButtonPadding, value);
+  }
+
+private:
+  PropSet<Prop> props;
+  friend class StyleManager;
+};
+
+class StyleManager {
+public:
+  void push(const Style& style) {
+    props.push(style.props);
+  }
+
+  void down() {
+    props.push_checkpoint();
+  }
+
+  void up() {
+    props.pop_checkpoint();
+  }
+
+  const Length* width() {
+    return props.get<Length>(Prop::Width);
+  }
+  const Length* height() {
+    props.get<Length>(Prop::Height);
+  }
+
+  const BoxDims* padding() {
+    return props.get<BoxDims>(Prop::Padding);
+  }
+  const BoxDims* border_width() {
+    return props.get<BoxDims>(Prop::BorderWidth);
+  }
+  const Color* border_color() {
+    return props.get<Color>(Prop::BorderColor);
+  }
+  const Color* bg_color() {
+    return props.get<Color>(Prop::BgColor);
+  }
+  const float* radius() {
+    return props.get<float>(Prop::Radius);
+  }
+
+  const Font* font() {
+    return props.get<Font>(Prop::Font);
+  }
+  const int* font_size() {
+    return props.get<int>(Prop::FontSize);
+  }
+  const Color* text_color() {
+    return props.get<Color>(Prop::TextColor);
+  }
+  const Color* highlight_color() {
+    return props.get<Color>(Prop::TextColor);
+  }
+  const int* cursor_width() {
+    return props.get<int>(Prop::CursorWidth);
+  }
+  const Color* cursor_color() {
+    return props.get<Color>(Prop::CursorColor);
+  }
+
+  const float* layout_inner_padding() {
+    return props.get<float>(Prop::LayoutInnerPadding);
+  }
+  const Direction* layout_direction() {
+    return props.get<Direction>(Prop::LayoutDirection);
+  }
+  const Alignment* layout_alignment() {
+    return props.get<Alignment>(Prop::LayoutAlignment);
+  }
+
+  const Color* focus_color() {
+    return props.get<Color>(Prop::FocusColor);
+  }
+  const Color* active_color() {
+    return props.get<Color>(Prop::ActiveColor);
+  }
+  const Color* hover_color() {
+    return props.get<Color>(Prop::HoverColor);
+  }
+
+  const float* checkbox_size() {
+    return props.get<float>(Prop::CheckboxSize);
+  }
+  const BoxDims* checkbox_border_width() {
+    return props.get<BoxDims>(Prop::CheckboxBorderWidth);
+  }
+  const Color* checkbox_border_color() {
+    return props.get<Color>(Prop::CheckboxBorderColor);
+  }
+  const Color* checkbox_icon_color() {
+    return props.get<Color>(Prop::CheckboxIconColor);
+  }
+  const BoxDims* checkbox_inner_padding() {
+    return props.get<BoxDims>(Prop::CheckboxInnerPadding);
+  }
+
+  const float* dropdown_inner_border_width() {
+    return props.get<float>(Prop::DropdownInnerBorderWidth);
+  }
+
+  const FloatType* float_type() {
+    return props.get<FloatType>(Prop::FloatType);
+  }
+
+  const bool* title_bar_enable() {
+    return props.get<bool>(Prop::TitleBarEnable);
+  }
+  const Color* title_bar_bg_color() {
+    return props.get<Color>(Prop::TitleBarBgColor);
+  }
+  const BoxDims* title_bar_padding() {
+    return props.get<BoxDims>(Prop::TitleBarPadding);
+  }
+  const BoxDims* title_bar_border_width() {
+    return props.get<BoxDims>(Prop::TitleBarBorderWidth);
+  }
+  const Color* title_bar_border_color() {
+    return props.get<Color>(Prop::TitleBarBorderColor);
+  }
+
+  const bool* close_button_enable() {
+    return props.get<bool>(Prop::TitleBarEnable);
+  }
+  const Color* close_button_color() {
+    return props.get<Color>(Prop::CloseButtonColor);
+  }
+  const BoxDims* close_button_padding() {
+    return props.get<BoxDims>(Prop::CloseButtonPadding);
+  }
+
+private:
+  PropStack<Prop> props;
+};
 
 struct BoxStyle {
   BoxDims padding = BoxDims();
@@ -17,12 +333,30 @@ struct BoxStyle {
   float radius = 0;
   Length width = literals::_wrap;
   Length height = literals::_wrap;
-};
 
-struct LayoutStyle : public BoxStyle {
-  float inner_padding;
-  Direction direction;
-  Alignment alignment;
+  void apply(StyleManager& style) {
+    if (auto value = style.padding()) {
+      padding = *value;
+    }
+    if (auto value = style.border_width()) {
+      border_width = *value;
+    }
+    if (auto value = style.border_color()) {
+      border_color = *value;
+    }
+    if (auto value = style.bg_color()) {
+      bg_color = *value;
+    }
+    if (auto value = style.radius()) {
+      radius = *value;
+    }
+    if (auto value = style.width()) {
+      width = *value;
+    }
+    if (auto value = style.height()) {
+      height = *value;
+    }
+  }
 };
 
 struct TextStyle {
@@ -32,228 +366,6 @@ struct TextStyle {
   Color highlight_color = Color::Gray(0.7);
   float cursor_width = 2;
   Color cursor_color = Color::Gray(0.5);
-};
-
-struct TextBoxStyle : public TextStyle, public BoxStyle {};
-
-struct InputStyle {
-  Color focus_color = Color(0, 1, 1);
-  Color active_color = Color::Gray(0.4);
-  Color hover_color = Color::Gray(0.6);
-};
-
-struct ButtonStyle : public BoxStyle, public TextStyle, public InputStyle {};
-
-struct CheckboxStyle : public BoxStyle, InputStyle {
-  float size = 24;
-  Color check_color = Color::Gray(0.2);
-  BoxDims check_padding = 2;
-};
-
-struct DropdownStyle : public BoxStyle, public TextStyle, public InputStyle {
-  float inner_border_width = 0;
-};
-
-struct TextInputStyle : public BoxStyle, public TextStyle, InputStyle {};
-
-struct FloatTypeAbsolute {
-  BoxDims margin;
-  FloatTypeAbsolute(const BoxDims& margin) : margin(margin) {}
-};
-
-struct FloatTypeRelative {
-  Vecf offset;
-  Vecf size;
-  FloatTypeRelative(const Vecf& offset, const Vecf& size) :
-      offset(offset), size(size) {}
-};
-
-using FloatType = std::variant<FloatTypeAbsolute, FloatTypeRelative>;
-
-struct TitleBarStyle : public TextStyle {
-  Color bg_color = Color::Gray(0.8);
-  bool close_button_enable = true;
-  Color close_button_color = Color::Gray(0.6);
-  BoxDims padding = 5;
-  BoxDims border_width = 0;
-  Color border_color = Color::Black();
-};
-
-struct FloatingStyle : public BoxStyle {
-  FloatType float_type;
-  bool title_bar_enable;
-  TitleBarStyle title_bar;
-
-  FloatingStyle() :
-      float_type(FloatTypeRelative(Vecf::Zero(), Vecf::Zero())),
-      title_bar_enable(false) {}
-};
-
-class StyleFuncBase {
-public:
-  virtual ~StyleFuncBase() {}
-};
-
-template <typename Style>
-class StyleFunc : public StyleFuncBase {
-public:
-  template <typename Functor>
-  StyleFunc(const Functor& func) : func(func) {}
-  template <typename Functor>
-  StyleFunc(Functor&& func) : func(std::move(func)) {}
-
-  StyleFunc(const std::function<void(Style&)>& func) : func(func) {}
-  StyleFunc(std::function<void(Style&)>&& func) : func(std::move(func)) {}
-
-  void apply(Style& style) const {
-    func(style);
-  }
-
-private:
-  std::function<void(Style&)> func;
-};
-
-#define STYLE_PROPERTY(label, StyleT, name)                                    \
-  Style& label(const typeof(StyleT::name)& name) {                             \
-    styles.push_back(std::make_shared<StyleFunc<StyleT>>(                      \
-        [name](StyleT& style) { style.name = name; }));                        \
-    return *this;                                                              \
-  }
-
-#define STYLE_SUB_PROPERTY(label, StyleT, name, subname)                       \
-  Style& label(const typeof(StyleT::name.subname)& name##_##subname) {         \
-    styles.push_back(std::make_shared<StyleFunc<StyleT>>(                      \
-        [name##_##subname](StyleT& style) {                                    \
-          style.name##_##enable = true;                                        \
-          style.name.subname = name##_##subname;                               \
-        }));                                                                   \
-    return *this;                                                              \
-  }
-
-class Style {
-public:
-  template <typename StyleT>
-  void apply(StyleT& style_data) const {
-    for (const auto& style : styles) {
-      auto style_t = dynamic_cast<const StyleFunc<StyleT>*>(style.get());
-      if (style_t) {
-        style_t->apply(style_data);
-      }
-    }
-  }
-
-  // BoxStyle
-  STYLE_PROPERTY(padding, BoxStyle, padding)
-  STYLE_PROPERTY(border_width, BoxStyle, border_width)
-  STYLE_PROPERTY(border_color, BoxStyle, border_color)
-  STYLE_PROPERTY(bg_color, BoxStyle, bg_color)
-  STYLE_PROPERTY(radius, BoxStyle, radius)
-  STYLE_PROPERTY(width, BoxStyle, width)
-  STYLE_PROPERTY(height, BoxStyle, height)
-
-  // LinearLayoutStyle
-  STYLE_PROPERTY(layout_direction, LayoutStyle, direction)
-  STYLE_PROPERTY(layout_alignment, LayoutStyle, alignment)
-  STYLE_PROPERTY(layout_inner_padding, LayoutStyle, inner_padding)
-
-  // TextStyle
-  STYLE_PROPERTY(font, TextStyle, font)
-  STYLE_PROPERTY(font_size, TextStyle, font_size)
-  STYLE_PROPERTY(text_color, TextStyle, text_color)
-  STYLE_PROPERTY(text_highlight_color, TextStyle, highlight_color)
-  STYLE_PROPERTY(cursor_width, TextStyle, cursor_width)
-  STYLE_PROPERTY(cursor_color, TextStyle, cursor_color)
-
-  // InputStyle
-  STYLE_PROPERTY(input_focus_color, InputStyle, focus_color)
-  STYLE_PROPERTY(input_active_color, InputStyle, active_color)
-  STYLE_PROPERTY(input_hover_color, InputStyle, hover_color)
-
-  // CheckboxStyle
-  STYLE_PROPERTY(checkbox_size, CheckboxStyle, size)
-  STYLE_PROPERTY(checkbox_check_color, CheckboxStyle, check_color)
-  STYLE_PROPERTY(checkbox_check_padding, CheckboxStyle, check_padding)
-
-  // CheckboxStyle
-  STYLE_PROPERTY(dropdown_inner_border_width, DropdownStyle, inner_border_width)
-
-  // FloatingStyle
-
-  Style& float_absolute(const BoxDims& margin) {
-    styles.push_back(std::make_shared<StyleFunc<FloatingStyle>>(
-        [margin](FloatingStyle& style) {
-          style.float_type = FloatTypeAbsolute(margin);
-        }));
-    return *this;
-  }
-
-  Style& float_relative(const Vecf& offset, const Vecf& size) {
-    styles.push_back(std::make_shared<StyleFunc<FloatingStyle>>(
-        [offset, size](FloatingStyle& style) {
-          style.float_type = FloatTypeRelative(offset, size);
-        }));
-    return *this;
-  }
-
-  STYLE_SUB_PROPERTY(float_bar_bg_color, FloatingStyle, title_bar, bg_color)
-  STYLE_SUB_PROPERTY(
-      float_bar_close_button_enable,
-      FloatingStyle,
-      title_bar,
-      close_button_enable)
-  STYLE_SUB_PROPERTY(
-      float_bar_close_button_color,
-      FloatingStyle,
-      title_bar,
-      close_button_color)
-  STYLE_SUB_PROPERTY(float_bar_padding, FloatingStyle, title_bar, padding)
-  STYLE_SUB_PROPERTY(
-      float_bar_border_width,
-      FloatingStyle,
-      title_bar,
-      border_width)
-  STYLE_SUB_PROPERTY(
-      float_bar_border_color,
-      FloatingStyle,
-      title_bar,
-      border_color)
-
-private:
-  std::vector<std::shared_ptr<StyleFuncBase>> styles;
-};
-
-class StyleManager {
-public:
-  StyleManager() {
-    styles.emplace_back();
-  }
-  void push(const Style& style) {
-    assert(!styles.empty());
-    styles.back().push_back(style);
-  }
-  void pop() {
-    assert(!styles.empty());
-    assert(!styles.back().empty());
-    styles.back().pop_back();
-  }
-  void down() {
-    styles.emplace_back();
-  }
-  void up() {
-    styles.pop_back();
-  }
-
-  template <typename Style>
-  void apply(Style& style) {
-    for (const auto& rules_layer : styles) {
-      for (const auto& rule : rules_layer) {
-        rule.apply(style);
-      }
-    }
-  }
-
-private:
-  std::vector<std::vector<Style>> styles;
 };
 
 } // namespace datagui
