@@ -146,9 +146,15 @@ void DropdownSystem::render(ConstElement element) const {
         res.font_manager.text_height(style.text) + style.box.padding.size().y +
             border->size().y);
 
+    Color bg_color;
+    if (i == data.choice) {
+      bg_color = style.active_color();
+    } else {
+      bg_color = style.box.bg_color;
+    }
     res.geometry_renderer.queue_box(
         Boxf(position, position + size),
-        i == data.choice ? style.active_color : style.box.bg_color,
+        bg_color,
         *border,
         style.box.border_color,
         0);

@@ -8,15 +8,17 @@ namespace datagui {
 
 struct VerticalLayoutStyle {
   BoxStyle box;
-  Direction direction = Direction::Vertical;
   Alignment alignment = Alignment::Center;
-  float inner_padding = 0;
 
   void apply(const StyleManager& style) {
-    box.apply(style);
-    style.layout_direction(direction);
+    style.layout_length(box.height);
+    style.layout_width(box.width);
+    style.layout_padding(box.padding);
+    style.layout_bg_color(box.bg_color);
+    box.border_width = 0;
+    box.border_color = Color::Black();
+    box.radius = 0;
     style.layout_alignment(alignment);
-    style.layout_inner_padding(inner_padding);
   }
 };
 

@@ -10,16 +10,22 @@ namespace datagui {
 struct TextInputStyle {
   BoxStyle box;
   TextStyle text;
-  Color focus_color = Color::Gray(0.8);
+  InputStyle input;
 
   TextInputStyle() {
     box.width = LengthDynamic(1);
   }
 
   void apply(const StyleManager& style) {
-    box.apply(style);
+    style.text_input_width(box.width);
+    box.height = LengthWrap();
+    style.text_padding(box.padding);
+    style.text_input_bg_color(box.bg_color);
+    style.text_input_border_width(box.border_width);
+    style.text_input_border_color(box.border_color);
+    box.radius = 0;
     text.apply(style);
-    style.focus_color(focus_color);
+    input.apply(style);
   }
 };
 

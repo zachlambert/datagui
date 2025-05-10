@@ -54,12 +54,12 @@ void FloatingSystem::set_child_layout_output(Element element) const {
 void FloatingSystem::set_float_box(ConstElement window, Element element) const {
   const auto& data = element.data<FloatingData>();
   const auto& style = data.style;
-  if (auto type = std::get_if<FloatTypeAbsolute>(&style.float_type)) {
+  if (auto type = std::get_if<FloatingTypeAbsolute>(&style.float_type)) {
     element->float_box.lower = window->box().lower + type->margin.offset();
     element->float_box.upper =
         window->box().upper - type->margin.offset_opposite();
   }
-  if (auto type = std::get_if<FloatTypeRelative>(&style.float_type)) {
+  if (auto type = std::get_if<FloatingTypeRelative>(&style.float_type)) {
     element->float_box.lower = element->box().lower + type->offset;
     element->float_box.upper = element->float_box.lower + type->size;
   }

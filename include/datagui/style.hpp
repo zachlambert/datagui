@@ -8,34 +8,44 @@
 namespace datagui {
 
 enum class Prop {
-  // Dimensions
-  Width,
-  Height,
-
-  // Box
-  Padding,
-  BorderWidth,
-  BorderColor,
-  BgColor,
-  Radius,
+  // =============================
+  // Generic
 
   // Text
   Font,
   FontSize,
   TextColor,
+  TextPadding,
   HighlightColor,
   CursorWidth,
   CursorColor,
 
-  // Layout
-  LayoutInnerPadding,
+  // =============================
+  // Layout Elements
+
+  // Linear
   LayoutDirection,
   LayoutAlignment,
+  LayoutLength,
+  LayoutWidth,
+  LayoutBgColor,
+  LayoutOuterPadding,
+  LayoutInnerPadding,
 
-  // Input
-  FocusColor,
-  ActiveColor,
-  HoverColor,
+  // =============================
+  // Primitive Elements
+
+  // Generic Input
+  FocusColorFactor,
+  ActiveColorFactor,
+  HoverColorFactor,
+
+  // Button
+  ButtonWidth,
+  ButtonBgColor,
+  ButtonBorderWidth,
+  ButtonBorderColor,
+  ButtonRadius,
 
   // Checkbox
   CheckboxSize,
@@ -44,13 +54,28 @@ enum class Prop {
   CheckboxBorderColor,
   CheckboxIconColor,
   CheckboxInnerPadding,
+  CheckboxRadius,
 
   // Dropdown
+  DropdownWidth,
+  DropdownBgColor,
+  DropdownBorderWidth,
+  DropdownBorderColor,
   DropdownInnerBorderWidth,
+  DropdownInnerBorderColor,
 
-  // Float
-  FloatType,
-  FloatBgColor,
+  // TextInput
+  TextInputWidth,
+  TextInputBgColor,
+  TextInputBorderWidth,
+  TextInputBorderColor,
+
+  // =============================
+  // Floating
+
+  // Floating
+  FloatingType,
+  FloatingBgColor,
 
   // TitleBar
   TitleBarEnable,
@@ -62,7 +87,6 @@ enum class Prop {
   // CloseButton
   CloseButtonEnable,
   CloseButtonColor,
-  CloseButtonPadding,
 };
 
 #define STYLE_PROP(label, prop, type)                                          \
@@ -70,48 +94,50 @@ enum class Prop {
     props.insert<type>(prop, std::forward<type>(value));                       \
   }
 
+#define STYLE_LENGTH(label, prop)                                              \
+  void label##_fixed(float value) {                                            \
+    props.insert<Length>(prop, LengthFixed(value));                            \
+  }                                                                            \
+  void label##_wrap() {                                                        \
+    props.insert<Length>(prop, LengthWrap());                                  \
+  }                                                                            \
+  void label##_dynamic(float weight = 1) {                                     \
+    props.insert<Length>(prop, LengthDynamic(weight));                         \
+  }
+
 class Style {
 public:
-  void width_fixed(float value) {
-    props.insert<Length>(Prop::Width, LengthFixed(value));
-  }
-  void width_wrap() {
-    props.insert<Length>(Prop::Width, LengthWrap());
-  }
-  void width_dynamic(float weight = 1) {
-    props.insert<Length>(Prop::Width, LengthDynamic(weight));
-  }
-
-  void height_fixed(float value) {
-    props.insert<Length>(Prop::Height, LengthFixed(value));
-  }
-  void height_wrap() {
-    props.insert<Length>(Prop::Height, LengthWrap());
-  }
-  void height_dynamic(float weight = 1) {
-    props.insert<Length>(Prop::Height, LengthDynamic(weight));
-  }
-
-  STYLE_PROP(padding, Prop::Padding, BoxDims)
-  STYLE_PROP(border_width, Prop::BorderWidth, BoxDims)
-  STYLE_PROP(border_color, Prop::BorderColor, Color)
-  STYLE_PROP(bg_color, Prop::BgColor, Color)
-  STYLE_PROP(radius, Prop::Radius, float)
+  // Generic
 
   STYLE_PROP(font, Prop::Font, Font)
   STYLE_PROP(font_size, Prop::FontSize, int)
   STYLE_PROP(text_color, Prop::TextColor, Color)
+  STYLE_PROP(text_padding, Prop::TextPadding, BoxDims)
   STYLE_PROP(highlight_color, Prop::HighlightColor, Color)
   STYLE_PROP(cursor_width, Prop::CursorWidth, float)
   STYLE_PROP(cursor_color, Prop::CursorColor, Color)
 
-  STYLE_PROP(layout_inner_padding, Prop::LayoutInnerPadding, float)
-  STYLE_PROP(layout_direction, Prop::LayoutDirection, Direction)
+  // Layout Elements
+
+  STYLE_LENGTH(layout_length, Prop::LayoutLength)
+  STYLE_LENGTH(layout_width, Prop::LayoutWidth)
+  STYLE_PROP(layout_bg_color, Prop::LayoutBgColor, Color)
+  STYLE_PROP(layout_padding, Prop::LayoutPadding, BoxDims)
+  STYLE_PROP(layout_inner_border_width, Prop::LayoutInnerBorderWidth, float)
+  STYLE_PROP(layout_inner_border_color, Prop::LayoutInnerBorderColor, Color)
   STYLE_PROP(layout_alignment, Prop::LayoutAlignment, Alignment)
 
-  STYLE_PROP(focus_color, Prop::FocusColor, Color)
-  STYLE_PROP(active_color, Prop::ActiveColor, Color)
-  STYLE_PROP(hover_color, Prop::HoverColor, Color)
+  // Primitive Elements
+
+  STYLE_PROP(focus_color_factor, Prop::FocusColorFactor, float)
+  STYLE_PROP(active_color_factor, Prop::ActiveColorFactor, float)
+  STYLE_PROP(hover_color_factor, Prop::HoverColorFactor, float)
+
+  STYLE_LENGTH(button_width, Prop::ButtonWidth)
+  STYLE_PROP(button_bg_color, Prop::ButtonBgColor, Color)
+  STYLE_PROP(button_border_width, Prop::ButtonBorderWidth, BoxDims)
+  STYLE_PROP(button_border_color, Prop::ButtonBorderColor, Color)
+  STYLE_PROP(button_radius, Prop::ButtonRadius, float)
 
   STYLE_PROP(checkbox_size, Prop::CheckboxSize, float)
   STYLE_PROP(checkbox_bg_color, Prop::CheckboxBgColor, Color)
@@ -119,16 +145,33 @@ public:
   STYLE_PROP(checkbox_border_color, Prop::CheckboxBorderColor, Color)
   STYLE_PROP(checkbox_icon_color, Prop::CheckboxIconColor, Color)
   STYLE_PROP(checkbox_inner_padding, Prop::CheckboxInnerPadding, BoxDims)
+  STYLE_PROP(checkbox_radius, Prop::CheckboxRadius, float)
 
+  STYLE_LENGTH(dropdown_width, Prop::DropdownWidth)
+  STYLE_PROP(dropdown_bg_color, Prop::DropdownBgColor, Color)
+  STYLE_PROP(dropdown_border_width, Prop::DropdownBorderWidth, BoxDims)
+  STYLE_PROP(dropdown_border_color, Prop::DropdownBorderColor, Color)
   STYLE_PROP(dropdown_inner_border_width, Prop::DropdownInnerBorderWidth, float)
+  STYLE_PROP(dropdown_inner_border_color, Prop::DropdownInnerBorderColor, Color)
+
+  STYLE_LENGTH(text_input_width, Prop::TextInputWidth)
+  STYLE_PROP(text_input_bg_color, Prop::TextInputBgColor, Color)
+  STYLE_PROP(text_input_border_width, Prop::TextInputBorderWidth, BoxDims)
+  STYLE_PROP(text_input_border_color, Prop::TextInputBorderColor, Color)
+
+  // Floating
 
   void float_absolute(const BoxDims& margin) {
-    props.insert<FloatType>(Prop::FloatType, FloatTypeAbsolute(margin));
+    props.insert<FloatingType>(
+        Prop::FloatingType,
+        FloatingTypeAbsolute(margin));
   }
   void float_relative(const Vecf& offset, const Vecf& size) {
-    props.insert<FloatType>(Prop::FloatType, FloatTypeRelative(offset, size));
+    props.insert<FloatingType>(
+        Prop::FloatingType,
+        FloatingTypeRelative(offset, size));
   }
-  STYLE_PROP(float_bg_color, Prop::FloatBgColor, Color)
+  STYLE_PROP(float_bg_color, Prop::FloatingBgColor, Color)
 
   STYLE_PROP(title_bar_enable, Prop::TitleBarEnable, bool)
   STYLE_PROP(title_bar_bg_color, Prop::TitleBarBgColor, Color)
@@ -138,13 +181,13 @@ public:
 
   STYLE_PROP(close_button_enable, Prop::CloseButtonEnable, bool)
   STYLE_PROP(close_button_color, Prop::CloseButtonColor, Color)
-  STYLE_PROP(close_button_padding, Prop::CloseButtonPadding, BoxDims)
 
 private:
   PropSet<Prop> props;
   friend class StyleManager;
 };
 #undef STYLE_PROP
+#undef STYLE_LENGTH
 
 #define STYLE_PROP(name, prop, type)                                           \
   void name(type& value) const {                                               \
@@ -176,29 +219,37 @@ public:
     props.pop_checkpoint();
   }
 
-  STYLE_PROP(width, Prop::Width, Length)
-  STYLE_PROP(height, Prop::Height, Length)
-
-  STYLE_PROP(padding, Prop::Padding, BoxDims)
-  STYLE_PROP(border_width, Prop::BorderWidth, BoxDims)
-  STYLE_PROP(border_color, Prop::BorderColor, Color)
-  STYLE_PROP(bg_color, Prop::BgColor, Color)
-  STYLE_PROP(radius, Prop::Radius, float)
+  // Generic
 
   STYLE_PROP(font, Prop::Font, Font)
   STYLE_PROP(font_size, Prop::FontSize, int)
   STYLE_PROP(text_color, Prop::TextColor, Color)
+  STYLE_PROP(text_padding, Prop::TextPadding, BoxDims)
   STYLE_PROP(highlight_color, Prop::HighlightColor, Color)
   STYLE_PROP(cursor_width, Prop::CursorWidth, float)
   STYLE_PROP(cursor_color, Prop::CursorColor, Color)
 
-  STYLE_PROP(layout_inner_padding, Prop::LayoutInnerPadding, float)
-  STYLE_PROP(layout_direction, Prop::LayoutDirection, Direction)
+  // Layout Elements
+
+  STYLE_PROP(layout_length, Prop::LayoutLength, Length)
+  STYLE_PROP(layout_width, Prop::LayoutWidth, Length)
+  STYLE_PROP(layout_bg_color, Prop::LayoutBgColor, Color)
+  STYLE_PROP(layout_padding, Prop::LayoutPadding, BoxDims)
+  STYLE_PROP(layout_inner_border_width, Prop::LayoutInnerBorderWidth, float)
+  STYLE_PROP(layout_inner_border_color, Prop::LayoutInnerBorderColor, Color)
   STYLE_PROP(layout_alignment, Prop::LayoutAlignment, Alignment)
 
-  STYLE_PROP(focus_color, Prop::FocusColor, Color)
-  STYLE_PROP(active_color, Prop::ActiveColor, Color)
-  STYLE_PROP(hover_color, Prop::HoverColor, Color)
+  // Primitive elements
+
+  STYLE_PROP(focus_color_factor, Prop::FocusColorFactor, float)
+  STYLE_PROP(active_color_factor, Prop::ActiveColorFactor, float)
+  STYLE_PROP(hover_color_factor, Prop::HoverColorFactor, float)
+
+  STYLE_PROP(button_width, Prop::ButtonWidth, Length)
+  STYLE_PROP(button_bg_color, Prop::ButtonBgColor, Color)
+  STYLE_PROP(button_border_width, Prop::ButtonBorderWidth, BoxDims)
+  STYLE_PROP(button_border_color, Prop::ButtonBorderColor, Color)
+  STYLE_PROP(button_radius, Prop::ButtonRadius, float)
 
   STYLE_PROP(checkbox_size, Prop::CheckboxSize, float)
   STYLE_PROP(checkbox_bg_color, Prop::CheckboxBgColor, Color)
@@ -206,11 +257,24 @@ public:
   STYLE_PROP(checkbox_border_color, Prop::CheckboxBorderColor, Color)
   STYLE_PROP(checkbox_icon_color, Prop::CheckboxIconColor, Color)
   STYLE_PROP(checkbox_inner_padding, Prop::CheckboxInnerPadding, BoxDims)
+  STYLE_PROP(checkbox_radius, Prop::CheckboxRadius, float)
 
+  STYLE_PROP(dropdown_width, Prop::DropdownWidth, Length)
+  STYLE_PROP(dropdown_bg_color, Prop::DropdownBgColor, Color)
+  STYLE_PROP(dropdown_border_width, Prop::DropdownBorderWidth, BoxDims)
+  STYLE_PROP(dropdown_border_color, Prop::DropdownBorderColor, Color)
   STYLE_PROP(dropdown_inner_border_width, Prop::DropdownInnerBorderWidth, float)
+  STYLE_PROP(dropdown_inner_border_color, Prop::DropdownInnerBorderColor, Color)
 
-  STYLE_PROP(float_type, Prop::FloatType, FloatType)
-  STYLE_PROP(float_bg_color, Prop::FloatBgColor, Color)
+  STYLE_PROP(text_input_width, Prop::TextInputWidth, Length)
+  STYLE_PROP(text_input_bg_color, Prop::TextInputBgColor, Color)
+  STYLE_PROP(text_input_border_width, Prop::TextInputBorderWidth, BoxDims)
+  STYLE_PROP(text_input_border_color, Prop::TextInputBorderColor, Color)
+
+  // Floating
+
+  STYLE_PROP(floating_type, Prop::FloatingType, FloatingType)
+  STYLE_PROP(floating_bg_color, Prop::FloatingBgColor, Color)
 
   STYLE_PROP(title_bar_enable, Prop::TitleBarEnable, bool)
   STYLE_PROP(title_bar_bg_color, Prop::TitleBarBgColor, Color)
@@ -220,7 +284,6 @@ public:
 
   STYLE_PROP(close_button_enable, Prop::CloseButtonEnable, bool)
   STYLE_PROP(close_button_color, Prop::CloseButtonColor, Color)
-  STYLE_PROP(close_button_padding, Prop::CloseButtonPadding, BoxDims)
 
 private:
   PropStack<Prop> props;
@@ -228,23 +291,16 @@ private:
 #undef STYLE_PROP
 
 struct BoxStyle {
+  Length width;
+  Length height;
   BoxDims padding = 0;
   BoxDims border_width = 0;
   Color border_color = Color::Black();
   Color bg_color = Color::Clear();
   float radius = 0;
-  Length width = LengthWrap();
-  Length height = LengthWrap();
 
-  void apply(const StyleManager& style) {
-    style.padding(padding);
-    style.border_width(border_width);
-    style.border_color(border_color);
-    style.bg_color(bg_color);
-    style.radius(radius);
-    style.width(width);
-    style.height(height);
-  }
+  // No apply method, since different elements set these
+  // values from different properties
 };
 
 struct TextStyle {
@@ -262,6 +318,40 @@ struct TextStyle {
     style.highlight_color(highlight_color);
     style.cursor_width(cursor_width);
     style.cursor_color(cursor_color);
+  }
+};
+
+struct InputStyle {
+  float active_color_factor = 1;
+  float hover_color_factor = 1;
+  float focus_color_factor = 1;
+
+  void apply(const StyleManager& style) {
+    style.active_color_factor(active_color_factor);
+    style.hover_color_factor(hover_color_factor);
+    style.focus_color_factor(focus_color_factor);
+  }
+
+  Color active_color(const Color& base) const {
+    return Color(
+        base.r * active_color_factor,
+        base.g * active_color_factor,
+        base.b * active_color_factor,
+        base.a);
+  }
+  Color hover_color(const Color& base) const {
+    return Color(
+        base.r * hover_color_factor,
+        base.g * hover_color_factor,
+        base.b * hover_color_factor,
+        base.a);
+  }
+  Color focus_color(const Color& base) const {
+    return Color(
+        base.r * focus_color_factor,
+        base.g * focus_color_factor,
+        base.b * focus_color_factor,
+        base.a);
   }
 };
 

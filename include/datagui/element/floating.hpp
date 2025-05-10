@@ -26,13 +26,12 @@ struct CloseButtonStyle {
 
   void apply(const StyleManager& style) {
     style.close_button_color(color);
-    style.close_button_padding(padding);
   }
 };
 
 struct FloatingStyle {
   TextStyle text;
-  FloatType float_type = FloatTypeAbsolute(BoxDims());
+  FloatingType float_type = FloatingTypeAbsolute(BoxDims());
   Color bg_color;
 
   bool title_bar_enable = false;
@@ -43,8 +42,8 @@ struct FloatingStyle {
 
   void apply(const StyleManager& style) {
     text.apply(style);
-    style.float_type(float_type);
-    style.float_bg_color(bg_color);
+    style.floating_type(float_type);
+    style.floating_bg_color(bg_color);
 
     style.title_bar_enable(title_bar_enable);
     title_bar.apply(style);

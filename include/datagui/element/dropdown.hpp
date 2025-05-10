@@ -8,15 +8,27 @@ namespace datagui {
 
 struct DropdownStyle {
   BoxStyle box;
-  TextStyle text;
   float inner_border_width = 0;
-  Color active_color = Color::Gray(0.5);
+  Color inner_border_color = Color::Black();
+  TextStyle text;
+  InputStyle input;
 
   void apply(const StyleManager& style) {
-    box.apply(style);
-    text.apply(style);
+    style.dropdown_width(box.width);
+    box.height = LengthWrap();
+    style.dropdown_bg_color(box.bg_color);
+    style.dropdown_border_width(box.border_width);
+    style.dropdown_border_color(box.border_color);
+    style.text_padding(box.padding);
     style.dropdown_inner_border_width(inner_border_width);
-    style.active_color(active_color);
+    style.dropdown_inner_border_color(inner_border_color);
+    box.radius = 0;
+    text.apply(style);
+    input.apply(style);
+  }
+
+  Color active_color() const {
+    return input.active_color(box.bg_color);
   }
 };
 

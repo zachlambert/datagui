@@ -49,12 +49,7 @@ void CheckboxSystem::render(ConstElement element) const {
   const auto& data = element.data<CheckboxData>();
   const auto& style = data.style;
 
-  res.geometry_renderer.queue_box(
-      element->box(),
-      style.bg_color,
-      style.border_width,
-      style.border_color,
-      0);
+  res.geometry_renderer.queue_box(element->box(), style.box);
 
   if (!data.checked) {
     return;
@@ -62,11 +57,12 @@ void CheckboxSystem::render(ConstElement element) const {
 
   Boxf checked_box;
   checked_box.lower = minimum(
-      element->position + style.border_width.offset() +
+      element->position + style.box.border_width.offset() +
           style.inner_padding.offset(),
       element->box().center());
   checked_box.upper = maximum(
-      element->position + element->size - style.border_width.offset_opposite() -
+      element->position + element->size -
+          style.box.border_width.offset_opposite() -
           style.inner_padding.offset_opposite(),
       element->box().center());
 

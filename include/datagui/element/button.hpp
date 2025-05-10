@@ -9,16 +9,28 @@ namespace datagui {
 struct ButtonStyle {
   BoxStyle box;
   TextStyle text;
-  Color active_color = Color::Clear();
-  Color hover_color = Color::Clear();
-  Color focus_color = Color::Clear();
+  InputStyle input;
 
   void apply(const StyleManager& style) {
-    box.apply(style);
+    style.button_width(box.width);
+    box.height = LengthWrap();
+    style.text_padding(box.padding);
+    style.button_bg_color(box.bg_color);
+    style.button_border_width(box.border_width);
+    style.button_border_color(box.border_color);
+    style.button_radius(box.radius);
     text.apply(style);
-    style.active_color(active_color);
-    style.hover_color(hover_color);
-    style.focus_color(focus_color);
+    input.apply(style);
+  }
+
+  Color active_color() const {
+    return input.active_color(box.bg_color);
+  }
+  Color hover_color() const {
+    return input.hover_color(box.bg_color);
+  }
+  Color focus_color() const {
+    return input.focus_color(box.border_color);
   }
 };
 

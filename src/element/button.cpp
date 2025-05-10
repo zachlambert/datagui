@@ -43,11 +43,11 @@ void ButtonSystem::render(ConstElement element) const {
 
   res.geometry_renderer.queue_box(
       element->box(),
-      data.down          ? style.active_color
-      : element->hovered ? style.hover_color
+      data.down          ? style.active_color()
+      : element->hovered ? style.hover_color()
                          : style.box.bg_color,
       style.box.border_width,
-      element->in_focus_tree ? style.focus_color : style.box.border_color,
+      element->in_focus_tree ? style.focus_color() : style.box.border_color,
       style.box.radius);
 
   Vecf text_position =
