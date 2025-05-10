@@ -7,30 +7,24 @@
 namespace datagui {
 
 struct ButtonStyle {
-  BoxStyle box;
+  Length width;
+  BoxDims padding;
+  Color bg_color;
+  BoxDims border_width;
+  Color border_color;
+  float radius;
   TextStyle text;
   InputStyle input;
 
   void apply(const StyleManager& style) {
-    style.button_width(box.width);
-    box.height = LengthWrap();
-    style.text_padding(box.padding);
-    style.button_bg_color(box.bg_color);
-    style.button_border_width(box.border_width);
-    style.button_border_color(box.border_color);
-    style.button_radius(box.radius);
+    style.button_width(width);
+    style.text_padding(padding);
+    style.button_bg_color(bg_color);
+    style.button_border_width(border_width);
+    style.button_border_color(border_color);
+    style.button_radius(radius);
     text.apply(style);
     input.apply(style);
-  }
-
-  Color active_color() const {
-    return input.active_color(box.bg_color);
-  }
-  Color hover_color() const {
-    return input.hover_color(box.bg_color);
-  }
-  Color focus_color() const {
-    return input.focus_color(box.border_color);
   }
 };
 

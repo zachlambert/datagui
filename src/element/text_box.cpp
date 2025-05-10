@@ -15,22 +15,11 @@ void TextBoxSystem::set_layout_input(Element element) const {
   const auto& data = element.data<TextBoxData>();
   const auto& style = data.style;
 
-  element->fixed_size = (style.box.border_width + style.box.padding).size();
+  element->fixed_size =
+      res.font_manager.text_size(data.text, style.text, LengthWrap()) +
+      style.padding.size();
   element->dynamic_size = Vecf::Zero();
   element->floating = false;
-
-  Vecf text_size =
-      res.font_manager.text_size(data.text, style.text, style.box.width);
-  element->fixed_size.y += text_size.y;
-
-  if (auto width = std::get_if<LengthFixed>(&style.box.width)) {
-    element->fixed_size.x += width->value;
-  } else {
-    element->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&style.box.width)) {
-      element->dynamic_size.x = width->weight;
-    }
-  }
 }
 
 void TextBoxSystem::render(ConstElement element) const {
@@ -38,7 +27,7 @@ void TextBoxSystem::render(ConstElement element) const {
   const auto& style = data.style;
 
   res.text_renderer
-      .queue_text(element->position, data.text, style.text, style.box.width);
+      .queue_text(element->position, data.text, style.text, LengthWrap());
 }
 
 } // namespace datagui

@@ -49,25 +49,37 @@ void CheckboxSystem::render(ConstElement element) const {
   const auto& data = element.data<CheckboxData>();
   const auto& style = data.style;
 
-  res.geometry_renderer.queue_box(element->box(), style.box);
+  res.geometry_renderer.queue_box(
+      element->box(),
+      style.bg_color,
+      style.border_width,
+      style.border_color,
+      style.radius);
 
   if (!data.checked) {
     return;
   }
 
-  Boxf checked_box;
-  checked_box.lower = minimum(
-      element->position + style.box.border_width.offset() +
+  Boxf icon_box;
+  icon_box.lower = minimum(
+      element->position + style.border_width.offset() +
           style.inner_padding.offset(),
       element->box().center());
-  checked_box.upper = maximum(
-      element->position + element->size -
-          style.box.border_width.offset_opposite() -
+  icon_box.upper = maximum(
+      element->position + element->size - style.border_width.offset_opposite() -
           style.inner_padding.offset_opposite(),
       element->box().center());
 
+  float icon_radius = 0;
+  if (!element->box().empty() && style.radius > 0) {
+    float size_ratio = std::min(
+        icon_box.size().x / element->box().size().x,
+        icon_box.size().y / element->box().size().y);
+    icon_radius = std::max<float>(0, size_ratio * style.radius);
+  }
+
   res.geometry_renderer
-      .queue_box(checked_box, style.icon_color, 0, Color::Black(), 0);
+      .queue_box(icon_box, style.icon_color, 0, Color::Black(), icon_radius);
 }
 
 void CheckboxSystem::mouse_event(Element element, const MouseEvent& event) {

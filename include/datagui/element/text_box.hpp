@@ -7,18 +7,11 @@
 namespace datagui {
 
 struct TextBoxStyle {
-  BoxStyle box;
+  BoxDims padding;
   TextStyle text;
 
   void apply(const StyleManager& style) {
-    // TODO: Does this need the full BoxStyle struct?
-    box.width = LengthWrap();
-    box.height = LengthWrap();
-    style.text_padding(box.padding);
-    box.bg_color = Color::Clear();
-    box.border_width = 0;
-    box.border_color = Color::Black();
-    box.radius = 0;
+    style.text_padding(padding);
     text.apply(style);
   }
 };

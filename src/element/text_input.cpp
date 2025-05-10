@@ -42,19 +42,19 @@ void TextInputSystem::set_layout_input(Element element) const {
   const auto& data = element.data<TextInputData>();
   const auto& style = data.style;
 
-  element->fixed_size = (style.box.border_width + style.box.padding).size();
+  element->fixed_size = style.border_width.size() + style.padding.size();
   element->dynamic_size = Vecf::Zero();
   element->floating = 0;
 
   Vecf text_size =
-      res.font_manager.text_size(data.text, style.text, style.box.width);
+      res.font_manager.text_size(data.text, style.text, style.width);
   element->fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&style.box.width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.width)) {
     element->fixed_size.x += width->value;
   } else {
     element->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&style.box.width)) {
+    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
       element->dynamic_size.x = width->weight;
     }
   }
@@ -66,29 +66,35 @@ void TextInputSystem::render(ConstElement element) const {
 
   const std::string& text = element->focused ? active_text : data.text;
 
+  Color border_color;
+  if (element->in_focus_tree) {
+    border_color = style.border_color.multiply(style.input.focus_color_factor);
+  } else {
+    border_color = style.border_color;
+  }
+
   res.geometry_renderer.queue_box(
       element->box(),
-      style.box.bg_color,
-      style.box.border_width,
-      element->in_focus_tree ? style.focus_color : style.box.border_color,
-      style.box.radius);
+      style.bg_color,
+      style.border_width,
+      border_color,
+      0);
 
   Vecf text_position =
-      element->position + (style.box.border_width + style.box.padding).offset();
+      element->position + style.border_width.offset() + style.padding.offset();
 
   if (element->focused) {
     render_selection(
         res.font_manager.font_structure(style.text.font, style.text.font_size),
         style.text,
-        style.box.width,
+        style.width,
         text,
         text_position,
         active_selection,
         res.geometry_renderer);
   }
 
-  res.text_renderer
-      .queue_text(text_position, text, style.text, style.box.width);
+  res.text_renderer.queue_text(text_position, text, style.text, style.width);
 }
 
 void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
@@ -96,7 +102,7 @@ void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
   const auto& style = data.style;
 
   Vecf text_origin =
-      element->position + (style.box.border_width + style.box.padding).offset();
+      element->position + style.border_width.offset() + style.padding.offset();
 
   const auto& font =
       res.font_manager.font_structure(style.text.font, style.text.font_size);
@@ -105,11 +111,8 @@ void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
     active_text = data.text;
   }
 
-  std::size_t cursor_pos = find_cursor(
-      font,
-      active_text,
-      style.box.width,
-      event.position - text_origin);
+  std::size_t cursor_pos =
+      find_cursor(font, active_text, style.width, event.position - text_origin);
 
   if (event.action == MouseAction::Press) {
     active_selection.reset(cursor_pos);

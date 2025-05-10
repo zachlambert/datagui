@@ -8,20 +8,20 @@
 namespace datagui {
 
 struct CheckboxStyle {
-  float size;
-  BoxStyle box;
+  float size = 0;
+  Color bg_color = Color::Black();
+  BoxDims border_width = 0;
+  Color border_color = Color::Black();
+  float radius = 0;
   Color icon_color = Color::Black();
   BoxDims inner_padding = 0;
 
   void apply(const StyleManager& style) {
     style.checkbox_size(size);
-    box.width = LengthFixed(size);
-    box.height = LengthFixed(size);
-    box.padding = BoxDims(0);
-    style.checkbox_bg_color(box.bg_color);
-    style.checkbox_border_color(box.border_color);
-    style.checkbox_border_width(box.border_width);
-    style.checkbox_radius(box.radius);
+    style.checkbox_bg_color(bg_color);
+    style.checkbox_border_width(border_width);
+    style.checkbox_border_color(border_color);
+    style.checkbox_radius(radius);
     style.checkbox_icon_color(icon_color);
     style.checkbox_inner_padding(inner_padding);
   }

@@ -23,14 +23,14 @@ enum class Prop {
   // =============================
   // Layout Elements
 
-  // Linear
-  LayoutDirection,
-  LayoutAlignment,
-  LayoutLength,
-  LayoutWidth,
-  LayoutBgColor,
-  LayoutOuterPadding,
-  LayoutInnerPadding,
+  // Series
+  SeriesDirection,
+  SeriesAlignment,
+  SeriesLength,
+  SeriesWidth,
+  SeriesBgColor,
+  SeriesOuterPadding,
+  SeriesInnerPadding,
 
   // =============================
   // Primitive Elements
@@ -90,19 +90,29 @@ enum class Prop {
 };
 
 #define STYLE_PROP(label, prop, type)                                          \
-  void label(type&& value) {                                                   \
+  Style& label(type&& value) {                                                 \
     props.insert<type>(prop, std::forward<type>(value));                       \
+    return *this;                                                              \
   }
 
 #define STYLE_LENGTH(label, prop)                                              \
-  void label##_fixed(float value) {                                            \
+  Style& label##_fixed(float value) {                                          \
     props.insert<Length>(prop, LengthFixed(value));                            \
+    return *this;                                                              \
   }                                                                            \
-  void label##_wrap() {                                                        \
+  Style& label##_wrap() {                                                      \
     props.insert<Length>(prop, LengthWrap());                                  \
+    return *this;                                                              \
   }                                                                            \
-  void label##_dynamic(float weight = 1) {                                     \
+  Style& label##_dynamic(float weight = 1) {                                   \
     props.insert<Length>(prop, LengthDynamic(weight));                         \
+    return *this;                                                              \
+  }
+
+#define STYLE_VALUE(label, prop, type, value)                                  \
+  Style& label() {                                                             \
+    props.insert<type>(prop, value);                                           \
+    return *this;                                                              \
   }
 
 class Style {
@@ -119,13 +129,36 @@ public:
 
   // Layout Elements
 
-  STYLE_LENGTH(layout_length, Prop::LayoutLength)
-  STYLE_LENGTH(layout_width, Prop::LayoutWidth)
-  STYLE_PROP(layout_bg_color, Prop::LayoutBgColor, Color)
-  STYLE_PROP(layout_padding, Prop::LayoutPadding, BoxDims)
-  STYLE_PROP(layout_inner_border_width, Prop::LayoutInnerBorderWidth, float)
-  STYLE_PROP(layout_inner_border_color, Prop::LayoutInnerBorderColor, Color)
-  STYLE_PROP(layout_alignment, Prop::LayoutAlignment, Alignment)
+  STYLE_VALUE(
+      series_horizontal,
+      Prop::SeriesDirection,
+      Direction,
+      Direction::Horizontal)
+  STYLE_VALUE(
+      series_vertical,
+      Prop::SeriesDirection,
+      Direction,
+      Direction::Vertical)
+  STYLE_VALUE(
+      series_align_center,
+      Prop::SeriesAlignment,
+      Alignment,
+      Alignment::Center)
+  STYLE_VALUE(
+      series_align_min,
+      Prop::SeriesAlignment,
+      Alignment,
+      Alignment::Min)
+  STYLE_VALUE(
+      series_align_max,
+      Prop::SeriesAlignment,
+      Alignment,
+      Alignment::Max)
+  STYLE_LENGTH(layout_length, Prop::SeriesLength)
+  STYLE_LENGTH(layout_width, Prop::SeriesWidth)
+  STYLE_PROP(series_bg_color, Prop::SeriesBgColor, Color)
+  STYLE_PROP(series_outer_padding, Prop::SeriesOuterPadding, BoxDims)
+  STYLE_PROP(series_inner_padding, Prop::SeriesInnerPadding, float)
 
   // Primitive Elements
 
@@ -231,13 +264,13 @@ public:
 
   // Layout Elements
 
-  STYLE_PROP(layout_length, Prop::LayoutLength, Length)
-  STYLE_PROP(layout_width, Prop::LayoutWidth, Length)
-  STYLE_PROP(layout_bg_color, Prop::LayoutBgColor, Color)
-  STYLE_PROP(layout_padding, Prop::LayoutPadding, BoxDims)
-  STYLE_PROP(layout_inner_border_width, Prop::LayoutInnerBorderWidth, float)
-  STYLE_PROP(layout_inner_border_color, Prop::LayoutInnerBorderColor, Color)
-  STYLE_PROP(layout_alignment, Prop::LayoutAlignment, Alignment)
+  STYLE_PROP(series_direction, Prop::SeriesDirection, Direction)
+  STYLE_PROP(series_alignment, Prop::SeriesAlignment, Alignment)
+  STYLE_PROP(series_length, Prop::SeriesLength, Length)
+  STYLE_PROP(series_width, Prop::SeriesWidth, Length)
+  STYLE_PROP(series_bg_color, Prop::SeriesBgColor, Color)
+  STYLE_PROP(series_outer_padding, Prop::SeriesOuterPadding, BoxDims)
+  STYLE_PROP(series_inner_padding, Prop::SeriesInnerPadding, float)
 
   // Primitive elements
 
@@ -290,19 +323,6 @@ private:
 };
 #undef STYLE_PROP
 
-struct BoxStyle {
-  Length width;
-  Length height;
-  BoxDims padding = 0;
-  BoxDims border_width = 0;
-  Color border_color = Color::Black();
-  Color bg_color = Color::Clear();
-  float radius = 0;
-
-  // No apply method, since different elements set these
-  // values from different properties
-};
-
 struct TextStyle {
   Font font = Font::DejaVuSans;
   int font_size = 24;
@@ -330,28 +350,6 @@ struct InputStyle {
     style.active_color_factor(active_color_factor);
     style.hover_color_factor(hover_color_factor);
     style.focus_color_factor(focus_color_factor);
-  }
-
-  Color active_color(const Color& base) const {
-    return Color(
-        base.r * active_color_factor,
-        base.g * active_color_factor,
-        base.b * active_color_factor,
-        base.a);
-  }
-  Color hover_color(const Color& base) const {
-    return Color(
-        base.r * hover_color_factor,
-        base.g * hover_color_factor,
-        base.b * hover_color_factor,
-        base.a);
-  }
-  Color focus_color(const Color& base) const {
-    return Color(
-        base.r * focus_color_factor,
-        base.g * focus_color_factor,
-        base.b * focus_color_factor,
-        base.a);
   }
 };
 

@@ -8,22 +8,20 @@
 namespace datagui {
 
 struct TextInputStyle {
-  BoxStyle box;
+  Length width = LengthDynamic(1);
+  BoxDims padding;
+  Color bg_color;
+  BoxDims border_width;
+  Color border_color;
   TextStyle text;
   InputStyle input;
 
-  TextInputStyle() {
-    box.width = LengthDynamic(1);
-  }
-
   void apply(const StyleManager& style) {
-    style.text_input_width(box.width);
-    box.height = LengthWrap();
-    style.text_padding(box.padding);
-    style.text_input_bg_color(box.bg_color);
-    style.text_input_border_width(box.border_width);
-    style.text_input_border_color(box.border_color);
-    box.radius = 0;
+    style.text_input_width(width);
+    style.text_padding(padding);
+    style.text_input_bg_color(bg_color);
+    style.text_input_border_width(border_width);
+    style.text_input_border_color(border_color);
     text.apply(style);
     input.apply(style);
   }

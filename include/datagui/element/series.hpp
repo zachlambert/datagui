@@ -6,31 +6,35 @@
 
 namespace datagui {
 
-struct VerticalLayoutStyle {
-  BoxStyle box;
+struct SeriesStyle {
+  Direction direction = Direction::Vertical;
   Alignment alignment = Alignment::Center;
+  Length length;
+  Length width;
+  Color bg_color;
+  BoxDims outer_padding;
+  float inner_padding;
 
   void apply(const StyleManager& style) {
-    style.layout_length(box.height);
-    style.layout_width(box.width);
-    style.layout_padding(box.padding);
-    style.layout_bg_color(box.bg_color);
-    box.border_width = 0;
-    box.border_color = Color::Black();
-    box.radius = 0;
-    style.layout_alignment(alignment);
+    style.series_direction(direction);
+    style.series_alignment(alignment);
+    style.series_length(length);
+    style.series_width(width);
+    style.series_bg_color(bg_color);
+    style.series_outer_padding(outer_padding);
+    style.series_inner_padding(inner_padding);
   }
 };
 
-struct VerticalLayoutData {
-  VerticalLayoutStyle style;
+struct SeriesData {
+  SeriesStyle style;
   float overrun = 0;
   float scroll_pos = 0;
 };
 
-class VerticalLayoutSystem : public ElementSystemImpl<VerticalLayoutData> {
+class SeriesSystem : public ElementSystemImpl<SeriesData> {
 public:
-  VerticalLayoutSystem(Resources& res) : res(res) {}
+  SeriesSystem(Resources& res) : res(res) {}
 
   void visit(Element element);
 

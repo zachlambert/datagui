@@ -19,19 +19,19 @@ void ButtonSystem::set_layout_input(Element element) const {
   const auto& data = element.data<ButtonData>();
   const auto& style = data.style;
 
-  element->fixed_size = (style.box.border_width + style.box.padding).size();
+  element->fixed_size = style.border_width.size() + style.padding.size();
   element->dynamic_size = Vecf::Zero();
   element->floating = false;
 
   Vecf text_size =
-      res.font_manager.text_size(data.text, style.text, style.box.width);
+      res.font_manager.text_size(data.text, style.text, style.width);
   element->fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&style.box.width)) {
+  if (auto width = std::get_if<LengthFixed>(&style.width)) {
     element->fixed_size.x += width->value;
   } else {
     element->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&style.box.width)) {
+    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
       element->dynamic_size.x = width->weight;
     }
   }
@@ -41,20 +41,34 @@ void ButtonSystem::render(ConstElement element) const {
   const auto& data = element.data<ButtonData>();
   const auto& style = data.style;
 
+  Color bg_color;
+  if (data.down) {
+    bg_color = style.bg_color.multiply(style.input.active_color_factor);
+  } else if (element->hovered) {
+    bg_color = style.bg_color.multiply(style.input.hover_color_factor);
+  } else {
+    bg_color = style.bg_color;
+  }
+
+  Color border_color;
+  if (element->in_focus_tree) {
+    border_color = style.border_color.multiply(style.input.focus_color_factor);
+  } else {
+    border_color = style.border_color;
+  }
+
   res.geometry_renderer.queue_box(
       element->box(),
-      data.down          ? style.active_color()
-      : element->hovered ? style.hover_color()
-                         : style.box.bg_color,
-      style.box.border_width,
-      element->in_focus_tree ? style.focus_color() : style.box.border_color,
-      style.box.radius);
+      bg_color,
+      style.border_width,
+      border_color,
+      style.radius);
 
   Vecf text_position =
-      element->position + (style.box.border_width + style.box.padding).offset();
+      element->position + style.border_width.offset() + style.padding.offset();
 
   res.text_renderer
-      .queue_text(text_position, data.text, style.text, style.box.width);
+      .queue_text(text_position, data.text, style.text, style.width);
 }
 
 void ButtonSystem::mouse_event(Element element, const MouseEvent& event) {
