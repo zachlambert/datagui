@@ -21,7 +21,7 @@ int main() {
 
   datagui::Style style_horiz_expand;
   style_horiz_expand.layout_direction(datagui::Direction::Horizontal);
-  style_horiz_expand.width(1.0_dynamic);
+  style_horiz_expand.width_dynamic();
   style_horiz_expand.padding({10, 50, 10, 20});
   style_horiz_expand.bg_color({10, 50, 10, 20});
   style_horiz_expand.layout_alignment(datagui::Alignment::Bottom);

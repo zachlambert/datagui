@@ -9,7 +9,7 @@ int main() {
   datagui::Style style_root;
   style_root.padding(10);
   style_root.layout_inner_padding(10);
-  style_root.width(1.0_dynamic);
+  style_root.width_dynamic();
 
   datagui::Style style_dropdown;
   style_dropdown.padding(5);
@@ -19,17 +19,17 @@ int main() {
   style_dropdown.border_color(datagui::Color::Black());
 
   datagui::Style style_input;
-  style_input.width(1.0_dynamic);
+  style_input.width_dynamic();
 
   datagui::Style style_floating_1;
   style_floating_1.float_absolute({150, 50, 150, 150});
   style_floating_1.bg_color(datagui::Color::Hsl(270, 0.9, 0.6));
-  style_floating_1.float_bar_close_button_enable(true);
+  style_floating_1.close_button_enable(true);
 
   datagui::Style style_floating_2;
   style_floating_2.float_absolute({200, 200, 200, 50});
   style_floating_2.bg_color(datagui::Color::Hsl(900, 0.9, 0.6));
-  style_floating_2.float_bar_close_button_enable(true);
+  style_floating_2.close_button_enable(true);
 
   std::vector<std::string> choices = {"red", "green", "blue"};
 

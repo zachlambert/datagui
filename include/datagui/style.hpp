@@ -122,7 +122,12 @@ public:
 
   STYLE_PROP(dropdown_inner_border_width, Prop::DropdownInnerBorderWidth, float)
 
-  STYLE_PROP(float_type, Prop::FloatType, FloatType)
+  void float_absolute(const BoxDims& margin) {
+    props.insert<FloatType>(Prop::FloatType, FloatTypeAbsolute(margin));
+  }
+  void float_relative(const Vecf& offset, const Vecf& size) {
+    props.insert<FloatType>(Prop::FloatType, FloatTypeRelative(offset, size));
+  }
   STYLE_PROP(float_bg_color, Prop::FloatBgColor, Color)
 
   STYLE_PROP(title_bar_enable, Prop::TitleBarEnable, bool)

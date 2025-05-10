@@ -14,8 +14,8 @@ int main() {
   items_layout.border_width(2);
   items_layout.padding(20);
   items_layout.layout_direction(datagui::Direction::Vertical);
-  items_layout.height(100.0_fixed);
-  items_layout.width(1.0_dynamic);
+  items_layout.height_fixed(100);
+  items_layout.width_dynamic();
 
   while (gui.running()) {
     gui.begin();
