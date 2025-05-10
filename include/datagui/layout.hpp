@@ -112,4 +112,18 @@ inline BoxDims operator/(BoxDims lhs, float rhs) {
   return lhs;
 }
 
+struct FloatTypeAbsolute {
+  BoxDims margin;
+  FloatTypeAbsolute(const BoxDims& margin) : margin(margin) {}
+};
+
+struct FloatTypeRelative {
+  Vecf offset;
+  Vecf size;
+  FloatTypeRelative(const Vecf& offset, const Vecf& size) :
+      offset(offset), size(size) {}
+};
+
+using FloatType = std::variant<FloatTypeAbsolute, FloatTypeRelative>;
+
 } // namespace datagui

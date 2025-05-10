@@ -214,6 +214,9 @@ public:
       handler.move(header_to->type, other.data_ + offset, data_ + offset);
       offset += handler.size(header_to->type);
     }
+    // Reset other.data_ so it doesn't free in its destructor
+    other.data_ = nullptr;
+    other.size_ = 0;
   }
 
   // TODO: Implement if required
