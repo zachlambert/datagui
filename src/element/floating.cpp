@@ -30,7 +30,7 @@ void FloatingSystem::set_input_state(Element element) const {
 }
 
 void FloatingSystem::set_dependent_state(Element element) const {
-  const auto& data = element.data<FloatingData>();
+  auto& data = element.data<FloatingData>();
   const auto& style = data.style;
 
   Vecf position = element->float_box.lower;
@@ -75,10 +75,43 @@ void FloatingSystem::set_dependent_state(Element element) const {
     element->float_box.lower = element->box().lower + type->offset;
     element->float_box.upper = element->float_box.lower + type->size;
   }
+
+  if (!style.title_bar_enable) {
+    return;
+  }
+  const auto& bar = style.title_bar;
+  auto& bar_box = data.title_bar_box;
+
+  bar_box.lower = element->float_box.lower;
+  bar_box.upper.x = element->float_box.upper.x;
+  bar_box.upper.y = element->float_box.lower.y +
+                    res.font_manager.text_height(style.text) +
+                    bar.border_width.size().y + bar.padding.size().y;
+
+  res.geometry_renderer
+      .queue_box(bar_box, bar.bg_color, bar.border_width, bar.border_color, 0);
+
+  data.title_bar_text_width = element->float_box.size().x -
+                              bar.border_width.size().x - bar.padding.size().x;
+
+  if (!style.close_button_enable) {
+    return;
+  }
+  const auto& button = style.close_button;
+  auto& button_box = data.close_button_box;
+
+  Vecf text_size =
+      res.font_manager.text_size("close", style.text, LengthWrap());
+  Vecf button_size = text_size + button.padding.size();
+  data.title_bar_text_width -= (button_size.x + bar.padding.left);
+  data.title_bar_text_width = std::max(0.f, data.title_bar_text_width);
+
+  button_box.upper = bar_box.upper - bar.border_width.offset_opposite();
+  button_box.lower = button_box.upper - button_size;
 }
 
 void FloatingSystem::render(ConstElement element) const {
-  const auto& data = element.data<FloatingData>();
+  auto& data = element.data<FloatingData>();
   const auto& style = data.style;
 
   res.geometry_renderer
@@ -89,42 +122,12 @@ void FloatingSystem::render(ConstElement element) const {
   }
   const auto& bar = style.title_bar;
 
-  Boxf bar_box;
-  bar_box.lower = element->float_box.lower;
-  bar_box.upper.x = element->float_box.upper.x;
-  bar_box.upper.y = element->float_box.lower.y +
-                    res.font_manager.text_height(style.text) +
-                    bar.border_width.size().y + bar.padding.size().y;
-
-  res.geometry_renderer
-      .queue_box(bar_box, bar.bg_color, bar.border_width, bar.border_color, 0);
-
-  float title_width = element->float_box.size().x - bar.border_width.size().x -
-                      bar.padding.size().x;
-
-  if (style.close_button_enable) {
-    const auto& button = style.close_button;
-
-    Vecf text_size =
-        res.font_manager.text_size("close", style.text, LengthWrap());
-    Vecf button_size = text_size + button.padding.size();
-    title_width -= (button_size.x + bar.padding.left);
-    title_width = std::max(0.f, title_width);
-
-    Boxf button_box;
-    button_box.upper = bar_box.upper - bar.border_width.offset_opposite();
-    button_box.lower = button_box.upper - button_size;
-    res.geometry_renderer
-        .queue_box(button_box, button.color, 0, Color::Black(), 0);
-
-    res.text_renderer.queue_text(
-        button_box.lower + bar.padding.offset(),
-        "close",
-        style.text.font,
-        style.text.font_size,
-        style.text.text_color,
-        LengthWrap());
-  }
+  res.geometry_renderer.queue_box(
+      data.title_bar_box,
+      bar.bg_color,
+      bar.border_width,
+      bar.border_color,
+      0);
 
   res.text_renderer.queue_text(
       element->float_box.lower + bar.border_width.offset() +
@@ -133,7 +136,26 @@ void FloatingSystem::render(ConstElement element) const {
       style.text.font,
       style.text.font_size,
       style.text.text_color,
-      LengthFixed(title_width));
+      LengthFixed(data.title_bar_text_width));
+
+  if (!style.close_button_enable) {
+    return;
+  }
+
+  res.geometry_renderer.queue_box(
+      data.close_button_box,
+      style.close_button.color,
+      0,
+      Color::Black(),
+      0);
+
+  res.text_renderer.queue_text(
+      data.close_button_box.lower + bar.padding.offset(),
+      "close",
+      style.text.font,
+      style.text.font_size,
+      style.text.text_color,
+      LengthWrap());
 }
 
 void FloatingSystem::mouse_event(Element element, const MouseEvent& event) {
@@ -150,20 +172,7 @@ void FloatingSystem::mouse_event(Element element, const MouseEvent& event) {
     return;
   }
 
-  const auto& bar = style.title_bar;
-
-  float title_width = element->float_box.size().x - bar.border_width.size().x -
-                      bar.padding.size().x;
-
-  Vecf text_size =
-      res.font_manager.text_size("close", style.text, LengthWrap());
-  Vecf button_size = text_size + bar.padding.size();
-  Vecf button_pos;
-  button_pos.x =
-      element->float_box.upper.x - bar.border_width.right - button_size.x;
-  button_pos.y = element->float_box.lower.y + bar.border_width.top;
-
-  if (!Boxf(button_pos, button_pos + button_size).contains(event.position)) {
+  if (!data.close_button_box.contains(event.position)) {
     return;
   }
   data.open = false;

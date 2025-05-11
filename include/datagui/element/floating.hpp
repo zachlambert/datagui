@@ -58,6 +58,9 @@ struct FloatingData {
   std::string title;
   bool open = false;
   bool open_changed = false;
+  Boxf title_bar_box;
+  float title_bar_text_width;
+  Boxf close_button_box;
 };
 
 class FloatingSystem : public ElementSystemImpl<FloatingData> {
