@@ -1,4 +1,4 @@
-#include <datagui/window.hpp>
+#include <datagui/gui.hpp>
 #include <datapack/common.hpp>
 #include <datapack/labelled_variant.hpp>
 #include <datapack/util/debug.hpp>
@@ -57,23 +57,12 @@ DATAPACK_INLINE(Foo, value, packer) {
 } // namespace datapack
 
 int main() {
-  datagui::Window::Config config;
-  config.title = "Datagui Example 2";
-  datagui::Style style;
-  style.element.border_width = 2;
-  // style.text_input.highlight_color = datagui::Color::Gray(0.5);
-  style.element.focus_color = datagui::Color::Gray(0.8);
-
+  datagui::Gui gui;
   Foo foo;
 
-  datagui::Window window(config, style);
-
-  while (window.running()) {
-    window.render_begin();
-    if (window.value(foo)) {
-      std::cout << "Foo changed:\n" << datapack::debug(foo) << std::endl;
-    }
-    window.render_end();
+  while (gui.running()) {
+    gui.begin();
+    gui.end();
   }
   return 0;
 }
