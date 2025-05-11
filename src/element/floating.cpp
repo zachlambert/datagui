@@ -23,13 +23,13 @@ void FloatingSystem::visit(
   }
 }
 
-void FloatingSystem::set_layout_input(Element element) const {
+void FloatingSystem::set_input_state(Element element) const {
   element->fixed_size = Vecf::Zero();
   element->dynamic_size = Vecf::Zero();
   element->floating = true;
 }
 
-void FloatingSystem::set_child_layout_output(Element element) const {
+void FloatingSystem::set_dependent_state(Element element) const {
   const auto& data = element.data<FloatingData>();
   const auto& style = data.style;
 
@@ -65,15 +65,11 @@ void FloatingSystem::set_child_layout_output(Element element) const {
     }
     position.y += child->size.y;
   }
-}
 
-void FloatingSystem::set_float_box(ConstElement window, Element element) const {
-  const auto& data = element.data<FloatingData>();
-  const auto& style = data.style;
   if (auto type = std::get_if<FloatingTypeAbsolute>(&style.float_type)) {
-    element->float_box.lower = window->box().lower + type->margin.offset();
+    element->float_box.lower = element->layer_box.lower + type->margin.offset();
     element->float_box.upper =
-        window->box().upper - type->margin.offset_opposite();
+        element->layer_box.upper - type->margin.offset_opposite();
   }
   if (auto type = std::get_if<FloatingTypeRelative>(&style.float_type)) {
     element->float_box.lower = element->box().lower + type->offset;

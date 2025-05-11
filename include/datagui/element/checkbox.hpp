@@ -40,7 +40,7 @@ public:
   const bool* visit(Element element, const bool& initial_checked);
   void visit(Element element, const Variable<bool>& checked);
 
-  void set_layout_input(Element element) const override;
+  void set_input_state(Element element) const override;
   void render(ConstElement element) const override;
 
   void mouse_event(Element element, const MouseEvent& event) override;

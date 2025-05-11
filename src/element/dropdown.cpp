@@ -44,7 +44,7 @@ void DropdownSystem::visit(
   }
 }
 
-void DropdownSystem::set_layout_input(Element element) const {
+void DropdownSystem::set_input_state(Element element) const {
   const auto& data = element.data<DropdownData>();
   const auto& style = data.style;
 
@@ -76,7 +76,7 @@ void DropdownSystem::set_layout_input(Element element) const {
   element->floating = data.open && !data.choices.empty();
 }
 
-void DropdownSystem::set_float_box(ConstElement root, Element element) const {
+void DropdownSystem::set_dependent_state(Element element) const {
   element->float_box = element->box();
   if (!element->floating) {
     return;

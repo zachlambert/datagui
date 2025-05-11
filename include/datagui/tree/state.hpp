@@ -19,6 +19,7 @@ struct State {
     return Boxf(position, position + size);
   }
 
+  Boxf layer_box;
   int layer = 0;
   bool floating = false;
   Boxf float_box;

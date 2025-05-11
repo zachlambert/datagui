@@ -38,7 +38,7 @@ void TextInputSystem::visit(
   }
 }
 
-void TextInputSystem::set_layout_input(Element element) const {
+void TextInputSystem::set_input_state(Element element) const {
   const auto& data = element.data<TextInputData>();
   const auto& style = data.style;
 
