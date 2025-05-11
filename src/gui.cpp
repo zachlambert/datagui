@@ -74,6 +74,18 @@ void Gui::text_input(const Variable<std::string>& text, const Style& style) {
   res.style_manager.pop_temp();
 }
 
+void Gui::text_input_write(const std::string& value, const Style& style) {
+  auto element = tree.next(text_input_system.type());
+  res.style_manager.push_temp(style);
+  text_input_system.write(element, value);
+  res.style_manager.pop_temp();
+}
+
+const std::string& Gui::text_input_read() {
+  auto element = tree.next(text_input_system.type());
+  return text_input_system.read(element);
+}
+
 bool Gui::button(const std::string& text, const Style& style) {
   auto element = tree.next(button_system.type());
   res.style_manager.push_temp(style);

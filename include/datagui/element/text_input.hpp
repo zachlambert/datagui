@@ -40,6 +40,9 @@ public:
   const std::string* visit(Element element, const std::string& initial_text);
   void visit(Element element, const Variable<std::string>& text);
 
+  void write(Element element, const std::string& text) const;
+  const std::string& read(Element element) const;
+
   void set_input_state(Element element) const override;
   void render(ConstElement element) const override;
 

@@ -38,6 +38,22 @@ void TextInputSystem::visit(
   }
 }
 
+void TextInputSystem::write(Element element, const std::string& text) const {
+  auto& data = element.data<TextInputData>();
+  if (element.rerender()) {
+    data.style.apply(res.style_manager);
+  }
+  data.text = text;
+}
+
+const std::string& TextInputSystem::read(Element element) const {
+  const auto& data = element.data<TextInputData>();
+  if (element.is_new()) {
+    throw ElementError("Cannot read from a new element");
+  }
+  return data.text;
+}
+
 void TextInputSystem::set_input_state(Element element) const {
   const auto& data = element.data<TextInputData>();
   const auto& style = data.style;
