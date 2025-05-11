@@ -3,37 +3,29 @@
 #include <iostream>
 
 int main() {
-  using namespace datagui::literals;
-
   datagui::Gui gui;
 
-  auto style_root = [](datagui::VerticalLayoutStyle& style) {
-    style.padding = {40, 10};
-    style.inner_padding = 10;
-    style.horizontal_alignment = datagui::AlignmentX::Center;
-  };
+  datagui::Style style_root;
+  style_root.series_vertical();
+  style_root.series_outer_padding({40, 10});
+  style_root.series_inner_padding(10);
 
-  auto style_h1 = [](datagui::TextStyle& style) {
-    style.text_color = datagui::Color::Red();
-    style.font_size = 40;
-  };
+  datagui::Style style_h1;
+  style_h1.text_color(datagui::Color::Red());
+  style_h1.font_size(40);
 
-  auto style_text = [](datagui::TextStyle& style) { style.font_size = 30; };
+  datagui::Style style_text;
+  style_text.font_size(30);
 
-  auto style_horiz_expand = [](datagui::HorizontalLayoutStyle& style) {
-    style.length = 1.0_dynamic;
-    style.width = _wrap;
-    style.padding = {10, 50, 10, 20};
-    style.bg_color = datagui::Color::Hsl(260, 0.4, 0.9);
-    style.vertical_alignment = datagui::AlignmentY::Bottom;
-    style.border_width = {4, 12};
-    style.border_color = datagui::Color::Hsl(260, 0.4, 0.7);
-    style.radius = 10;
-  };
+  datagui::Style style_box;
+  style_box.series_horizontal();
+  style_box.series_width_dynamic();
+  style_box.series_outer_padding({10, 50, 10, 20});
+  style_box.series_bg_color({10, 50, 10, 20});
+  style_box.series_align_max();
 
-  auto style_text_input = [](datagui::TextInputStyle& style) {
-    style.font_size = 40;
-  };
+  datagui::Style style_text_input;
+  style_text_input.font_size(40);
 
   auto timer = gui.variable<int>(0);
   using clock_t = std::chrono::high_resolution_clock;
@@ -43,15 +35,15 @@ int main() {
 
   while (gui.running()) {
     gui.begin();
-    if (gui.vertical_layout(style_root)) {
+    if (gui.series_begin(style_root)) {
       gui.text_box("Welcome Screen!", style_h1);
 
       auto name = gui.variable<std::string>("");
 
-      if (gui.horizontal_layout(style_horiz_expand)) {
+      if (gui.series_begin(style_box)) {
         gui.text_box("Name: ", style_text);
         gui.text_input(name, style_text_input);
-        gui.layout_end();
+        gui.series_end();
       }
       if (auto value = gui.checkbox()) {
         std::cout << "Checked: " << *value << std::endl;
@@ -70,13 +62,13 @@ int main() {
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
       }
 
-      if (gui.horizontal_layout()) {
+      if (gui.series_begin()) {
         gui.checkbox(timer_paused);
         gui.text_box("Paused");
-        gui.layout_end();
+        gui.series_end();
       }
 
-      gui.layout_end();
+      gui.series_end();
     }
     gui.end();
 

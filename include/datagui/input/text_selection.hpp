@@ -56,7 +56,7 @@ void selection_text_event(
 
 void render_selection(
     const FontStructure& font,
-    const SelectableTextStyle& style,
+    const TextStyle& style,
     Length width,
     const std::string& text,
     const Vecf& origin,

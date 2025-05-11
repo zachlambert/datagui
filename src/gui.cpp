@@ -9,122 +9,140 @@ using namespace std::placeholders;
 
 Gui::Gui(const Window::Config& config) :
     window(config),
-    text_renderer(font_manager),
-    horizontal_layout_system(geometry_renderer),
-    vertical_layout_system(geometry_renderer),
-    text_box_system(font_manager, text_renderer),
-    text_input_system(font_manager, text_renderer, geometry_renderer),
-    button_system(font_manager, geometry_renderer, text_renderer),
-    drop_down_system(font_manager, text_renderer, geometry_renderer),
-    window_system(geometry_renderer, text_renderer, font_manager),
-    checkbox_system(geometry_renderer) {
+    series_system(res),
+    text_box_system(res),
+    text_input_system(res),
+    button_system(res),
+    dropdown_system(res),
+    floating_system(res),
+    checkbox_system(res) {
 
-  horizontal_layout_system.register_type(tree, systems);
-  vertical_layout_system.register_type(tree, systems);
+  series_system.register_type(tree, systems);
   text_box_system.register_type(tree, systems);
   text_input_system.register_type(tree, systems);
   button_system.register_type(tree, systems);
-  drop_down_system.register_type(tree, systems);
-  window_system.register_type(tree, systems);
+  dropdown_system.register_type(tree, systems);
+  floating_system.register_type(tree, systems);
   checkbox_system.register_type(tree, systems);
 
-  geometry_renderer.init();
-  text_renderer.init();
+  res.geometry_renderer.init();
+  res.text_renderer.init();
 }
 
 bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::horizontal_layout(const SetHorizontalLayoutStyle& set_style) {
-  auto element = tree.next(horizontal_layout_system.type());
-  horizontal_layout_system.visit(element, set_style);
-  return tree.down_if();
+bool Gui::series_begin(const Style& style) {
+  auto element = tree.next(series_system.type());
+  res.style_manager.push_temp(style);
+  series_system.visit(element);
+  res.style_manager.pop_temp();
+  if (tree.down_if()) {
+    res.style_manager.down();
+    return true;
+  }
+  return false;
 }
 
-bool Gui::vertical_layout(
-    const std::function<void(VerticalLayoutStyle&)>& set_style) {
-  auto element = tree.next(vertical_layout_system.type());
-  vertical_layout_system.visit(element, set_style);
-  return tree.down_if();
-}
-
-void Gui::layout_end() {
+void Gui::series_end() {
+  res.style_manager.up();
   tree.up();
 }
 
-void Gui::text_box(
-    const std::string& text,
-    const std::function<void(TextBoxStyle&)>& set_style) {
+void Gui::text_box(const std::string& text, const Style& style) {
   auto element = tree.next(text_box_system.type());
-  text_box_system.visit(element, text, set_style);
+  res.style_manager.push_temp(style);
+  text_box_system.visit(element, text);
+  res.style_manager.pop_temp();
 }
 
 const std::string* Gui::text_input(
     const std::string& initial_text,
-    const std::function<void(TextInputStyle&)>& set_style) {
+    const Style& style) {
   auto element = tree.next(text_input_system.type());
-  return text_input_system.visit(element, initial_text, set_style);
+  res.style_manager.push_temp(style);
+  auto result = text_input_system.visit(element, initial_text);
+  res.style_manager.pop_temp();
+  return result;
 }
 
-void Gui::text_input(
-    const Variable<std::string>& text,
-    const std::function<void(TextInputStyle&)>& set_style) {
+void Gui::text_input(const Variable<std::string>& text, const Style& style) {
   auto element = tree.next(text_input_system.type());
-  text_input_system.visit(element, text, set_style);
+  res.style_manager.push_temp(style);
+  text_input_system.visit(element, text);
+  res.style_manager.pop_temp();
 }
 
-bool Gui::button(
-    const std::string& text,
-    const std::function<void(ButtonStyle&)>& set_style) {
+bool Gui::button(const std::string& text, const Style& style) {
   auto element = tree.next(button_system.type());
-  return button_system.visit(element, text, set_style);
+  res.style_manager.push_temp(style);
+  auto result = button_system.visit(element, text);
+  res.style_manager.pop_temp();
+  return result;
 }
 
-const int* Gui::drop_down(
+const int* Gui::dropdown(
     const std::vector<std::string>& choices,
     int initial_choice,
-    const SetDropDownStyle& set_style) {
-  auto element = tree.next(drop_down_system.type());
-  return drop_down_system.visit(element, choices, initial_choice, set_style);
+    const Style& style) {
+  auto element = tree.next(dropdown_system.type());
+  res.style_manager.push_temp(style);
+  auto result = dropdown_system.visit(element, choices, initial_choice);
+  res.style_manager.pop_temp();
+  return result;
 }
 
-void Gui::drop_down(
+void Gui::dropdown(
     const std::vector<std::string>& choices,
     const Variable<int>& choice,
-    const SetDropDownStyle& set_style) {
-  auto element = tree.next(drop_down_system.type());
-  drop_down_system.visit(element, choices, choice, set_style);
+    const Style& style) {
+  auto element = tree.next(dropdown_system.type());
+  res.style_manager.push_temp(style);
+  dropdown_system.visit(element, choices, choice);
+  res.style_manager.pop_temp();
 }
 
-bool Gui::floating(
+bool Gui::floating_begin(
     const Variable<bool>& open,
     const std::string& title,
-    const SetWindowStyle& set_style) {
+    const Style& style) {
   if (!*open) {
     return false;
   }
 
-  auto element = tree.next(window_system.type(), "floating");
-  window_system.visit(element, open, title, set_style);
+  auto element = tree.next(floating_system.type(), "floating");
+  res.style_manager.push_temp(style);
+  floating_system.visit(element, open, title);
+  res.style_manager.pop_temp();
   if (!*open) {
     return false;
   }
-  return tree.down_if();
+  if (tree.down_if()) {
+    res.style_manager.down();
+    return true;
+  }
+  return false;
 }
 
-const bool* Gui::checkbox(
-    const bool& initial_checked,
-    const SetCheckboxStyle& set_style) {
-  auto element = tree.next(checkbox_system.type());
-  return checkbox_system.visit(element, initial_checked, set_style);
+void Gui::floating_end() {
+  res.style_manager.up();
+  tree.up();
 }
 
-void Gui::checkbox(
-    const Variable<bool>& checked,
-    const SetCheckboxStyle& set_style) {
+const bool* Gui::checkbox(const bool& initial_checked, const Style& style) {
   auto element = tree.next(checkbox_system.type());
-  checkbox_system.visit(element, checked, set_style);
+  res.style_manager.push_temp(style);
+  auto result = checkbox_system.visit(element, initial_checked);
+  res.style_manager.pop_temp();
+  return result;
+}
+
+void Gui::checkbox(const Variable<bool>& checked, const Style& style) {
+  auto element = tree.next(checkbox_system.type());
+  res.style_manager.push_temp(style);
+  checkbox_system.visit(element, checked);
+  res.style_manager.pop_temp();
 }
 
 void Gui::begin() {
@@ -160,8 +178,8 @@ void Gui::render() {
 
   while (true) {
     if (layer_stack.empty()) {
-      geometry_renderer.render(window.size());
-      text_renderer.render(window.size());
+      res.geometry_renderer.render(window.size());
+      res.text_renderer.render(window.size());
       if (queued_elements.empty()) {
         break;
       }
@@ -173,8 +191,8 @@ void Gui::render() {
     const auto& element = state.element;
 
     if (!state.first_visit) {
-      geometry_renderer.pop_mask();
-      text_renderer.pop_mask();
+      res.geometry_renderer.pop_mask();
+      res.text_renderer.pop_mask();
       layer_stack.pop();
       continue;
     }
@@ -186,7 +204,7 @@ void Gui::render() {
     systems.render(element);
 
     if (debug_mode_) {
-      geometry_renderer.queue_box(
+      res.geometry_renderer.queue_box(
           Boxf(element->position, element->position + element->size),
           Color::Clear(),
           2,
@@ -196,7 +214,7 @@ void Gui::render() {
           0);
 
       if (element->floating) {
-        geometry_renderer.queue_box(
+        res.geometry_renderer.queue_box(
             element->float_box,
             Color::Clear(),
             2,
@@ -216,20 +234,20 @@ void Gui::render() {
         ss << "\nlayer: " << element->layer;
         std::string debug_text = ss.str();
 
-        BoxStyle box_style;
-        box_style.bg_color = Color::White();
-        box_style.border_width = 2;
         TextStyle text_style;
         text_style.font_size = 24;
         auto text_size =
-            font_manager.text_size(debug_text, text_style, LengthWrap());
+            res.font_manager.text_size(debug_text, text_style, LengthWrap());
 
-        geometry_renderer.queue_box(
+        res.geometry_renderer.queue_box(
             Boxf(
                 window.size() - text_size - Vecf::Constant(15),
                 window.size() - Vecf::Constant(5)),
-            box_style);
-        text_renderer.queue_text(
+            Color::White(),
+            2,
+            Color::Black(),
+            0);
+        res.text_renderer.queue_text(
             window.size() - text_size - Vecf::Constant(10),
             debug_text,
             text_style,
@@ -238,11 +256,11 @@ void Gui::render() {
     }
 
     if (element->floating) {
-      geometry_renderer.push_mask(element->float_box);
-      text_renderer.push_mask(element->float_box);
+      res.geometry_renderer.push_mask(element->float_box);
+      res.text_renderer.push_mask(element->float_box);
     } else {
-      geometry_renderer.push_mask(element->box());
-      text_renderer.push_mask(element->box());
+      res.geometry_renderer.push_mask(element->box());
+      res.text_renderer.push_mask(element->box());
     }
 
     for (auto child = element.first_child(); child; child = child.next()) {

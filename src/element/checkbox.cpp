@@ -4,17 +4,13 @@ namespace datagui {
 
 const bool* CheckboxSystem::visit(
     Element element,
-    const bool& initial_checked,
-    const SetCheckboxStyle& set_style) {
+    const bool& initial_checked) {
   auto& data = element.data<CheckboxData>();
   if (element.is_new()) {
     data.checked = initial_checked;
-    printf("Creating with checked = %i\n", data.checked);
   }
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    data.style.apply(res.style_manager);
   }
   if (data.changed) {
     data.changed = false;
@@ -23,19 +19,14 @@ const bool* CheckboxSystem::visit(
   return nullptr;
 }
 
-void CheckboxSystem::visit(
-    Element element,
-    const Variable<bool>& checked,
-    const SetCheckboxStyle& set_style) {
+void CheckboxSystem::visit(Element element, const Variable<bool>& checked) {
   auto& data = element.data<CheckboxData>();
 
   if (element.is_new()) {
     data.checked = *checked;
   }
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    data.style.apply(res.style_manager);
   }
   if (data.changed) {
     data.changed = false;
@@ -58,7 +49,7 @@ void CheckboxSystem::render(ConstElement element) const {
   const auto& data = element.data<CheckboxData>();
   const auto& style = data.style;
 
-  geometry_renderer.queue_box(
+  res.geometry_renderer.queue_box(
       element->box(),
       style.bg_color,
       style.border_width,
@@ -69,18 +60,26 @@ void CheckboxSystem::render(ConstElement element) const {
     return;
   }
 
-  Boxf checked_box;
-  checked_box.lower = minimum(
+  Boxf icon_box;
+  icon_box.lower = minimum(
       element->position + style.border_width.offset() +
-          style.check_padding.offset(),
+          style.inner_padding.offset(),
       element->box().center());
-  checked_box.upper = maximum(
+  icon_box.upper = maximum(
       element->position + element->size - style.border_width.offset_opposite() -
-          style.check_padding.offset_opposite(),
+          style.inner_padding.offset_opposite(),
       element->box().center());
 
-  geometry_renderer
-      .queue_box(checked_box, style.check_color, 0, Color::Black(), 0);
+  float icon_radius = 0;
+  if (!element->box().empty() && style.radius > 0) {
+    float size_ratio = std::min(
+        icon_box.size().x / element->box().size().x,
+        icon_box.size().y / element->box().size().y);
+    icon_radius = std::max<float>(0, size_ratio * style.radius);
+  }
+
+  res.geometry_renderer
+      .queue_box(icon_box, style.icon_color, 0, Color::Black(), icon_radius);
 }
 
 void CheckboxSystem::mouse_event(Element element, const MouseEvent& event) {

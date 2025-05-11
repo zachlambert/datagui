@@ -1,8 +1,8 @@
 #pragma once
 
 #include "datagui/tree/state.hpp"
-#include "datagui/tree/unique_any.hpp"
-#include "datagui/tree/vector_map.hpp"
+#include "datagui/types/unique_any.hpp"
+#include "datagui/types/vector_map.hpp"
 #include <assert.h>
 #include <functional>
 #include <stack>

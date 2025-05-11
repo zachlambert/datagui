@@ -1,42 +1,44 @@
 #pragma once
 
 #include "datagui/input/text_selection.hpp"
+#include "datagui/resources.hpp"
 #include "datagui/style.hpp"
 #include "datagui/tree/element_system.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
 
 namespace datagui {
 
 struct CheckboxStyle {
-  Color bg_color = Color::Gray(0.8);
-  Color border_color = Color::Gray(0.2);
-  Color check_color = Color::Gray(0.2);
-  BoxDims border_width = 2;
-  BoxDims check_padding = 2;
-  float radius = 0;
   float size = 24;
+  Color bg_color = Color::White();
+  BoxDims border_width = 2;
+  Color border_color = Color::Black();
+  float radius = 0;
+  Color icon_color = Color::Black();
+  BoxDims inner_padding = 2;
+
+  void apply(const StyleManager& style) {
+    style.checkbox_size(size);
+    style.checkbox_bg_color(bg_color);
+    style.checkbox_border_width(border_width);
+    style.checkbox_border_color(border_color);
+    style.checkbox_radius(radius);
+    style.checkbox_icon_color(icon_color);
+    style.checkbox_inner_padding(inner_padding);
+  }
 };
-using SetCheckboxStyle = SetStyle<CheckboxStyle>;
 
 struct CheckboxData {
+  CheckboxStyle style;
   bool checked = false;
   bool changed = false;
-  CheckboxStyle style;
 };
 
 class CheckboxSystem : public ElementSystemImpl<CheckboxData> {
 public:
-  CheckboxSystem(GeometryRenderer& geometry_renderer) :
-      geometry_renderer(geometry_renderer) {}
+  CheckboxSystem(Resources& res) : res(res) {}
 
-  const bool* visit(
-      Element element,
-      const bool& initial_checked,
-      const SetCheckboxStyle& set_style);
-  void visit(
-      Element element,
-      const Variable<bool>& checked,
-      const SetCheckboxStyle& set_style);
+  const bool* visit(Element element, const bool& initial_checked);
+  void visit(Element element, const Variable<bool>& checked);
 
   void set_layout_input(Element element) const override;
   void render(ConstElement element) const override;
@@ -45,7 +47,7 @@ public:
   void key_event(Element element, const KeyEvent& event) override;
 
 private:
-  GeometryRenderer& geometry_renderer;
+  Resources& res;
 
   std::string active_text;
   TextSelection active_selection;

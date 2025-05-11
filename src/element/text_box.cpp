@@ -3,16 +3,11 @@
 
 namespace datagui {
 
-void TextBoxSystem::visit(
-    Element element,
-    const std::string& text,
-    const SetTextBoxStyle& set_style) {
+void TextBoxSystem::visit(Element element, const std::string& text) {
   auto& data = element.data<TextBoxData>();
   if (element.rerender()) {
     data.text = text;
-    if (set_style) {
-      set_style(data.style);
-    }
+    data.style.apply(res.style_manager);
   }
 }
 
@@ -20,28 +15,29 @@ void TextBoxSystem::set_layout_input(Element element) const {
   const auto& data = element.data<TextBoxData>();
   const auto& style = data.style;
 
-  element->fixed_size = (style.border_width + style.padding).size();
+  element->fixed_size =
+      res.font_manager.text_size(data.text, style.text, LengthWrap()) +
+      style.padding.size();
   element->dynamic_size = Vecf::Zero();
   element->floating = false;
-
-  Vecf text_size = font_manager.text_size(data.text, style, style.width);
-  element->fixed_size.y += text_size.y;
-
-  if (auto width = std::get_if<LengthFixed>(&style.width)) {
-    element->fixed_size.x += width->value;
-  } else {
-    element->fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&style.width)) {
-      element->dynamic_size.x = width->weight;
-    }
-  }
 }
 
 void TextBoxSystem::render(ConstElement element) const {
   const auto& data = element.data<TextBoxData>();
   const auto& style = data.style;
 
-  text_renderer.queue_text(element->position, data.text, style, style.width);
+  Boxf mask;
+  mask.lower = element->position + style.padding.offset();
+  mask.upper =
+      element->position + element->size - style.padding.offset_opposite();
+
+  res.text_renderer.push_mask(mask);
+  res.text_renderer.queue_text(
+      element->position + style.padding.offset(),
+      data.text,
+      style.text,
+      LengthWrap());
+  res.text_renderer.pop_mask();
 }
 
 } // namespace datagui

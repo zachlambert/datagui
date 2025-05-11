@@ -18,13 +18,12 @@ find_package(Freetype REQUIRED)
 
 add_library(datagui SHARED
   src/element/button.cpp
-  src/element/drop_down.cpp
-  src/element/horizontal_layout.cpp
+  src/element/checkbox.cpp
+  src/element/dropdown.cpp
+  src/element/floating.cpp
+  src/element/series.cpp
   src/element/text_box.cpp
   src/element/text_input.cpp
-  src/element/vertical_layout.cpp
-  src/element/window.cpp
-  src/element/checkbox.cpp
 
   src/input/text_selection.cpp
 
@@ -65,8 +64,11 @@ target_link_libraries(example_gui datagui)
 add_executable(example_gui2 examples/gui2.cpp)
 target_link_libraries(example_gui2 datagui)
 
-add_executable(example_drop_down examples/drop_down.cpp)
-target_link_libraries(example_drop_down datagui)
+add_executable(example_gui_layers examples/gui_layers.cpp)
+target_link_libraries(example_gui_layers datagui)
+
+add_executable(example_prop_stack examples/prop_stack.cpp)
+target_link_libraries(example_prop_stack datagui)
 
 # Create install target
 

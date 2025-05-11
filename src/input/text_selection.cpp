@@ -265,7 +265,7 @@ void selection_key_event(
 
 void render_selection(
     const FontStructure& font,
-    const SelectableTextStyle& style,
+    const TextStyle& style,
     Length width,
     const std::string& text,
     const Vecf& origin,
@@ -275,9 +275,6 @@ void render_selection(
   // Render cursor only
 
   if (selection.span() == 0) {
-    if (style.disabled) {
-      return;
-    }
     Vecf offset = cursor_offset(font, text, width, selection.begin);
     geometry_renderer.queue_box(
         Boxf(

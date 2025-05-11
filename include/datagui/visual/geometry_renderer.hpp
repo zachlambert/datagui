@@ -21,6 +21,7 @@ public:
       Color border_color,
       float radius);
 
+#if 0
   void queue_box(const Boxf& box, const BoxStyle& style) {
     queue_box(
         box,
@@ -29,6 +30,7 @@ public:
         style.border_color,
         style.radius);
   }
+#endif
 
   void render(const Vecf& viewport_size);
 

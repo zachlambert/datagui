@@ -4,16 +4,13 @@ namespace datagui {
 
 const std::string* TextInputSystem::visit(
     Element element,
-    const std::string& initial_value,
-    const SetTextInputStyle& set_style) {
+    const std::string& initial_value) {
   auto& data = element.data<TextInputData>();
   if (element.is_new()) {
     data.text = initial_value;
   }
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    data.style.apply(res.style_manager);
   }
   if (data.changed) {
     data.changed = false;
@@ -24,17 +21,14 @@ const std::string* TextInputSystem::visit(
 
 void TextInputSystem::visit(
     Element element,
-    const Variable<std::string>& text,
-    const SetTextInputStyle& set_style) {
+    const Variable<std::string>& text) {
   auto& data = element.data<TextInputData>();
 
   if (element.is_new()) {
     data.text = *text;
   }
   if (element.rerender()) {
-    if (set_style) {
-      set_style(data.style);
-    }
+    data.style.apply(res.style_manager);
   }
   if (data.changed) {
     data.changed = false;
@@ -48,11 +42,12 @@ void TextInputSystem::set_layout_input(Element element) const {
   const auto& data = element.data<TextInputData>();
   const auto& style = data.style;
 
-  element->fixed_size = (style.border_width + style.padding).size();
+  element->fixed_size = style.border_width.size() + style.padding.size();
   element->dynamic_size = Vecf::Zero();
   element->floating = 0;
 
-  Vecf text_size = font_manager.text_size(data.text, style, style.width);
+  Vecf text_size =
+      res.font_manager.text_size(data.text, style.text, style.width);
   element->fixed_size.y += text_size.y;
 
   if (auto width = std::get_if<LengthFixed>(&style.width)) {
@@ -71,28 +66,44 @@ void TextInputSystem::render(ConstElement element) const {
 
   const std::string& text = element->focused ? active_text : data.text;
 
-  geometry_renderer.queue_box(
+  Color border_color;
+  if (element->in_focus_tree) {
+    border_color = style.border_color.multiply(style.input.focus_color_factor);
+  } else {
+    border_color = style.border_color;
+  }
+
+  res.geometry_renderer.queue_box(
       element->box(),
       style.bg_color,
       style.border_width,
-      element->in_focus_tree ? style.focus_color : style.border_color,
-      style.radius);
+      border_color,
+      0);
 
   Vecf text_position =
-      element->position + (style.border_width + style.padding).offset();
+      element->position + style.border_width.offset() + style.padding.offset();
 
   if (element->focused) {
     render_selection(
-        font_manager.font_structure(style.font, style.font_size),
-        style,
+        res.font_manager.font_structure(style.text.font, style.text.font_size),
+        style.text,
         style.width,
         text,
         text_position,
         active_selection,
-        geometry_renderer);
+        res.geometry_renderer);
   }
 
-  text_renderer.queue_text(text_position, text, style, style.width);
+  Boxf mask;
+  mask.lower =
+      element->position + style.padding.offset() + style.border_width.offset();
+  mask.upper = element->position + element->size -
+               style.padding.offset_opposite() -
+               style.border_width.offset_opposite();
+
+  res.text_renderer.push_mask(mask);
+  res.text_renderer.queue_text(text_position, text, style.text, style.width);
+  res.text_renderer.pop_mask();
 }
 
 void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
@@ -100,9 +111,10 @@ void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {
   const auto& style = data.style;
 
   Vecf text_origin =
-      element->position + (style.border_width + style.padding).offset();
+      element->position + style.border_width.offset() + style.padding.offset();
 
-  const auto& font = font_manager.font_structure(style.font, style.font_size);
+  const auto& font =
+      res.font_manager.font_structure(style.text.font, style.text.font_size);
 
   if (event.action == MouseAction::Press) {
     active_text = data.text;

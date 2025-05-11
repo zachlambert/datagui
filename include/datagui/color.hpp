@@ -88,6 +88,10 @@ public:
     error = std::max(error, std::abs(a - other.a));
     return error <= max_error;
   }
+
+  Color multiply(float factor) const {
+    return Color(r * factor, g * factor, b * factor, a);
+  }
 };
 
 } // namespace datagui

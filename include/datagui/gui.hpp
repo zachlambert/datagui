@@ -3,21 +3,17 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "datagui/resources.hpp"
 #include "datagui/tree/tree.hpp"
 #include "datagui/visual/window.hpp"
 
-#include "datagui/visual/font.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/text_renderer.hpp"
-
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
-#include "datagui/element/drop_down.hpp"
-#include "datagui/element/horizontal_layout.hpp"
+#include "datagui/element/dropdown.hpp"
+#include "datagui/element/floating.hpp"
+#include "datagui/element/series.hpp"
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
-#include "datagui/element/vertical_layout.hpp"
-#include "datagui/element/window.hpp"
 
 namespace datagui {
 
@@ -32,53 +28,52 @@ public:
   void begin();
   void end();
 
-  bool horizontal_layout(const SetHorizontalLayoutStyle& = nullptr);
-  bool vertical_layout(const SetVerticalLayoutStyle& = nullptr);
-  void layout_end();
+  bool series_begin(const Style& = Style());
+  void series_end();
 
-  void text_box(
-      const std::string& text,
-      const SetTextBoxStyle& set_style = nullptr);
-
-  const std::string* text_input(
-      const std::string& initial_text = "",
-      const SetTextInputStyle& set_style = nullptr);
-
-  void text_input(
-      const Variable<std::string>& text,
-      const SetTextInputStyle& set_style = nullptr);
-
-  bool button(
-      const std::string& text,
-      const SetButtonStyle& set_style = nullptr);
-
-  const int* drop_down(
-      const std::vector<std::string>& choices,
-      int initial_choice = -1,
-      const SetDropDownStyle& set_style = nullptr);
-
-  void drop_down(
-      const std::vector<std::string>& choices,
-      const Variable<int>& choice,
-      const SetDropDownStyle& set_style = nullptr);
-
-  bool floating(
-      const Variable<bool>& open,
-      const std::string& title,
-      const SetWindowStyle& set_style = nullptr);
+  bool button(const std::string& text, const Style& style = Style());
 
   const bool* checkbox(
       const bool& initial_checked = false,
-      const SetCheckboxStyle& set_style = nullptr);
+      const Style& style = Style());
 
-  void checkbox(
-      const Variable<bool>& checked,
-      const SetCheckboxStyle& set_style = nullptr);
+  void checkbox(const Variable<bool>& checked, const Style& style = Style());
+
+  void text_box(const std::string& text, const Style& style = Style());
+
+  const std::string* text_input(
+      const std::string& initial_text = "",
+      const Style& style = Style());
+
+  void text_input(
+      const Variable<std::string>& text,
+      const Style& style = Style());
+
+  const int* dropdown(
+      const std::vector<std::string>& choices,
+      int initial_choice = -1,
+      const Style& style = Style());
+
+  void dropdown(
+      const std::vector<std::string>& choices,
+      const Variable<int>& choice,
+      const Style& style = Style());
+
+  bool floating_begin(
+      const Variable<bool>& open,
+      const std::string& title,
+      const Style& style = Style());
+
+  void floating_end();
 
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
     // Capture initial_value by value
     return tree.variable<T>([initial_value]() { return initial_value; });
+  }
+
+  void style(const Style& style) {
+    res.style_manager.push(style);
   }
 
 private:
@@ -98,17 +93,14 @@ private:
   Tree tree;
   bool debug_mode_ = false;
 
-  FontManager font_manager;
-  GeometryRenderer geometry_renderer;
-  TextRenderer text_renderer;
+  Resources res;
 
-  HorizontalLayoutSystem horizontal_layout_system;
-  VerticalLayoutSystem vertical_layout_system;
+  SeriesSystem series_system;
   TextBoxSystem text_box_system;
   TextInputSystem text_input_system;
   ButtonSystem button_system;
-  DropDownSystem drop_down_system;
-  WindowSystem window_system;
+  DropdownSystem dropdown_system;
+  FloatingSystem floating_system;
   CheckboxSystem checkbox_system;
   ElementSystems systems;
 

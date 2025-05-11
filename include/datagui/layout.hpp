@@ -6,8 +6,7 @@
 namespace datagui {
 
 enum class Direction { Horizontal, Vertical };
-enum class AlignmentX { Left, Center, Right };
-enum class AlignmentY { Top, Center, Bottom };
+enum class Alignment { Min, Center, Max };
 
 struct LengthFixed {
   float value = 0;
@@ -16,7 +15,7 @@ struct LengthFixed {
 };
 
 struct LengthDynamic {
-  float weight = 0;
+  float weight = 1;
   LengthDynamic() = default;
   LengthDynamic(float weight) : weight(weight) {}
 };
@@ -24,18 +23,6 @@ struct LengthDynamic {
 struct LengthWrap {};
 
 using Length = std::variant<LengthFixed, LengthDynamic, LengthWrap>;
-
-namespace literals {
-
-static constexpr Length _wrap = LengthWrap();
-inline Length operator""_fixed(long double value) {
-  return LengthFixed(value);
-}
-inline Length operator""_dynamic(long double weight) {
-  return LengthDynamic(weight);
-}
-
-} // namespace literals
 
 class BoxDims {
 public:
@@ -112,5 +99,19 @@ inline BoxDims operator/(BoxDims lhs, float rhs) {
   lhs /= rhs;
   return lhs;
 }
+
+struct FloatingTypeAbsolute {
+  BoxDims margin;
+  FloatingTypeAbsolute(const BoxDims& margin) : margin(margin) {}
+};
+
+struct FloatingTypeRelative {
+  Vecf offset;
+  Vecf size;
+  FloatingTypeRelative(const Vecf& offset, const Vecf& size) :
+      offset(offset), size(size) {}
+};
+
+using FloatingType = std::variant<FloatingTypeAbsolute, FloatingTypeRelative>;
 
 } // namespace datagui

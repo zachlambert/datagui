@@ -2,16 +2,11 @@
 
 namespace datagui {
 
-bool ButtonSystem::visit(
-    Element element,
-    const std::string& text,
-    const SetButtonStyle& set_style) {
+bool ButtonSystem::visit(Element element, const std::string& text) {
   auto& data = element.data<ButtonData>();
   if (element.rerender()) {
     data.text = text;
-    if (set_style) {
-      set_style(data.style);
-    }
+    data.style.apply(res.style_manager);
   }
   if (data.released) {
     data.released = false;
@@ -24,11 +19,12 @@ void ButtonSystem::set_layout_input(Element element) const {
   const auto& data = element.data<ButtonData>();
   const auto& style = data.style;
 
-  element->fixed_size = (style.border_width + style.padding).size();
+  element->fixed_size = style.border_width.size() + style.padding.size();
   element->dynamic_size = Vecf::Zero();
   element->floating = false;
 
-  Vecf text_size = font_manager.text_size(data.text, style, style.width);
+  Vecf text_size =
+      res.font_manager.text_size(data.text, style.text, style.width);
   element->fixed_size.y += text_size.y;
 
   if (auto width = std::get_if<LengthFixed>(&style.width)) {
@@ -45,19 +41,34 @@ void ButtonSystem::render(ConstElement element) const {
   const auto& data = element.data<ButtonData>();
   const auto& style = data.style;
 
-  geometry_renderer.queue_box(
+  Color bg_color;
+  if (data.down) {
+    bg_color = style.bg_color.multiply(style.input.active_color_factor);
+  } else if (element->hovered) {
+    bg_color = style.bg_color.multiply(style.input.hover_color_factor);
+  } else {
+    bg_color = style.bg_color;
+  }
+
+  Color border_color;
+  if (element->in_focus_tree) {
+    border_color = style.border_color.multiply(style.input.focus_color_factor);
+  } else {
+    border_color = style.border_color;
+  }
+
+  res.geometry_renderer.queue_box(
       element->box(),
-      data.down          ? style.down_color
-      : element->hovered ? style.hover_color
-                         : style.bg_color,
+      bg_color,
       style.border_width,
-      element->in_focus_tree ? style.focus_color : style.border_color,
+      border_color,
       style.radius);
 
   Vecf text_position =
-      element->position + (style.border_width + style.padding).offset();
+      element->position + style.border_width.offset() + style.padding.offset();
 
-  text_renderer.queue_text(text_position, data.text, style, style.width);
+  res.text_renderer
+      .queue_text(text_position, data.text, style.text, style.width);
 }
 
 void ButtonSystem::mouse_event(Element element, const MouseEvent& event) {
