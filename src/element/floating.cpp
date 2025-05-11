@@ -95,7 +95,7 @@ void FloatingSystem::render(ConstElement element) const {
 
     Vecf text_size =
         res.font_manager.text_size("close", style.text, LengthWrap());
-    Vecf button_size = text_size + button.padding.size() + bar.padding.size();
+    Vecf button_size = text_size + button.padding.size();
     title_width -= (button_size.x + bar.padding.left);
     title_width = std::max(0.f, title_width);
 

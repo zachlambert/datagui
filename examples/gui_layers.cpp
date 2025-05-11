@@ -22,11 +22,13 @@ int main() {
   datagui::Style style_floating_1;
   style_floating_1.floating_absolute({150, 50, 150, 150});
   style_floating_1.floating_bg_color(datagui::Color::Hsl(270, 0.9, 0.6));
+  style_floating_1.title_bar_enable(true);
   style_floating_1.close_button_enable(true);
 
   datagui::Style style_floating_2;
   style_floating_2.floating_absolute({200, 200, 200, 50});
   style_floating_2.floating_bg_color(datagui::Color::Hsl(900, 0.9, 0.6));
+  style_floating_2.title_bar_enable(true);
   style_floating_2.close_button_enable(true);
 
   std::vector<std::string> choices = {"red", "green", "blue"};
