@@ -36,7 +36,6 @@ public:
   const bool* checkbox(
       const bool& initial_checked = false,
       const Style& style = Style());
-
   void checkbox(const Variable<bool>& checked, const Style& style = Style());
 
   void text_box(const std::string& text, const Style& style = Style());
@@ -44,10 +43,12 @@ public:
   const std::string* text_input(
       const std::string& initial_text = "",
       const Style& style = Style());
-
   void text_input(
       const Variable<std::string>& text,
       const Style& style = Style());
+
+  void text_input_write(const std::string& value, const Style& style = Style());
+  const std::string& text_input_read();
 
   const int* dropdown(
       const std::vector<std::string>& choices,

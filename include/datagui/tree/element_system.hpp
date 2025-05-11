@@ -2,6 +2,7 @@
 
 #include "datagui/input/event.hpp"
 #include "datagui/tree/tree.hpp"
+#include <stdexcept>
 #include <unordered_map>
 
 namespace datagui {
@@ -98,6 +99,11 @@ public:
 
 private:
   int type_ = -1;
+};
+
+class ElementError : public std::runtime_error {
+public:
+  ElementError(const std::string& message) : std::runtime_error(message) {}
 };
 
 } // namespace datagui
