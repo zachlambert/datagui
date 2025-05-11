@@ -41,12 +41,28 @@ void FloatingSystem::set_child_layout_output(Element element) const {
                   res.font_manager.text_height(style.text);
   }
 
+  float fixed_size_y = 0;
+  float dynamic_size_y = 0;
+  for (auto child = element.first_child(); child; child = child.next()) {
+    fixed_size_y += child->fixed_size.y;
+    dynamic_size_y += child->dynamic_size.y;
+  }
+
+  float available_y = std::min(0.f, element->float_box.size().y - fixed_size_y);
+
   // Expected to only use one child, but allow for multiple children and
   // lay them out vertically without any padding, etc
   for (auto child = element.first_child(); child; child = child.next()) {
     child->position = position;
-    child->size.x = std::min(size.x, child->fixed_size.x);
+    if (child->dynamic_size.x > 0) {
+      child->size.x = size.x;
+    } else {
+      child->size.x = child->fixed_size.x;
+    }
     child->size.y = child->fixed_size.y;
+    if (child->dynamic_size.y > 0) {
+      child->size.y += available_y * child->dynamic_size.y / dynamic_size_y;
+    }
     position.y += child->size.y;
   }
 }
@@ -115,7 +131,8 @@ void FloatingSystem::render(ConstElement element) const {
   }
 
   res.text_renderer.queue_text(
-      element->float_box.lower + bar.padding.offset(),
+      element->float_box.lower + bar.border_width.offset() +
+          bar.padding.offset(),
       data.title,
       style.text.font,
       style.text.font_size,

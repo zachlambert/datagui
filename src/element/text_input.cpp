@@ -94,7 +94,16 @@ void TextInputSystem::render(ConstElement element) const {
         res.geometry_renderer);
   }
 
+  Boxf mask;
+  mask.lower =
+      element->position + style.padding.offset() + style.border_width.offset();
+  mask.upper = element->position + element->size -
+               style.padding.offset_opposite() -
+               style.border_width.offset_opposite();
+
+  res.text_renderer.push_mask(mask);
   res.text_renderer.queue_text(text_position, text, style.text, style.width);
+  res.text_renderer.pop_mask();
 }
 
 void TextInputSystem::mouse_event(Element element, const MouseEvent& event) {

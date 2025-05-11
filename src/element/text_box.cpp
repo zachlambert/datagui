@@ -26,8 +26,18 @@ void TextBoxSystem::render(ConstElement element) const {
   const auto& data = element.data<TextBoxData>();
   const auto& style = data.style;
 
-  res.text_renderer
-      .queue_text(element->position, data.text, style.text, LengthWrap());
+  Boxf mask;
+  mask.lower = element->position + style.padding.offset();
+  mask.upper =
+      element->position + element->size - style.padding.offset_opposite();
+
+  res.text_renderer.push_mask(mask);
+  res.text_renderer.queue_text(
+      element->position + style.padding.offset(),
+      data.text,
+      style.text,
+      LengthWrap());
+  res.text_renderer.pop_mask();
 }
 
 } // namespace datagui
