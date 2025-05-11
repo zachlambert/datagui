@@ -59,6 +59,9 @@ public:
   void require(const PropHandler& other, std::type_index type) {
     auto iter = types.find(type);
     if (iter == types.end()) {
+      auto iter_other = other.types.find(type);
+      assert(iter_other != other.types.end());
+
       types.emplace(type, other.types.at(type));
     }
   }
@@ -77,6 +80,10 @@ public:
 
   std::size_t size(std::type_index type) const {
     return types.at(type)->size();
+  }
+
+  bool contains(const std::type_index& type) const {
+    return types.contains(type);
   }
 
 private:
@@ -99,6 +106,10 @@ public:
     return header().key;
   }
 
+  const std::type_index& type() const {
+    return header().type;
+  }
+
   template <typename T>
   const T* as() {
     if (header().type != std::type_index(typeid(T))) {
@@ -112,7 +123,9 @@ private:
       std::span<const std::uint8_t> data,
       std::size_t offset,
       const PropHandler* handler) :
-      data(data), offset(offset), handler(handler) {}
+      data(data), offset(offset), handler(handler) {
+    assert(handler->contains(header().type));
+  }
 
   std::span<const std::uint8_t> data;
   std::size_t offset;
@@ -126,6 +139,8 @@ private:
   friend class PropIterator;
   template <typename K_>
   friend class PropContainer;
+  template <typename K_>
+  friend class PropStack;
 };
 
 template <typename K>
@@ -188,12 +203,13 @@ public:
     }
   }
 
-  PropContainer(const PropContainer& other) : handler(other.handler) {
+  PropContainer(const PropContainer& other) :
+      data_(nullptr), size_(0), alloc_size_(0), handler(other.handler) {
     std::size_t offset = 0;
     resize(other.size_);
     while (offset < other.size_) {
       const auto* header_from = ((const Header*)(other.data_ + offset));
-      auto* header_to = ((Header*)(other.data_ + offset));
+      auto* header_to = ((Header*)(data_ + offset));
       new (header_to) Header(*header_from);
       offset += aligned_size<Header>;
 
@@ -202,12 +218,16 @@ public:
     }
   }
 
-  PropContainer(PropContainer&& other) : handler(std::move(other.handler)) {
+  PropContainer(PropContainer&& other) :
+      data_(nullptr),
+      size_(0),
+      alloc_size_(0),
+      handler(std::move(other.handler)) {
     std::size_t offset = 0;
     resize(other.size_);
     while (offset < other.size_) {
       const auto* header_from = ((const Header*)(other.data_ + offset));
-      auto* header_to = ((Header*)(other.data_ + offset));
+      auto* header_to = ((Header*)(data_ + offset));
       new (header_to) Header(std::move(*header_from));
       offset += aligned_size<Header>;
 
@@ -258,6 +278,7 @@ public:
   std::size_t push(const PropValue<K>& value) {
     std::size_t start_offset = size_;
 
+    assert(value.handler->contains(value.type()));
     const auto& value_header =
         *((const Header*)(value.data.data() + value.offset));
     handler.require(*value.handler, value_header.type);
@@ -409,6 +430,8 @@ public:
   }
 
   void push(const PropValue<K>& value) {
+    assert(value.handler->contains(value.type()));
+
     std::size_t offset = props.push(value);
     auto iter = key_offsets.find(value.key());
     if (iter == key_offsets.end()) {
