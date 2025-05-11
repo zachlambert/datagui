@@ -52,8 +52,8 @@ public:
       const std::vector<std::string>& choices,
       const Variable<int>& choice);
 
-  void set_layout_input(Element element) const override;
-  void set_float_box(ConstElement root, Element element) const override;
+  void set_input_state(Element element) const override;
+  void set_dependent_state(Element element) const override;
   void render(ConstElement element) const override;
   void mouse_event(Element element, const MouseEvent& event) override;
 

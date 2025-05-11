@@ -36,7 +36,7 @@ void CheckboxSystem::visit(Element element, const Variable<bool>& checked) {
   }
 }
 
-void CheckboxSystem::set_layout_input(Element element) const {
+void CheckboxSystem::set_input_state(Element element) const {
   const auto& data = element.data<CheckboxData>();
   const auto& style = data.style;
 

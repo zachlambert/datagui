@@ -27,7 +27,7 @@ public:
 
   void visit(Element element, const std::string& text);
 
-  void set_layout_input(Element element) const override;
+  void set_input_state(Element element) const override;
   void render(ConstElement element) const override;
 
 private:

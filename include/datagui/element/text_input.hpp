@@ -40,7 +40,7 @@ public:
   const std::string* visit(Element element, const std::string& initial_text);
   void visit(Element element, const Variable<std::string>& text);
 
-  void set_layout_input(Element element) const override;
+  void set_input_state(Element element) const override;
   void render(ConstElement element) const override;
 
   void mouse_event(Element element, const MouseEvent& event) override;

@@ -9,7 +9,7 @@ void SeriesSystem::visit(Element element) {
   }
 }
 
-void SeriesSystem::set_layout_input(Element element) const {
+void SeriesSystem::set_input_state(Element element) const {
   auto& data = element.data<SeriesData>();
   const auto& style = data.style;
 
@@ -105,7 +105,7 @@ void SeriesSystem::set_layout_input(Element element) const {
   element->fixed_size += style.outer_padding.size();
 }
 
-void SeriesSystem::set_child_layout_output(Element element) const {
+void SeriesSystem::set_dependent_state(Element element) const {
   const auto& data = element.data<SeriesData>();
   const auto& style = data.style;
 

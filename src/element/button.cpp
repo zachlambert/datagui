@@ -15,7 +15,7 @@ bool ButtonSystem::visit(Element element, const std::string& text) {
   return false;
 }
 
-void ButtonSystem::set_layout_input(Element element) const {
+void ButtonSystem::set_input_state(Element element) const {
   const auto& data = element.data<ButtonData>();
   const auto& style = data.style;
 

@@ -305,7 +305,7 @@ void Gui::calculate_sizes() {
       }
       stack.pop();
 
-      systems.set_layout_input(element);
+      systems.set_input_state(element);
     }
   }
 
@@ -327,6 +327,7 @@ void Gui::calculate_sizes() {
       auto root = tree.root();
       root->position = Vecf::Zero();
       root->size = window.size();
+      root->layer_box = root->box();
       root->layer = 0;
       stack.push(root);
       layers.emplace(root);
@@ -345,8 +346,7 @@ void Gui::calculate_sizes() {
         }
 
         Element next_floating = layer.floating.top();
-        systems.set_float_box(layer.root, next_floating);
-
+        next_floating->layer_box = layer.root->box();
         next_floating->layer = next_layer;
         next_layer++;
         stack.push(next_floating);
@@ -370,9 +370,10 @@ void Gui::calculate_sizes() {
         continue;
       }
 
-      systems.set_child_layout_output(element);
+      systems.set_dependent_state(element);
 
       for (auto child = element.first_child(); child; child = child.next()) {
+        child->layer_box = element->layer_box;
         child->layer = element->layer;
         stack.push(child);
       }

@@ -11,7 +11,7 @@ void TextBoxSystem::visit(Element element, const std::string& text) {
   }
 }
 
-void TextBoxSystem::set_layout_input(Element element) const {
+void TextBoxSystem::set_input_state(Element element) const {
   const auto& data = element.data<TextBoxData>();
   const auto& style = data.style;
 

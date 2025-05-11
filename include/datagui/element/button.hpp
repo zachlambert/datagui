@@ -41,7 +41,7 @@ public:
 
   bool visit(Element element, const std::string& text);
 
-  void set_layout_input(Element element) const override;
+  void set_input_state(Element element) const override;
   void render(ConstElement element) const override;
 
   void mouse_event(Element element, const MouseEvent& event) override;

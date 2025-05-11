@@ -13,11 +13,9 @@ public:
   virtual int type() const = 0;
   virtual void register_type(Tree& tree, ElementSystems& systems) = 0;
 
-  virtual void set_layout_input(Element element) const = 0;
-  virtual void set_child_layout_output(Element element) const {}
-  virtual void set_float_box(ConstElement parent, Element element) const {
-    element->float_box = element->box();
-  }
+  virtual void set_input_state(Element element) const = 0;
+  virtual void set_dependent_state(Element element) const {}
+
   virtual void render(ConstElement element) const = 0;
 
   // Mouse press, hold or release inside the element bounding box
@@ -49,14 +47,11 @@ public:
     systems.emplace(type, system);
   }
 
-  void set_layout_input(Element element) const {
-    systems.at(element.type())->set_layout_input(element);
+  void set_input_state(Element element) const {
+    systems.at(element.type())->set_input_state(element);
   }
-  void set_child_layout_output(Element element) const {
-    systems.at(element.type())->set_child_layout_output(element);
-  }
-  void set_float_box(ConstElement window, Element element) const {
-    systems.at(element.type())->set_float_box(window, element);
+  void set_dependent_state(Element element) const {
+    systems.at(element.type())->set_dependent_state(element);
   }
   void render(ConstElement element) const {
     systems.at(element.type())->render(element);
