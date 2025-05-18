@@ -51,6 +51,11 @@ public:
       Element element,
       const std::vector<std::string>& choices,
       const Variable<int>& choice);
+  void write(
+      Element element,
+      const std::vector<std::string>& choices,
+      int choice);
+  int read(ConstElement element);
 
   void set_input_state(Element element) const override;
   void set_dependent_state(Element element) const override;

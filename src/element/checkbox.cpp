@@ -36,6 +36,19 @@ void CheckboxSystem::visit(Element element, const Variable<bool>& checked) {
   }
 }
 
+void CheckboxSystem::write(Element element, bool checked) {
+  auto& data = element.data<CheckboxData>();
+  if (element.rerender()) {
+    data.style.apply(res.style_manager);
+  }
+  data.checked = checked;
+}
+
+bool read(ConstElement element) {
+  const auto& data = element.data<CheckboxData>();
+  return data.checked;
+}
+
 void CheckboxSystem::set_input_state(Element element) const {
   const auto& data = element.data<CheckboxData>();
   const auto& style = data.style;

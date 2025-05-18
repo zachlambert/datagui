@@ -40,6 +40,9 @@ public:
   const bool* visit(Element element, const bool& initial_checked);
   void visit(Element element, const Variable<bool>& checked);
 
+  void write(Element element, bool checked);
+  bool read(ConstElement element);
+
   void set_input_state(Element element) const override;
   void render(ConstElement element) const override;
 
