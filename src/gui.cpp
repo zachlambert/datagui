@@ -33,6 +33,8 @@ bool Gui::running() const {
   return window.running();
 }
 
+// Series
+
 bool Gui::series_begin(const Style& style) {
   auto element = tree.next(series_system.type());
   res.style_manager.push_temp(style);
@@ -50,12 +52,26 @@ void Gui::series_end() {
   tree.up();
 }
 
+// Text box
+
 void Gui::text_box(const std::string& text, const Style& style) {
   auto element = tree.next(text_box_system.type());
   res.style_manager.push_temp(style);
   text_box_system.visit(element, text);
   res.style_manager.pop_temp();
 }
+
+// Button
+
+bool Gui::button(const std::string& text, const Style& style) {
+  auto element = tree.next(button_system.type());
+  res.style_manager.push_temp(style);
+  auto result = button_system.visit(element, text);
+  res.style_manager.pop_temp();
+  return result;
+}
+
+// Text input
 
 const std::string* Gui::text_input(
     const std::string& initial_text,
@@ -81,18 +97,41 @@ void Gui::text_input_write(const std::string& value, const Style& style) {
   res.style_manager.pop_temp();
 }
 
-const std::string& Gui::text_input_read() {
+std::string Gui::text_input_read() {
   auto element = tree.next(text_input_system.type());
   return text_input_system.read(element);
 }
 
-bool Gui::button(const std::string& text, const Style& style) {
-  auto element = tree.next(button_system.type());
+// Checkbox
+
+const bool* Gui::checkbox(const bool& initial_checked, const Style& style) {
+  auto element = tree.next(checkbox_system.type());
   res.style_manager.push_temp(style);
-  auto result = button_system.visit(element, text);
+  auto result = checkbox_system.visit(element, initial_checked);
   res.style_manager.pop_temp();
   return result;
 }
+
+void Gui::checkbox(const Variable<bool>& checked, const Style& style) {
+  auto element = tree.next(checkbox_system.type());
+  res.style_manager.push_temp(style);
+  checkbox_system.visit(element, checked);
+  res.style_manager.pop_temp();
+}
+
+void Gui::checkbox_write(bool value, const Style& style) {
+  auto element = tree.next(checkbox_system.type());
+  res.style_manager.push_temp(style);
+  checkbox_system.write(element, value);
+  res.style_manager.pop_temp();
+}
+
+bool Gui::checkbox_read() {
+  auto element = tree.next(checkbox_system.type());
+  return checkbox_system.read(element);
+}
+
+// Dropdown
 
 const int* Gui::dropdown(
     const std::vector<std::string>& choices,
@@ -114,6 +153,23 @@ void Gui::dropdown(
   dropdown_system.visit(element, choices, choice);
   res.style_manager.pop_temp();
 }
+
+void Gui::dropdown_write(
+    const std::vector<std::string>& choices,
+    int choice,
+    const Style& style) {
+  auto element = tree.next(dropdown_system.type());
+  res.style_manager.push_temp(style);
+  dropdown_system.write(element, choices, choice);
+  res.style_manager.pop_temp();
+}
+
+int Gui::dropdown_read() {
+  auto element = tree.next(dropdown_system.type());
+  return dropdown_system.read(element);
+}
+
+// Floating
 
 bool Gui::floating_begin(
     const Variable<bool>& open,
@@ -140,21 +196,6 @@ bool Gui::floating_begin(
 void Gui::floating_end() {
   res.style_manager.up();
   tree.up();
-}
-
-const bool* Gui::checkbox(const bool& initial_checked, const Style& style) {
-  auto element = tree.next(checkbox_system.type());
-  res.style_manager.push_temp(style);
-  auto result = checkbox_system.visit(element, initial_checked);
-  res.style_manager.pop_temp();
-  return result;
-}
-
-void Gui::checkbox(const Variable<bool>& checked, const Style& style) {
-  auto element = tree.next(checkbox_system.type());
-  res.style_manager.push_temp(style);
-  checkbox_system.visit(element, checked);
-  res.style_manager.pop_temp();
 }
 
 void Gui::begin() {

@@ -44,6 +44,25 @@ void DropdownSystem::visit(
   }
 }
 
+void DropdownSystem::write(
+    Element element,
+    const std::vector<std::string>& choices,
+    int choice) {
+  auto& data = element.data<DropdownData>();
+  if (element.is_new()) {
+    data.choices = choices;
+  }
+  if (element.rerender()) {
+    data.style.apply(res.style_manager);
+  }
+  data.choice = choice;
+}
+
+int read(ConstElement element) {
+  const auto& data = element.data<DropdownData>();
+  return data.choice;
+}
+
 void DropdownSystem::set_input_state(Element element) const {
   const auto& data = element.data<DropdownData>();
   const auto& style = data.style;
