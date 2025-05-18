@@ -1,9 +1,14 @@
 #include <datagui/gui.hpp>
 #include <datapack/debug.hpp>
 #include <datapack/labelled_variant.hpp>
-#include <datapack/std/optional.hpp>
 #include <iostream>
 #include <optional>
+
+#include <datapack/std/array.hpp>
+#include <datapack/std/optional.hpp>
+#include <datapack/std/string.hpp>
+#include <datapack/std/variant.hpp>
+#include <datapack/std/vector.hpp>
 
 struct Point {
   double x;
@@ -34,15 +39,19 @@ DATAPACK_LABELLED_VARIANT(Shape, 2);
 DATAPACK_LABELLED_VARIANT_DEF(Shape) = {"point", "line"};
 
 DATAPACK_INLINE(Point, value, packer) {
+  packer.object_begin();
   packer.value("x", value.x);
   packer.value("y", value.x);
+  packer.object_end();
 }
 
 DATAPACK_INLINE(Line, value, packer) {
+  packer.object_begin();
   packer.value("x1", value.x1);
   packer.value("y1", value.y1);
   packer.value("x2", value.x2);
   packer.value("y2", value.y2);
+  packer.object_end();
 }
 
 DATAPACK_INLINE(Foo, value, packer) {
@@ -50,19 +59,25 @@ DATAPACK_INLINE(Foo, value, packer) {
   packer.value("x", value.x);
   packer.value("y", value.y);
   packer.value("test", value.test);
-  packer.value("shape", value.shape);
-  packer.value("points", value.points);
-  packer.value("names", value.names);
+  // packer.value("shape", value.shape);
+  // packer.value("points", value.points);
+  // packer.value("names", value.names);
   packer.object_end();
 }
 } // namespace datapack
 
 int main() {
   datagui::Gui gui;
-  Foo foo;
 
   while (gui.running()) {
     gui.begin();
+    if (gui.series_begin()) {
+      auto var = gui.edit_variable<Foo>();
+      if (var.modified()) {
+        std::cout << datapack::debug(*var) << std::endl;
+      }
+      gui.series_end();
+    }
     gui.end();
   }
   return 0;
