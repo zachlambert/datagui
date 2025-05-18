@@ -47,6 +47,15 @@ bool Gui::series_begin(const Style& style) {
   return false;
 }
 
+void Gui::series_begin_force(const Style& style) {
+  auto element = tree.next(series_system.type());
+  res.style_manager.push_temp(style);
+  series_system.visit(element);
+  res.style_manager.pop_temp();
+  tree.down();
+  res.style_manager.down();
+}
+
 void Gui::series_end() {
   res.style_manager.up();
   tree.up();
@@ -97,7 +106,7 @@ void Gui::text_input_write(const std::string& value, const Style& style) {
   res.style_manager.pop_temp();
 }
 
-std::string Gui::text_input_read() {
+const std::string& Gui::text_input_read() {
   auto element = tree.next(text_input_system.type());
   return text_input_system.read(element);
 }

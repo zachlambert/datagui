@@ -44,7 +44,7 @@ void CheckboxSystem::write(Element element, bool checked) {
   data.checked = checked;
 }
 
-bool read(ConstElement element) {
+bool CheckboxSystem::read(ConstElement element) {
   const auto& data = element.data<CheckboxData>();
   return data.checked;
 }

@@ -27,7 +27,8 @@ public:
 
   // Series
 
-  bool series_begin(const Style& = Style());
+  bool series_begin(const Style& style = Style());
+  void series_begin_force(const Style& style = Style());
   void series_end();
 
   // Text box
@@ -49,7 +50,7 @@ public:
 
   void text_input_write(const std::string& value, const Style& style = Style());
 
-  std::string text_input_read();
+  const std::string& text_input_read();
 
   // Checkbox
 
