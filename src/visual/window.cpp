@@ -1,6 +1,5 @@
 #include "datagui/visual/window.hpp"
 
-#include "datagui/exception.hpp"
 #include <GLFW/glfw3.h>
 #include <assert.h>
 #include <cstring>
@@ -204,7 +203,7 @@ bool Window::running() const {
 
 void Window::open() {
   if (!glfwInit()) {
-    throw InitializationError("Failed to initialize glfw");
+    throw std::runtime_error("Failed to initialize glfw");
   }
 
   // GL 3.0 + GLSL 130
@@ -221,7 +220,7 @@ void Window::open() {
       nullptr);
 
   if (window == nullptr) {
-    throw InitializationError("Failed to create window");
+    throw std::runtime_error("Failed to create window");
   }
 
   glfwMakeContextCurrent(window);
@@ -233,7 +232,7 @@ void Window::open() {
   }
 
   if (glewInit() != GLEW_OK) {
-    throw InitializationError("Failed to initialise glew");
+    throw std::runtime_error("Failed to initialise glew");
   }
 
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -249,7 +248,7 @@ void Window::open() {
 
 void Window::close() {
   if (!window) {
-    throw WindowError("Window is already closed");
+    return;
   }
 
   glfwMakeContextCurrent(window);

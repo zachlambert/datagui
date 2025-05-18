@@ -1,8 +1,9 @@
 #include <datagui/gui.hpp>
-#include <datapack/common.hpp>
+#include <datapack/debug.hpp>
 #include <datapack/labelled_variant.hpp>
-#include <datapack/util/debug.hpp>
+#include <datapack/std/optional.hpp>
 #include <iostream>
+#include <optional>
 
 struct Point {
   double x;

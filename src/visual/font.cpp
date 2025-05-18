@@ -1,6 +1,5 @@
 #include "datagui/visual/font.hpp"
 
-#include "datagui/exception.hpp"
 #include "datagui/visual/shader.hpp"
 #include <GL/glew.h>
 #include <algorithm>
@@ -76,7 +75,7 @@ std::string find_font_path(Font font) {
   }
 
   if (candidates.empty()) {
-    throw InitializationError("Failed to find font");
+    throw std::runtime_error("Failed to find font");
   }
 
   std::sort(
@@ -98,12 +97,12 @@ FontStructure load_font(Font font, int font_size) {
 
   FT_Library ft_library;
   if (FT_Init_FreeType(&ft_library) != 0) {
-    throw InitializationError("Failed to initialize freetype library");
+    throw std::runtime_error("Failed to initialize freetype library");
   }
 
   FT_Face ft_face;
   if (FT_New_Face(ft_library, find_font_path(font).c_str(), 0, &ft_face) != 0) {
-    throw InitializationError("Failed to load font");
+    throw std::runtime_error("Failed to load font");
   }
 
   FT_Set_Pixel_Sizes(ft_face, 0, font_size);
@@ -128,7 +127,7 @@ FontStructure load_font(Font font, int font_size) {
   float texture_row_width = 0;
   for (int i = structure.char_first(); i < structure.char_end(); i++) {
     if (FT_Load_Char(ft_face, char(i), 0) != 0) {
-      throw InitializationError(
+      throw std::runtime_error(
           "Failed to load character: " + std::to_string(char(i)));
     }
 
