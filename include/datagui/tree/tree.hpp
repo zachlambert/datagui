@@ -67,7 +67,7 @@ struct VariableNode {
 
   UniqueAny data;
   UniqueAny data_new;
-  bool modified;
+  bool modified = false;
 
   // Linked list of data nodes for a given gui node
   int prev = -1;
@@ -133,7 +133,7 @@ private:
   int create_variable(int element);
   void remove_variable(int variable);
 
-  void variable_mutate(int variable);
+  void variable_mutate(int variable, bool deferred_set);
   void set_revisit(int node);
   void set_rerender(int node);
 
@@ -152,7 +152,7 @@ private:
 
   std::stack<int> variable_stack_;
   std::vector<int> queue_revisit_;
-  std::vector<int> queue_rerender_variables_;
+  std::vector<std::pair<int, bool>> queue_rerender_variables_;
   std::vector<int> queue_remove_;
   std::vector<int> modified_variables_;
 
@@ -182,13 +182,13 @@ public:
     static_assert(!IsConst);
     assert(tree->variables[variable].data.cast<T>());
     tree->variables[variable].data_new = UniqueAny::Make<T>(value);
-    tree->variable_mutate(variable);
+    tree->variable_mutate(variable, true);
   }
   void set(T&& value) const {
     static_assert(!IsConst);
     assert(tree->variables[variable].data.cast<T>());
     tree->variables[variable].data_new = UniqueAny::Make<T>(std::move(value));
-    tree->variable_mutate(variable);
+    tree->variable_mutate(variable, true);
   }
   bool modified() const {
     return tree->variables[variable].modified;
@@ -196,6 +196,12 @@ public:
   T& mut() const {
     // Doesn't trigger rerender
     return *tree->variables[variable].data.cast<T>();
+  }
+  void trigger() const {
+    tree->variable_mutate(variable, false);
+  }
+  bool is_new() const {
+    return tree->elements[tree->variables[variable].element].is_new;
   }
 
   template <
@@ -310,6 +316,7 @@ public:
   }
 
   void trigger() const {
+    printf("Queue revisit\n");
     tree->queue_revisit_.emplace_back(index);
   }
 

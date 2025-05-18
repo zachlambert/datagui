@@ -19,10 +19,13 @@ void Tree::begin() {
     variables[variable].modified = false;
   }
   modified_variables_.clear();
-  for (auto variable : queue_rerender_variables_) {
+  for (auto [variable, deferred_set] : queue_rerender_variables_) {
     set_rerender(variables[variable].element);
-    variables[variable].data = std::move(variables[variable].data_new);
-    assert(variables[variable].data);
+    if (deferred_set) {
+      variables[variable].data = std::move(variables[variable].data_new);
+      assert(variables[variable].data);
+    }
+    printf("Queued re-render variable\n");
     variables[variable].modified = true;
     modified_variables_.push_back(variable);
   }
@@ -286,8 +289,9 @@ void Tree::remove_variable(int variable) {
   variables.pop(variable);
 }
 
-void Tree::variable_mutate(int variable) {
-  queue_rerender_variables_.push_back(variable);
+void Tree::variable_mutate(int variable, bool deferred_set) {
+  printf("Variable mutate, deferred? %s\n", deferred_set ? "true" : "false");
+  queue_rerender_variables_.emplace_back(variable, deferred_set);
 }
 
 void Tree::set_revisit(int element) {

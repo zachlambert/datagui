@@ -29,8 +29,6 @@ add_library(datagui SHARED
 
   src/tree/tree.cpp
 
-  src/types/datapack.cpp
-
   src/visual/font.cpp
   src/visual/geometry_renderer.cpp
   src/visual/shader.cpp
