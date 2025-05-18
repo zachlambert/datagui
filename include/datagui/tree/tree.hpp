@@ -193,6 +193,10 @@ public:
   bool modified() const {
     return tree->variables[variable].modified;
   }
+  T& mut() const {
+    // Doesn't trigger rerender
+    return *tree->variables[variable].data.cast<T>();
+  }
 
   template <
       bool OtherConst,

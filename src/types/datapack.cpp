@@ -35,49 +35,122 @@ void GuiWriter::boolean(bool value) {
   gui.checkbox_write(value);
 }
 
-void GuiWriter::string(const char*) {}
-void GuiWriter::enumerate(int value, const char* label) {}
-void GuiWriter::binary(const std::span<const std::uint8_t>& data) {}
+void GuiWriter::string(const char* value) {
+  std::string value_str(value);
+  gui.text_input_write(value_str);
+}
 
-void GuiWriter::optional_begin(bool has_value) {}
-void GuiWriter::optional_end() {}
+void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
+  std::vector<std::string> labels_str;
+  for (auto label : labels) {
+    labels_str.emplace_back(label);
+  }
+  gui.dropdown_write(labels_str, value);
+}
 
-void GuiWriter::variant_begin(int value, const char* label) {}
-void GuiWriter::variant_end() {}
+void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
+  gui.text_input("<binary not editable>");
+}
 
-void GuiWriter::object_begin() {}
-void GuiWriter::object_next(const char* key) {}
-void GuiWriter::object_end() {}
+void GuiWriter::optional_begin(bool has_value) {
+  gui.series_begin_force();
+  gui.variable<bool>(has_value);
+  gui.checkbox_write(has_value);
+  if (has_value) {
+    gui.series_begin_force();
+  }
+}
 
-void GuiWriter::tuple_begin() {}
-void GuiWriter::tuple_next() {}
-void GuiWriter::tuple_end() {}
+void GuiWriter::optional_end() {
+  gui.series_end();
+}
 
-void GuiWriter::list_begin() {}
-void GuiWriter::list_next() {}
-void GuiWriter::list_end() {}
+void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
+  std::vector<std::string> labels_str;
+  for (auto label : labels) {
+    labels_str.emplace_back(label);
+  }
+  gui.dropdown_write(labels_str, value);
+  gui.series_begin_force();
+}
+void GuiWriter::variant_end() {
+  gui.series_end();
+}
+
+void GuiWriter::object_begin() {
+  gui.series_begin_force();
+}
+void GuiWriter::object_next(const char* key) {
+  gui.text_box(key);
+}
+void GuiWriter::object_end() {
+  gui.series_end();
+}
+
+void GuiWriter::tuple_begin() {
+  gui.series_begin_force();
+}
+void GuiWriter::tuple_next() {
+  // Do nothing
+}
+void GuiWriter::tuple_end() {
+  gui.series_end();
+}
+
+void GuiWriter::list_begin() {
+  gui.series_begin_force();
+  list_sizes.push(gui.variable<std::size_t>(0));
+}
+void GuiWriter::list_next() {
+  list_sizes.top().mut()++;
+}
+void GuiWriter::list_end() {
+  gui.button("Push");
+  gui.button("Pop");
+  gui.series_end();
+}
 
 void GuiReader::number(datapack::NumberType type, void* value) {
-  gui.text_input();
+  auto value_str = gui.text_input_read();
+  try {
+    switch (type) {
+    case datapack::NumberType::I32:
+      *(std::int32_t*)value = std::stoi(value_str);
+      break;
+    case datapack::NumberType::I64:
+      *(std::int64_t*)value = std::stol(value_str);
+      break;
+    case datapack::NumberType::U32:
+      *(std::uint32_t*)value = std::stoul(value_str);
+      break;
+    case datapack::NumberType::U64:
+      *(std::uint64_t*)value = std::stoul(value_str);
+      break;
+    case datapack::NumberType::U8:
+      *(std::uint8_t*)value = std::stoul(value_str);
+      break;
+    case datapack::NumberType::F32:
+      *(float*)value = std::stof(value_str);
+      break;
+    case datapack::NumberType::F64:
+      *(double*)value = std::stod(value_str);
+      break;
+    }
+  } catch (const std::runtime_error& e) {
+    // Ignore
+  }
 }
 
 bool GuiReader::boolean() {
-  gui.checkbox();
-  return false;
+  return gui.checkbox_read();
 }
 
 const char* GuiReader::string() {
-  gui.text_input();
-  return "";
+  return gui.text_input_read().c_str();
 }
 
 int GuiReader::enumerate(const std::span<const char*>& labels) {
-  std::vector<std::string> labels_str;
-  for (auto label : labels) {
-    labels_str.push_back(std::string(label));
-  }
-  gui.dropdown(labels_str);
-  return 0;
+  return gui.dropdown_read();
 }
 
 std::span<const std::uint8_t> GuiReader::binary() {
@@ -86,26 +159,24 @@ std::span<const std::uint8_t> GuiReader::binary() {
 }
 
 bool GuiReader::optional_begin() {
-  auto checked = gui.variable<bool>(false);
-  gui.checkbox(checked);
-  if (*checked) {
-    gui.series_begin();
+  gui.series_begin_force();
+  auto has_value = gui.variable<bool>();
+  gui.checkbox(has_value);
+  if (*has_value) {
+    gui.series_begin_force();
     return true;
   }
   return false;
 }
+
 void GuiReader::optional_end() {
   gui.series_end();
 }
 
 int GuiReader::variant_begin(const std::span<const char*>& labels) {
-  std::vector<std::string> labels_str;
-  for (auto label : labels) {
-    labels_str.push_back(std::string(label));
-  }
-  gui.dropdown(labels_str);
-  gui.series_begin();
-  return 0;
+  int value = gui.dropdown_read();
+  gui.series_begin_force();
+  return value;
 }
 void GuiReader::variant_end() {
   gui.series_end();
@@ -133,12 +204,26 @@ void GuiReader::tuple_end() {
 
 void GuiReader::list_begin() {
   gui.series_begin();
+  auto size = gui.variable<std::size_t>(0);
+  list_sizes.push(std::make_pair(size, *size));
 }
 bool GuiReader::list_next() {
-  // TODO
-  return false;
+  auto& [variable, remaining] = list_sizes.top();
+  if (remaining == 0) {
+    return false;
+  }
+  remaining--;
+  return true;
 }
 void GuiReader::list_end() {
+  auto size = list_sizes.top().first;
+  if (gui.button("Push")) {
+    size.set(*size + 1);
+  }
+  if (gui.button("Pop") && *size > 0) {
+    size.set(*size - 1);
+  }
+  list_sizes.pop();
   gui.series_end();
 }
 

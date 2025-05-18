@@ -58,7 +58,7 @@ void DropdownSystem::write(
   data.choice = choice;
 }
 
-int read(ConstElement element) {
+int DropdownSystem::read(ConstElement element) {
   const auto& data = element.data<DropdownData>();
   return data.choice;
 }
