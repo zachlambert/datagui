@@ -1,4 +1,5 @@
 #include "datagui/tree/tree.hpp"
+#include "datagui/log.hpp"
 #include <assert.h>
 #include <stack>
 
@@ -35,6 +36,12 @@ void Tree::begin() {
     remove_element(element);
   }
   queue_remove_.clear();
+
+#ifdef DATAGUI_DEBUG
+  if (root_ == -1 || elements[root_].is_new || elements[root_].revisit) {
+    DATAGUI_LOG("[Tree | *] Revisit required");
+  }
+#endif
 }
 
 void Tree::end() {
@@ -78,6 +85,12 @@ void Tree::end() {
 }
 
 Element Tree::next(int type, const std::string& key) {
+#ifdef DATAGUI_DEBUG
+  if (parent_ != -1) {
+    DATAGUI_LOG("[Tree | %i] Next type=%i, key='%s'", depth, type, key.c_str());
+  }
+#endif
+
   if (parent_ == -1) {
     if (current_ != -1) {
       throw UsageError("Cannot create more than one root node");
@@ -134,21 +147,29 @@ bool Tree::down_if() {
   if (!elements[current_].revisit) {
     return false;
   }
+  DATAGUI_LOG("[Tree | %i] Down", depth);
   parent_ = current_;
   current_ = -1;
   variable_stack_.push(variable_current_);
   variable_current_ = -1;
+  depth++;
   return true;
 }
 
 void Tree::down() {
+  DATAGUI_LOG("[Tree | %i] Down (force)", depth);
   parent_ = current_;
   current_ = -1;
   variable_stack_.push(variable_current_);
   variable_current_ = -1;
+  depth++;
 }
 
 void Tree::up() {
+  DATAGUI_LOG("[Tree | %i] Up", depth);
+  depth--;
+  assert(depth >= 0);
+
   if (parent_ == -1) {
     throw UsageError("Called up too many times");
   }
