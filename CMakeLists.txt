@@ -45,6 +45,9 @@ target_include_directories(datagui PUBLIC
     $<BUILD_INTERFACE:${FREETYPE_INCLUDE_DIRS}>
     $<INSTALL_INTERFACE:include>
 )
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  target_compile_definitions(datagui PUBLIC -DDATAGUI_DEBUG)
+endif()
 
 # Additional targets
 

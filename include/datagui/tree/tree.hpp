@@ -143,6 +143,7 @@ private:
   std::vector<std::unique_ptr<DataContainer>> data_containers;
   VectorMap<VariableNode> variables;
 
+  int depth = 0; // Debugging
   bool is_new = true;
   bool render_in_progress = false;
   int root_ = -1;
