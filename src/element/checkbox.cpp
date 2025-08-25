@@ -9,9 +9,8 @@ const bool* CheckboxSystem::visit(
   if (element.is_new()) {
     data.checked = initial_checked;
   }
-  if (element.rerender()) {
-    data.style.apply(res.style_manager);
-  }
+  data.style.apply(res.style_manager);
+
   if (data.changed) {
     data.changed = false;
     return &data.checked;

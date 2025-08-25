@@ -4,10 +4,9 @@ namespace datagui {
 
 bool ButtonSystem::visit(Element element, const std::string& text) {
   auto& data = element.data<ButtonData>();
-  if (element.rerender()) {
-    data.text = text;
-    data.style.apply(res.style_manager);
-  }
+  data.text = text;
+  data.style.apply(res.style_manager);
+
   if (data.released) {
     data.released = false;
     return true;

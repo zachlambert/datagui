@@ -14,6 +14,7 @@
 #include "datagui/element/series.hpp"
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
+#include "datagui/log.hpp"
 #include "datapack/datapack.hpp"
 
 namespace datagui {
@@ -218,17 +219,20 @@ Variable<T> Gui::edit_variable(const T& initial_value) {
   series_begin_force();
   auto var = variable<T>(initial_value);
   if (var.modified() || var.is_new()) {
-    printf("Var modified? %s\n", var.modified() ? "true" : "false");
-    printf("Var new? %s\n", var.is_new() ? "true" : "false");
-    printf("Writing new value\n");
+    if (var.modified()) {
+      DATAGUI_LOG("[Gui::edit_variable] Variable modified -> update GUI");
+    } else {
+      DATAGUI_LOG("[Gui::edit_variable] Variable is new -> update GUI");
+    }
     series_begin_force();
     GuiWriter(*this).value(*var);
     series_end();
   } else {
     if (series_begin()) {
-      printf("Revisit, re-trigger variable\n");
-      GuiReader(*this).value(var.mut());
-      var.trigger();
+      DATAGUI_LOG("[Gui::edit_variable] Variable revisit -> update VAR");
+      T new_value;
+      GuiReader(*this).value(new_value);
+      var.set(new_value);
       series_end();
     }
   }

@@ -17,7 +17,7 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-  # src/element/button.cpp
+  src/element/button.cpp
   # src/element/checkbox.cpp
   # src/element/dropdown.cpp
   # src/element/floating.cpp
@@ -36,6 +36,7 @@ add_library(datagui SHARED
   src/visual/window.cpp
 
   # src/gui.cpp
+  # src/gui_datapack.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
