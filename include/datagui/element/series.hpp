@@ -1,8 +1,6 @@
 #pragma once
 
-#include "datagui/resources.hpp"
-#include "datagui/style.hpp"
-#include "datagui/tree/element_system.hpp"
+#include "datagui/tree/element.hpp"
 
 namespace datagui {
 
@@ -26,25 +24,16 @@ struct SeriesStyle {
   }
 };
 
-struct SeriesData {
+struct SeriesElement : public Element {
   SeriesStyle style;
   float overrun = 0;
   float scroll_pos = 0;
-};
 
-class SeriesSystem : public ElementSystemImpl<SeriesData> {
-public:
-  SeriesSystem(Resources& res) : res(res) {}
-
-  void visit(Element element);
-
-  void set_input_state(Element element) const override;
-  void set_dependent_state(Element element) const override;
-  void render(ConstElement element) const override;
-  bool scroll_event(Element element, const ScrollEvent& event) override;
-
-private:
-  Resources& res;
+  SeriesElement(Resources* resources) : Element(resources) {}
+  void set_input_state(const std::vector<const Element*>& children) override;
+  void set_dependent_state(const std::vector<Element*>& children) override;
+  void render() const override;
+  bool scroll_event(const ScrollEvent& event) override;
 };
 
 } // namespace datagui

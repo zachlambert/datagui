@@ -16,9 +16,7 @@ struct ElementNode {
   std::unique_ptr<Element> element;
 
   int id;
-  bool is_new = true;
   bool revisit = true;
-  bool visible = true;
 
   int parent = -1;
   int prev = -1;
@@ -105,7 +103,6 @@ private:
   VectorMap<ElementNode> elements;
   VectorMap<VariableNode> variables;
 
-  bool is_new = true;
   bool active_ = false;
   int root_ = -1;
   int parent_ = -1;
@@ -159,8 +156,8 @@ public:
   bool modified() const {
     return tree->variables[variable].modified;
   }
-  bool is_new() const {
-    return tree->elements[tree->variables[variable].element].is_new;
+  bool has_value() const {
+    return tree->variables[variable].data;
   }
 
   template <
@@ -233,29 +230,28 @@ public:
   }
 
   ref_t operator*() const {
-    return *tree->elements[index].state;
+    return *tree->elements[index].element;
   }
   ptr_t operator->() const {
-    return tree->elements[index].state.get();
+    return tree->elements[index].element.get();
+  }
+  ptr_t get() const {
+    return tree->elements[index].element.get();
   }
 
   template <typename T>
   std::conditional_t<IsConst, const T&, T&> cast() const {
-    static_assert(std::is_base_of_v<Element, T>());
-    return *dynamic_cast<T>(tree->elements[index].interface.get());
+    static_assert(std::is_base_of_v<Element, T>);
+    using T_ptr = std::conditional_t<IsConst, const T*, T*>;
+    return *dynamic_cast<T_ptr>(tree->elements[index].element.get());
   }
 
   template <typename T>
   std::conditional_t<IsConst, const T*, T*> cast_if() const {
-    static_assert(std::is_base_of_v<Element, T>());
-    return dynamic_cast<T>(tree->elements[index].interface.get());
+    static_assert(std::is_base_of_v<Element, T>);
+    using T_ptr = std::conditional_t<IsConst, const T*, T*>;
+    return dynamic_cast<T_ptr>(tree->elements[index].element.get());
   }
-
-#if 0
-  bool visible() const {
-    return tree->elements[index].visible;
-  }
-#endif
 
   std::string debug() const {
     return tree->element_debug(index);
@@ -266,12 +262,13 @@ public:
     tree->queue_revisit_.emplace_back(index);
   }
 
-  bool is_new() const {
-    return tree->elements[index].is_new;
+  bool is_constructed() const {
+    return bool(tree->elements[index].element);
   }
-
-  bool rerender() const {
-    return tree->elements[index].rerender;
+  template <typename T, typename... Args>
+  void construct(Args&&... args) {
+    tree->elements[index].element =
+        std::make_unique<T>(std::forward<Args>(args)...);
   }
 
   template <
@@ -331,15 +328,9 @@ Var<T> Tree::variable(const std::function<T()>& construct) {
 
   if (variable == -1) {
     if (parent_ == -1) {
-      if (!is_new) {
-        throw UsageError("Changed the number of variable nodes");
-      }
       variable = create_variable(-1);
       variables[variable].data = UniqueAny::Make<T>(construct());
     } else {
-      if (!elements[parent_].is_new) {
-        throw UsageError("Changed the number of variable nodes");
-      }
       variable = create_variable(parent_);
       variables[variable].data = UniqueAny::Make<T>(construct());
     }

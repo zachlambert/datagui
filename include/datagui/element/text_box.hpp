@@ -1,8 +1,6 @@
 #pragma once
 
-#include "datagui/resources.hpp"
-#include "datagui/style.hpp"
-#include "datagui/tree/element_system.hpp"
+#include "datagui/tree/element.hpp"
 
 namespace datagui {
 
@@ -16,22 +14,13 @@ struct TextBoxStyle {
   }
 };
 
-struct TextBoxData {
+struct TextBoxElement : public Element {
   TextBoxStyle style;
   std::string text;
-};
 
-class TextBoxSystem : public ElementSystemImpl<TextBoxData> {
-public:
-  TextBoxSystem(Resources& res) : res(res) {}
-
-  void visit(Element element, const std::string& text);
-
-  void set_input_state(Element element) const override;
-  void render(ConstElement element) const override;
-
-private:
-  Resources& res;
+  TextBoxElement(Resources* resources) : Element(resources) {}
+  void set_input_state(const std::vector<const Element*>& children) override;
+  void render() const override;
 };
 
 } // namespace datagui

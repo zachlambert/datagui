@@ -10,12 +10,12 @@ class Element {
 public:
   Element(Resources* resources) : resources(resources) {}
 
-protected:
   Resources* const resources;
 
   // Layout input
   Vecf fixed_size;
   Vecf dynamic_size;
+  bool hidden;
   bool zero_size() const {
     return fixed_size == Vecf::Zero() && dynamic_size == Vecf::Zero();
   }
@@ -40,10 +40,8 @@ protected:
   bool focused = false;
   bool hovered = false;
 
-  virtual void set_input_state(
-      const std::vector<const Element*>& children) const = 0;
-  virtual void set_dependent_state(
-      const std::vector<Element*> children) const = 0;
+  virtual void set_input_state(const std::vector<const Element*>& children) = 0;
+  virtual void set_dependent_state(const std::vector<Element*>& children) {}
 
   virtual void render() const = 0;
 
