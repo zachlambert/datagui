@@ -16,8 +16,9 @@ public:
   Gui(const Window::Config& window_config = Window::Config());
 
   bool running() const;
-  void begin();
+  bool begin();
   void end();
+  void poll();
 
   bool series_begin();
   void series_end();

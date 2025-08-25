@@ -15,7 +15,7 @@ public:
   // Layout input
   Vecf fixed_size;
   Vecf dynamic_size;
-  bool hidden;
+  bool hidden = false;
   bool zero_size() const {
     return fixed_size == Vecf::Zero() && dynamic_size == Vecf::Zero();
   }

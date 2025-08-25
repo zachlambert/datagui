@@ -1,4 +1,5 @@
 #include "datagui/element/text_box.hpp"
+#include "datagui/log.hpp"
 #include "datagui/visual/text_renderer.hpp"
 
 namespace datagui {

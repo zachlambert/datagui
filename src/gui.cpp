@@ -1,6 +1,7 @@
 #include "datagui/gui.hpp"
 #include "datagui/element/series.hpp"
 #include "datagui/element/text_box.hpp"
+#include "datagui/log.hpp"
 #include <queue>
 #include <sstream>
 #include <stack>
@@ -23,7 +24,12 @@ bool Gui::series_begin() {
   if (!element.is_constructed()) {
     element.construct<SeriesElement>(&res);
   }
-  return tree.down_if();
+  if (tree.down_if()) {
+    DATAGUI_LOG("[Gui::series_begin] DOWN");
+    return true;
+  }
+  DATAGUI_LOG("[Gui::series_begin] SKIP");
+  return false;
 }
 
 void Gui::series_end() {
@@ -35,6 +41,7 @@ void Gui::text_box(const std::string& text) {
   if (!element.is_constructed()) {
     element.construct<TextBoxElement>(&res);
   }
+  DATAGUI_LOG("[Gui::text_box] text=%s\n", text.c_str());
   auto& text_box = element.cast<TextBoxElement>();
   text_box.text = text;
 }
@@ -215,12 +222,16 @@ void Gui::floating_end() {
 
 #endif
 
-void Gui::begin() {
-  tree.begin();
+bool Gui::begin() {
+  return tree.begin();
 }
 
 void Gui::end() {
   tree.end();
+}
+
+void Gui::poll() {
+  // TODO: Can some of this be put in end() ?
   calculate_sizes();
   render();
   event_handling();
@@ -261,8 +272,10 @@ void Gui::render() {
     const auto& element = state.element;
 
     if (!state.first_visit) {
+#if 0
       res.geometry_renderer.pop_mask();
       res.text_renderer.pop_mask();
+#endif
       layer_stack.pop();
       continue;
     }
@@ -325,6 +338,7 @@ void Gui::render() {
       }
     }
 
+#if 0
     if (element->floating) {
       res.geometry_renderer.push_mask(element->float_box);
       res.text_renderer.push_mask(element->float_box);
@@ -332,6 +346,7 @@ void Gui::render() {
       res.geometry_renderer.push_mask(element->box());
       res.text_renderer.push_mask(element->box());
     }
+#endif
 
     for (auto child = element.first_child(); child; child = child.next()) {
       if (child->layer == current_layer) {
