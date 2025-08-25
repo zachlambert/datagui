@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/log.hpp"
 #include "datagui/tree/state.hpp"
 #include "datagui/types/unique_any.hpp"
 #include "datagui/types/vector_map.hpp"
@@ -313,8 +314,8 @@ public:
     return tree->element_debug(index);
   }
 
-  void trigger() const {
-    printf("Queue revisit\n");
+  void revisit() const {
+    DATAGUI_LOG("[Element_::revisit] REVISIT: element=%i", index);
     tree->queue_revisit_.emplace_back(index);
   }
 

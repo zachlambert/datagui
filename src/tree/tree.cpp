@@ -36,6 +36,10 @@ bool Tree::begin() {
     }
     element_d.revisit = false;
 
+    // If is_new = true, then must also have revisit=true, so handle
+    // clearing the is_new flag here too
+    element_d.is_new = false;
+
     int child = element_d.first_child;
     while (child != -1) {
       stack.push(child);

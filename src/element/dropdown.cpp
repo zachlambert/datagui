@@ -12,9 +12,8 @@ const int* DropdownSystem::visit(
     data.choices = choices;
     data.choice = initial_choice;
   }
-  if (element.rerender()) {
-    data.style.apply(res.style_manager);
-  }
+  data.style.apply(res.style_manager);
+
   if (data.changed) {
     data.changed = false;
     return &data.choice;
