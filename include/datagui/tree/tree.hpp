@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/log.hpp"
-#include "datagui/tree/state.hpp"
+#include "datagui/tree/element.hpp"
 #include "datagui/types/unique_any.hpp"
 #include "datagui/types/vector_map.hpp"
 #include <assert.h>
@@ -12,37 +12,8 @@
 
 namespace datagui {
 
-class DataContainer {
-public:
-  virtual int emplace() = 0;
-  virtual void pop(int index) = 0;
-};
-
-template <typename Data>
-requires std::is_default_constructible_v<Data>
-class DataContainerImpl : public DataContainer {
-public:
-  int emplace() override final {
-    return datas.emplace();
-  }
-  void pop(int index) override final {
-    datas.pop(index);
-  }
-  Data& get(int index) {
-    return datas[index];
-  }
-  const Data& get(int index) const {
-    return datas[index];
-  }
-
-protected:
-  VectorMap<Data> datas;
-};
-
 struct ElementNode {
-  int type;
-  int data_index;
-  State state;
+  std::unique_ptr<Element> element;
 
   int id;
   bool is_new = true;
@@ -57,8 +28,6 @@ struct ElementNode {
   int first_variable = -1;
 
   int version = 0; // Debug information
-
-  ElementNode(int type, int data_index) : type(type), data_index(data_index) {}
 };
 
 struct VariableNode {
@@ -78,24 +47,22 @@ struct VariableNode {
 // Forward declare Element_
 
 template <bool IsConst>
-class Element_;
-using Element = Element_<false>;
-using ConstElement = Element_<true>;
+class ElementPtr_;
+using ElementPtr = ElementPtr_<false>;
+using ConstElementPtr = ElementPtr_<true>;
 
-// Forward declare Variable_
+// Forward declare Var_
 
 template <typename T, bool IsConst>
-class Variable_;
+class Var_;
 template <typename T>
-using Var = Variable_<T, false>;
+using Var = Var_<T, false>;
 template <typename T>
-using ConstVar = Variable_<T, true>;
+using ConstVar = Var_<T, true>;
 
 class Tree {
-  template <bool IsConst>
-  friend class NodeElement_;
   template <typename T, bool IsConst>
-  friend class Variable_;
+  friend class Var_;
 
 public:
   class UsageError : public std::runtime_error {
@@ -108,29 +75,23 @@ public:
   bool begin();
   void end();
 
-  Element next(int type = -1, int id = -1);
+  ElementPtr next(int id = -1);
   bool down_if();
   void down();
   void up();
 
-  Element root();
-  ConstElement root() const;
+  ElementPtr root();
+  ConstElementPtr root() const;
 
   template <typename T>
   Var<T> variable(const std::function<T()>& construct = []() { return T(); });
-
-  template <typename Data>
-  int create_element_type() {
-    data_containers.push_back(std::make_unique<DataContainerImpl<Data>>());
-    return data_containers.size() - 1;
-  }
 
   int get_id() {
     return next_id++;
   }
 
 private:
-  int create_element(int parent, int prev, int type, int id);
+  int create_element(int parent, int prev, int id);
   void remove_element(int node);
 
   int create_variable(int element);
@@ -142,7 +103,6 @@ private:
   const char* indent_cstr() const;
 
   VectorMap<ElementNode> elements;
-  std::vector<std::unique_ptr<DataContainer>> data_containers;
   VectorMap<VariableNode> variables;
 
   bool is_new = true;
@@ -165,13 +125,13 @@ private:
   int external_first_variable_ = -1;
 
   template <typename T, bool IsConst>
-  friend class Variable_;
+  friend class Var_;
   template <bool IsConst>
-  friend class Element_;
+  friend class ElementPtr_;
 };
 
 template <typename T, bool IsConst>
-class Variable_ {
+class Var_ {
   using data_ptr_t = std::conditional_t<IsConst, const T*, T*>;
   using data_ref_t = std::conditional_t<IsConst, const T&, T&>;
 
@@ -206,23 +166,23 @@ public:
   template <
       bool OtherConst,
       typename = std::enable_if_t<IsConst || !OtherConst>>
-  Variable_(const Variable_<T, OtherConst>& other) :
+  Var_(const Var_<T, OtherConst>& other) :
       tree(other.tree), variable(other.variable), data_ptr(other.data_ptr) {}
 
   template <
       bool OtherConst,
       typename = std::enable_if_t<IsConst || !OtherConst>>
-  Variable_(Variable_<T, OtherConst>&& other) :
+  Var_(Var_<T, OtherConst>&& other) :
       tree(other.tree), variable(other.variable), data_ptr(other.data_ptr) {}
 
-  Variable_() : tree(nullptr), variable(-1), data_ptr(nullptr) {}
+  Var_() : tree(nullptr), variable(-1), data_ptr(nullptr) {}
 
   operator bool() const {
     return tree;
   }
 
 private:
-  Variable_(Tree* tree, int variable) :
+  Var_(Tree* tree, int variable) :
       tree(tree),
       variable(variable),
       data_ptr(tree->variables[variable].data.cast<T>()) {
@@ -236,86 +196,73 @@ private:
   friend class Tree;
 };
 template <typename T>
-using Variable = Variable_<T, false>;
+using Variable = Var_<T, false>;
 template <typename T>
-using ConstVariable = Variable_<T, true>;
+using ConstVariable = Var_<T, true>;
 
 template <bool IsConst>
-class Element_ {
+class ElementPtr_ {
   using tree_ptr_t = std::conditional_t<IsConst, const Tree*, Tree*>;
-  using state_ptr_t = std::conditional_t<IsConst, const State*, State*>;
-  using state_ref_t = std::conditional_t<IsConst, const State&, State&>;
+  using ptr_t = std::conditional_t<IsConst, const Element*, Element*>;
+  using ref_t = std::conditional_t<IsConst, const Element&, Element&>;
 
 public:
   int type() const {
     return tree->elements[index].type;
   }
 
-  Element_ first_child() const {
+  ElementPtr_ first_child() const {
     assert(index != -1);
-    return Element_(tree, tree->elements[index].first_child);
+    return ElementPtr_(tree, tree->elements[index].first_child);
   }
-  Element_ last_child() const {
+  ElementPtr_ last_child() const {
     assert(index != -1);
-    return Element_(tree, tree->elements[index].last_child);
+    return ElementPtr_(tree, tree->elements[index].last_child);
   }
-  Element_ next() const {
+  ElementPtr_ next() const {
     assert(index != -1);
-    return Element_(tree, tree->elements[index].next);
+    return ElementPtr_(tree, tree->elements[index].next);
   }
-  Element_ prev() const {
+  ElementPtr_ prev() const {
     assert(index != -1);
-    return Element_(tree, tree->elements[index].prev);
+    return ElementPtr_(tree, tree->elements[index].prev);
   }
-  Element_ parent() const {
+  ElementPtr_ parent() const {
     assert(index != -1);
-    return Element_(tree, tree->elements[index].parent);
+    return ElementPtr_(tree, tree->elements[index].parent);
   }
 
-  state_ref_t operator*() const {
-    return tree->elements[index].state;
+  ref_t operator*() const {
+    return *tree->elements[index].state;
   }
-  state_ptr_t operator->() const {
-    return &tree->elements[index].state;
-  }
-
-  template <typename Data>
-  std::conditional_t<IsConst, const Data&, Data&> data() const {
-    const auto& element = tree->elements[index];
-    assert(element.type != -1);
-    auto container = tree->data_containers[element.type].get();
-    auto container_t = dynamic_cast<std::conditional_t<
-        IsConst,
-        const DataContainerImpl<Data>*,
-        DataContainerImpl<Data>*>>(container);
-    assert(container_t);
-    return container_t->get(element.data_index);
+  ptr_t operator->() const {
+    return tree->elements[index].state.get();
   }
 
-  template <typename Data>
-  std::conditional_t<IsConst, const Data&, Data&> data_if() const {
-    const auto& element = tree->elements[index];
-    assert(element.type != -1);
-    auto container = tree->element_containers[element.type].get();
-    auto container_t = dynamic_cast<std::conditional_t<
-        IsConst,
-        const DataContainerImpl<Data>*,
-        DataContainerImpl<Data>*>>(container);
-    if (!container_t) {
-      return nullptr;
-    }
-    return &container_t->get(element.data_index);
+  template <typename T>
+  std::conditional_t<IsConst, const T&, T&> cast() const {
+    static_assert(std::is_base_of_v<Element, T>());
+    return *dynamic_cast<T>(tree->elements[index].interface.get());
   }
 
+  template <typename T>
+  std::conditional_t<IsConst, const T*, T*> cast_if() const {
+    static_assert(std::is_base_of_v<Element, T>());
+    return dynamic_cast<T>(tree->elements[index].interface.get());
+  }
+
+#if 0
   bool visible() const {
     return tree->elements[index].visible;
   }
+#endif
+
   std::string debug() const {
     return tree->element_debug(index);
   }
 
   void revisit() const {
-    DATAGUI_LOG("[Element_::revisit] REVISIT: element=%i", index);
+    DATAGUI_LOG("[ElementPtr_::revisit] REVISIT: element=%i", index);
     tree->queue_revisit_.emplace_back(index);
   }
 
@@ -330,28 +277,28 @@ public:
   template <
       bool OtherConst,
       typename = std::enable_if_t<IsConst || !OtherConst>>
-  Element_(const Element_<OtherConst>& other) :
+  ElementPtr_(const ElementPtr_<OtherConst>& other) :
       tree(other.tree), index(other.index) {}
 
   template <
       bool OtherConst,
       typename = std::enable_if_t<IsConst || !OtherConst>>
 
-  Element_(Element_<OtherConst>&& other) :
+  ElementPtr_(ElementPtr_<OtherConst>&& other) :
       tree(other.tree), index(other.index) {}
 
-  Element_() : tree(nullptr), index(-1) {}
+  ElementPtr_() : tree(nullptr), index(-1) {}
 
   operator bool() const {
     return index != -1;
   }
 
-  friend bool operator==(const Element_& lhs, const Element_& rhs) {
+  friend bool operator==(const ElementPtr_& lhs, const ElementPtr_& rhs) {
     return lhs.tree == rhs.tree && lhs.index == rhs.index;
   }
 
 private:
-  Element_(tree_ptr_t tree, int index) : tree(tree), index(index) {}
+  ElementPtr_(tree_ptr_t tree, int index) : tree(tree), index(index) {}
 
   tree_ptr_t tree;
   int index;
@@ -359,7 +306,7 @@ private:
   friend class Tree;
 
   template <bool OtherConst>
-  friend class Element_;
+  friend class ElementPtr_;
 };
 
 template <typename T>
@@ -401,12 +348,12 @@ Var<T> Tree::variable(const std::function<T()>& construct) {
   return Variable<T>(this, variable);
 }
 
-inline Element Tree::root() {
-  return Element(this, root_);
+inline ElementPtr Tree::root() {
+  return ElementPtr(this, root_);
 }
 
-inline ConstElement Tree::root() const {
-  return ConstElement(this, root_);
+inline ConstElementPtr Tree::root() const {
+  return ConstElementPtr(this, root_);
 }
 
 } // namespace datagui

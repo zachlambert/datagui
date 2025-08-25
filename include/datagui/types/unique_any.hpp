@@ -54,9 +54,6 @@ private:
   UniqueAny(T&& value) : value(std::make_unique<Value<T>>(std::move(value))) {}
 
   std::unique_ptr<ValueBase> value;
-
-  template <typename T, typename... Args>
-  friend UniqueAny make_unique_any(Args&&... args);
 };
 
 } // namespace datagui
