@@ -17,15 +17,15 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-  src/element/button.cpp
-  src/element/checkbox.cpp
-  src/element/dropdown.cpp
-  src/element/floating.cpp
-  src/element/series.cpp
-  src/element/text_box.cpp
-  src/element/text_input.cpp
+  # src/element/button.cpp
+  # src/element/checkbox.cpp
+  # src/element/dropdown.cpp
+  # src/element/floating.cpp
+  # src/element/series.cpp
+  # src/element/text_box.cpp
+  # src/element/text_input.cpp
 
-  src/input/text_selection.cpp
+  # src/input/text_selection.cpp
 
   src/tree/tree.cpp
 
@@ -35,7 +35,7 @@ add_library(datagui SHARED
   src/visual/text_renderer.cpp
   src/visual/window.cpp
 
-  src/gui.cpp
+  # src/gui.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
@@ -61,20 +61,20 @@ target_link_libraries(example_tree datagui)
 add_executable(example_window examples/window.cpp)
 target_link_libraries(example_window datagui)
 
-add_executable(example_gui examples/gui.cpp)
-target_link_libraries(example_gui datagui)
-
-add_executable(example_gui2 examples/gui2.cpp)
-target_link_libraries(example_gui2 datagui)
-
-add_executable(example_gui_layers examples/gui_layers.cpp)
-target_link_libraries(example_gui_layers datagui)
-
-add_executable(example_prop_stack examples/prop_stack.cpp)
-target_link_libraries(example_prop_stack datagui)
-
-add_executable(example_datapack examples/datapack.cpp)
-target_link_libraries(example_datapack datagui)
+# add_executable(example_gui examples/gui.cpp)
+# target_link_libraries(example_gui datagui)
+# 
+# add_executable(example_gui2 examples/gui2.cpp)
+# target_link_libraries(example_gui2 datagui)
+# 
+# add_executable(example_gui_layers examples/gui_layers.cpp)
+# target_link_libraries(example_gui_layers datagui)
+# 
+# add_executable(example_prop_stack examples/prop_stack.cpp)
+# target_link_libraries(example_prop_stack datagui)
+# 
+# add_executable(example_datapack examples/datapack.cpp)
+# target_link_libraries(example_datapack datagui)
 
 # Create install target
 
