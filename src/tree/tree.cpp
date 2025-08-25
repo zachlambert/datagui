@@ -5,141 +5,163 @@
 
 namespace datagui {
 
-void Tree::begin() {
-  render_in_progress = true;
-  parent_ = -1;
-  current_ = -1;
-  variable_current_ = -1;
-
-  for (auto element : queue_revisit_) {
-    set_revisit(element);
-  }
-  queue_revisit_.clear();
-
-  for (auto variable : modified_variables_) {
-    variables[variable].modified = false;
-  }
-  modified_variables_.clear();
-  for (auto [variable, deferred_set] : queue_rerender_variables_) {
-    set_rerender(variables[variable].element);
-    if (deferred_set) {
-      variables[variable].data = std::move(variables[variable].data_new);
-      assert(variables[variable].data);
-    }
-    printf("Queued re-render variable\n");
-    variables[variable].modified = true;
-    modified_variables_.push_back(variable);
-  }
-  queue_rerender_variables_.clear();
-
-  for (auto element : queue_remove_) {
-    remove_element(element);
-  }
-  queue_remove_.clear();
-
-#ifdef DATAGUI_DEBUG
-  if (root_ == -1 || elements[root_].is_new || elements[root_].revisit) {
-    DATAGUI_LOG("[Tree | *] Revisit required");
-  }
-#endif
-}
-
-void Tree::end() {
-  if (parent_ != -1) {
+bool Tree::begin() {
+  assert(parent_ == -1);
+  assert(current_ == -1);
+  assert(variable_current_ == -1);
+  if (active_) {
     throw UsageError(
-        "Didn't call layout_... and layout_end the same number of times");
-  }
-  if (!variable_stack_.empty()) {
-    // If this isn't true, should also fail the above condition
-    assert(false);
+        "Didn't call end() after a previous begin() call returned true");
   }
 
-  is_new = false;
   if (root_ == -1) {
-    return;
+    DATAGUI_LOG("[Tree::begin] BEGIN");
+    active_ = true;
+    return true;
   }
 
-  // Clear the rerender and revisit flags
-  // TODO: Can this be done during the visit?
+  // Clear revisit flags
 
   std::stack<int> stack;
   stack.push(root_);
   while (!stack.empty()) {
     int element = stack.top();
+    auto& element_d = elements[element];
     stack.pop();
 
-    elements[element].is_new = false;
-    elements[element].revisit = false;
-    elements[element].rerender = false;
+    if (!element_d.revisit) {
+      // Element and descendents have revisit=false,
+      // no need to continue down this subtree
+      continue;
+    }
+    element_d.revisit = false;
 
-    int child = elements[element].first_child;
+    int child = element_d.first_child;
     while (child != -1) {
       stack.push(child);
       child = elements[child].next;
     }
   }
 
-  render_in_progress = false;
-  parent_ = -1;
-  variable_current_ = -1;
+  // Applied queued revisit flags
+
+  for (auto element : queue_revisit_) {
+    DATAGUI_LOG("[Tree::begin] Element revisit: %i", element);
+    set_revisit(element);
+  }
+  queue_revisit_.clear();
+
+  // Clear variable modified flags
+
+  for (int variable : modified_variables_) {
+    variables[variable].modified = false;
+  }
+  modified_variables_.clear();
+
+  // Apply queued variable modified flags
+
+  for (int variable : queue_modified_variables_) {
+    auto& variable_d = variables[variable];
+    DATAGUI_LOG(
+        "[Tree::begin] Variable modify: element=%i var=%i",
+        variable_d.element,
+        variable);
+
+    // Revisit node
+    set_revisit(variable_d.element);
+
+    // Apply new data
+    variable_d.data = std::move(variable_d.data_new);
+    variable_d.modified = true;
+    assert(variable_d.data);
+
+    // Keep track of what is modified, to clear next iteration
+    modified_variables_.push_back(variable);
+  }
+  queue_modified_variables_.clear();
+
+  if (elements[root_].revisit) {
+    DATAGUI_LOG("[Tree::begin] BEGIN");
+    active_ = true;
+    return true;
+  }
+  return false;
 }
 
-Element Tree::next(int type, const std::string& key) {
-#ifdef DATAGUI_DEBUG
-  if (parent_ != -1) {
-    DATAGUI_LOG("[Tree | %i] Next type=%i, key='%s'", depth, type, key.c_str());
+void Tree::end() {
+  if (!active_) {
+    throw UsageError("Called end() without calling begin() previously and "
+                     "having it return true");
   }
-#endif
+  active_ = false;
+  DATAGUI_LOG("[Tree::end  ] END");
+
+  if (parent_ != -1) {
+    throw UsageError("Didn't call down and up the same number of times");
+  }
+  assert(variable_stack_.empty());
+
+  assert(parent_ == -1);
+  assert(current_ == root_);
+  assert(variable_current_ == -1);
+  current_ = -1;
+}
+
+Element Tree::next(int type, int id) {
+  DATAGUI_LOG(
+      "[Tree::next ] %sNEXT: current=%i type=%i id=%i",
+      indent_cstr(),
+      current_,
+      type,
+      id);
 
   if (parent_ == -1) {
     if (current_ != -1) {
-      throw UsageError("Cannot create more than one root node");
+      throw UsageError("Cannot call next more than once at the root");
     }
     if (root_ == -1) {
-      root_ = create_element(-1, -1, type, "");
+      root_ = create_element(-1, -1, type, id);
+      DATAGUI_LOG(
+          "[Tree::next ] %sCreated root: element=%i type=%i  id=%i",
+          indent_cstr(),
+          root_,
+          type,
+          id);
+    } else if (elements[root_].id != id) {
+      throw UsageError("TODO: Handle overwriting root");
     }
     current_ = root_;
-    return Element(this, current_);
+
+  } else {
+
+    int prev = current_;
+    int iter = current_ == -1 ? elements[parent_].first_child
+                              : elements[current_].next;
+    while (iter != -1) {
+      if (elements[iter].id == id) {
+        break;
+      }
+      int to_remove = iter;
+      iter = elements[iter].next;
+      remove_element(to_remove);
+    }
+
+    if (iter == -1) {
+      current_ = create_element(parent_, prev, type, id);
+      DATAGUI_LOG(
+          "[Tree::next ] %sCreated element: element=%i type=%i id=%i",
+          indent_cstr(),
+          current_,
+          type,
+          id);
+    } else {
+      current_ = iter;
+    }
   }
 
-  if (current_ != -1 && elements[current_].parent == -1) {
-    throw UsageError("Cannot call next on the root node more than once");
+  if (type != elements[current_].type) {
+    throw UsageError("Element type changed for the same ID");
   }
-
-  int prev = current_;
-  int next =
-      current_ == -1 ? elements[parent_].first_child : elements[current_].next;
-
-  while (next != -1) {
-    if (elements[next].key == key) {
-      break;
-    }
-    if (!elements[parent_].rerender) {
-      throw UsageError("Structure changed outside of a re-render");
-    }
-    if (elements[next].key.empty() && !key.empty()) {
-      next = create_element(parent_, prev, type, key);
-      break;
-    }
-    if (!elements[parent_].retain) {
-      queue_remove_.push_back(next);
-    }
-    prev = next;
-    next = elements[next].next;
-  }
-
-  if (next != -1) {
-    if (type != elements[next].type && !elements[next].rerender) {
-      throw UsageError("Structure changed outside of a re-render");
-    }
-    current_ = next;
-    return Element(this, current_);
-  }
-
-  if (!elements[parent_].rerender) {
-    throw UsageError("Structure changed outside of a re-render");
-  }
-  current_ = create_element(parent_, prev, type, key);
   return Element(this, current_);
 }
 
@@ -147,7 +169,7 @@ bool Tree::down_if() {
   if (!elements[current_].revisit) {
     return false;
   }
-  DATAGUI_LOG("[Tree | %i] Down", depth);
+  DATAGUI_LOG("[Tree::down ] %sDOWN (if): element=%i", indent_cstr(), current_);
   parent_ = current_;
   current_ = -1;
   variable_stack_.push(variable_current_);
@@ -157,7 +179,10 @@ bool Tree::down_if() {
 }
 
 void Tree::down() {
-  DATAGUI_LOG("[Tree | %i] Down (force)", depth);
+  DATAGUI_LOG(
+      "[Tree::down ] %sDOWN (force): element=%i",
+      indent_cstr(),
+      current_);
   parent_ = current_;
   current_ = -1;
   variable_stack_.push(variable_current_);
@@ -166,7 +191,6 @@ void Tree::down() {
 }
 
 void Tree::up() {
-  DATAGUI_LOG("[Tree | %i] Up", depth);
   depth--;
   assert(depth >= 0);
 
@@ -177,26 +201,21 @@ void Tree::up() {
   int remove_from =
       current_ == -1 ? elements[parent_].first_child : elements[current_].next;
 
-  if (remove_from != -1 && !elements[parent_].rerender) {
-    throw UsageError("Structure changed outside of a re-render");
-  }
   while (remove_from != -1) {
-    queue_remove_.push_back(remove_from);
-    remove_from = elements[remove_from].next;
+    int next = elements[remove_from].next;
+    remove_element(remove_from);
+    next = remove_from;
   }
 
   current_ = parent_;
   parent_ = elements[current_].parent;
+  DATAGUI_LOG("[Tree::up   ] %sUP: element=%i", indent_cstr(), current_);
 
   variable_current_ = variable_stack_.top();
   variable_stack_.pop();
 }
 
-int Tree::create_element(
-    int parent,
-    int prev,
-    int type,
-    const std::string& key) {
+int Tree::create_element(int parent, int prev, int type, int id) {
   int data_index = 1;
   if (type != -1) {
     assert(type < data_containers.size());
@@ -206,7 +225,7 @@ int Tree::create_element(
   int element = elements.emplace(type, data_index);
   auto& node = elements[element];
   node.parent = parent;
-  node.key = key;
+  node.id = id;
 
   node.prev = prev;
   int next = (prev == -1) ? parent == -1 ? root_ : elements[parent].first_child
@@ -310,48 +329,41 @@ void Tree::remove_variable(int variable) {
   variables.pop(variable);
 }
 
-void Tree::variable_mutate(int variable, bool deferred_set) {
-  printf("Variable mutate, deferred? %s\n", deferred_set ? "true" : "false");
-  queue_rerender_variables_.emplace_back(variable, deferred_set);
-}
-
 void Tree::set_revisit(int element) {
   if (element == -1) {
     return;
   }
 
-  // Set revisit = true on the node and all it's ancestors
-  int iter = element;
-  while (iter != -1) {
-    elements[iter].revisit = true;
-    iter = elements[iter].parent;
-  }
-}
-
-void Tree::set_rerender(int element) {
-  // Revisit this node
-  set_revisit(element);
-
-  // Set revisit = true and rerender = true on all the descendants
+  // Set revisit = true on element and descendents
   std::stack<int> stack;
   stack.push(element);
   while (!stack.empty()) {
     int element = stack.top();
     stack.pop();
-    if (element == -1) {
-      stack.push(root_);
+
+    if (elements[element].revisit) {
+      // Revisit is already set to true, no need to update
       continue;
     }
-
     elements[element].revisit = true;
-    elements[element].rerender = true;
-    elements[element].version++;
 
     int child = elements[element].first_child;
     while (child != -1) {
       stack.push(child);
       child = elements[child].next;
     }
+  }
+
+  // Set revisit = true on anscestors
+  int iter = elements[element].parent;
+  while (iter != -1) {
+    if (elements[iter].revisit) {
+      // Revisit already set here, must mean already set
+      // for ancestors too
+      break;
+    }
+    elements[iter].revisit = true;
+    iter = elements[iter].parent;
   }
 }
 
@@ -369,6 +381,15 @@ std::string Tree::element_debug(int element) const {
     }
   }
   return result;
+}
+
+const char* Tree::indent_cstr() const {
+  const int tab_size = 2;
+  const int num_spaces = depth * tab_size;
+  while (indent_string.size() < num_spaces) {
+    indent_string.push_back(' ');
+  }
+  return indent_string.c_str() + (indent_string.size() - num_spaces);
 }
 
 } // namespace datagui

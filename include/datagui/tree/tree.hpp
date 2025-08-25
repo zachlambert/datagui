@@ -43,12 +43,10 @@ struct ElementNode {
   int data_index;
   State state;
 
-  std::string key = "";
+  int id;
   bool is_new = true;
-  bool rerender = true;
   bool revisit = true;
   bool visible = true;
-  bool retain = false;
 
   int parent = -1;
   int prev = -1;
@@ -106,10 +104,10 @@ public:
 
   Tree() {}
 
-  void begin();
+  bool begin();
   void end();
 
-  Element next(int type = -1, const std::string& key = "");
+  Element next(int type = -1, int id = -1);
   bool down_if();
   void down();
   void up();
@@ -126,35 +124,41 @@ public:
     return data_containers.size() - 1;
   }
 
+  int get_id() {
+    return next_id++;
+  }
+
 private:
-  int create_element(int parent, int prev, int type, const std::string& key);
+  int create_element(int parent, int prev, int type, int id);
   void remove_element(int node);
 
   int create_variable(int element);
   void remove_variable(int variable);
 
-  void variable_mutate(int variable, bool deferred_set);
   void set_revisit(int node);
-  void set_rerender(int node);
 
   std::string element_debug(int element) const;
+  const char* indent_cstr() const;
 
   VectorMap<ElementNode> elements;
   std::vector<std::unique_ptr<DataContainer>> data_containers;
   VectorMap<VariableNode> variables;
 
-  int depth = 0; // Debugging
   bool is_new = true;
-  bool render_in_progress = false;
+  bool active_ = false;
   int root_ = -1;
   int parent_ = -1;
   int current_ = -1;
   int variable_current_ = -1;
 
+  int next_id = 0;
+
+  int depth = 0; // Debugging
+  mutable std::string indent_string;
+
   std::stack<int> variable_stack_;
   std::vector<int> queue_revisit_;
-  std::vector<std::pair<int, bool>> queue_rerender_variables_;
-  std::vector<int> queue_remove_;
+  std::vector<int> queue_modified_variables_;
   std::vector<int> modified_variables_;
 
   int external_first_variable_ = -1;
@@ -183,23 +187,16 @@ public:
     static_assert(!IsConst);
     assert(tree->variables[variable].data.cast<T>());
     tree->variables[variable].data_new = UniqueAny::Make<T>(value);
-    tree->variable_mutate(variable, true);
+    tree->queue_modified_variables_.push_back(variable);
   }
   void set(T&& value) const {
     static_assert(!IsConst);
     assert(tree->variables[variable].data.cast<T>());
     tree->variables[variable].data_new = UniqueAny::Make<T>(std::move(value));
-    tree->variable_mutate(variable, true);
+    tree->queue_modified_variables_.push_back(variable);
   }
   bool modified() const {
     return tree->variables[variable].modified;
-  }
-  T& mut() const {
-    // Doesn't trigger rerender
-    return *tree->variables[variable].data.cast<T>();
-  }
-  void trigger() const {
-    tree->variable_mutate(variable, false);
   }
   bool is_new() const {
     return tree->elements[tree->variables[variable].element].is_new;
@@ -404,18 +401,10 @@ Var<T> Tree::variable(const std::function<T()>& construct) {
 }
 
 inline Element Tree::root() {
-  if (render_in_progress) {
-    throw UsageError(
-        "Cannot traverse the tree data while rendering is in progress");
-  }
   return Element(this, root_);
 }
 
 inline ConstElement Tree::root() const {
-  if (render_in_progress) {
-    throw UsageError(
-        "Cannot traverse the tree data while rendering is in progress");
-  }
   return ConstElement(this, root_);
 }
 
