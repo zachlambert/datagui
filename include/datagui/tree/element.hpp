@@ -1,0 +1,79 @@
+#pragma once
+
+#include "datagui/geometry.hpp"
+#include "datagui/input/event.hpp"
+#include "datagui/tree/resources.hpp"
+
+namespace datagui {
+
+class Element {
+public:
+  Element(Resources* resources) : resources(resources) {}
+
+protected:
+  Resources* const resources;
+
+  // Layout input
+  Vecf fixed_size;
+  Vecf dynamic_size;
+  bool zero_size() const {
+    return fixed_size == Vecf::Zero() && dynamic_size == Vecf::Zero();
+  }
+
+  // Layout output
+  Vecf position;
+  Vecf size;
+  Boxf box() const {
+    return Boxf(position, position + size);
+  }
+
+  Boxf layer_box;
+  int layer = 0;
+  bool floating = false;
+  Boxf float_box;
+  int float_priority = 0;
+
+  // Event handling
+  Boxf hitbox; // = box or float_box
+  Boxf hitbox_bounds;
+  bool in_focus_tree = false;
+  bool focused = false;
+  bool hovered = false;
+
+  virtual void set_input_state(
+      const std::vector<const Element*>& children) const = 0;
+  virtual void set_dependent_state(
+      const std::vector<Element*> children) const = 0;
+
+  virtual void render() const = 0;
+
+  // Mouse press, hold or release inside the element bounding box
+  virtual bool mouse_event(const MouseEvent& event) {
+    return false;
+  }
+  virtual bool mouse_hover(const Vecf& mouse_pos) {
+    return false;
+  }
+  // If an element captures the scroll event, process it and return true
+  virtual bool scroll_event(const ScrollEvent& event) {
+    return false;
+  }
+  // Key press, hold or release, while a node is focused
+  virtual bool key_event(const KeyEvent& event) {
+    return false;
+  }
+  // Text input while a node is focused
+  virtual bool text_event(const TextEvent& event) {
+    return false;
+  }
+
+  // Node is focused via tab instead of clicking on it
+  virtual void focus_enter() {}
+  // Node is unfocused via tab, escape or clicking on another node
+  // success = should the changes be retained?
+  virtual bool focus_leave(bool success) {
+    return false;
+  }
+};
+
+} // namespace datagui

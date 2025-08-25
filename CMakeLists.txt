@@ -17,7 +17,7 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-  src/element/button.cpp
+  # src/element/button.cpp
   # src/element/checkbox.cpp
   # src/element/dropdown.cpp
   # src/element/floating.cpp

@@ -111,12 +111,11 @@ void Tree::end() {
   current_ = -1;
 }
 
-Element Tree::next(int type, int id) {
+ElementPtr Tree::next(int id) {
   DATAGUI_LOG(
-      "[Tree::next ] %sNEXT: current=%i type=%i id=%i",
+      "[Tree::next ] %sNEXT: current=%i id=%i",
       indent_cstr(),
       current_,
-      type,
       id);
 
   if (parent_ == -1) {
@@ -124,12 +123,11 @@ Element Tree::next(int type, int id) {
       throw UsageError("Cannot call next more than once at the root");
     }
     if (root_ == -1) {
-      root_ = create_element(-1, -1, type, id);
+      root_ = create_element(-1, -1, id);
       DATAGUI_LOG(
-          "[Tree::next ] %sCreated root: element=%i type=%i  id=%i",
+          "[Tree::next ] %sCreated root: element=%i id=%i",
           indent_cstr(),
           root_,
-          type,
           id);
     } else if (elements[root_].id != id) {
       throw UsageError("TODO: Handle overwriting root");
@@ -151,22 +149,18 @@ Element Tree::next(int type, int id) {
     }
 
     if (iter == -1) {
-      current_ = create_element(parent_, prev, type, id);
+      current_ = create_element(parent_, prev, id);
       DATAGUI_LOG(
-          "[Tree::next ] %sCreated element: element=%i type=%i id=%i",
+          "[Tree::next ] %sCreated element: element=%i id=%i",
           indent_cstr(),
           current_,
-          type,
           id);
     } else {
       current_ = iter;
     }
   }
 
-  if (type != elements[current_].type) {
-    throw UsageError("Element type changed for the same ID");
-  }
-  return Element(this, current_);
+  return ElementPtr(this, current_);
 }
 
 bool Tree::down_if() {
@@ -219,14 +213,8 @@ void Tree::up() {
   variable_stack_.pop();
 }
 
-int Tree::create_element(int parent, int prev, int type, int id) {
-  int data_index = 1;
-  if (type != -1) {
-    assert(type < data_containers.size());
-    data_index = data_containers[type]->emplace();
-  }
-
-  int element = elements.emplace(type, data_index);
+int Tree::create_element(int parent, int prev, int id) {
+  int element = elements.emplace();
   auto& node = elements[element];
   node.parent = parent;
   node.id = id;
@@ -268,10 +256,6 @@ void Tree::remove_element(int element) {
         elements[node.next].prev = node.prev;
       } else if (node.parent != -1) {
         elements[node.parent].last_child = node.prev;
-      }
-
-      if (node.data_index != -1) {
-        data_containers[int(node.type)]->pop(node.data_index);
       }
 
       int variable = node.first_variable;
