@@ -23,13 +23,13 @@ Gui::Gui(const Window::Config& config) : window(config) {
   sm = std::make_shared<StyleManager>();
   renderer.init(fm);
 
-  systems.push_back(std::make_unique<ButtonSystem>(fm));
-  systems.push_back(std::make_unique<CheckboxSystem>(fm));
-  systems.push_back(std::make_unique<DropdownSystem>(fm));
-  systems.push_back(std::make_unique<FloatingSystem>(fm));
-  systems.push_back(std::make_unique<SeriesSystem>());
-  systems.push_back(std::make_unique<TextBoxSystem>(fm));
-  systems.push_back(std::make_unique<TextInputSystem>(fm));
+  systems.emplace<ButtonSystem>(fm);
+  systems.emplace<CheckboxSystem>(fm);
+  systems.emplace<DropdownSystem>(fm);
+  systems.emplace<FloatingSystem>(fm);
+  systems.emplace<SeriesSystem>();
+  systems.emplace<TextBoxSystem>(fm);
+  systems.emplace<TextInputSystem>(fm);
 }
 
 bool Gui::running() const {
@@ -40,10 +40,8 @@ bool Gui::series_begin() {
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::text_box] Construct new Series");
-    assert(!element->props);
     element->props = UniqueAny::Make<SeriesProps>();
-    element->system = find_system<SeriesSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<SeriesSystem>();
   }
 
   auto& props = *element->props.cast<SeriesProps>();
@@ -67,10 +65,8 @@ void Gui::text_box(const std::string& text) {
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::text_box] Construct new TextBox");
-    assert(!element->props);
     element->props = UniqueAny::Make<TextBoxProps>();
-    element->system = find_system<TextBoxSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<TextBoxSystem>();
   }
 
   auto& props = *element->props.cast<TextBoxProps>();
@@ -90,10 +86,8 @@ bool Gui::button(const std::string& text) {
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::button] Construct new Button");
-    assert(!element->props);
     element->props = UniqueAny::Make<ButtonProps>();
-    element->system = find_system<ButtonSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<ButtonSystem>();
   }
 
   auto& props = *element->props.cast<ButtonProps>();
@@ -111,10 +105,8 @@ const std::string* Gui::text_input(const std::string& initial_value) {
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::text_input(initial_value)] Construct new TextInput");
-    assert(!element->props);
     element->props = UniqueAny::Make<TextInputProps>();
-    element->system = find_system<TextInputSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<TextInputSystem>();
 
     auto& props = *element->props.cast<TextInputProps>();
     props.text = initial_value;
@@ -135,10 +127,8 @@ void Gui::text_input(const Variable<std::string>& value) {
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::text_input(variable)] Construct new TextInput");
-    assert(!element->props);
     element->props = UniqueAny::Make<TextInputProps>();
-    element->system = find_system<TextInputSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<TextInputSystem>();
 
     auto& props = *element->props.cast<TextInputProps>();
     props.text = *value;
@@ -162,10 +152,8 @@ const bool* Gui::checkbox(bool initial_value) {
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::checkbox(initial_value)] Construct new Checkbox");
-    assert(!element->props);
     element->props = UniqueAny::Make<CheckboxProps>();
-    element->system = find_system<CheckboxSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<CheckboxSystem>();
 
     auto& props = *element->props.cast<CheckboxProps>();
     props.checked = initial_value;
@@ -188,10 +176,8 @@ void Gui::checkbox(const Variable<bool>& value) {
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::checkbox(variable)] Construct new Checkbox");
-    assert(!element->props);
     element->props = UniqueAny::Make<CheckboxProps>();
-    element->system = find_system<CheckboxSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<CheckboxSystem>();
 
     auto& props = *element->props.cast<CheckboxProps>();
     props.checked = *value;
@@ -220,10 +206,8 @@ const int* Gui::dropdown(
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::dropdown(initial_value)] Construct new Dropdown");
-    assert(!element->props);
     element->props = UniqueAny::Make<DropdownProps>();
-    element->system = find_system<DropdownSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<DropdownSystem>();
 
     auto& props = *element->props.cast<DropdownProps>();
     props.choices = choices;
@@ -249,10 +233,8 @@ void Gui::dropdown(
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::dropdown(variable)] Construct new Dropdown");
-    assert(!element->props);
     element->props = UniqueAny::Make<DropdownProps>();
-    element->system = find_system<DropdownSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<DropdownSystem>();
 
     auto& props = *element->props.cast<DropdownProps>();
     props.choices = choices;
@@ -278,10 +260,8 @@ bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
   auto element = tree.next();
   if (element->system == -1) {
     DATAGUI_LOG("[Gui::floating_begin] Construct new Floating");
-    assert(!element->props);
     element->props = UniqueAny::Make<FloatingProps>();
-    element->system = find_system<FloatingSystem>();
-    assert(element->system != -1);
+    element->system = systems.find<FloatingSystem>();
 
     auto& props = *element->props.cast<FloatingProps>();
     props.open = *open;
@@ -380,7 +360,7 @@ void Gui::render() {
     if (element->hidden) {
       continue;
     }
-    systems[element->system]->render(*element, renderer);
+    systems.get(*element).render(*element, renderer);
 
 #ifdef DATAGUI_DEBUG
     if (debug_mode_) {
@@ -491,7 +471,7 @@ void Gui::calculate_sizes() {
       for (auto child = element.first_child(); child; child = child.next()) {
         children.push_back(child.get());
       }
-      systems[element->system]->set_input_state(*element, children);
+      systems.get(*element).set_input_state(*element, children);
     }
   }
 
@@ -564,7 +544,7 @@ void Gui::calculate_sizes() {
       for (auto child = element.first_child(); child; child = child.next()) {
         children.push_back(child.get());
       }
-      systems[element->system]->set_dependent_state(*element, children);
+      systems.get(*element).set_dependent_state(*element, children);
 
       for (auto child = element.first_child(); child; child = child.next()) {
         child->layer_box = element->layer_box;
@@ -646,7 +626,7 @@ void Gui::event_handling() {
         break;
       case Key::Escape:
         if (element_focus) {
-          systems[element_focus->system]->focus_leave(*element_focus, false);
+          systems.get(*element_focus).focus_leave(*element_focus, false);
           set_tree_focus(element_focus, false);
           element_focus = ElementPtr();
         }
@@ -666,14 +646,14 @@ void Gui::event_handling() {
 
     if (!handled && element_focus) {
       element_focus.revisit(
-          systems[element_focus->system]->key_event(*element_focus, event));
+          systems.get(*element_focus).key_event(*element_focus, event));
     }
   }
 
   for (const auto& event : window.text_events()) {
     if (element_focus) {
       element_focus.revisit(
-          systems[element_focus->system]->text_event(*element_focus, event));
+          systems.get(*element_focus).text_event(*element_focus, event));
     }
   }
 }
@@ -714,7 +694,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // this isn't true (eg: The node gets removed)
     if (element_focus) {
       element_focus.revisit(
-          systems[element_focus->system]->mouse_event(*element_focus, event));
+          systems.get(*element_focus).mouse_event(*element_focus, event));
     }
     return;
   }
@@ -726,9 +706,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
 
   if (element_focus != prev_element_focus) {
     if (prev_element_focus) {
-      systems[prev_element_focus->system]->focus_leave(
-          *prev_element_focus,
-          true);
+      systems.get(*prev_element_focus).focus_leave(*prev_element_focus, true);
       set_tree_focus(prev_element_focus, false);
     }
     if (element_focus) {
@@ -739,7 +717,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   }
   if (element_focus) {
     element_focus.revisit(
-        systems[element_focus->system]->mouse_event(*element_focus, event));
+        systems.get(*element_focus).mouse_event(*element_focus, event));
   }
 }
 
@@ -753,13 +731,13 @@ void Gui::event_handling_hover(const Vecf& mouse_pos) {
     return;
   }
   element_hover->hovered = true;
-  systems[element_hover->system]->mouse_hover(*element_hover, mouse_pos);
+  systems.get(*element_hover).mouse_hover(*element_hover, mouse_pos);
 }
 
 void Gui::event_handling_scroll(const ScrollEvent& event) {
   ElementPtr element = get_leaf_node(event.position);
   while (element) {
-    if (systems[element->system]->scroll_event(*element, event)) {
+    if (systems.get(*element).scroll_event(*element, event)) {
       return;
     }
     element = element.parent();
@@ -828,7 +806,7 @@ void Gui::focus_next(bool reverse) {
 
   if (element_focus) {
     auto prev_element_focus = element_focus;
-    systems[prev_element_focus->system]->focus_leave(*prev_element_focus, true);
+    systems.get(*prev_element_focus).focus_leave(*prev_element_focus, true);
     set_tree_focus(element_focus, false);
   }
 
@@ -836,7 +814,7 @@ void Gui::focus_next(bool reverse) {
 
   if (element_focus) {
     set_tree_focus(element_focus, true);
-    systems[element_focus->system]->focus_enter(*element_focus);
+    systems.get(*element_focus).focus_enter(*element_focus);
   }
 }
 
