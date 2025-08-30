@@ -51,16 +51,16 @@ public:
       Element& element,
       const ConstElementList& children) = 0;
   virtual void set_dependent_state(
-      const Element& element,
+      Element& element,
       const ElementList& children) {}
 
-  virtual void render(const Element& element, Renderer& renderer) const = 0;
+  virtual void render(const Element& element, Renderer& renderer) = 0;
 
   // Mouse press, hold or release inside the element bounding box
-  virtual bool mouse_event(const Element& element, const MouseEvent& event) {
+  virtual bool mouse_event(Element& element, const MouseEvent& event) {
     return false;
   }
-  virtual bool mouse_hover(const Element& element, const Vecf& mouse_pos) {
+  virtual bool mouse_hover(Element& element, const Vecf& mouse_pos) {
     return false;
   }
   // If an element captures the scroll event, process it and return true

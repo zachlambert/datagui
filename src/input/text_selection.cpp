@@ -270,13 +270,13 @@ void render_selection(
     const std::string& text,
     const Vecf& origin,
     const TextSelection& selection,
-    GeometryRenderer& geometry_renderer) {
+    Renderer& renderer) {
 
   // Render cursor only
 
   if (selection.span() == 0) {
     Vecf offset = cursor_offset(font, text, width, selection.begin);
-    geometry_renderer.queue_box(
+    renderer.queue_box(
         Boxf(
             origin + offset - Vecf(float(style.cursor_width) / 2, 0),
             origin + offset + Vecf(style.cursor_width, font.line_height)),
@@ -308,7 +308,7 @@ void render_selection(
         to_offset.x += c.advance;
       }
       to_offset.y += font.line_height;
-      geometry_renderer.queue_box(
+      renderer.queue_box(
           Boxf(origin + from_offset, origin + to_offset),
           style.highlight_color,
           0,
@@ -324,7 +324,7 @@ void render_selection(
   }
 
   Vecf to_offset = offset + Vecf(0, font.line_height);
-  geometry_renderer.queue_box(
+  renderer.queue_box(
       Boxf(origin + from_offset, origin + to_offset),
       style.highlight_color,
       0,

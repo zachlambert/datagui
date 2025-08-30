@@ -88,7 +88,7 @@ void SeriesSystem::set_input_state(
 }
 
 void SeriesSystem::set_dependent_state(
-    const Element& e,
+    Element& e,
     const ElementList& children) {
   const auto& props = *e.props.cast<SeriesProps>();
 
@@ -173,7 +173,7 @@ void SeriesSystem::set_dependent_state(
   }
 }
 
-void SeriesSystem::render(const Element& e, Renderer& renderer) const {
+void SeriesSystem::render(const Element& e, Renderer& renderer) {
   const auto& props = *e.props.cast<SeriesProps>();
   renderer.queue_box(e.box(), props.bg_color, 0, Color::Black(), 0);
 }

@@ -2,8 +2,8 @@
 
 #include "datagui/input/event.hpp"
 #include "datagui/style.hpp"
-#include "datagui/visual/font.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
+#include "datagui/visual/font_manager.hpp"
+#include "datagui/visual/renderer.hpp"
 
 namespace datagui {
 
@@ -61,6 +61,6 @@ void render_selection(
     const std::string& text,
     const Vecf& origin,
     const TextSelection& selection,
-    GeometryRenderer& geometry_renderer);
+    Renderer& renderer);
 
 } // namespace datagui
