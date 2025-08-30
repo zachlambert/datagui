@@ -28,54 +28,23 @@ public:
 
   void text_box(const std::string& text);
 
-#if 0
-  bool series_begin(const Style& style = Style());
-  void series_begin_force(const Style& style = Style());
-  void series_end();
+  bool button(const std::string& text);
 
-  void text_box(const std::string& text, const Style& style = Style());
+  const std::string* text_input(const std::string& initial_value);
+  void text_input(const Variable<std::string>& value);
 
-  bool button(const std::string& text, const Style& style = Style());
-
-  const std::string* text_input(
-      const std::string& initial_text = "",
-      const Style& style = Style());
-  void text_input(
-      const Variable<std::string>& text,
-      const Style& style = Style());
-  void text_input_write(const std::string& value, const Style& style = Style());
-  const std::string& text_input_read();
-
-  const bool* checkbox(
-      const bool& initial_checked = false,
-      const Style& style = Style());
-  void checkbox(const Variable<bool>& checked, const Style& style = Style());
-  void checkbox_write(bool value, const Style& style = Style());
-  bool checkbox_read();
+  const bool* checkbox(bool initial_value = false);
+  void checkbox(const Variable<bool>& value);
 
   const int* dropdown(
       const std::vector<std::string>& choices,
-      int initial_choice = -1,
-      const Style& style = Style());
+      int initial_choice = -1);
   void dropdown(
       const std::vector<std::string>& choices,
-      const Variable<int>& choice,
-      const Style& style = Style());
-  void dropdown_write(
-      const std::vector<std::string>& choices,
-      int choice,
-      const Style& style = Style());
-  int dropdown_read();
+      const Variable<int>& choice);
 
-  // Floating
-
-  bool floating_begin(
-      const Variable<bool>& open,
-      const std::string& title,
-      const Style& style = Style());
+  bool floating_begin(const Variable<bool>& open, const std::string& title);
   void floating_end();
-
-#endif
 
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
