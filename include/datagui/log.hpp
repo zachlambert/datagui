@@ -41,17 +41,23 @@ void log_indent(int change);
                                     : __FILE__)
 
 #define DATAGUI_LOG_INIT() ::datagui::log_init();
-#define DATAGUI_LOG(msg, ...) \
-  { \
-  }
-// #define DATAGUI_LOG(msg, ...) printf((msg "\n"), ##__VA_ARGS__)
-#define DATAGUI_LOG2(label, fmt, ...) \
+
+#define DATAGUI_LOG(label, fmt, ...) \
   ::datagui::log_write(__FILENAME__, __LINE__, label, fmt, ##__VA_ARGS__)
+
 #define DATAGUI_LOG_INDENT(change) ::datagui::log_indent(change)
 
 #else
-#define DATAGUI_LOG_INIT() ()
-#define DATAGUI_LOG(msg, ...) ()
-#define DATAGUI_LOG2(label, fmt, ...) ()
-#define DATAGUI_INDENT(change) ()
+#define DATAGUI_LOG_INIT() \
+  { \
+  }
+#define DATAGUI_LOG(msg, ...) \
+  { \
+  }
+#define DATAGUI_LOG2(label, fmt, ...) \
+  { \
+  }
+#define DATAGUI_INDENT(change) \
+  { \
+  }
 #endif

@@ -259,7 +259,7 @@ public:
     if (!revisit) {
       return;
     }
-    DATAGUI_LOG("[ElementPtr_::revisit] REVISIT: element=%i", index);
+    DATAGUI_LOG("ElementPtr_::revisit", "REVISIT: element=%i", index);
     tree->queue_revisit_.emplace_back(index);
   }
 
@@ -322,11 +322,11 @@ Var<T> Tree::variable(const std::function<T()>& construct) {
     if (parent_ == -1) {
       variable = create_variable(-1);
       variables[variable].data = UniqueAny::Make<T>(construct());
-      DATAGUI_LOG("Created external variable: %i", variable);
+      DATAGUI_LOG("Tree::variable", "Created external variable: %i", variable);
     } else {
       variable = create_variable(parent_);
       variables[variable].data = UniqueAny::Make<T>(construct());
-      DATAGUI_LOG("Created internal variable: %i", variable);
+      DATAGUI_LOG("Tree::variable", "Created internal variable: %i", variable);
     }
   }
   variable_current_ = variable;

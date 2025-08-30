@@ -80,7 +80,7 @@ bool GuiReader::optional_begin() {
   }
 
   tree.down();
-  DATAGUI_LOG("[GuiReader::optional_begin] DOWN (1)");
+  DATAGUI_LOG("GuiReader::optional_begin", "DOWN (1)");
 
   bool has_value;
   {
@@ -91,7 +91,7 @@ bool GuiReader::optional_begin() {
   }
 
   if (!has_value) {
-    DATAGUI_LOG("[GuiReader::optional_begin] UP (1) (no value)");
+    DATAGUI_LOG("GuiReader::optional_begin", "UP (1) (no value)");
     tree.up();
     return false;
   }
@@ -101,15 +101,15 @@ bool GuiReader::optional_begin() {
     assert(element->props.cast<SeriesProps>());
   }
 
-  DATAGUI_LOG("[GuiReader::optional_begin] DOWN (1) (has value)");
+  DATAGUI_LOG("GuiReader::optional_begin", "DOWN (1) (has value)");
   tree.down();
   return true;
 }
 
 void GuiReader::optional_end() {
-  DATAGUI_LOG("[GuiReader::optional_end] UP (2)");
+  DATAGUI_LOG("GuiReader::optional_end", "UP (2)");
   tree.up();
-  DATAGUI_LOG("[GuiReader::optional_end] UP (1)");
+  DATAGUI_LOG("GuiReader::optional_end", "UP (1)");
   tree.up();
 }
 
@@ -119,7 +119,7 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
     assert(element->props.cast<SeriesProps>());
   }
 
-  DATAGUI_LOG("[GuiReader::variant_begin] DOWN (1)");
+  DATAGUI_LOG("GuiReader::variant_begin", "DOWN (1)");
   tree.down();
 
   int value;
@@ -135,23 +135,23 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
     assert(element->props.cast<SeriesProps>());
   }
 
-  DATAGUI_LOG("[GuiReader::variant_begin] DOWN (2)");
+  DATAGUI_LOG("GuiReader::variant_begin", "DOWN (2)");
   tree.down();
 
   return value;
 }
 
 void GuiReader::variant_end() {
-  DATAGUI_LOG("[GuiReader::variant_end] UP (2)");
+  DATAGUI_LOG("GuiReader::variant_end", "UP (2)");
   tree.up();
-  DATAGUI_LOG("[GuiReader::variant_end] UP (1)");
+  DATAGUI_LOG("GuiReader::variant_end", "UP (1)");
   tree.up();
 }
 
 void GuiReader::object_begin() {
   auto element = tree.next();
   assert(element->props.cast<SeriesProps>());
-  DATAGUI_LOG("[GuiReader::object_begin] DOWN");
+  DATAGUI_LOG("GuiReader::object_begin", "DOWN");
   tree.down();
 }
 
@@ -163,14 +163,14 @@ void GuiReader::object_next(const char* key) {
 }
 
 void GuiReader::object_end() {
-  DATAGUI_LOG("[GuiReader::object_begin] UP");
+  DATAGUI_LOG("GuiReader::object_begin", "UP");
   tree.up();
 }
 
 void GuiReader::tuple_begin() {
   auto element = tree.next();
   assert(element->props.cast<SeriesProps>());
-  DATAGUI_LOG("[GuiReader::tuple_begin] DOWN");
+  DATAGUI_LOG("GuiReader::tuple_begin", "DOWN");
   tree.down();
 }
 
@@ -179,7 +179,7 @@ void GuiReader::tuple_next() {
 }
 
 void GuiReader::tuple_end() {
-  DATAGUI_LOG("[GuiReader::tuple_end] UP");
+  DATAGUI_LOG("GuiReader::tuple_end", "UP");
   tree.up();
 }
 
@@ -188,7 +188,7 @@ void GuiReader::list_begin() {
     auto element = tree.next();
     assert(element->props.cast<SeriesProps>());
   }
-  DATAGUI_LOG("[GuiReader::list_begin] DOWN (1)");
+  DATAGUI_LOG("GuiReader::list_begin", "DOWN (1)");
   tree.down();
 
   ListState state;
@@ -200,7 +200,7 @@ void GuiReader::list_begin() {
     auto element = tree.next();
     assert(element->props.cast<SeriesProps>());
   }
-  DATAGUI_LOG("[GuiReader::list_begin] DOWN (2)");
+  DATAGUI_LOG("GuiReader::list_begin", "DOWN (2)");
   tree.down();
 }
 
@@ -214,7 +214,7 @@ bool GuiReader::list_next() {
 }
 
 void GuiReader::list_end() {
-  DATAGUI_LOG("[GuiReader::list_end] UP (2)");
+  DATAGUI_LOG("GuiReader::list_end", "UP (2)");
   tree.up();
 
   const auto& state = list_stack.top();
@@ -251,7 +251,7 @@ void GuiReader::list_end() {
 
   list_stack.pop();
 
-  DATAGUI_LOG("[GuiReader::list_end] UP (1)");
+  DATAGUI_LOG("GuiReader::list_end", "UP (1)");
   tree.up();
 }
 

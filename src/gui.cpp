@@ -39,7 +39,7 @@ bool Gui::running() const {
 bool Gui::series_begin() {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::text_box] Construct new Series");
+    DATAGUI_LOG("Gui::text_box", "Construct new Series");
     element->props = UniqueAny::Make<SeriesProps>();
     element->system = systems.find<SeriesSystem>();
   }
@@ -48,11 +48,11 @@ bool Gui::series_begin() {
   props.set_style(*sm);
 
   if (tree.down_if()) {
-    DATAGUI_LOG("[Gui::series_begin] DOWN");
+    DATAGUI_LOG("Gui::series_begin", "DOWN");
     sm->down();
     return true;
   }
-  DATAGUI_LOG("[Gui::series_begin] SKIP");
+  DATAGUI_LOG("Gui::series_begin", "SKIP");
   return false;
 }
 
@@ -64,7 +64,7 @@ void Gui::series_end() {
 void Gui::text_box(const std::string& text) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::text_box] Construct new TextBox");
+    DATAGUI_LOG("Gui::text_box", "Construct new TextBox");
     element->props = UniqueAny::Make<TextBoxProps>();
     element->system = systems.find<TextBoxSystem>();
   }
@@ -85,7 +85,7 @@ void Gui::text_box(const std::string& text) {
 bool Gui::button(const std::string& text) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::button] Construct new Button");
+    DATAGUI_LOG("Gui::button", "Construct new Button");
     element->props = UniqueAny::Make<ButtonProps>();
     element->system = systems.find<ButtonSystem>();
   }
@@ -94,7 +94,7 @@ bool Gui::button(const std::string& text) {
   props.text = text;
   props.set_style(*sm);
   if (props.released) {
-    DATAGUI_LOG("[Gui::button] Button released");
+    DATAGUI_LOG("Gui::button", "Button released");
     props.released = false;
     return true;
   }
@@ -104,7 +104,7 @@ bool Gui::button(const std::string& text) {
 const std::string* Gui::text_input(const std::string& initial_value) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::text_input(initial_value)] Construct new TextInput");
+    DATAGUI_LOG("Gui::text_input(initial_value)", "Construct new TextInput");
     element->props = UniqueAny::Make<TextInputProps>();
     element->system = systems.find<TextInputSystem>();
 
@@ -116,7 +116,7 @@ const std::string* Gui::text_input(const std::string& initial_value) {
   props.set_style(*sm);
 
   if (props.changed) {
-    DATAGUI_LOG("[Gui::text_input(initial_value)] Text input changed");
+    DATAGUI_LOG("Gui::text_input(initial_value)", "Text input changed");
     props.changed = false;
     return &props.text;
   }
@@ -126,7 +126,7 @@ const std::string* Gui::text_input(const std::string& initial_value) {
 void Gui::text_input(const Variable<std::string>& value) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::text_input(variable)] Construct new TextInput");
+    DATAGUI_LOG("Gui::text_input(variable)", "Construct new TextInput");
     element->props = UniqueAny::Make<TextInputProps>();
     element->system = systems.find<TextInputSystem>();
 
@@ -139,11 +139,11 @@ void Gui::text_input(const Variable<std::string>& value) {
   printf("Changed: %s\n", BOOL_STR(props.changed));
 
   if (props.changed) {
-    DATAGUI_LOG("[Gui::text_input(variable)] Text input changed");
+    DATAGUI_LOG("Gui::text_input(variable)", "Text input changed");
     value.set(props.text);
     props.changed = false;
   } else if (value.modified()) {
-    DATAGUI_LOG("[Gui::text_input(variable)] Variable modified");
+    DATAGUI_LOG("Gui::text_input(variable)", "Variable modified");
     props.text = *value;
   }
 }
@@ -151,7 +151,7 @@ void Gui::text_input(const Variable<std::string>& value) {
 const bool* Gui::checkbox(bool initial_value) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::checkbox(initial_value)] Construct new Checkbox");
+    DATAGUI_LOG("Gui::checkbox(initial_value)", "Construct new Checkbox");
     element->props = UniqueAny::Make<CheckboxProps>();
     element->system = systems.find<CheckboxSystem>();
 
@@ -164,7 +164,8 @@ const bool* Gui::checkbox(bool initial_value) {
 
   if (props.changed) {
     DATAGUI_LOG(
-        "[Gui::checkbox(initial_value)] Checkbox changed -> %s",
+        "Gui::checkbox(initial_value)",
+        "Checkbox changed -> %s",
         props.checked ? "true" : "false");
     props.changed = false;
     return &props.checked;
@@ -175,7 +176,7 @@ const bool* Gui::checkbox(bool initial_value) {
 void Gui::checkbox(const Variable<bool>& value) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::checkbox(variable)] Construct new Checkbox");
+    DATAGUI_LOG("Gui::checkbox(variable)", "Construct new Checkbox");
     element->props = UniqueAny::Make<CheckboxProps>();
     element->system = systems.find<CheckboxSystem>();
 
@@ -188,13 +189,15 @@ void Gui::checkbox(const Variable<bool>& value) {
 
   if (props.changed) {
     DATAGUI_LOG(
-        "[Gui::checkbox(variable)] Checkbox changed -> %s",
+        "Gui::checkbox(variable)",
+        "Checkbox changed -> %s",
         BOOL_STR(props.checked));
     value.set(props.checked);
     props.changed = false;
   } else if (value.modified()) {
     DATAGUI_LOG(
-        "[Gui::checkbox(variable)] Variable modified -> %s",
+        "Gui::checkbox(variable)",
+        "Variable modified -> %s",
         BOOL_STR(*value));
     props.checked = *value;
   }
@@ -205,7 +208,7 @@ const int* Gui::dropdown(
     int initial_choice) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::dropdown(initial_value)] Construct new Dropdown");
+    DATAGUI_LOG("Gui::dropdown(initial_value)", "Construct new Dropdown");
     element->props = UniqueAny::Make<DropdownProps>();
     element->system = systems.find<DropdownSystem>();
 
@@ -219,7 +222,8 @@ const int* Gui::dropdown(
 
   if (props.changed) {
     DATAGUI_LOG(
-        "[Gui::dropdown(initial_value)] Dropdown changed -> %i",
+        "Gui::dropdown(initial_value)",
+        "Dropdown changed -> %i",
         props.choice);
     props.changed = false;
     return &props.choice;
@@ -232,7 +236,7 @@ void Gui::dropdown(
     const Variable<int>& choice) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::dropdown(variable)] Construct new Dropdown");
+    DATAGUI_LOG("Gui::dropdown(variable)", "Construct new Dropdown");
     element->props = UniqueAny::Make<DropdownProps>();
     element->system = systems.find<DropdownSystem>();
 
@@ -246,12 +250,13 @@ void Gui::dropdown(
 
   if (props.changed) {
     DATAGUI_LOG(
-        "[Gui::dropdown(variable)] Dropdown changed -> %i",
+        "Gui::dropdown(variable)",
+        "Dropdown changed -> %i",
         props.choice);
     choice.set(props.choice);
     props.changed = false;
   } else if (choice.modified()) {
-    DATAGUI_LOG("[Gui::dropdown(variable)] Variable modified -> %i", *choice);
+    DATAGUI_LOG("Gui::dropdown(variable)", "Variable modified -> %i", *choice);
     props.choice = *choice;
   }
 }
@@ -259,7 +264,7 @@ void Gui::dropdown(
 bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[Gui::floating_begin] Construct new Floating");
+    DATAGUI_LOG("Gui::floating_begin", "Construct new Floating");
     element->props = UniqueAny::Make<FloatingProps>();
     element->system = systems.find<FloatingSystem>();
 
@@ -273,13 +278,15 @@ bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
 
   if (props.open_changed) {
     DATAGUI_LOG(
-        "[Gui::floating_begin] Open changed -> %s",
+        "Gui::floating_begin",
+        "Open changed -> %s",
         BOOL_STR(props.open));
     props.open_changed = false;
     open.set(props.open);
   } else if (open.modified()) {
     DATAGUI_LOG(
-        "[Gui::floating_begin] Open variable changed -> %s",
+        "Gui::floating_begin",
+        "Open variable changed -> %s",
         BOOL_STR(*open));
     props.open = *open;
   }
