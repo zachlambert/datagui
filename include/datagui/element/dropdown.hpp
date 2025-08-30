@@ -1,12 +1,13 @@
 #pragma once
 
-#include "datagui/resources.hpp"
 #include "datagui/style.hpp"
-#include "datagui/tree/element_system.hpp"
+#include "datagui/tree/element.hpp"
+#include "datagui/visual/font_manager.hpp"
 
 namespace datagui {
 
-struct DropdownStyle {
+struct DropdownProps {
+  // Style
   Length width = LengthWrap();
   Color bg_color = Color::Gray(0.8);
   BoxDims border_width = 2;
@@ -14,60 +15,45 @@ struct DropdownStyle {
   BoxDims padding = 5;
   float inner_border_width = 2;
   Color inner_border_color = Color::Black();
-  TextStyle text;
-  InputStyle input;
+  TextStyle text_style;
+  InputStyle input_style;
 
-  void apply(const StyleManager& style) {
-    style.dropdown_width(width);
-    style.dropdown_bg_color(bg_color);
-    style.dropdown_border_width(border_width);
-    style.dropdown_border_color(border_color);
-    style.text_padding(padding);
-    style.dropdown_inner_border_width(inner_border_width);
-    style.dropdown_inner_border_color(inner_border_color);
-    text.apply(style);
-    input.apply(style);
-  }
-};
-
-struct DropdownData {
-  DropdownStyle style;
+  // Data
   std::vector<std::string> choices;
   int choice = -1;
   int choice_hovered = -1;
   bool changed = false;
   bool open = false;
+
+  void set_style(const StyleManager& sm) {
+    sm.dropdown_width(width);
+    sm.dropdown_bg_color(bg_color);
+    sm.dropdown_border_width(border_width);
+    sm.dropdown_border_color(border_color);
+    sm.text_padding(padding);
+    sm.dropdown_inner_border_width(inner_border_width);
+    sm.dropdown_inner_border_color(inner_border_color);
+    text_style.apply(sm);
+    input_style.apply(sm);
+  }
 };
 
-class DropdownSystem : public ElementSystemImpl<DropdownData> {
+class DropdownSystem : public ElementSystem {
 public:
-  DropdownSystem(Resources& res) : res(res) {}
+  DropdownSystem(std::shared_ptr<FontManager> fm) : fm(fm) {}
 
-  const int* visit(
-      Element element,
-      const std::vector<std::string>& choices,
-      int initial_choice);
-  void visit(
-      Element element,
-      const std::vector<std::string>& choices,
-      const Variable<int>& choice);
-  void write(
-      Element element,
-      const std::vector<std::string>& choices,
-      int choice);
-  int read(ConstElement element);
-
-  void set_input_state(Element element) const override;
-  void set_dependent_state(Element element) const override;
-  void render(ConstElement element) const override;
-  void mouse_event(Element element, const MouseEvent& event) override;
-
-  void focus_enter(Element element) override;
-  void focus_leave(Element element, bool success, ConstElement new_element)
+  void set_input_state(Element& element, const ConstElementList& children)
       override;
+  void set_dependent_state(Element& element, const ElementList& children)
+      override;
+  void render(const Element& element, Renderer& renderer) override;
+  bool mouse_event(Element& element, const MouseEvent& event) override;
+
+  void focus_enter(Element& element) override;
+  bool focus_leave(Element& element, bool success) override;
 
 private:
-  Resources& res;
+  std::shared_ptr<FontManager> fm;
 };
 
 } // namespace datagui

@@ -17,19 +17,19 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-  # src/element/button.cpp
-  # src/element/checkbox.cpp
-  # src/element/dropdown.cpp
-  # src/element/floating.cpp
+  src/element/button.cpp
+  src/element/checkbox.cpp
+  src/element/dropdown.cpp
+  src/element/floating.cpp
   src/element/series.cpp
   src/element/text_box.cpp
-  # src/element/text_input.cpp
+  src/element/text_input.cpp
 
-  # src/input/text_selection.cpp
+  src/input/text_selection.cpp
 
   src/tree/tree.cpp
 
-  src/visual/font.cpp
+  src/visual/font_manager.cpp
   src/visual/geometry_renderer.cpp
   src/visual/shader.cpp
   src/visual/text_renderer.cpp

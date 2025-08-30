@@ -2,235 +2,169 @@
 
 namespace datagui {
 
-const int* DropdownSystem::visit(
-    Element element,
-    const std::vector<std::string>& choices,
-    int initial_choice) {
-
-  auto& data = element.data<DropdownData>();
-  if (element.is_new()) {
-    data.choices = choices;
-    data.choice = initial_choice;
-  }
-  data.style.apply(res.style_manager);
-
-  if (data.changed) {
-    data.changed = false;
-    return &data.choice;
-  }
-  return nullptr;
-}
-
-void DropdownSystem::visit(
-    Element element,
-    const std::vector<std::string>& choices,
-    const Variable<int>& choice) {
-
-  auto& data = element.data<DropdownData>();
-  if (element.is_new()) {
-    data.choices = choices;
-    data.choice = *choice;
-  }
-  if (element.rerender()) {
-    data.style.apply(res.style_manager);
-  }
-  if (choice.modified()) {
-    data.choice = *choice;
-    data.changed = false;
-  } else if (data.changed) {
-    data.changed = false;
-    choice.set(data.choice);
-  }
-}
-
-void DropdownSystem::write(
-    Element element,
-    const std::vector<std::string>& choices,
-    int choice) {
-  auto& data = element.data<DropdownData>();
-  if (element.is_new()) {
-    data.choices = choices;
-  }
-  if (element.rerender()) {
-    data.style.apply(res.style_manager);
-  }
-  data.choice = choice;
-}
-
-int DropdownSystem::read(ConstElement element) {
-  const auto& data = element.data<DropdownData>();
-  return data.choice;
-}
-
-void DropdownSystem::set_input_state(Element element) const {
-  const auto& data = element.data<DropdownData>();
-  const auto& style = data.style;
+void DropdownSystem::set_input_state(
+    Element& e,
+    const ConstElementList& children) {
+  const auto& props = *e.props.cast<DropdownProps>();
 
   float max_item_width = 0;
-  for (const auto& choice : data.choices) {
-    Vecf choice_size =
-        res.font_manager.text_size(choice, style.text, LengthWrap());
+  for (const auto& choice : props.choices) {
+    Vecf choice_size = fm->text_size(choice, props.text_style, LengthWrap());
     max_item_width = std::max(max_item_width, choice_size.x);
   }
-  if (data.choices.empty()) {
-    Vecf none_size =
-        res.font_manager.text_size("<none>", style.text, LengthWrap());
+  if (props.choices.empty()) {
+    Vecf none_size = fm->text_size("<none>", props.text_style, LengthWrap());
     max_item_width = std::max(max_item_width, none_size.x);
   }
 
-  element->fixed_size = Vecf::Zero();
-  element->dynamic_size = Vecf::Zero();
+  e.fixed_size = Vecf::Zero();
+  e.dynamic_size = Vecf::Zero();
 
-  if (auto width = std::get_if<LengthFixed>(&style.width)) {
-    element->fixed_size.x = std::min(max_item_width, width->value);
-  } else if (std::get_if<LengthWrap>(&style.width)) {
-    element->fixed_size.x = max_item_width;
-  } else if (auto width = std::get_if<LengthDynamic>(&style.width)) {
-    element->dynamic_size.x = width->weight;
+  if (auto width = std::get_if<LengthFixed>(&props.width)) {
+    e.fixed_size.x = std::min(max_item_width, width->value);
+  } else if (std::get_if<LengthWrap>(&props.width)) {
+    e.fixed_size.x = max_item_width;
+  } else if (auto width = std::get_if<LengthDynamic>(&props.width)) {
+    e.dynamic_size.x = width->weight;
   }
-  element->fixed_size += style.border_width.size() + style.padding.size();
-  element->fixed_size.y += res.font_manager.text_height(style.text);
+  e.fixed_size += props.border_width.size() + props.padding.size();
+  e.fixed_size.y += fm->text_height(props.text_style);
 
-  element->floating = data.open && !data.choices.empty();
+  e.floating = props.open && !props.choices.empty();
 }
 
-void DropdownSystem::set_dependent_state(Element element) const {
-  element->float_box = element->box();
-  if (!element->floating) {
+void DropdownSystem::set_dependent_state(
+    Element& e,
+    const ElementList& children) {
+  e.float_box = e.box();
+  if (!e.floating) {
     return;
   }
 
-  const auto& data = element.data<DropdownData>();
-  const auto& style = data.style;
-  element->float_box.upper.y +=
-      (data.choices.size() - 1) *
-      (res.font_manager.text_height(style.text) + style.padding.size().y +
-       style.inner_border_width);
+  const auto& props = *e.props.cast<DropdownProps>();
+  e.float_box.upper.y += (props.choices.size() - 1) *
+                         (fm->text_height(props.text_style) +
+                          props.padding.size().y + props.inner_border_width);
 }
 
-void DropdownSystem::render(ConstElement element) const {
-  const auto& data = element.data<DropdownData>();
-  const auto& style = data.style;
+void DropdownSystem::render(const Element& e, Renderer& renderer) {
+  const auto& props = *e.props.cast<DropdownProps>();
 
-  if (!data.open || data.choices.empty()) {
-    res.geometry_renderer.queue_box(
-        element->box(),
-        style.bg_color,
-        style.border_width,
-        style.border_color,
+  if (!props.open || props.choices.empty()) {
+    renderer.queue_box(
+        e.box(),
+        props.bg_color,
+        props.border_width,
+        props.border_color,
         0);
 
-    std::string text = !data.open
-                           ? data.choice == -1 ? "" : data.choices[data.choice]
-                           : "<none>";
+    std::string text =
+        !props.open ? props.choice == -1 ? "" : props.choices[props.choice]
+                    : "<none>";
 
-    res.text_renderer.queue_text(
-        element->position + style.border_width.offset() +
-            style.padding.offset(),
+    renderer.queue_text(
+        e.position + props.border_width.offset() + props.padding.offset(),
         text,
-        style.text,
+        props.text_style,
         LengthFixed(
-            element->size.x - style.border_width.size().x -
-            style.padding.size().x));
+            e.size.x - props.border_width.size().x - props.padding.size().x));
     return;
   }
 
-  BoxDims top_border = style.border_width;
-  top_border.bottom = style.inner_border_width;
-  BoxDims inner_border = style.border_width;
-  inner_border.top = style.inner_border_width;
-  inner_border.bottom = style.inner_border_width;
-  BoxDims bottom_border = style.border_width;
-  bottom_border.top = style.inner_border_width;
+  BoxDims top_border = props.border_width;
+  top_border.bottom = props.inner_border_width;
+  BoxDims inner_border = props.border_width;
+  inner_border.top = props.inner_border_width;
+  inner_border.bottom = props.inner_border_width;
+  BoxDims bottom_border = props.border_width;
+  bottom_border.top = props.inner_border_width;
 
   Vecf offset = Vecf::Zero();
 
-  for (int i = 0; i < data.choices.size(); i++) {
+  for (int i = 0; i < props.choices.size(); i++) {
     const BoxDims* border;
-    if (data.choices.size() == 1) {
-      border = &style.border_width;
+    if (props.choices.size() == 1) {
+      border = &props.border_width;
     } else if (i == 0) {
       border = &top_border;
-    } else if (i == data.choices.size() - 1) {
+    } else if (i == props.choices.size() - 1) {
       border = &bottom_border;
     } else {
       border = &inner_border;
     }
 
-    Vecf position = element->position + offset;
+    Vecf position = e.position + offset;
     Vecf size = Vecf(
-        element->size.x,
-        res.font_manager.text_height(style.text) + style.padding.size().y +
+        e.size.x,
+        fm->text_height(props.text_style) + props.padding.size().y +
             border->size().y);
 
     Color bg_color;
-    if (i == data.choice) {
-      bg_color = style.bg_color.multiply(style.input.active_color_factor);
+    if (i == props.choice) {
+      bg_color = props.bg_color.multiply(props.input_style.active_color_factor);
     } else {
-      bg_color = style.bg_color;
+      bg_color = props.bg_color;
     }
-    res.geometry_renderer.queue_box(
+    renderer.queue_box(
         Boxf(position, position + size),
         bg_color,
         *border,
-        style.border_color,
+        props.border_color,
         0);
 
-    res.text_renderer.queue_text(
-        position + border->offset() + style.padding.offset(),
-        data.choices[i],
-        style.text,
+    renderer.queue_text(
+        position + border->offset() + props.padding.offset(),
+        props.choices[i],
+        props.text_style,
         LengthFixed(
-            element->size.x - style.border_width.size().x -
-            style.padding.size().x));
+            e.size.x - props.border_width.size().x - props.padding.size().x));
 
-    offset.y += border->top + style.padding.size().y +
-                res.font_manager.text_height(style.text);
+    offset.y += border->top + props.padding.size().y +
+                fm->text_height(props.text_style);
   }
 }
 
-void DropdownSystem::mouse_event(Element element, const MouseEvent& event) {
-  auto& data = element.data<DropdownData>();
-  const auto& style = data.style;
+bool DropdownSystem::mouse_event(Element& e, const MouseEvent& event) {
+  auto& props = *e.props.cast<DropdownProps>();
 
   if (event.action != MouseAction::Press) {
-    return;
+    return false;
   }
-  if (!data.open) {
-    data.open = true;
-    return;
+  if (!props.open) {
+    props.open = true;
+    return false;
   }
-  if (data.choices.empty()) {
-    return;
+  if (props.choices.empty()) {
+    return false;
   }
 
-  BoxDims top_border = style.border_width;
-  top_border.bottom = style.inner_border_width;
-  BoxDims inner_border = style.border_width;
-  inner_border.top = style.inner_border_width;
-  inner_border.bottom = style.inner_border_width;
-  BoxDims bottom_border = style.border_width;
-  bottom_border.top = style.inner_border_width;
+  BoxDims top_border = props.border_width;
+  top_border.bottom = props.inner_border_width;
+  BoxDims inner_border = props.border_width;
+  inner_border.top = props.inner_border_width;
+  inner_border.bottom = props.inner_border_width;
+  BoxDims bottom_border = props.border_width;
+  bottom_border.top = props.inner_border_width;
 
   Vecf offset = Vecf::Zero();
   int clicked = -1;
 
-  for (int i = 0; i < data.choices.size(); i++) {
+  for (int i = 0; i < props.choices.size(); i++) {
     const BoxDims* border;
-    if (data.choices.size() == 1) {
-      border = &style.border_width;
+    if (props.choices.size() == 1) {
+      border = &props.border_width;
     } else if (i == 0) {
       border = &top_border;
-    } else if (i == data.choices.size() - 1) {
+    } else if (i == props.choices.size() - 1) {
       border = &bottom_border;
     } else {
       border = &inner_border;
     }
 
-    Vecf position = element->position + offset;
+    Vecf position = e.position + offset;
     Vecf size = Vecf(
-        element->size.x,
-        res.font_manager.text_height(style.text) + style.padding.size().y +
+        e.size.x,
+        fm->text_height(props.text_style) + props.padding.size().y +
             border->size().y);
 
     if (Boxf(position, position + size).contains(event.position)) {
@@ -238,31 +172,30 @@ void DropdownSystem::mouse_event(Element element, const MouseEvent& event) {
       break;
     }
 
-    offset.y += border->top + style.padding.size().y +
-                res.font_manager.text_height(style.text);
+    offset.y += border->top + props.padding.size().y +
+                fm->text_height(props.text_style);
   }
 
   if (clicked != -1) {
-    if (data.choice != clicked) {
-      data.changed = true;
-      data.choice = clicked;
+    if (props.choice != clicked) {
+      props.changed = true;
+      props.choice = clicked;
     }
-    data.open = false;
-    element.trigger();
+    props.open = false;
+    return true;
   }
+  return false;
 }
 
-void DropdownSystem::focus_enter(Element element) {
-  auto& data = element.data<DropdownData>();
-  data.open = true;
+void DropdownSystem::focus_enter(Element& e) {
+  auto& props = *e.props.cast<DropdownProps>();
+  props.open = true;
 }
 
-void DropdownSystem::focus_leave(
-    Element element,
-    bool success,
-    ConstElement new_element) {
-  auto& data = element.data<DropdownData>();
-  data.open = false;
+bool DropdownSystem::focus_leave(Element& e, bool success) {
+  auto& props = *e.props.cast<DropdownProps>();
+  props.open = false;
+  return false;
 }
 
 } // namespace datagui

@@ -23,7 +23,7 @@ public:
   TextBoxSystem(std::shared_ptr<FontManager> fm) : fm(fm) {}
   void set_input_state(Element& element, const ConstElementList& children)
       override;
-  void render(const Element& element, Renderer& renderer) const override;
+  void render(const Element& element, Renderer& renderer) override;
 
 private:
   std::shared_ptr<FontManager> fm;

@@ -1,4 +1,4 @@
-#include <datagui/visual/font.hpp>
+#include <datagui/visual/font_manager.hpp>
 #include <datagui/visual/geometry_renderer.hpp>
 #include <datagui/visual/text_renderer.hpp>
 #include <datagui/visual/window.hpp>

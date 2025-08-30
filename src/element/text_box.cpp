@@ -15,7 +15,7 @@ void TextBoxSystem::set_input_state(
   e.floating = false;
 }
 
-void TextBoxSystem::render(const Element& e, Renderer& renderer) const {
+void TextBoxSystem::render(const Element& e, Renderer& renderer) {
   const auto& props = *e.props.cast<TextBoxProps>();
 
   Boxf mask;
