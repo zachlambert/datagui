@@ -39,6 +39,7 @@ add_library(datagui SHARED
   src/visual/window.cpp
 
   src/gui.cpp
+  src/log.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
@@ -81,6 +82,9 @@ target_link_libraries(example_gui datagui)
 
 add_executable(example_datapack examples/datapack.cpp)
 target_link_libraries(example_datapack datagui)
+
+add_executable(log_terminal util/log_terminal.cpp)
+target_link_libraries(log_terminal datagui)
 
 # Create install target
 

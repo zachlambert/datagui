@@ -2,6 +2,8 @@
 #include <iostream>
 
 int main() {
+  DATAGUI_LOG_INIT();
+
   using namespace datagui;
 
   Tree tree;

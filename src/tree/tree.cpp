@@ -16,7 +16,8 @@ bool Tree::begin() {
   }
 
   if (root_ == -1) {
-    DATAGUI_LOG("[Tree::begin] BEGIN");
+    DATAGUI_LOG2("Tree::begin", "BEGIN");
+    DATAGUI_LOG_INDENT(1);
     active_ = true;
     return true;
   }
@@ -47,7 +48,7 @@ bool Tree::begin() {
   // Applied queued revisit flags
 
   for (auto element : queue_revisit_) {
-    DATAGUI_LOG("[Tree::begin] Element revisit: %i", element);
+    DATAGUI_LOG2("Tree::begin", "Element revisit: %i", element);
     set_revisit(element);
   }
   queue_revisit_.clear();
@@ -63,8 +64,9 @@ bool Tree::begin() {
 
   for (int variable : queue_modified_variables_) {
     auto& variable_d = variables[variable];
-    DATAGUI_LOG(
-        "[Tree::begin] Variable modify: element=%i var=%i",
+    DATAGUI_LOG2(
+        "Tree::begin",
+        "Variable modify: element=%i var=%i",
         variable_d.element,
         variable);
 
@@ -86,7 +88,8 @@ bool Tree::begin() {
   queue_modified_variables_.clear();
 
   if (elements[root_].revisit) {
-    DATAGUI_LOG("[Tree::begin] BEGIN");
+    DATAGUI_LOG2("Tree::begin", "BEGIN");
+    DATAGUI_LOG_INDENT(1);
     active_ = true;
     return true;
   }
@@ -99,7 +102,8 @@ void Tree::end() {
                      "having it return true");
   }
   active_ = false;
-  DATAGUI_LOG("[Tree::end  ] END");
+  DATAGUI_LOG_INDENT(-1);
+  DATAGUI_LOG2("Tree::end", "END");
 
   if (parent_ != -1) {
     throw UsageError("Didn't call down and up the same number of times");
@@ -112,11 +116,7 @@ void Tree::end() {
 }
 
 ElementPtr Tree::next(int id) {
-  DATAGUI_LOG(
-      "[Tree::next ] %sNEXT: current=%i id=%i",
-      indent_cstr(),
-      current_,
-      id);
+  DATAGUI_LOG2("Tree::next", "NEXT: current=%i id=%i", current_, id);
 
   if (parent_ == -1) {
     if (current_ != -1) {
@@ -124,11 +124,7 @@ ElementPtr Tree::next(int id) {
     }
     if (root_ == -1) {
       root_ = create_element(-1, -1, id);
-      DATAGUI_LOG(
-          "[Tree::next ] %sCreated root: element=%i id=%i",
-          indent_cstr(),
-          root_,
-          id);
+      DATAGUI_LOG2("Tree::next", "Created root: element=%i id=%i", root_, id);
     } else if (elements[root_].id != id) {
       throw UsageError("TODO: Handle overwriting root");
     }
@@ -150,9 +146,9 @@ ElementPtr Tree::next(int id) {
 
     if (iter == -1) {
       current_ = create_element(parent_, prev, id);
-      DATAGUI_LOG(
-          "[Tree::next ] %sCreated element: element=%i id=%i",
-          indent_cstr(),
+      DATAGUI_LOG2(
+          "Tree::next",
+          "Created element: element=%i id=%i",
           current_,
           id);
     } else {
@@ -167,18 +163,15 @@ bool Tree::down_if() {
   if (!elements[current_].revisit) {
     return false;
   }
-  DATAGUI_LOG("[Tree::down ] %sDOWN (if): element=%i", indent_cstr(), current_);
+  DATAGUI_LOG2("Tree::down", "DOWN (if): element=%i", current_);
   parent_ = current_;
   current_ = -1;
 
-#ifdef DATAGUI_DEBUG
   if (variable_current_ != -1) {
-    printf(
-        "[Tree::down ] %s           pushed variable %i\n",
-        indent_cstr(),
-        variable_current_);
+    DATAGUI_LOG2("Tree::down", "pushed variable %i", variable_current_);
   }
-#endif
+  DATAGUI_LOG_INDENT(1);
+
   variable_stack_.push(variable_current_);
   variable_current_ = -1;
   depth++;
@@ -186,21 +179,15 @@ bool Tree::down_if() {
 }
 
 void Tree::down() {
-  DATAGUI_LOG(
-      "[Tree::down ] %sDOWN (force): element=%i",
-      indent_cstr(),
-      current_);
+  DATAGUI_LOG2("Tree::down", "DOWN (force): element=%i", current_);
   parent_ = current_;
   current_ = -1;
 
-#ifdef DATAGUI_DEBUG
   if (variable_current_ != -1) {
-    printf(
-        "[Tree::down ] %s           pushed variable %i\n",
-        indent_cstr(),
-        variable_current_);
+    DATAGUI_LOG2("Tree::down", "pushed variable %i", variable_current_);
   }
-#endif
+  DATAGUI_LOG_INDENT(1);
+
   variable_stack_.push(variable_current_);
   variable_current_ = -1;
   depth++;
@@ -209,6 +196,7 @@ void Tree::down() {
 void Tree::up() {
   depth--;
   assert(depth >= 0);
+  DATAGUI_LOG_INDENT(-1);
 
   if (parent_ == -1) {
     throw UsageError("Called up too many times");
@@ -225,18 +213,13 @@ void Tree::up() {
 
   current_ = parent_;
   parent_ = elements[current_].parent;
-  DATAGUI_LOG("[Tree::up   ] %sUP: element=%i", indent_cstr(), current_);
+  DATAGUI_LOG2("Tree::up", "UP: element=%i", current_);
 
   variable_current_ = variable_stack_.top();
   variable_stack_.pop();
-#ifdef DATAGUI_DEBUG
   if (variable_current_ != -1) {
-    printf(
-        "[Tree::up   ] %s    popped variable %i\n",
-        indent_cstr(),
-        variable_current_);
+    DATAGUI_LOG2("Tree::up", "popped variable %i", variable_current_);
   }
-#endif
 }
 
 int Tree::create_element(int parent, int prev, int id) {
@@ -395,15 +378,6 @@ std::string Tree::element_debug(int element) const {
     }
   }
   return result;
-}
-
-const char* Tree::indent_cstr() const {
-  const int tab_size = 2;
-  const int num_spaces = depth * tab_size;
-  while (indent_string.size() < num_spaces) {
-    indent_string.push_back(' ');
-  }
-  return indent_string.c_str() + (indent_string.size() - num_spaces);
 }
 
 } // namespace datagui

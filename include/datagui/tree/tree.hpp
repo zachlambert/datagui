@@ -98,7 +98,6 @@ private:
   void set_revisit(int node);
 
   std::string element_debug(int element) const;
-  const char* indent_cstr() const;
 
   VectorMap<ElementNode> elements;
   VectorMap<VariableNode> variables;
@@ -112,7 +111,6 @@ private:
   int next_id = 0;
 
   int depth = 0; // Debugging
-  mutable std::string indent_string;
 
   std::stack<int> variable_stack_;
   std::vector<int> queue_revisit_;
