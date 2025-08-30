@@ -2,8 +2,8 @@
 
 #include "datagui/geometry.hpp"
 #include "datagui/input/event.hpp"
-#include "datagui/tree/resources.hpp"
 #include "datagui/types/unique_any.hpp"
+#include "datagui/visual/renderer.hpp"
 #include <vector>
 
 namespace datagui {
@@ -47,8 +47,6 @@ struct Element {
 
 class ElementSystem {
 public:
-  ElementSystem(Resources* resources) : resources(resources) {}
-
   virtual void set_input_state(
       Element& element,
       const ConstElementList& children) = 0;
@@ -56,7 +54,7 @@ public:
       const Element& element,
       const ElementList& children) {}
 
-  virtual void render(const Element& element) const = 0;
+  virtual void render(const Element& element, Renderer& renderer) const = 0;
 
   // Mouse press, hold or release inside the element bounding box
   virtual bool mouse_event(const Element& element, const MouseEvent& event) {
@@ -85,9 +83,6 @@ public:
   virtual bool focus_leave(Element& element, bool success) {
     return false;
   }
-
-protected:
-  Resources* resources;
 };
 
 } // namespace datagui

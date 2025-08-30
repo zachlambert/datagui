@@ -11,8 +11,7 @@ namespace datagui {
 
 class TextRenderer {
 public:
-  TextRenderer(FontManager& font_manager) : font_manager(font_manager) {}
-  void init();
+  void init(std::shared_ptr<FontManager> fm);
 
   void queue_text(
       const Vecf& origin,
@@ -21,20 +20,6 @@ public:
       int font_size,
       Color text_color,
       Length width);
-
-  void queue_text(
-      const Vecf& origin,
-      const std::string& text,
-      const TextStyle& style,
-      Length width) {
-    queue_text(
-        origin,
-        text,
-        style.font,
-        style.font_size,
-        style.text_color,
-        width);
-  }
 
   void render(const Vecf& viewport_size);
 
@@ -61,7 +46,7 @@ private:
         font_texture(font_texture), font_color(font_color) {}
   };
 
-  FontManager& font_manager;
+  std::shared_ptr<FontManager> fm;
   std::vector<Command> commands;
   std::stack<Boxf> masks;
 

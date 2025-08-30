@@ -173,10 +173,9 @@ void SeriesSystem::set_dependent_state(
   }
 }
 
-void SeriesSystem::render(const Element& e) const {
+void SeriesSystem::render(const Element& e, Renderer& renderer) const {
   const auto& props = *e.props.cast<SeriesProps>();
-  resources->geometry_renderer
-      .queue_box(e.box(), props.bg_color, 0, Color::Black(), 0);
+  renderer.queue_box(e.box(), props.bg_color, 0, Color::Black(), 0);
 }
 
 bool SeriesSystem::scroll_event(Element& e, const ScrollEvent& event) {

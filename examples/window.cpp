@@ -8,11 +8,11 @@ int main() {
   using namespace datagui;
 
   Window window;
-  FontManager font_manager;
+  auto font_manager = std::make_shared<FontManager>();
   GeometryRenderer geometry;
-  TextRenderer text(font_manager);
+  TextRenderer text;
   geometry.init();
-  text.init();
+  text.init(font_manager);
 
   Boxf box;
   box.lower = Vecf(50, 50);

@@ -30,12 +30,11 @@ struct SeriesProps {
 };
 
 struct SeriesSystem : public ElementSystem {
-  SeriesSystem(Resources* resources) : ElementSystem(resources) {}
   void set_input_state(Element& element, const ConstElementList& children)
       override;
   void set_dependent_state(const Element& element, const ElementList& children)
       override;
-  void render(const Element& element) const override;
+  void render(const Element& element, Renderer& renderer) const override;
   bool scroll_event(Element& element, const ScrollEvent& event) override;
 };
 
