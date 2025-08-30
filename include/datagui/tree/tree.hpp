@@ -13,7 +13,7 @@
 namespace datagui {
 
 struct ElementNode {
-  std::unique_ptr<Element> element;
+  Element element;
 
   int id;
   bool revisit = true;
@@ -230,13 +230,13 @@ public:
   }
 
   ref_t operator*() const {
-    return *tree->elements[index].element;
+    return tree->elements[index].element;
   }
   ptr_t operator->() const {
-    return tree->elements[index].element.get();
+    return &tree->elements[index].element;
   }
   ptr_t get() const {
-    return tree->elements[index].element.get();
+    return &tree->elements[index].element;
   }
 
   template <typename T>
@@ -260,15 +260,6 @@ public:
   void revisit() const {
     DATAGUI_LOG("[ElementPtr_::revisit] REVISIT: element=%i", index);
     tree->queue_revisit_.emplace_back(index);
-  }
-
-  bool is_constructed() const {
-    return bool(tree->elements[index].element);
-  }
-  template <typename T, typename... Args>
-  void construct(Args&&... args) {
-    tree->elements[index].element =
-        std::make_unique<T>(std::forward<Args>(args)...);
   }
 
   template <

@@ -8,6 +8,8 @@
 #endif
 #include "datagui/tree/tree.hpp"
 #include "datagui/visual/window.hpp"
+#include <memory>
+#include <vector>
 
 namespace datagui {
 
@@ -113,7 +115,18 @@ public:
   // Style
 
   void style(const Style& style) {
-    res.style_manager.push(style);
+    resources.style_manager.push(style);
+  }
+
+  template <typename System>
+  requires std::is_base_of_v<ElementSystem, System>
+  int find_system() const {
+    for (int i = 0; i < systems.size(); i++) {
+      if (dynamic_cast<const System*>(systems[i].get())) {
+        return i;
+      }
+    }
+    return -1;
   }
 
 private:
@@ -133,7 +146,8 @@ private:
   Tree tree;
   bool debug_mode_ = false;
 
-  Resources res;
+  std::vector<std::unique_ptr<ElementSystem>> systems;
+  Resources resources;
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;

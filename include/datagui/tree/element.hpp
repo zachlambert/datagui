@@ -3,15 +3,16 @@
 #include "datagui/geometry.hpp"
 #include "datagui/input/event.hpp"
 #include "datagui/tree/resources.hpp"
+#include "datagui/types/unique_any.hpp"
+#include <vector>
 
 namespace datagui {
 
-class Element {
-public:
-  Element(Resources* resources) : resources(resources) {}
+class Element;
+using ElementList = std::vector<Element*>;
+using ConstElementList = std::vector<const Element*>;
 
-  Resources* const resources;
-
+struct Element {
   // Layout input
   Vecf fixed_size;
   Vecf dynamic_size;
@@ -40,38 +41,53 @@ public:
   bool focused = false;
   bool hovered = false;
 
-  virtual void set_input_state(const std::vector<const Element*>& children) = 0;
-  virtual void set_dependent_state(const std::vector<Element*>& children) {}
+  UniqueAny props;
+  int system = -1;
+};
 
-  virtual void render() const = 0;
+class ElementSystem {
+public:
+  ElementSystem(Resources* resources) : resources(resources) {}
+
+  virtual void set_input_state(
+      Element& element,
+      const ConstElementList& children) = 0;
+  virtual void set_dependent_state(
+      const Element& element,
+      const ElementList& children) {}
+
+  virtual void render(const Element& element) const = 0;
 
   // Mouse press, hold or release inside the element bounding box
-  virtual bool mouse_event(const MouseEvent& event) {
+  virtual bool mouse_event(const Element& element, const MouseEvent& event) {
     return false;
   }
-  virtual bool mouse_hover(const Vecf& mouse_pos) {
+  virtual bool mouse_hover(const Element& element, const Vecf& mouse_pos) {
     return false;
   }
   // If an element captures the scroll event, process it and return true
-  virtual bool scroll_event(const ScrollEvent& event) {
+  virtual bool scroll_event(Element& element, const ScrollEvent& event) {
     return false;
   }
   // Key press, hold or release, while a node is focused
-  virtual bool key_event(const KeyEvent& event) {
+  virtual bool key_event(Element& element, const KeyEvent& event) {
     return false;
   }
   // Text input while a node is focused
-  virtual bool text_event(const TextEvent& event) {
+  virtual bool text_event(Element& element, const TextEvent& event) {
     return false;
   }
 
   // Node is focused via tab instead of clicking on it
-  virtual void focus_enter() {}
+  virtual void focus_enter(Element& element) {}
   // Node is unfocused via tab, escape or clicking on another node
   // success = should the changes be retained?
-  virtual bool focus_leave(bool success) {
+  virtual bool focus_leave(Element& element, bool success) {
     return false;
   }
+
+protected:
+  Resources* resources;
 };
 
 } // namespace datagui

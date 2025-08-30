@@ -4,23 +4,25 @@
 
 namespace datagui {
 
-struct TextBoxStyle {
+struct TextBoxProps {
+  // Style
   BoxDims padding = 5;
-  TextStyle text;
+  TextStyle text_style;
 
-  void apply(const StyleManager& style) {
-    style.text_padding(padding);
-    text.apply(style);
+  // Data
+  std::string text;
+
+  void set_style(const StyleManager& sm) {
+    sm.text_padding(padding);
+    text_style.apply(sm);
   }
 };
 
-struct TextBoxElement : public Element {
-  TextBoxStyle style;
-  std::string text;
-
-  TextBoxElement(Resources* resources) : Element(resources) {}
-  void set_input_state(const std::vector<const Element*>& children) override;
-  void render() const override;
+struct TextBoxSystem : public ElementSystem {
+  TextBoxSystem(Resources* resources) : ElementSystem(resources) {}
+  void set_input_state(Element& element, const ConstElementList& children)
+      override;
+  void render(const Element& element) const override;
 };
 
 } // namespace datagui
