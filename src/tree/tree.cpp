@@ -8,7 +8,8 @@ namespace datagui {
 bool Tree::begin() {
   assert(parent_ == -1);
   assert(current_ == -1);
-  assert(variable_current_ == -1);
+  assert(variable_stack_.empty());
+
   if (active_) {
     throw UsageError(
         "Didn't call end() after a previous begin() call returned true");
@@ -68,7 +69,11 @@ bool Tree::begin() {
         variable);
 
     // Revisit node
-    set_revisit(variable_d.element);
+    if (variable_d.element == -1) {
+      set_revisit(root_);
+    } else {
+      set_revisit(variable_d.element);
+    }
 
     // Apply new data
     variable_d.data = std::move(variable_d.data_new);
@@ -103,7 +108,6 @@ void Tree::end() {
 
   assert(parent_ == -1);
   assert(current_ == root_);
-  assert(variable_current_ == -1);
   current_ = -1;
 }
 
@@ -166,6 +170,15 @@ bool Tree::down_if() {
   DATAGUI_LOG("[Tree::down ] %sDOWN (if): element=%i", indent_cstr(), current_);
   parent_ = current_;
   current_ = -1;
+
+#ifdef DATAGUI_DEBUG
+  if (variable_current_ != -1) {
+    printf(
+        "[Tree::down ] %s           pushed variable %i\n",
+        indent_cstr(),
+        variable_current_);
+  }
+#endif
   variable_stack_.push(variable_current_);
   variable_current_ = -1;
   depth++;
@@ -179,6 +192,15 @@ void Tree::down() {
       current_);
   parent_ = current_;
   current_ = -1;
+
+#ifdef DATAGUI_DEBUG
+  if (variable_current_ != -1) {
+    printf(
+        "[Tree::down ] %s           pushed variable %i\n",
+        indent_cstr(),
+        variable_current_);
+  }
+#endif
   variable_stack_.push(variable_current_);
   variable_current_ = -1;
   depth++;
@@ -207,6 +229,14 @@ void Tree::up() {
 
   variable_current_ = variable_stack_.top();
   variable_stack_.pop();
+#ifdef DATAGUI_DEBUG
+  if (variable_current_ != -1) {
+    printf(
+        "[Tree::up   ] %s    popped variable %i\n",
+        indent_cstr(),
+        variable_current_);
+  }
+#endif
 }
 
 int Tree::create_element(int parent, int prev, int id) {

@@ -146,6 +146,7 @@ void Gui::text_input(const Variable<std::string>& value) {
 
   auto& props = *element->props.cast<TextInputProps>();
   props.set_style(*sm);
+  printf("Changed: %s\n", BOOL_STR(props.changed));
 
   if (props.changed) {
     DATAGUI_LOG("[Gui::text_input(variable)] Text input changed");
@@ -664,13 +665,15 @@ void Gui::event_handling() {
     }
 
     if (!handled && element_focus) {
-      systems[element_focus->system]->key_event(*element_focus, event);
+      element_focus.revisit(
+          systems[element_focus->system]->key_event(*element_focus, event));
     }
   }
 
   for (const auto& event : window.text_events()) {
     if (element_focus) {
-      systems[element_focus->system]->text_event(*element_focus, event);
+      element_focus.revisit(
+          systems[element_focus->system]->text_event(*element_focus, event));
     }
   }
 }
@@ -710,7 +713,8 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
     if (element_focus) {
-      systems[element_focus->system]->mouse_event(*element_focus, event);
+      element_focus.revisit(
+          systems[element_focus->system]->mouse_event(*element_focus, event));
     }
     return;
   }
@@ -734,7 +738,8 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     }
   }
   if (element_focus) {
-    systems[element_focus->system]->mouse_event(*element_focus, event);
+    element_focus.revisit(
+        systems[element_focus->system]->mouse_event(*element_focus, event));
   }
 }
 
