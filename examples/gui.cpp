@@ -3,6 +3,8 @@
 #include <iostream>
 
 int main() {
+  DATAGUI_LOG_INIT();
+
   datagui::Gui gui;
 
   datagui::Style style_root;
