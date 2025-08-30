@@ -3,7 +3,6 @@
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
 #include "datagui/element/dropdown.hpp"
-#include "datagui/element/floating.hpp"
 #include "datagui/element/series.hpp"
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
@@ -45,7 +44,7 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
 
   auto& props = *element->props.cast<TextInputProps>();
   props.text = value_str;
-  props.set_style(*sm);
+  // props.set_style(*sm);
 }
 
 void GuiWriter::boolean(bool value) {
@@ -58,7 +57,7 @@ void GuiWriter::boolean(bool value) {
 
   auto& props = *element->props.cast<CheckboxProps>();
   props.checked = value;
-  props.set_style(*sm);
+  // props.set_style(*sm);
 }
 
 void GuiWriter::string(const char* value) {
@@ -71,7 +70,7 @@ void GuiWriter::string(const char* value) {
 
   auto& props = *element->props.cast<TextInputProps>();
   props.text = value;
-  props.set_style(*sm);
+  // props.set_style(*sm);
 }
 
 void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
@@ -90,7 +89,7 @@ void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
   auto& props = *element->props.cast<DropdownProps>();
   props.choices = labels_str;
   props.choice = value;
-  props.set_style(*sm);
+  // props.set_style(*sm);
 }
 
 void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
@@ -103,7 +102,7 @@ void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
 
   auto& props = *element->props.cast<TextBoxProps>();
   props.text = "<binary not editable>";
-  props.set_style(*sm);
+  // props.set_style(*sm);
 }
 
 void GuiWriter::optional_begin(bool has_value) {
@@ -115,7 +114,7 @@ void GuiWriter::optional_begin(bool has_value) {
       element->system = systems.find<SeriesSystem>();
     }
     auto& props = *element->props.cast<SeriesProps>();
-    props.set_style(*sm);
+    // props.set_style(*sm);
   }
 
   DATAGUI_LOG("GuiWriter::optional_begin", "DOWN (1)");
@@ -130,7 +129,7 @@ void GuiWriter::optional_begin(bool has_value) {
     }
     auto& props = *element->props.cast<CheckboxProps>();
     props.checked = has_value;
-    props.set_style(*sm);
+    // props.set_style(*sm);
   }
 
   {
@@ -141,7 +140,7 @@ void GuiWriter::optional_begin(bool has_value) {
       element->system = systems.find<SeriesSystem>();
     }
     auto& props = *element->props.cast<SeriesProps>();
-    props.set_style(*sm);
+    // props.set_style(*sm);
   }
 
   if (!has_value) {
@@ -176,7 +175,7 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
       element->system = systems.find<SeriesSystem>();
     }
     auto& props = *element->props.cast<SeriesProps>();
-    props.set_style(*sm);
+    // props.set_style(*sm);
   }
 
   tree.down();
@@ -193,18 +192,20 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
     auto& props = *element->props.cast<DropdownProps>();
     props.choices = labels_str;
     props.choice = value;
-    props.set_style(*sm);
+    // props.set_style(*sm);
   }
 
+  auto id_var = tree.variable<int>([&]() { return tree.get_id(); });
+
   {
-    auto element = tree.next();
+    auto element = tree.next(*id_var);
     if (element->system == -1) {
       DATAGUI_LOG("GuiWriter::variant_begin", "Construct new Series (2)");
       element->props = UniqueAny::Make<SeriesProps>();
       element->system = systems.find<SeriesSystem>();
     }
     auto& props = *element->props.cast<SeriesProps>();
-    props.set_style(*sm);
+    // props.set_style(*sm);
   }
 
   tree.down();
@@ -226,7 +227,7 @@ void GuiWriter::object_begin() {
     element->system = systems.find<SeriesSystem>();
   }
   auto& props = *element->props.cast<SeriesProps>();
-  props.set_style(*sm);
+  // props.set_style(*sm);
 
   DATAGUI_LOG("GuiWriter::object_begin", "DOWN");
   tree.down();
@@ -240,7 +241,7 @@ void GuiWriter::object_next(const char* key) {
     element->system = systems.find<TextBoxSystem>();
   }
   auto& props = *element->props.cast<TextBoxProps>();
-  props.set_style(*sm);
+  // props.set_style(*sm);
   props.text = key;
 }
 
@@ -257,7 +258,7 @@ void GuiWriter::tuple_begin() {
     element->system = systems.find<SeriesSystem>();
   }
   auto& props = *element->props.cast<SeriesProps>();
-  props.set_style(*sm);
+  // props.set_style(*sm);
 
   DATAGUI_LOG("GuiWriter::tuple_begin", "DOWN");
   tree.down();
@@ -281,7 +282,7 @@ void GuiWriter::list_begin() {
       element->system = systems.find<SeriesSystem>();
     }
     auto& props = *element->props.cast<SeriesProps>();
-    props.set_style(*sm);
+    // props.set_style(*sm);
   }
 
   DATAGUI_LOG("GuiWriter::list_begin", "DOWN (1)");
@@ -300,7 +301,7 @@ void GuiWriter::list_begin() {
       element->system = systems.find<SeriesSystem>();
     }
     auto& props = *element->props.cast<SeriesProps>();
-    props.set_style(*sm);
+    // props.set_style(*sm);
   }
 
   DATAGUI_LOG("GuiWriter::list_begin", "DOWN (2)");
@@ -325,7 +326,7 @@ void GuiWriter::list_end() {
       element->system = systems.find<ButtonSystem>();
     }
     auto& props = *element->props.cast<ButtonProps>();
-    props.set_style(*sm);
+    // props.set_style(*sm);
     props.text = "Push";
   }
 
@@ -337,7 +338,7 @@ void GuiWriter::list_end() {
       element->system = systems.find<ButtonSystem>();
     }
     auto& props = *element->props.cast<ButtonProps>();
-    props.set_style(*sm);
+    // props.set_style(*sm);
     props.text = "Pop";
   }
 

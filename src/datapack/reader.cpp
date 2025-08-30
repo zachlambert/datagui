@@ -122,17 +122,33 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
   DATAGUI_LOG("GuiReader::variant_begin", "DOWN (1)");
   tree.down();
 
+  bool changed = false;
   int value;
   {
     auto element = tree.next();
     auto props = element->props.cast<DropdownProps>();
     assert(props);
+    changed = props->changed;
+    props->changed = false;
     value = props->choice;
   }
 
+  auto id_var = tree.variable<int>([&]() { return tree.get_id(); });
+  int id = *id_var;
+  if (changed) {
+    id = tree.get_id();
+    id_var.set(id);
+  }
+
   {
-    auto element = tree.next();
-    assert(element->props.cast<SeriesProps>());
+    auto element = tree.next(id);
+    if (element->system == -1) {
+      DATAGUI_LOG(
+          "GuiReader::variant_begin",
+          "Construct new Series (id changed)");
+      element->props = UniqueAny::Make<SeriesProps>();
+      element->system = systems.find<SeriesSystem>();
+    }
   }
 
   DATAGUI_LOG("GuiReader::variant_begin", "DOWN (2)");

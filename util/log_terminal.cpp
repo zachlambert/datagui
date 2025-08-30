@@ -13,6 +13,11 @@
 #include <unistd.h>
 #include <vector>
 
+#define _RED "\033[0;31m"
+#define _GREEN "\033[0;32m"
+#define _BLUE "\033[0;34m"
+#define _RESET "\033[0m"
+
 static void* get_in_addr(struct sockaddr* addr) {
   if (addr->sa_family == AF_INET) {
     return &(((struct sockaddr_in*)addr)->sin_addr);
@@ -88,6 +93,12 @@ int main() {
   poll_fds[0].events = POLLIN;
   poll_fds[0].revents = 0;
 
+  struct ClientData {
+    int prev_message_num = -1;
+    int total_missed_messages = 0;
+  };
+  std::vector<ClientData> client_datas;
+
   printf("Listening...\n");
 
   while (true) {
@@ -148,7 +159,25 @@ int main() {
       if (message_len >= nbytes) {
         fprintf(stderr, "Invalid data received\n");
       }
-      printf("[%zu] %s\n", index, buffer);
+
+      int rec_message_num;
+      int offset_pos;
+      sscanf(buffer, "%i%n", &rec_message_num, &offset_pos);
+
+      ClientData& data = client_datas[index];
+
+      int missed_messages = rec_message_num - (data.prev_message_num + 1);
+      if (missed_messages > 0) {
+        printf(
+            "[%zu] " _RED "Missed %i %s\n" _RESET,
+            index,
+            missed_messages,
+            missed_messages == 1 ? "message" : "messages");
+      }
+      data.total_missed_messages += missed_messages;
+      data.prev_message_num = rec_message_num;
+
+      printf("[%zu] %s\n", index, buffer + offset_pos + 1);
     }
 
     for (int client_fd : client_fds_to_add) {
@@ -158,6 +187,7 @@ int main() {
       poll_fds.back().fd = client_fd;
       poll_fds.back().events = POLLIN;
       poll_fds.back().revents = 0;
+      client_datas.emplace_back();
     }
     for (int client_fd : client_fds_to_remove) {
       std::size_t index = 0;
@@ -170,6 +200,7 @@ int main() {
       printf("[Removing connection %zu]\n", index);
       client_fds.erase(client_fds.begin() + index);
       poll_fds.erase(poll_fds.begin() + index + 1);
+      client_datas.erase(client_datas.begin() + index);
     }
   }
 
