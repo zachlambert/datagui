@@ -59,7 +59,7 @@ DATAPACK_INLINE(Foo, value, packer) {
   packer.value("x", value.x);
   packer.value("y", value.y);
   packer.value("test", value.test);
-  // packer.value("shape", value.shape);
+  packer.value("shape", value.shape);
   // packer.value("points", value.points);
   // packer.value("names", value.names);
   packer.object_end();
@@ -67,6 +67,7 @@ DATAPACK_INLINE(Foo, value, packer) {
 } // namespace datapack
 
 int main() {
+  DATAGUI_LOG_INIT();
   datagui::Gui gui;
 
   while (gui.running()) {

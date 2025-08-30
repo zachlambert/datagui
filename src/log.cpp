@@ -3,8 +3,10 @@
 
 #include <algorithm>
 #include <arpa/inet.h>
+#include <array>
 #include <assert.h>
 #include <cstring>
+#include <mutex>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -12,13 +14,16 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <thread>
 #include <unistd.h>
+#include <vector>
 
 namespace datagui {
 
 static bool log_init_called = false;
 static int socket_fd = -1;
 static int indent = 0;
+static int message_num = 0;
 
 const char* log_hostname = "localhost";
 const char* log_port = "5678";
@@ -31,6 +36,9 @@ char indent_buffer[1024];
 char pad_buffer[1024];
 const char pad_char = '.';
 const char pad_end_char = '|';
+
+constexpr std::size_t buffer_size = 256;
+char buffer[buffer_size];
 
 const char* indent_str(std::size_t length) {
   length = std::min(length, sizeof(indent_buffer) - 1);
@@ -49,6 +57,8 @@ static void* get_in_addr(struct sockaddr* addr) {
 }
 
 void log_init() {
+  log_init_called = true;
+
   struct addrinfo hints;
   struct addrinfo* servinfo;
   struct addrinfo* p;
@@ -75,7 +85,6 @@ void log_init() {
     if (connect(socket_fd, iter->ai_addr, iter->ai_addrlen) == -1) {
       close(socket_fd);
       socket_fd = -1;
-      perror(_RED "Failed to start log client" _RESET);
       continue;
     }
 
@@ -91,13 +100,17 @@ void log_init() {
   }
   freeaddrinfo(servinfo);
 
+  if (socket_fd == -1) {
+    perror(_RED "Failed to start log client" _RESET);
+    return;
+  }
+
   indent = 0;
   memset(indent_buffer, ' ', sizeof(indent_buffer));
   indent_buffer[sizeof(indent_buffer) - 1] = '\0';
   memset(pad_buffer, pad_char, sizeof(pad_buffer));
   pad_buffer[sizeof(pad_buffer) - 1] = '\0';
 
-  log_init_called = true;
   printf(_GREEN "Log client started successfully\n" _RESET);
 }
 
@@ -119,59 +132,60 @@ void log_write(
     return;
   }
 
-  const std::size_t loc_width = 24;
-  const std::size_t label_width = 24;
-  const std::size_t indent_width = 10;
+  // location = label + line number (ignoring file)
+  const std::size_t line_num_width = 4;
+  const std::size_t label_width = 30;
+  const std::size_t indent_width = 16;
 
-  char buffer[256];
   std::size_t pos = 0;
   std::size_t change = 0;
 
-  change = snprintf(
-      buffer + pos,
-      sizeof(buffer) - pos,
-      _BLUE "%s :: %i",
-      file,
-      line_number);
-  pos += change;
-  pos += snprintf(
-      buffer + pos,
-      sizeof(buffer) - pos,
-      "%s" _RESET " |",
-      indent_str(loc_width - std::min(change, loc_width)));
+  pos += snprintf(buffer + pos, buffer_size - pos, "%i ", message_num);
+  message_num++;
 
-  change = snprintf(buffer + pos, sizeof(buffer) - pos, _GREEN " %s", label);
+  pos += snprintf(buffer + pos, buffer_size - pos, _BLUE);
+  change = snprintf(buffer + pos, buffer_size - pos, "%i", line_number);
   pos += change;
   pos += snprintf(
       buffer + pos,
-      sizeof(buffer) - pos,
-      "%s" _RESET " |",
+      buffer_size - pos,
+      "%s",
+      indent_str(line_num_width - std::min(change, line_num_width)));
+
+  pos += snprintf(buffer + pos, buffer_size - pos, _GREEN);
+  change = snprintf(buffer + pos, buffer_size - pos, " %s", label);
+  pos += change;
+  pos += snprintf(
+      buffer + pos,
+      buffer_size - pos,
+      "%s",
       indent_str(label_width - std::min(change, label_width)));
+  pos += snprintf(buffer + pos, buffer_size - pos, _RESET " | ");
 
+  pos += snprintf(buffer + pos, buffer_size - pos, _RED);
   if (indent == 0) {
-    pos += snprintf(
-        buffer + pos,
-        sizeof(buffer) - pos,
-        _RED " %s " _RESET "| ",
-        pad_str(indent_width));
+    pos +=
+        snprintf(buffer + pos, buffer_size - pos, "%s", pad_str(indent_width));
   } else {
     pos += snprintf(
         buffer + pos,
-        sizeof(buffer) - pos,
-        _RED " %s%c%s " _RESET "| ",
+        buffer_size - pos,
+        "%s%c%s",
         pad_str(indent),
         pad_end_char,
         indent_str(indent_width - indent - 1));
   }
+  pos += snprintf(buffer + pos, buffer_size - pos, _RESET " | ");
 
-  pos += vsnprintf(buffer + pos, sizeof(buffer) - pos, fmt, args);
-  pos += printf(buffer + pos, sizeof(buffer) - pos, "\n");
+  pos += vsnprintf(buffer + pos, buffer_size - pos, fmt, args);
 
-  // TEST
-  printf("%s\n", buffer);
-  printf("SEND N: %zu (max %zu)\n", pos + 1, sizeof(buffer));
+  std::size_t sent = send(socket_fd, buffer, pos + 1, 0);
+  if (sent != pos + 1) {
+    printf(_RED "Failed to send message" _RESET "\n");
+  }
 
-  send(socket_fd, buffer, pos + 1, 0);
+  // Note: Need to throttle the output rate otherwise messages will be skipped
+  std::this_thread::sleep_for(std::chrono::microseconds(500));
 }
 
 void log_indent(int change) {

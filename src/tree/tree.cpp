@@ -288,6 +288,10 @@ void Tree::remove_element(int element) {
 int Tree::create_variable(int element) {
   int variable = variables.emplace(element);
 
+  // Initialise as modified
+  variables[variable].modified = true;
+  modified_variables_.push_back(variable);
+
   int prev;
   if (element == -1) {
     if (external_first_variable_ == -1) {
@@ -308,6 +312,7 @@ int Tree::create_variable(int element) {
   }
   variables[prev].next = variable;
   variables[variable].prev = prev;
+
   return variable;
 }
 
