@@ -97,14 +97,15 @@ bool TextInputSystem::key_event(Element& e, const KeyEvent& event) {
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
     if (props.text != active_text) {
       DATAGUI_LOG(
-          "[TextInputSystem::key_event] Enter changed: %s -> %s",
+          "TextInputSystem::key_event",
+          "Enter changed: %s -> %s",
           props.text.c_str(),
           active_text.c_str());
       props.text = active_text;
       props.changed = true;
       return true;
     }
-    DATAGUI_LOG("[TextInputSystem::key_event] Enter unchanged");
+    DATAGUI_LOG("TextInputSystem::key_event", "Enter unchanged");
     return false;
   }
 

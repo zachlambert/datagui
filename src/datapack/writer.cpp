@@ -38,7 +38,7 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
 
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[GuiWriter::number] Construct new TextInput");
+    DATAGUI_LOG("GuiWriter::number", "Construct new TextInput");
     element->props = UniqueAny::Make<TextInputProps>();
     element->system = systems.find<TextInputSystem>();
   }
@@ -51,7 +51,7 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
 void GuiWriter::boolean(bool value) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[GuiWriter::boolean] Construct new Checkbox");
+    DATAGUI_LOG("GuiWriter::boolean", "Construct new Checkbox");
     element->props = UniqueAny::Make<CheckboxProps>();
     element->system = systems.find<CheckboxSystem>();
   }
@@ -64,7 +64,7 @@ void GuiWriter::boolean(bool value) {
 void GuiWriter::string(const char* value) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[GuiWriter::string] Construct new TextInput");
+    DATAGUI_LOG("GuiWriter::string", "Construct new TextInput");
     element->props = UniqueAny::Make<TextInputProps>();
     element->system = systems.find<TextInputSystem>();
   }
@@ -82,7 +82,7 @@ void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
 
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[GuiWriter::enumerate] Construct new Dropdown");
+    DATAGUI_LOG("GuiWriter::enumerate", "Construct new Dropdown");
     element->props = UniqueAny::Make<DropdownProps>();
     element->system = systems.find<DropdownSystem>();
   }
@@ -96,7 +96,7 @@ void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
 void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[GuiWriter::binary] Construct new TextBox");
+    DATAGUI_LOG("GuiWriter::binary", "Construct new TextBox");
     element->props = UniqueAny::Make<TextBoxProps>();
     element->system = systems.find<TextBoxSystem>();
   }
@@ -110,7 +110,7 @@ void GuiWriter::optional_begin(bool has_value) {
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::optional_begin] Construct new Series (1)");
+      DATAGUI_LOG("GuiWriter::optional_begin", "Construct new Series (1)");
       element->props = UniqueAny::Make<SeriesProps>();
       element->system = systems.find<SeriesSystem>();
     }
@@ -118,13 +118,13 @@ void GuiWriter::optional_begin(bool has_value) {
     props.set_style(*sm);
   }
 
-  DATAGUI_LOG("[GuiWriter::optional_begin] DOWN (1)");
+  DATAGUI_LOG("GuiWriter::optional_begin", "DOWN (1)");
   tree.down();
 
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::optional_begin] Construct new Checkbox");
+      DATAGUI_LOG("GuiWriter::optional_begin", "Construct new Checkbox");
       element->props = UniqueAny::Make<CheckboxProps>();
       element->system = systems.find<CheckboxSystem>();
     }
@@ -136,7 +136,7 @@ void GuiWriter::optional_begin(bool has_value) {
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::optional_begin] Construct new Series (2)");
+      DATAGUI_LOG("GuiWriter::optional_begin", "Construct new Series (2)");
       element->props = UniqueAny::Make<SeriesProps>();
       element->system = systems.find<SeriesSystem>();
     }
@@ -145,20 +145,20 @@ void GuiWriter::optional_begin(bool has_value) {
   }
 
   if (!has_value) {
-    DATAGUI_LOG("[GuiWriter::optional_begin] UP (1) (no value)");
+    DATAGUI_LOG("GuiWriter::optional_begin", "UP (1) (no value)");
     tree.up();
     return;
   }
 
-  DATAGUI_LOG("[GuiWriter::optional_begin] DOWN (2) (has value)");
+  DATAGUI_LOG("GuiWriter::optional_begin", "DOWN (2) (has value)");
   tree.down();
 }
 
 void GuiWriter::optional_end() {
-  DATAGUI_LOG("[GuiWriter::object_end] UP (2)");
+  DATAGUI_LOG("GuiWriter::object_end", "UP (2)");
   tree.up();
 
-  DATAGUI_LOG("[GuiWriter::object_end] UP (1)");
+  DATAGUI_LOG("GuiWriter::object_end", "UP (1)");
   tree.up();
 }
 
@@ -171,7 +171,7 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::variant_begin] Construct new Series (1)");
+      DATAGUI_LOG("GuiWriter::variant_begin", "Construct new Series (1)");
       element->props = UniqueAny::Make<SeriesProps>();
       element->system = systems.find<SeriesSystem>();
     }
@@ -180,12 +180,12 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   }
 
   tree.down();
-  DATAGUI_LOG("[GuiWriter::variant_begin] DOWN (1)");
+  DATAGUI_LOG("GuiWriter::variant_begin", "DOWN (1)");
 
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::variant_begin] Construct new Dropdown");
+      DATAGUI_LOG("GuiWriter::variant_begin", "Construct new Dropdown");
       element->props = UniqueAny::Make<DropdownProps>();
       element->system = systems.find<DropdownSystem>();
     }
@@ -199,7 +199,7 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::variant_begin] Construct new Series (2)");
+      DATAGUI_LOG("GuiWriter::variant_begin", "Construct new Series (2)");
       element->props = UniqueAny::Make<SeriesProps>();
       element->system = systems.find<SeriesSystem>();
     }
@@ -208,34 +208,34 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   }
 
   tree.down();
-  DATAGUI_LOG("[GuiWriter::variant_begin] DOWN (2)");
+  DATAGUI_LOG("GuiWriter::variant_begin", "DOWN (2)");
 }
 
 void GuiWriter::variant_end() {
-  DATAGUI_LOG("[GuiWriter::variant_end] UP (2)");
+  DATAGUI_LOG("GuiWriter::variant_end", "UP (2)");
   tree.up();
-  DATAGUI_LOG("[GuiWriter::variant_end] UP (2)");
+  DATAGUI_LOG("GuiWriter::variant_end", "UP (2)");
   tree.up();
 }
 
 void GuiWriter::object_begin() {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[GuiWriter::object_begin] Construct new Series");
+    DATAGUI_LOG("GuiWriter::object_begin", "Construct new Series");
     element->props = UniqueAny::Make<SeriesProps>();
     element->system = systems.find<SeriesSystem>();
   }
   auto& props = *element->props.cast<SeriesProps>();
   props.set_style(*sm);
 
-  DATAGUI_LOG("[GuiWriter::object_begin] DOWN");
+  DATAGUI_LOG("GuiWriter::object_begin", "DOWN");
   tree.down();
 }
 
 void GuiWriter::object_next(const char* key) {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[GuiWriter::object_next] Construct new TextBox (%s)", key);
+    DATAGUI_LOG("GuiWriter::object_next", "Construct new TextBox (%s)", key);
     element->props = UniqueAny::Make<TextBoxProps>();
     element->system = systems.find<TextBoxSystem>();
   }
@@ -245,21 +245,21 @@ void GuiWriter::object_next(const char* key) {
 }
 
 void GuiWriter::object_end() {
-  DATAGUI_LOG("[GuiWriter::object_end] UP");
+  DATAGUI_LOG("GuiWriter::object_end", "UP");
   tree.up();
 }
 
 void GuiWriter::tuple_begin() {
   auto element = tree.next();
   if (element->system == -1) {
-    DATAGUI_LOG("[GuiWriter::tuple_begin] Construct new Series");
+    DATAGUI_LOG("GuiWriter::tuple_begin", "Construct new Series");
     element->props = UniqueAny::Make<SeriesProps>();
     element->system = systems.find<SeriesSystem>();
   }
   auto& props = *element->props.cast<SeriesProps>();
   props.set_style(*sm);
 
-  DATAGUI_LOG("[GuiWriter::tuple_begin] DOWN");
+  DATAGUI_LOG("GuiWriter::tuple_begin", "DOWN");
   tree.down();
 }
 
@@ -268,7 +268,7 @@ void GuiWriter::tuple_next() {
 }
 
 void GuiWriter::tuple_end() {
-  DATAGUI_LOG("[GuiWriter::tuple_end] UP");
+  DATAGUI_LOG("GuiWriter::tuple_end", "UP");
   tree.up();
 }
 
@@ -276,7 +276,7 @@ void GuiWriter::list_begin() {
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::list_begin] Construct new Series (1)");
+      DATAGUI_LOG("GuiWriter::list_begin", "Construct new Series (1)");
       element->props = UniqueAny::Make<SeriesProps>();
       element->system = systems.find<SeriesSystem>();
     }
@@ -284,7 +284,7 @@ void GuiWriter::list_begin() {
     props.set_style(*sm);
   }
 
-  DATAGUI_LOG("[GuiWriter::list_begin] DOWN (1)");
+  DATAGUI_LOG("GuiWriter::list_begin", "DOWN (1)");
   tree.down();
 
   ListState state;
@@ -295,7 +295,7 @@ void GuiWriter::list_begin() {
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::list_begin] Construct new Series (2)");
+      DATAGUI_LOG("GuiWriter::list_begin", "Construct new Series (2)");
       element->props = UniqueAny::Make<SeriesProps>();
       element->system = systems.find<SeriesSystem>();
     }
@@ -303,7 +303,7 @@ void GuiWriter::list_begin() {
     props.set_style(*sm);
   }
 
-  DATAGUI_LOG("[GuiWriter::list_begin] DOWN (2)");
+  DATAGUI_LOG("GuiWriter::list_begin", "DOWN (2)");
   tree.down();
 }
 
@@ -314,13 +314,13 @@ void GuiWriter::list_next() {
 void GuiWriter::list_end() {
   list_stack.top().ids_var.set(list_stack.top().ids);
 
-  DATAGUI_LOG("[GuiWriter::list_end] UP (2)");
+  DATAGUI_LOG("GuiWriter::list_end", "UP (2)");
   tree.up();
 
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::list_end] Construct new Button (Push)");
+      DATAGUI_LOG("GuiWriter::list_end", "Construct new Button (Push)");
       element->props = UniqueAny::Make<ButtonProps>();
       element->system = systems.find<ButtonSystem>();
     }
@@ -332,7 +332,7 @@ void GuiWriter::list_end() {
   {
     auto element = tree.next();
     if (element->system == -1) {
-      DATAGUI_LOG("[GuiWriter::list_end] Construct new Button (Pop)");
+      DATAGUI_LOG("GuiWriter::list_end", "Construct new Button (Pop)");
       element->props = UniqueAny::Make<ButtonProps>();
       element->system = systems.find<ButtonSystem>();
     }
@@ -341,7 +341,7 @@ void GuiWriter::list_end() {
     props.text = "Pop";
   }
 
-  DATAGUI_LOG("[GuiWriter::list_end] UP (1)");
+  DATAGUI_LOG("GuiWriter::list_end", "UP (1)");
   tree.up();
 }
 
