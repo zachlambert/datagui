@@ -11,8 +11,11 @@ namespace datagui {
 using namespace std::placeholders;
 
 Gui::Gui(const Window::Config& config) : window(config) {
-  res.geometry_renderer.init();
-  res.text_renderer.init();
+  resources.geometry_renderer.init();
+  resources.text_renderer.init();
+
+  systems.push_back(std::make_unique<SeriesSystem>(&resources));
+  systems.push_back(std::make_unique<TextBoxSystem>(&resources));
 }
 
 bool Gui::running() const {
@@ -21,9 +24,17 @@ bool Gui::running() const {
 
 bool Gui::series_begin() {
   auto element = tree.next();
-  if (!element.is_constructed()) {
-    element.construct<SeriesElement>(&res);
+  if (element->system == -1) {
+    DATAGUI_LOG("[Gui::text_box] Construct new Series");
+    assert(!element->props);
+    element->props = UniqueAny::Make<SeriesProps>();
+    element->system = find_system<SeriesSystem>();
+    assert(element->system != -1);
   }
+
+  auto& props = *element->props.cast<SeriesProps>();
+  props.set_style(resources.style_manager);
+
   if (tree.down_if()) {
     DATAGUI_LOG("[Gui::series_begin] DOWN");
     return true;
@@ -38,12 +49,25 @@ void Gui::series_end() {
 
 void Gui::text_box(const std::string& text) {
   auto element = tree.next();
-  if (!element.is_constructed()) {
-    element.construct<TextBoxElement>(&res);
+  if (element->system == -1) {
+    DATAGUI_LOG("[Gui::text_box] Construct new TextBox");
+    assert(!element->props);
+    element->props = UniqueAny::Make<TextBoxProps>();
+    element->system = find_system<TextBoxSystem>();
+    assert(element->system != -1);
   }
-  DATAGUI_LOG("[Gui::text_box] text=%s\n", text.c_str());
-  auto& text_box = element.cast<TextBoxElement>();
-  text_box.text = text;
+
+  auto& props = *element->props.cast<TextBoxProps>();
+#ifdef DATAGUI_DEBUG
+  if (props.text != text) {
+    printf(
+        "[Gui::text_box] Changed %s -> %s\n",
+        props.text.c_str(),
+        text.c_str());
+  }
+#endif
+  props.set_style(resources.style_manager);
+  props.text = text;
 }
 
 #if 0
@@ -259,8 +283,8 @@ void Gui::render() {
 
   while (true) {
     if (layer_stack.empty()) {
-      res.geometry_renderer.render(window.size());
-      res.text_renderer.render(window.size());
+      resources.geometry_renderer.render(window.size());
+      resources.text_renderer.render(window.size());
       if (queued_elements.empty()) {
         break;
       }
@@ -284,10 +308,10 @@ void Gui::render() {
     if (element->hidden) {
       continue;
     }
-    element->render();
+    systems[element->system]->render(*element);
 
     if (debug_mode_) {
-      res.geometry_renderer.queue_box(
+      resources.geometry_renderer.queue_box(
           Boxf(element->position, element->position + element->size),
           Color::Clear(),
           2,
@@ -297,7 +321,7 @@ void Gui::render() {
           0);
 
       if (element->floating) {
-        res.geometry_renderer.queue_box(
+        resources.geometry_renderer.queue_box(
             element->float_box,
             Color::Clear(),
             2,
@@ -319,10 +343,12 @@ void Gui::render() {
 
         TextStyle text_style;
         text_style.font_size = 24;
-        auto text_size =
-            res.font_manager.text_size(debug_text, text_style, LengthWrap());
+        auto text_size = resources.font_manager.text_size(
+            debug_text,
+            text_style,
+            LengthWrap());
 
-        res.geometry_renderer.queue_box(
+        resources.geometry_renderer.queue_box(
             Boxf(
                 window.size() - text_size - Vecf::Constant(15),
                 window.size() - Vecf::Constant(5)),
@@ -330,7 +356,7 @@ void Gui::render() {
             2,
             Color::Black(),
             0);
-        res.text_renderer.queue_text(
+        resources.text_renderer.queue_text(
             window.size() - text_size - Vecf::Constant(10),
             debug_text,
             text_style,
@@ -394,7 +420,7 @@ void Gui::calculate_sizes() {
       for (auto child = element.first_child(); child; child = child.next()) {
         children.push_back(child.get());
       }
-      element->set_input_state(children);
+      systems[element->system]->set_input_state(*element, children);
     }
   }
 
@@ -467,7 +493,7 @@ void Gui::calculate_sizes() {
       for (auto child = element.first_child(); child; child = child.next()) {
         children.push_back(child.get());
       }
-      element->set_dependent_state(children);
+      systems[element->system]->set_dependent_state(*element, children);
 
       for (auto child = element.first_child(); child; child = child.next()) {
         child->layer_box = element->layer_box;
@@ -549,7 +575,7 @@ void Gui::event_handling() {
         break;
       case Key::Escape:
         if (element_focus) {
-          element_focus->focus_leave(false);
+          systems[element_focus->system]->focus_leave(*element_focus, false);
           set_tree_focus(element_focus, false);
           element_focus = ElementPtr();
         }
@@ -566,13 +592,13 @@ void Gui::event_handling() {
     }
 
     if (!handled && element_focus) {
-      element_focus->key_event(event);
+      systems[element_focus->system]->key_event(*element_focus, event);
     }
   }
 
   for (const auto& event : window.text_events()) {
     if (element_focus) {
-      element_focus->text_event(event);
+      systems[element_focus->system]->text_event(*element_focus, event);
     }
   }
 }
@@ -612,7 +638,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
     if (element_focus) {
-      element_focus->mouse_event(event);
+      systems[element_focus->system]->mouse_event(*element_focus, event);
     }
     return;
   }
@@ -624,7 +650,9 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
 
   if (element_focus != prev_element_focus) {
     if (prev_element_focus) {
-      prev_element_focus->focus_leave(true);
+      systems[prev_element_focus->system]->focus_leave(
+          *prev_element_focus,
+          true);
       set_tree_focus(prev_element_focus, false);
     }
     if (element_focus) {
@@ -634,7 +662,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     }
   }
   if (element_focus) {
-    element_focus->mouse_event(event);
+    systems[element_focus->system]->mouse_event(*element_focus, event);
   }
 }
 
@@ -648,13 +676,13 @@ void Gui::event_handling_hover(const Vecf& mouse_pos) {
     return;
   }
   element_hover->hovered = true;
-  element_hover->mouse_hover(mouse_pos);
+  systems[element_hover->system]->mouse_hover(*element_hover, mouse_pos);
 }
 
 void Gui::event_handling_scroll(const ScrollEvent& event) {
   ElementPtr element = get_leaf_node(event.position);
   while (element) {
-    if (element->scroll_event(event)) {
+    if (systems[element->system]->scroll_event(*element, event)) {
       return;
     }
     element = element.parent();
@@ -723,7 +751,7 @@ void Gui::focus_next(bool reverse) {
 
   if (element_focus) {
     auto prev_element_focus = element_focus;
-    prev_element_focus->focus_leave(true);
+    systems[prev_element_focus->system]->focus_leave(*prev_element_focus, true);
     set_tree_focus(element_focus, false);
   }
 
@@ -731,7 +759,7 @@ void Gui::focus_next(bool reverse) {
 
   if (element_focus) {
     set_tree_focus(element_focus, true);
-    element_focus->focus_enter();
+    systems[element_focus->system]->focus_enter(*element_focus);
   }
 }
 
