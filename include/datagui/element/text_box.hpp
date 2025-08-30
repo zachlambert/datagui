@@ -18,11 +18,15 @@ struct TextBoxProps {
   }
 };
 
-struct TextBoxSystem : public ElementSystem {
-  TextBoxSystem(Resources* resources) : ElementSystem(resources) {}
+class TextBoxSystem : public ElementSystem {
+public:
+  TextBoxSystem(std::shared_ptr<FontManager> fm) : fm(fm) {}
   void set_input_state(Element& element, const ConstElementList& children)
       override;
-  void render(const Element& element) const override;
+  void render(const Element& element, Renderer& renderer) const override;
+
+private:
+  std::shared_ptr<FontManager> fm;
 };
 
 } // namespace datagui

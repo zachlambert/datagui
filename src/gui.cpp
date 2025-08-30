@@ -11,11 +11,11 @@ namespace datagui {
 using namespace std::placeholders;
 
 Gui::Gui(const Window::Config& config) : window(config) {
-  resources.geometry_renderer.init();
-  resources.text_renderer.init();
-
-  systems.push_back(std::make_unique<SeriesSystem>(&resources));
-  systems.push_back(std::make_unique<TextBoxSystem>(&resources));
+  fm = std::make_shared<FontManager>();
+  sm = std::make_shared<StyleManager>();
+  renderer.init(fm);
+  systems.push_back(std::make_unique<SeriesSystem>());
+  systems.push_back(std::make_unique<TextBoxSystem>(fm));
 }
 
 bool Gui::running() const {
@@ -33,7 +33,7 @@ bool Gui::series_begin() {
   }
 
   auto& props = *element->props.cast<SeriesProps>();
-  props.set_style(resources.style_manager);
+  props.set_style(*sm);
 
   if (tree.down_if()) {
     DATAGUI_LOG("[Gui::series_begin] DOWN");
@@ -66,7 +66,7 @@ void Gui::text_box(const std::string& text) {
         text.c_str());
   }
 #endif
-  props.set_style(resources.style_manager);
+  props.set_style(*sm);
   props.text = text;
 }
 
@@ -283,8 +283,8 @@ void Gui::render() {
 
   while (true) {
     if (layer_stack.empty()) {
-      resources.geometry_renderer.render(window.size());
-      resources.text_renderer.render(window.size());
+      renderer.render(window.size());
+      renderer.render(window.size());
       if (queued_elements.empty()) {
         break;
       }
@@ -297,8 +297,7 @@ void Gui::render() {
 
     if (!state.first_visit) {
 #if 0
-      res.geometry_renderer.pop_mask();
-      res.text_renderer.pop_mask();
+      renderer.pop_mask();
 #endif
       layer_stack.pop();
       continue;
@@ -308,10 +307,11 @@ void Gui::render() {
     if (element->hidden) {
       continue;
     }
-    systems[element->system]->render(*element);
+    systems[element->system]->render(*element, renderer);
 
+#ifdef DATAGUI_DEBUG
     if (debug_mode_) {
-      resources.geometry_renderer.queue_box(
+      renderer.queue_box(
           Boxf(element->position, element->position + element->size),
           Color::Clear(),
           2,
@@ -321,7 +321,7 @@ void Gui::render() {
           0);
 
       if (element->floating) {
-        resources.geometry_renderer.queue_box(
+        renderer.queue_box(
             element->float_box,
             Color::Clear(),
             2,
@@ -343,12 +343,9 @@ void Gui::render() {
 
         TextStyle text_style;
         text_style.font_size = 24;
-        auto text_size = resources.font_manager.text_size(
-            debug_text,
-            text_style,
-            LengthWrap());
+        auto text_size = fm->text_size(debug_text, text_style, LengthWrap());
 
-        resources.geometry_renderer.queue_box(
+        renderer.queue_box(
             Boxf(
                 window.size() - text_size - Vecf::Constant(15),
                 window.size() - Vecf::Constant(5)),
@@ -356,13 +353,14 @@ void Gui::render() {
             2,
             Color::Black(),
             0);
-        resources.text_renderer.queue_text(
+        renderer.queue_text(
             window.size() - text_size - Vecf::Constant(10),
             debug_text,
             text_style,
             LengthWrap());
       }
     }
+#endif
 
 #if 0
     if (element->floating) {
@@ -581,11 +579,13 @@ void Gui::event_handling() {
         }
         handled = true;
         break;
+#ifdef DATAGUI_DEBUG
       case Key::D:
         if (event.mod_ctrl) {
           handled = true;
           debug_mode_ = !debug_mode_;
         }
+#endif
       default:
         break;
       }

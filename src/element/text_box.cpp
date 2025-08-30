@@ -9,29 +9,26 @@ void TextBoxSystem::set_input_state(
   assert(children.empty());
   auto& props = *e.props.cast<TextBoxProps>();
 
-  e.fixed_size = resources->font_manager.text_size(
-                     props.text,
-                     props.text_style,
-                     LengthWrap()) +
+  e.fixed_size = fm->text_size(props.text, props.text_style, LengthWrap()) +
                  props.padding.size();
   e.dynamic_size = Vecf::Zero();
   e.floating = false;
 }
 
-void TextBoxSystem::render(const Element& e) const {
+void TextBoxSystem::render(const Element& e, Renderer& renderer) const {
   const auto& props = *e.props.cast<TextBoxProps>();
 
   Boxf mask;
   mask.lower = e.position + props.padding.offset();
   mask.upper = e.position + e.size - props.padding.offset_opposite();
 
-  resources->text_renderer.push_mask(mask);
-  resources->text_renderer.queue_text(
+  renderer.push_mask(mask);
+  renderer.queue_text(
       e.position + props.padding.offset(),
       props.text,
       props.text_style,
       LengthWrap());
-  resources->text_renderer.pop_mask();
+  renderer.pop_mask();
 }
 
 } // namespace datagui

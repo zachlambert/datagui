@@ -7,6 +7,7 @@
 #include "datagui/gui_datapack.hpp"
 #endif
 #include "datagui/tree/tree.hpp"
+#include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>
 #include <vector>
@@ -115,7 +116,7 @@ public:
   // Style
 
   void style(const Style& style) {
-    resources.style_manager.push(style);
+    sm->push(style);
   }
 
   template <typename System>
@@ -144,10 +145,15 @@ private:
 
   Window window;
   Tree tree;
+#ifdef DATAGUI_DEBUG
   bool debug_mode_ = false;
+#endif
 
+  std::shared_ptr<FontManager> fm;
+  std::shared_ptr<StyleManager> sm;
+  Renderer renderer;
   std::vector<std::unique_ptr<ElementSystem>> systems;
-  Resources resources;
+
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;

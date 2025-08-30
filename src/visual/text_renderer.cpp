@@ -41,7 +41,9 @@ void main(){
 }
 )";
 
-void TextRenderer::init() {
+void TextRenderer::init(std::shared_ptr<FontManager> fm) {
+  this->fm = fm;
+
   // Configure shader program and buffers
 
   gl_data.program_id = create_program(vertex_shader, fragment_shader);
@@ -86,7 +88,7 @@ void TextRenderer::queue_text(
     Color text_color,
     Length width) {
 
-  const auto& fs = font_manager.font_structure(font, font_size);
+  const auto& fs = fm->font_structure(font, font_size);
 
   std::size_t command_i = 0;
   while (command_i < commands.size()) {

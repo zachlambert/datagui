@@ -123,8 +123,6 @@ static const std::array<Vecf, 6> quad_vertices = {
     Vecf(1.f, 0.f),
     Vecf(1.f, 1.f)};
 
-GeometryRenderer::GeometryRenderer() {}
-
 void GeometryRenderer::init() {
   gl_data.program_id = create_program(rect_vs, rect_fs);
 
