@@ -85,4 +85,34 @@ public:
   }
 };
 
+class ElementSystemList {
+public:
+  template <typename System, typename... Args>
+  void emplace(Args&&... args) {
+    list.push_back(std::make_unique<System>(std::forward<Args>(args)...));
+  }
+
+  ElementSystem& get(const Element& element) {
+    return *list[element.system];
+  }
+  const ElementSystem& get(const Element& element) const {
+    return *list[element.system];
+  }
+
+  template <typename System>
+  requires std::is_base_of_v<ElementSystem, System>
+  int find() const {
+    for (int i = 0; i < list.size(); i++) {
+      if (dynamic_cast<const System*>(list[i].get())) {
+        return i;
+      }
+    }
+    assert(false);
+    return -1;
+  }
+
+private:
+  std::vector<std::unique_ptr<ElementSystem>> list;
+};
+
 } // namespace datagui

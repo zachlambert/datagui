@@ -70,15 +70,17 @@ int main() {
   datagui::Gui gui;
 
   while (gui.running()) {
-    gui.begin();
-    if (gui.series_begin()) {
-      auto var = gui.edit_variable<Foo>();
-      if (var.modified()) {
-        std::cout << datapack::debug(*var) << std::endl;
+    if (gui.begin()) {
+      if (gui.series_begin()) {
+        auto var = gui.edit_variable<Foo>();
+        if (var.modified()) {
+          std::cout << datapack::debug(*var) << std::endl;
+        }
+        gui.series_end();
       }
-      gui.series_end();
+      gui.end();
     }
-    gui.end();
+    gui.poll();
   }
   return 0;
 }

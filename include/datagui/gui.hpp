@@ -3,9 +3,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#if 0
-#include "datagui/gui_datapack.hpp"
-#endif
+#include "datagui/datapack/reader.hpp"
+#include "datagui/datapack/writer.hpp"
+#include "datagui/element/series.hpp"
 #include "datagui/tree/tree.hpp"
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
@@ -52,51 +52,63 @@ public:
     return tree.variable<T>([initial_value]() { return initial_value; });
   }
 
-#if 0
-
   template <typename T>
   requires datapack::writeable<T> && datapack::readable<T>
   Variable<T> edit_variable(const T& initial_value = T()) {
-    series_begin_force();
-    auto var = variable<T>(initial_value);
-    if (var.modified() || var.is_new()) {
-      if (var.modified()) {
-        DATAGUI_LOG("[Gui::edit_variable] Variable modified -> update GUI");
-      } else {
-        DATAGUI_LOG("[Gui::edit_variable] Variable is new -> update GUI");
+    {
+      auto element = tree.next();
+      if (element->system == -1) {
+        DATAGUI_LOG("[Gui::edit_variable] Construct new Series");
+        element->props = UniqueAny::Make<SeriesProps>();
+        element->system = systems.find<SeriesSystem>();
       }
-      series_begin_force();
-      GuiWriter(*this).value(*var);
-      series_end();
-    } else {
-      if (series_begin()) {
-        DATAGUI_LOG("[Gui::edit_variable] Variable revisit -> update VAR");
-        T new_value;
-        GuiReader(*this).value(new_value);
-        var.set(new_value);
-        series_end();
-      }
+      auto& props = *element->props.cast<SeriesProps>();
+      props.set_style(*sm);
     }
-    series_end();
+
+    DATAGUI_LOG("[Gui::edit_variable] DOWN (1)");
+    tree.down();
+
+    auto var = variable<T>(initial_value);
+
+    {
+      auto element = tree.next();
+      if (element->system == -1) {
+        DATAGUI_LOG("[Gui::edit_variable] Construct new Series");
+        element->props = UniqueAny::Make<SeriesProps>();
+        element->system = systems.find<SeriesSystem>();
+      }
+      auto& props = *element->props.cast<SeriesProps>();
+      props.set_style(*sm);
+    }
+
+    if (!tree.down_if()) {
+      DATAGUI_LOG("[Gui::edit_variable] UP (1) (no revisit)");
+      tree.up();
+      return var;
+    }
+    DATAGUI_LOG("[Gui::edit_variable] DOWN (2) (revisit)");
+
+    if (var.modified()) {
+      DATAGUI_LOG("[Gui::edit_variable] Write variable -> GUI");
+      GuiWriter(systems, tree, sm).value(*var);
+    } else {
+      DATAGUI_LOG("[Gui::edit_variable] Read GUI -> variable");
+      T new_value;
+      GuiReader(systems, tree).value(new_value);
+      var.set(new_value);
+    }
+
+    DATAGUI_LOG("[Gui::edit_variable] UP (2) (after revisit)");
+    tree.up();
+    DATAGUI_LOG("[Gui::edit_variable] UP (1) (after revisit)");
+    tree.up();
+
     return var;
   }
-#endif
-
-  // Style
 
   void style(const Style& style) {
     sm->push(style);
-  }
-
-  template <typename System>
-  requires std::is_base_of_v<ElementSystem, System>
-  int find_system() const {
-    for (int i = 0; i < systems.size(); i++) {
-      if (dynamic_cast<const System*>(systems[i].get())) {
-        return i;
-      }
-    }
-    return -1;
   }
 
 private:
@@ -121,7 +133,7 @@ private:
   std::shared_ptr<FontManager> fm;
   std::shared_ptr<StyleManager> sm;
   Renderer renderer;
-  std::vector<std::unique_ptr<ElementSystem>> systems;
+  ElementSystemList systems;
 
   ElementPtr element_focus;
   ElementPtr element_hover;
