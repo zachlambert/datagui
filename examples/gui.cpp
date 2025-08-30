@@ -34,43 +34,50 @@ int main() {
   auto timer_paused = gui.variable<bool>(false);
 
   while (gui.running()) {
-    gui.begin();
-    if (gui.series_begin(style_root)) {
-      gui.text_box("Welcome Screen!", style_h1);
-
-      auto name = gui.variable<std::string>("");
-
-      if (gui.series_begin(style_box)) {
-        gui.text_box("Name: ", style_text);
-        gui.text_input(name, style_text_input);
-        gui.series_end();
-      }
-      if (auto value = gui.checkbox()) {
-        std::cout << "Checked: " << *value << std::endl;
-      }
-
-      if (name->empty()) {
-        gui.text_box("Hello... what is your name?", style_text);
-      } else {
-        gui.text_box("Hello " + *name, style_text);
-      }
-
-      gui.text_box("Timer: " + std::to_string(*timer));
-
-      if (gui.button("Reset")) {
-        timer.set(0);
-        next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
-      }
-
+    if (gui.begin()) {
+      gui.style(style_root);
       if (gui.series_begin()) {
-        gui.checkbox(timer_paused);
-        gui.text_box("Paused");
+        gui.style(style_h1);
+        gui.text_box("Welcome Screen!");
+
+        auto name = gui.variable<std::string>("");
+
+        gui.style(style_box);
+        if (gui.series_begin()) {
+          gui.text_box("Name: ");
+          gui.style(style_text_input);
+          gui.text_input(name);
+          gui.series_end();
+        }
+        if (auto value = gui.checkbox()) {
+          std::cout << "Checked: " << *value << std::endl;
+        }
+
+        gui.style(style_text);
+        if (name->empty()) {
+          gui.text_box("Hello... what is your name?");
+        } else {
+          gui.text_box("Hello " + *name);
+        }
+
+        gui.text_box("Timer: " + std::to_string(*timer));
+
+        if (gui.button("Reset")) {
+          timer.set(0);
+          next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
+        }
+
+        if (gui.series_begin()) {
+          gui.checkbox(timer_paused);
+          gui.text_box("Paused");
+          gui.series_end();
+        }
+
         gui.series_end();
       }
-
-      gui.series_end();
+      gui.end();
     }
-    gui.end();
+    gui.poll();
 
     if (clock_t::now() > next_t) {
       if (!*timer_paused) {

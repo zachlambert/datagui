@@ -65,9 +65,9 @@ target_link_libraries(example_window datagui)
 add_executable(example_gui_new examples/gui_new.cpp)
 target_link_libraries(example_gui_new datagui)
 
-# add_executable(example_gui examples/gui.cpp)
-# target_link_libraries(example_gui datagui)
-# 
+add_executable(example_gui examples/gui.cpp)
+target_link_libraries(example_gui datagui)
+
 # add_executable(example_gui2 examples/gui2.cpp)
 # target_link_libraries(example_gui2 datagui)
 # 
