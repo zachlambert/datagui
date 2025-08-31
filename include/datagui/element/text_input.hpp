@@ -52,4 +52,21 @@ private:
   TextSelection active_selection;
 };
 
+inline TextInputProps& get_text_input(
+    ElementSystemList& systems,
+    Element& element,
+    const std::string& initial_value) {
+  if (element.system == -1) {
+    element.system = systems.find<TextInputSystem>();
+    assert(element.system != -1);
+    assert(!element.props);
+    element.props = UniqueAny::Make<TextInputProps>();
+    auto props = *element.props.cast<TextInputProps>();
+    props.text = initial_value;
+  }
+  auto props = element.props.cast<TextInputProps>();
+  assert(props);
+  return *props;
+}
+
 } // namespace datagui

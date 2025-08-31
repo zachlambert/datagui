@@ -49,4 +49,16 @@ private:
   std::shared_ptr<FontManager> fm;
 };
 
+inline ButtonProps& get_button(ElementSystemList& systems, Element& element) {
+  if (element.system == -1) {
+    element.system = systems.find<ButtonSystem>();
+    assert(element.system != -1);
+    assert(!element.props);
+    element.props = UniqueAny::Make<ButtonProps>();
+  }
+  auto props = element.props.cast<ButtonProps>();
+  assert(props);
+  return *props;
+}
+
 } // namespace datagui

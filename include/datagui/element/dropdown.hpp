@@ -56,4 +56,23 @@ private:
   std::shared_ptr<FontManager> fm;
 };
 
+inline DropdownProps& get_dropdown(
+    ElementSystemList& systems,
+    Element& element,
+    const std::vector<std::string>& choices,
+    int initial_choice) {
+  if (element.system == -1) {
+    element.system = systems.find<DropdownSystem>();
+    assert(element.system != -1);
+    assert(!element.props);
+    element.props = UniqueAny::Make<DropdownProps>();
+    auto props = *element.props.cast<DropdownProps>();
+    props.choices = choices;
+    props.choice = initial_choice;
+  }
+  auto props = element.props.cast<DropdownProps>();
+  assert(props);
+  return *props;
+}
+
 } // namespace datagui

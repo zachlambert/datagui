@@ -57,12 +57,7 @@ public:
   Variable<T> edit_variable(const T& initial_value = T()) {
     {
       auto element = tree.next();
-      if (element->system == -1) {
-        DATAGUI_LOG("Gui::edit_variable", "Construct new Series");
-        element->props = UniqueAny::Make<SeriesProps>();
-        element->system = systems.find<SeriesSystem>();
-      }
-      auto& props = *element->props.cast<SeriesProps>();
+      auto& props = get_series(systems, *element);
       props.set_style(*sm);
     }
 
@@ -73,12 +68,7 @@ public:
 
     {
       auto element = tree.next();
-      if (element->system == -1) {
-        DATAGUI_LOG("Gui::edit_variable", "Construct new Series");
-        element->props = UniqueAny::Make<SeriesProps>();
-        element->system = systems.find<SeriesSystem>();
-      }
-      auto& props = *element->props.cast<SeriesProps>();
+      auto& props = get_series(systems, *element);
       props.set_style(*sm);
     }
 

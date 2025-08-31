@@ -46,4 +46,21 @@ private:
   std::shared_ptr<FontManager> fm;
 };
 
+inline CheckboxProps& get_checkbox(
+    ElementSystemList& systems,
+    Element& element,
+    bool initial_value) {
+  if (element.system == -1) {
+    element.system = systems.find<CheckboxSystem>();
+    assert(element.system != -1);
+    assert(!element.props);
+    element.props = UniqueAny::Make<CheckboxProps>();
+    auto props = *element.props.cast<CheckboxProps>();
+    props.checked = initial_value;
+  }
+  auto props = element.props.cast<CheckboxProps>();
+  assert(props);
+  return *props;
+}
+
 } // namespace datagui
