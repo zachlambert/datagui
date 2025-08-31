@@ -57,12 +57,13 @@ bool Tree::begin() {
 
   for (int variable : modified_variables_) {
     variables[variable].modified = false;
+    variables[variable].modified_internal = false;
   }
   modified_variables_.clear();
 
   // Apply queued variable modified flags
 
-  for (int variable : queue_modified_variables_) {
+  for (auto [variable, internal] : queue_modified_variables_) {
     auto& variable_d = variables[variable];
     DATAGUI_LOG(
         "Tree::begin",
@@ -80,6 +81,7 @@ bool Tree::begin() {
     // Apply new data
     variable_d.data = std::move(variable_d.data_new);
     variable_d.modified = true;
+    variable_d.modified_internal = internal;
     assert(variable_d.data);
 
     // Keep track of what is modified, to clear next iteration
@@ -208,7 +210,7 @@ void Tree::up() {
   while (remove_from != -1) {
     int next = elements[remove_from].next;
     remove_element(remove_from);
-    next = remove_from;
+    remove_from = next;
   }
 
   current_ = parent_;

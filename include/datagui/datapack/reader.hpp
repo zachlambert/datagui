@@ -10,8 +10,10 @@ class Gui;
 
 class GuiReader : public datapack::Reader {
 public:
-  GuiReader(ElementSystemList& systems, Tree& tree) :
-      systems(systems), tree(tree) {}
+  GuiReader(ElementSystemList& systems, Tree& tree, bool& changed) :
+      systems(systems), tree(tree), changed(changed) {
+    changed = false;
+  }
 
   void number(datapack::NumberType type, void* value) override;
   bool boolean() override;
@@ -40,6 +42,7 @@ public:
 private:
   ElementSystemList& systems;
   Tree& tree;
+  bool& changed;
 
   struct ListState {
     Variable<std::vector<int>> ids_var;

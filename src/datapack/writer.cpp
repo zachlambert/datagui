@@ -200,6 +200,7 @@ void GuiWriter::list_next() {
 void GuiWriter::list_end() {
   auto& state = list_stack.top();
   state.ids_var.mutate(state.ids);
+
   if (state.index != 0) {
     DATAGUI_LOG("GuiWriter::list_end", "UP (el %zu)", state.index - 1);
     tree.up();

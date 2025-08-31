@@ -34,6 +34,7 @@ struct VariableNode {
   UniqueAny data;
   UniqueAny data_new;
   bool modified = false;
+  bool modified_internal = false;
 
   // Linked list of data nodes for a given gui node
   int prev = -1;
@@ -114,7 +115,8 @@ private:
 
   std::stack<int> variable_stack_;
   std::vector<int> queue_revisit_;
-  std::vector<int> queue_modified_variables_;
+  std::vector<std::pair<int, bool>>
+      queue_modified_variables_; // [variable, internally modified?]
   std::vector<int> modified_variables_;
 
   int external_first_variable_ = -1;
@@ -143,24 +145,19 @@ public:
     static_assert(!IsConst);
     assert(tree->variables[variable].data.cast<T>());
     tree->variables[variable].data_new = UniqueAny::Make<T>(value);
-    tree->queue_modified_variables_.push_back(variable);
+    tree->queue_modified_variables_.emplace_back(variable, false);
   }
   void set(T&& value) const {
     static_assert(!IsConst);
     assert(tree->variables[variable].data.cast<T>());
     tree->variables[variable].data_new = UniqueAny::Make<T>(std::move(value));
-    tree->queue_modified_variables_.push_back(variable);
+    tree->queue_modified_variables_.emplace_back(variable, false);
   }
   bool modified() const {
     return tree->variables[variable].modified;
   }
   bool has_value() const {
     return tree->variables[variable].data;
-  }
-  // Write to current value
-  // TODO: Only need to use this in GuiWriter, shouldn't be used otherwise
-  void mutate(const T& value) const {
-    tree->variables[variable].data = UniqueAny::Make<T>(value);
   }
 
   template <
@@ -194,6 +191,30 @@ private:
   data_ptr_t data_ptr;
 
   friend class Tree;
+
+  // For the following methods
+  friend class GuiWriter;
+  friend class GuiReader;
+  friend class Gui;
+
+  void mutate(const T& value) const {
+    tree->variables[variable].data = UniqueAny::Make<T>(value);
+  }
+  void set_internal(const T& value) const {
+    static_assert(!IsConst);
+    assert(tree->variables[variable].data.cast<T>());
+    tree->variables[variable].data_new = UniqueAny::Make<T>(value);
+    tree->queue_modified_variables_.emplace_back(variable, true);
+  }
+  void set_internal(T&& value) const {
+    static_assert(!IsConst);
+    assert(tree->variables[variable].data.cast<T>());
+    tree->variables[variable].data_new = UniqueAny::Make<T>(std::move(value));
+    tree->queue_modified_variables_.emplace_back(variable, true);
+  }
+  bool modified_external() const {
+    return modified() && !tree->variables[variable].modified_internal;
+  }
 };
 template <typename T>
 using Variable = Var_<T, false>;
