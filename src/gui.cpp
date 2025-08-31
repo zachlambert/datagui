@@ -60,14 +60,6 @@ void Gui::text_box(const std::string& text) {
   auto element = tree.next();
   auto& props = get_text_box(systems, *element);
 
-#ifdef DATAGUI_DEBUG
-  if (props.text != text) {
-    printf(
-        "[Gui::text_box] Changed %s -> %s\n",
-        props.text.c_str(),
-        text.c_str());
-  }
-#endif
   props.set_style(*sm);
   props.text = text;
 }
@@ -108,9 +100,9 @@ void Gui::text_input(const Variable<std::string>& value) {
 
   if (props.changed) {
     DATAGUI_LOG("Gui::text_input(variable)", "Text input changed");
-    value.set(props.text);
+    value.set_internal(props.text);
     props.changed = false;
-  } else if (value.modified()) {
+  } else if (value.modified_external()) {
     DATAGUI_LOG("Gui::text_input(variable)", "Variable modified");
     props.text = *value;
   }
@@ -144,9 +136,9 @@ void Gui::checkbox(const Variable<bool>& value) {
         "Gui::checkbox(variable)",
         "Checkbox changed -> %s",
         BOOL_STR(props.checked));
-    value.set(props.checked);
+    value.set_internal(props.checked);
     props.changed = false;
-  } else if (value.modified()) {
+  } else if (value.modified_external()) {
     DATAGUI_LOG(
         "Gui::checkbox(variable)",
         "Variable modified -> %s",
@@ -187,9 +179,9 @@ void Gui::dropdown(
         "Gui::dropdown(variable)",
         "Dropdown changed -> %i",
         props.choice);
-    choice.set(props.choice);
+    choice.set_internal(props.choice);
     props.changed = false;
-  } else if (choice.modified()) {
+  } else if (choice.modified_external()) {
     DATAGUI_LOG("Gui::dropdown(variable)", "Variable modified -> %i", *choice);
     props.choice = *choice;
   }
@@ -208,8 +200,8 @@ bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
         "Open changed -> %s",
         BOOL_STR(props.open));
     props.open_changed = false;
-    open.set(props.open);
-  } else if (open.modified()) {
+    open.set_internal(props.open);
+  } else if (open.modified_external()) {
     DATAGUI_LOG(
         "Gui::floating_begin",
         "Open variable changed -> %s",
@@ -559,7 +551,8 @@ void Gui::event_handling() {
         break;
       case Key::Escape:
         if (element_focus) {
-          systems.get(*element_focus).focus_leave(*element_focus, false);
+          element_focus.revisit(
+              systems.get(*element_focus).focus_leave(*element_focus, false));
           set_tree_focus(element_focus, false);
           element_focus = ElementPtr();
         }
@@ -639,7 +632,8 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
 
   if (element_focus != prev_element_focus) {
     if (prev_element_focus) {
-      systems.get(*prev_element_focus).focus_leave(*prev_element_focus, true);
+      prev_element_focus.revisit(systems.get(*prev_element_focus)
+                                     .focus_leave(*prev_element_focus, true));
       set_tree_focus(prev_element_focus, false);
     }
     if (element_focus) {
@@ -739,7 +733,8 @@ void Gui::focus_next(bool reverse) {
 
   if (element_focus) {
     auto prev_element_focus = element_focus;
-    systems.get(*prev_element_focus).focus_leave(*prev_element_focus, true);
+    prev_element_focus.revisit(systems.get(*prev_element_focus)
+                                   .focus_leave(*prev_element_focus, true));
     set_tree_focus(element_focus, false);
   }
 

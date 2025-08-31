@@ -3,7 +3,6 @@
 #include "datagui/element/button.hpp"
 #include "datagui/element/checkbox.hpp"
 #include "datagui/element/dropdown.hpp"
-#include "datagui/element/floating.hpp"
 #include "datagui/element/series.hpp"
 #include "datagui/element/text_box.hpp"
 #include "datagui/element/text_input.hpp"
@@ -11,7 +10,9 @@
 namespace datagui {
 
 void GuiReader::number(datapack::NumberType type, void* value) {
-  const auto& props = get_text_input(systems, *tree.next(), "0");
+  auto& props = get_text_input(systems, *tree.next(), "0");
+  changed |= props.changed;
+  props.changed = false;
 
   try {
     switch (type) {
@@ -43,12 +44,16 @@ void GuiReader::number(datapack::NumberType type, void* value) {
 }
 
 bool GuiReader::boolean() {
-  const auto& props = get_checkbox(systems, *tree.next(), false);
+  auto& props = get_checkbox(systems, *tree.next(), false);
+  changed |= props.changed;
+  props.changed = false;
   return props.checked;
 }
 
 const char* GuiReader::string() {
-  const auto& props = get_text_input(systems, *tree.next(), "");
+  auto& props = get_text_input(systems, *tree.next(), "");
+  changed |= props.changed;
+  props.changed = false;
   return props.text.c_str();
 }
 
@@ -58,7 +63,9 @@ int GuiReader::enumerate(const std::span<const char*>& labels) {
     labels_str.emplace_back(label);
   }
 
-  const auto& props = get_dropdown(systems, *tree.next(), labels_str, 0);
+  auto& props = get_dropdown(systems, *tree.next(), labels_str, 0);
+  changed |= props.changed;
+  props.changed = false;
   return props.choice;
 }
 
@@ -74,7 +81,9 @@ bool GuiReader::optional_begin() {
   tree.down();
   DATAGUI_LOG("GuiReader::optional_begin", "DOWN (1)");
 
-  const auto& toggle = get_checkbox(systems, *tree.next(), false);
+  auto& toggle = get_checkbox(systems, *tree.next(), false);
+  changed |= toggle.changed;
+  toggle.changed = false;
 
   if (!toggle.checked) {
     DATAGUI_LOG("GuiReader::optional_begin", "UP (1) (no value)");
@@ -107,17 +116,15 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
     labels_str.emplace_back(label);
   }
 
-  bool changed = false;
   auto& dropdown = get_dropdown(systems, *tree.next(), labels_str, 0);
-  if (dropdown.changed) {
-    dropdown.changed = false;
-  }
 
   auto id_var = tree.variable<int>([&]() { return tree.get_id(); });
   int id = *id_var;
   if (dropdown.changed) {
     id = tree.get_id();
     id_var.set(id);
+    dropdown.changed = false;
+    changed = true;
   }
 
   get_series(systems, *tree.next(id));
@@ -174,7 +181,10 @@ void GuiReader::list_begin() {
   ListState state;
   state.ids_var =
       tree.variable<std::vector<int>>([]() { return std::vector<int>(); });
+  changed |= state.ids_var.modified();
+
   state.index = 0;
+  list_stack.push(state);
 
   get_series(systems, *tree.next());
   DATAGUI_LOG("GuiReader::list_begin", "DOWN (2)");
@@ -183,18 +193,34 @@ void GuiReader::list_begin() {
 
 bool GuiReader::list_next() {
   auto& state = list_stack.top();
+
   if (state.index == state.ids_var->size()) {
     return false;
   }
+
+  if (state.index != 0) {
+    DATAGUI_LOG("GuiReader::list_next", "UP (el %zu)", state.index - 1);
+    tree.up();
+  }
+
+  get_series(systems, *tree.next());
+  DATAGUI_LOG("GuiReader::list_next", "DOWN (el %zu)", state.index);
+  tree.down();
+
   state.index++;
   return true;
 }
 
 void GuiReader::list_end() {
+  const auto& state = list_stack.top();
+
+  if (state.index != 0) {
+    DATAGUI_LOG("GuiReader::list_next", "UP (el %zu)", state.index - 1);
+    tree.up();
+  }
+
   DATAGUI_LOG("GuiReader::list_end", "UP (2)");
   tree.up();
-
-  const auto& state = list_stack.top();
 
   auto& push_button = get_button(systems, *tree.next());
   push_button.text = "Push";
@@ -202,7 +228,7 @@ void GuiReader::list_end() {
     push_button.released = false;
     auto new_ids = *state.ids_var;
     new_ids.push_back(tree.get_id());
-    state.ids_var.set(new_ids);
+    state.ids_var.set(std::move(new_ids));
   }
 
   auto& pop_button = get_button(systems, *tree.next());
@@ -212,7 +238,7 @@ void GuiReader::list_end() {
     if (!state.ids_var->empty()) {
       auto new_ids = *state.ids_var;
       new_ids.pop_back();
-      state.ids_var.set(new_ids);
+      state.ids_var.set(std::move(new_ids));
     }
   }
 

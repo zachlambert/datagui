@@ -60,8 +60,8 @@ DATAPACK_INLINE(Foo, value, packer) {
   packer.value("y", value.y);
   packer.value("test", value.test);
   packer.value("shape", value.shape);
-  // packer.value("points", value.points);
-  // packer.value("names", value.names);
+  packer.value("points", value.points);
+  packer.value("names", value.names);
   packer.object_end();
 }
 } // namespace datapack

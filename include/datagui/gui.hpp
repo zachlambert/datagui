@@ -79,14 +79,17 @@ public:
     }
     DATAGUI_LOG("Gui::edit_variable", "DOWN (2) (revisit)");
 
-    if (var.modified()) {
+    if (var.modified_external()) {
       DATAGUI_LOG("Gui::edit_variable", "Write variable -> GUI");
       GuiWriter(systems, tree, sm).value(*var);
     } else {
       DATAGUI_LOG("Gui::edit_variable", "Read GUI -> variable");
       T new_value;
-      GuiReader(systems, tree).value(new_value);
-      var.set(new_value);
+      bool changed;
+      GuiReader(systems, tree, changed).value(new_value);
+      if (changed) {
+        var.set_internal(std::move(new_value));
+      }
     }
 
     DATAGUI_LOG("Gui::edit_variable", "UP (2) (after revisit)");
