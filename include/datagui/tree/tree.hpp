@@ -157,6 +157,11 @@ public:
   bool has_value() const {
     return tree->variables[variable].data;
   }
+  // Write to current value
+  // TODO: Only need to use this in GuiWriter, shouldn't be used otherwise
+  void mutate(const T& value) const {
+    tree->variables[variable].data = UniqueAny::Make<T>(value);
+  }
 
   template <
       bool OtherConst,

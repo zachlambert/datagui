@@ -45,6 +45,7 @@ private:
   struct ListState {
     std::vector<int> ids;
     Variable<std::vector<int>> ids_var;
+    std::size_t index = 0;
   };
   std::stack<ListState> list_stack;
 };

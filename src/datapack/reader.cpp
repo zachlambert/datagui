@@ -11,32 +11,30 @@
 namespace datagui {
 
 void GuiReader::number(datapack::NumberType type, void* value) {
-  auto element = tree.next();
-  auto props = element->props.cast<TextInputProps>();
-  assert(props);
+  const auto& props = get_text_input(systems, *tree.next(), "0");
 
   try {
     switch (type) {
     case datapack::NumberType::I32:
-      *(std::int32_t*)value = std::stoi(props->text);
+      *(std::int32_t*)value = std::stoi(props.text);
       break;
     case datapack::NumberType::I64:
-      *(std::int64_t*)value = std::stol(props->text);
+      *(std::int64_t*)value = std::stol(props.text);
       break;
     case datapack::NumberType::U32:
-      *(std::uint32_t*)value = std::stoul(props->text);
+      *(std::uint32_t*)value = std::stoul(props.text);
       break;
     case datapack::NumberType::U64:
-      *(std::uint64_t*)value = std::stoul(props->text);
+      *(std::uint64_t*)value = std::stoul(props.text);
       break;
     case datapack::NumberType::U8:
-      *(std::uint8_t*)value = std::stoul(props->text);
+      *(std::uint8_t*)value = std::stoul(props.text);
       break;
     case datapack::NumberType::F32:
-      *(float*)value = std::stof(props->text);
+      *(float*)value = std::stof(props.text);
       break;
     case datapack::NumberType::F64:
-      *(double*)value = std::stod(props->text);
+      *(double*)value = std::stod(props.text);
       break;
     }
   } catch (const std::invalid_argument& e) {
@@ -45,61 +43,46 @@ void GuiReader::number(datapack::NumberType type, void* value) {
 }
 
 bool GuiReader::boolean() {
-  auto element = tree.next();
-  auto props = element->props.cast<CheckboxProps>();
-  assert(props);
-  return props->checked;
+  const auto& props = get_checkbox(systems, *tree.next(), false);
+  return props.checked;
 }
 
 const char* GuiReader::string() {
-  auto element = tree.next();
-  auto props = element->props.cast<TextInputProps>();
-  assert(props);
-  return props->text.c_str();
+  const auto& props = get_text_input(systems, *tree.next(), "");
+  return props.text.c_str();
 }
 
 int GuiReader::enumerate(const std::span<const char*>& labels) {
-  auto element = tree.next();
-  auto props = element->props.cast<DropdownProps>();
-  assert(props);
-  return props->choice;
+  std::vector<std::string> labels_str;
+  for (auto label : labels) {
+    labels_str.emplace_back(label);
+  }
+
+  const auto& props = get_dropdown(systems, *tree.next(), labels_str, 0);
+  return props.choice;
 }
 
 std::span<const std::uint8_t> GuiReader::binary() {
-  auto element = tree.next();
-  auto props = element->props.cast<TextBoxProps>();
-  assert(props);
-  // No change
+  auto& props = get_text_box(systems, *tree.next());
+  props.text = "<binary not editable>";
   return std::span<const std::uint8_t>((const std::uint8_t*)nullptr, 0);
 }
 
 bool GuiReader::optional_begin() {
-  {
-    auto element = tree.next();
-    assert(element->props.cast<SeriesProps>());
-  }
+  get_series(systems, *tree.next());
 
   tree.down();
   DATAGUI_LOG("GuiReader::optional_begin", "DOWN (1)");
 
-  bool has_value;
-  {
-    auto element = tree.next();
-    auto props = element->props.cast<CheckboxProps>();
-    assert(props);
-    has_value = props->checked;
-  }
+  const auto& toggle = get_checkbox(systems, *tree.next(), false);
 
-  if (!has_value) {
+  if (!toggle.checked) {
     DATAGUI_LOG("GuiReader::optional_begin", "UP (1) (no value)");
     tree.up();
     return false;
   }
 
-  {
-    auto element = tree.next();
-    assert(element->props.cast<SeriesProps>());
-  }
+  get_series(systems, *tree.next());
 
   DATAGUI_LOG("GuiReader::optional_begin", "DOWN (1) (has value)");
   tree.down();
@@ -114,47 +97,35 @@ void GuiReader::optional_end() {
 }
 
 int GuiReader::variant_begin(const std::span<const char*>& labels) {
-  {
-    auto element = tree.next();
-    assert(element->props.cast<SeriesProps>());
-  }
+  get_series(systems, *tree.next());
 
   DATAGUI_LOG("GuiReader::variant_begin", "DOWN (1)");
   tree.down();
 
+  std::vector<std::string> labels_str;
+  for (auto label : labels) {
+    labels_str.emplace_back(label);
+  }
+
   bool changed = false;
-  int value;
-  {
-    auto element = tree.next();
-    auto props = element->props.cast<DropdownProps>();
-    assert(props);
-    changed = props->changed;
-    props->changed = false;
-    value = props->choice;
+  auto& dropdown = get_dropdown(systems, *tree.next(), labels_str, 0);
+  if (dropdown.changed) {
+    dropdown.changed = false;
   }
 
   auto id_var = tree.variable<int>([&]() { return tree.get_id(); });
   int id = *id_var;
-  if (changed) {
+  if (dropdown.changed) {
     id = tree.get_id();
     id_var.set(id);
   }
 
-  {
-    auto element = tree.next(id);
-    if (element->system == -1) {
-      DATAGUI_LOG(
-          "GuiReader::variant_begin",
-          "Construct new Series (id changed)");
-      element->props = UniqueAny::Make<SeriesProps>();
-      element->system = systems.find<SeriesSystem>();
-    }
-  }
+  get_series(systems, *tree.next(id));
 
   DATAGUI_LOG("GuiReader::variant_begin", "DOWN (2)");
   tree.down();
 
-  return value;
+  return dropdown.choice;
 }
 
 void GuiReader::variant_end() {
@@ -165,17 +136,14 @@ void GuiReader::variant_end() {
 }
 
 void GuiReader::object_begin() {
-  auto element = tree.next();
-  assert(element->props.cast<SeriesProps>());
+  get_series(systems, *tree.next());
   DATAGUI_LOG("GuiReader::object_begin", "DOWN");
   tree.down();
 }
 
 void GuiReader::object_next(const char* key) {
-  auto element = tree.next();
-  auto props = element->props.cast<TextBoxProps>();
-  assert(props);
-  assert(props->text == key);
+  auto& props = get_text_box(systems, *tree.next());
+  props.text = key;
 }
 
 void GuiReader::object_end() {
@@ -184,8 +152,7 @@ void GuiReader::object_end() {
 }
 
 void GuiReader::tuple_begin() {
-  auto element = tree.next();
-  assert(element->props.cast<SeriesProps>());
+  get_series(systems, *tree.next());
   DATAGUI_LOG("GuiReader::tuple_begin", "DOWN");
   tree.down();
 }
@@ -200,10 +167,7 @@ void GuiReader::tuple_end() {
 }
 
 void GuiReader::list_begin() {
-  {
-    auto element = tree.next();
-    assert(element->props.cast<SeriesProps>());
-  }
+  get_series(systems, *tree.next());
   DATAGUI_LOG("GuiReader::list_begin", "DOWN (1)");
   tree.down();
 
@@ -212,10 +176,7 @@ void GuiReader::list_begin() {
       tree.variable<std::vector<int>>([]() { return std::vector<int>(); });
   state.index = 0;
 
-  {
-    auto element = tree.next();
-    assert(element->props.cast<SeriesProps>());
-  }
+  get_series(systems, *tree.next());
   DATAGUI_LOG("GuiReader::list_begin", "DOWN (2)");
   tree.down();
 }
@@ -235,33 +196,23 @@ void GuiReader::list_end() {
 
   const auto& state = list_stack.top();
 
-  {
-    auto element = tree.next();
-    auto props = element->props.cast<ButtonProps>();
-    assert(props);
-    assert(props->text == "Push");
-
-    if (props->released) {
-      props->released = false;
-      auto new_ids = *state.ids_var;
-      new_ids.push_back(tree.get_id());
-      state.ids_var.set(new_ids);
-    }
+  auto& push_button = get_button(systems, *tree.next());
+  push_button.text = "Push";
+  if (push_button.released) {
+    push_button.released = false;
+    auto new_ids = *state.ids_var;
+    new_ids.push_back(tree.get_id());
+    state.ids_var.set(new_ids);
   }
 
-  {
-    auto element = tree.next();
-    auto props = element->props.cast<ButtonProps>();
-    assert(props);
-    assert(props->text == "Pop");
-
-    if (props->released) {
-      props->released = false;
+  auto& pop_button = get_button(systems, *tree.next());
+  pop_button.text = "Pop";
+  if (pop_button.released) {
+    pop_button.released = false;
+    if (!state.ids_var->empty()) {
       auto new_ids = *state.ids_var;
-      if (new_ids.size() > 0) {
-        new_ids.pop_back();
-        state.ids_var.set(new_ids);
-      }
+      new_ids.pop_back();
+      state.ids_var.set(new_ids);
     }
   }
 

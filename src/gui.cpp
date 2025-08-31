@@ -38,13 +38,8 @@ bool Gui::running() const {
 
 bool Gui::series_begin() {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::text_box", "Construct new Series");
-    element->props = UniqueAny::Make<SeriesProps>();
-    element->system = systems.find<SeriesSystem>();
-  }
+  auto& props = get_series(systems, *element);
 
-  auto& props = *element->props.cast<SeriesProps>();
   props.set_style(*sm);
 
   if (tree.down_if()) {
@@ -63,13 +58,8 @@ void Gui::series_end() {
 
 void Gui::text_box(const std::string& text) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::text_box", "Construct new TextBox");
-    element->props = UniqueAny::Make<TextBoxProps>();
-    element->system = systems.find<TextBoxSystem>();
-  }
+  auto& props = get_text_box(systems, *element);
 
-  auto& props = *element->props.cast<TextBoxProps>();
 #ifdef DATAGUI_DEBUG
   if (props.text != text) {
     printf(
@@ -84,13 +74,8 @@ void Gui::text_box(const std::string& text) {
 
 bool Gui::button(const std::string& text) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::button", "Construct new Button");
-    element->props = UniqueAny::Make<ButtonProps>();
-    element->system = systems.find<ButtonSystem>();
-  }
+  auto& props = get_button(systems, *element);
 
-  auto& props = *element->props.cast<ButtonProps>();
   props.text = text;
   props.set_style(*sm);
   if (props.released) {
@@ -103,16 +88,8 @@ bool Gui::button(const std::string& text) {
 
 const std::string* Gui::text_input(const std::string& initial_value) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::text_input(initial_value)", "Construct new TextInput");
-    element->props = UniqueAny::Make<TextInputProps>();
-    element->system = systems.find<TextInputSystem>();
+  auto& props = get_text_input(systems, *element, initial_value);
 
-    auto& props = *element->props.cast<TextInputProps>();
-    props.text = initial_value;
-  }
-
-  auto& props = *element->props.cast<TextInputProps>();
   props.set_style(*sm);
 
   if (props.changed) {
@@ -125,18 +102,9 @@ const std::string* Gui::text_input(const std::string& initial_value) {
 
 void Gui::text_input(const Variable<std::string>& value) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::text_input(variable)", "Construct new TextInput");
-    element->props = UniqueAny::Make<TextInputProps>();
-    element->system = systems.find<TextInputSystem>();
+  auto& props = get_text_input(systems, *element, *value);
 
-    auto& props = *element->props.cast<TextInputProps>();
-    props.text = *value;
-  }
-
-  auto& props = *element->props.cast<TextInputProps>();
   props.set_style(*sm);
-  printf("Changed: %s\n", BOOL_STR(props.changed));
 
   if (props.changed) {
     DATAGUI_LOG("Gui::text_input(variable)", "Text input changed");
@@ -150,16 +118,8 @@ void Gui::text_input(const Variable<std::string>& value) {
 
 const bool* Gui::checkbox(bool initial_value) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::checkbox(initial_value)", "Construct new Checkbox");
-    element->props = UniqueAny::Make<CheckboxProps>();
-    element->system = systems.find<CheckboxSystem>();
+  auto& props = get_checkbox(systems, *element, initial_value);
 
-    auto& props = *element->props.cast<CheckboxProps>();
-    props.checked = initial_value;
-  }
-
-  auto& props = *element->props.cast<CheckboxProps>();
   props.set_style(*sm);
 
   if (props.changed) {
@@ -175,16 +135,8 @@ const bool* Gui::checkbox(bool initial_value) {
 
 void Gui::checkbox(const Variable<bool>& value) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::checkbox(variable)", "Construct new Checkbox");
-    element->props = UniqueAny::Make<CheckboxProps>();
-    element->system = systems.find<CheckboxSystem>();
+  auto& props = get_checkbox(systems, *element, *value);
 
-    auto& props = *element->props.cast<CheckboxProps>();
-    props.checked = *value;
-  }
-
-  auto& props = *element->props.cast<CheckboxProps>();
   props.set_style(*sm);
 
   if (props.changed) {
@@ -207,17 +159,8 @@ const int* Gui::dropdown(
     const std::vector<std::string>& choices,
     int initial_choice) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::dropdown(initial_value)", "Construct new Dropdown");
-    element->props = UniqueAny::Make<DropdownProps>();
-    element->system = systems.find<DropdownSystem>();
+  auto& props = get_dropdown(systems, *element, choices, initial_choice);
 
-    auto& props = *element->props.cast<DropdownProps>();
-    props.choices = choices;
-    props.choice = initial_choice;
-  }
-
-  auto& props = *element->props.cast<DropdownProps>();
   props.set_style(*sm);
 
   if (props.changed) {
@@ -235,17 +178,8 @@ void Gui::dropdown(
     const std::vector<std::string>& choices,
     const Variable<int>& choice) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::dropdown(variable)", "Construct new Dropdown");
-    element->props = UniqueAny::Make<DropdownProps>();
-    element->system = systems.find<DropdownSystem>();
+  auto& props = get_dropdown(systems, *element, choices, *choice);
 
-    auto& props = *element->props.cast<DropdownProps>();
-    props.choices = choices;
-    props.choice = *choice;
-  }
-
-  auto& props = *element->props.cast<DropdownProps>();
   props.set_style(*sm);
 
   if (props.changed) {
@@ -263,16 +197,8 @@ void Gui::dropdown(
 
 bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
   auto element = tree.next();
-  if (element->system == -1) {
-    DATAGUI_LOG("Gui::floating_begin", "Construct new Floating");
-    element->props = UniqueAny::Make<FloatingProps>();
-    element->system = systems.find<FloatingSystem>();
+  auto props = get_floating(systems, *element, *open);
 
-    auto& props = *element->props.cast<FloatingProps>();
-    props.open = *open;
-  }
-
-  auto& props = *element->props.cast<FloatingProps>();
   props.title = title;
   props.set_style(*sm);
 
