@@ -7,10 +7,7 @@ namespace datagui {
 
 class GuiWriter : public datapack::Writer {
 public:
-  GuiWriter(
-      ElementSystemList& systems,
-      Tree& tree,
-      std::shared_ptr<StyleManager> sm) :
+  GuiWriter(ElementSystemList& systems, Tree& tree) :
       systems(systems), tree(tree) {}
 
   void number(datapack::NumberType type, const void* value) override;
@@ -40,7 +37,6 @@ public:
 private:
   ElementSystemList& systems;
   Tree& tree;
-  std::shared_ptr<StyleManager> sm;
 
   struct ListState {
     std::vector<int> ids;

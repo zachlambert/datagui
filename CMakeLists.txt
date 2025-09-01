@@ -40,6 +40,7 @@ add_library(datagui SHARED
 
   src/gui.cpp
   src/log.cpp
+  src/theme.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
@@ -76,9 +77,6 @@ target_link_libraries(example_gui datagui)
 
 # add_executable(example_gui_layers examples/gui_layers.cpp)
 # target_link_libraries(example_gui_layers datagui)
-
-# add_executable(example_prop_stack examples/prop_stack.cpp)
-# target_link_libraries(example_prop_stack datagui)
 
 add_executable(example_datapack examples/datapack.cpp)
 target_link_libraries(example_datapack datagui)

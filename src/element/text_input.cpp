@@ -8,11 +8,16 @@ void TextInputSystem::set_input_state(
     const ConstElementList& children) {
   const auto& props = *e.props.cast<TextInputProps>();
 
-  e.fixed_size = props.border_width.size() + props.padding.size();
+  e.fixed_size =
+      2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
   e.dynamic_size = Vecf::Zero();
   e.floating = 0;
 
-  Vecf text_size = fm->text_size(props.text, props.text_style, props.width);
+  Vecf text_size = fm->text_size(
+      props.text,
+      theme->text_font,
+      theme->text_size,
+      props.width);
   e.fixed_size.y += text_size.y;
 
   if (auto width = std::get_if<LengthFixed>(&props.width)) {
@@ -32,37 +37,49 @@ void TextInputSystem::render(const Element& e, Renderer& renderer) {
 
   Color border_color;
   if (e.in_focus_tree) {
-    border_color =
-        props.border_color.multiply(props.input_style.focus_color_factor);
+    border_color = theme->input_color_border_focus;
   } else {
-    border_color = props.border_color;
+    border_color = theme->input_color_border;
   }
 
-  renderer
-      .queue_box(e.box(), props.bg_color, props.border_width, border_color, 0);
+  renderer.queue_box(
+      e.box(),
+      theme->input_color_bg,
+      theme->input_border_width,
+      border_color,
+      0);
 
   Vecf text_position =
-      e.position + props.border_width.offset() + props.padding.offset();
+      e.position +
+      Vecf::Constant(theme->input_border_width + theme->text_padding);
 
   if (e.focused) {
     render_selection(
-        fm->font_structure(props.text_style.font, props.text_style.font_size),
-        props.text_style,
-        props.width,
         text,
         text_position,
         active_selection,
+        fm->font_structure(theme->text_font, theme->text_size),
+        theme->text_cursor_color,
+        theme->text_highlight_color,
+        theme->text_cursor_width,
+        props.width,
         renderer);
   }
 
   Boxf mask;
-  mask.lower =
-      e.position + props.padding.offset() + props.border_width.offset();
-  mask.upper = e.position + e.size - props.padding.offset_opposite() -
-               props.border_width.offset_opposite();
+  mask.lower = e.position +
+               Vecf::Constant(theme->input_border_width + theme->text_padding);
+  mask.upper = e.position + e.size -
+               Vecf::Constant(theme->input_border_width + theme->text_padding);
 
   renderer.push_mask(mask);
-  renderer.queue_text(text_position, text, props.text_style, props.width);
+  renderer.queue_text(
+      text_position,
+      text,
+      theme->text_font,
+      theme->text_size,
+      theme->text_color,
+      props.width);
   renderer.pop_mask();
 }
 
@@ -70,10 +87,10 @@ bool TextInputSystem::mouse_event(Element& e, const MouseEvent& event) {
   const auto& props = *e.props.cast<TextInputProps>();
 
   Vecf text_origin =
-      e.position + props.border_width.offset() + props.padding.offset();
+      e.position +
+      Vecf::Constant(theme->input_border_width + theme->text_padding);
 
-  const auto& font =
-      fm->font_structure(props.text_style.font, props.text_style.font_size);
+  const auto& font = fm->font_structure(theme->text_font, theme->text_size);
 
   if (event.action == MouseAction::Press) {
     active_text = props.text;

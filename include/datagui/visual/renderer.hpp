@@ -1,7 +1,9 @@
 #pragma once
 
+#include "datagui/visual/font_manager.hpp"
 #include "datagui/visual/geometry_renderer.hpp"
 #include "datagui/visual/text_renderer.hpp"
+#include <memory>
 
 namespace datagui {
 
@@ -30,20 +32,6 @@ public:
       Color text_color,
       Length width) {
     text_renderer.queue_text(origin, text, font, font_size, text_color, width);
-  }
-
-  void queue_text(
-      const Vecf& origin,
-      const std::string& text,
-      const TextStyle& style,
-      Length width) {
-    text_renderer.queue_text(
-        origin,
-        text,
-        style.font,
-        style.font_size,
-        style.text_color,
-        width);
   }
 
   void render(const Vecf& viewport_size) {

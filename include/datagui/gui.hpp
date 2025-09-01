@@ -55,22 +55,13 @@ public:
   template <typename T>
   requires datapack::writeable<T> && datapack::readable<T>
   Variable<T> edit_variable(const T& initial_value = T()) {
-    {
-      auto element = tree.next();
-      auto& props = get_series(systems, *element);
-      props.set_style(*sm);
-    }
-
+    get_series(systems, *tree.next());
     DATAGUI_LOG("Gui::edit_variable", "DOWN (1)");
     tree.down();
 
     auto var = variable<T>(initial_value);
 
-    {
-      auto element = tree.next();
-      auto& props = get_series(systems, *element);
-      props.set_style(*sm);
-    }
+    get_series(systems, *tree.next());
 
     if (!tree.down_if()) {
       DATAGUI_LOG("Gui::edit_variable", "UP (1) (no revisit)");
@@ -81,7 +72,7 @@ public:
 
     if (var.modified_external()) {
       DATAGUI_LOG("Gui::edit_variable", "Write variable -> GUI");
-      GuiWriter(systems, tree, sm).value(*var);
+      GuiWriter(systems, tree).value(*var);
     } else {
       DATAGUI_LOG("Gui::edit_variable", "Read GUI -> variable");
       T new_value;
@@ -98,10 +89,6 @@ public:
     tree.up();
 
     return var;
-  }
-
-  void style(const Style& style) {
-    sm->push(style);
   }
 
 private:
@@ -124,7 +111,7 @@ private:
 #endif
 
   std::shared_ptr<FontManager> fm;
-  std::shared_ptr<StyleManager> sm;
+  std::shared_ptr<Theme> theme;
   Renderer renderer;
   ElementSystemList systems;
 

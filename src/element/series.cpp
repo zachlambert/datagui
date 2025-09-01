@@ -30,9 +30,9 @@ void SeriesSystem::set_input_state(
 
     if (!children.empty()) {
       if (props.direction == Direction::Horizontal) {
-        e.fixed_size.x += (children.size() - 1) * props.inner_padding;
+        e.fixed_size.x += (children.size() - 1) * theme->layout_inner_padding;
       } else {
-        e.fixed_size.y += (children.size() - 1) * props.inner_padding;
+        e.fixed_size.y += (children.size() - 1) * theme->layout_inner_padding;
       }
     }
   }
@@ -84,7 +84,7 @@ void SeriesSystem::set_input_state(
     }
   }
 
-  e.fixed_size += props.outer_padding.size();
+  e.fixed_size += Vecf::Constant(theme->layout_outer_padding);
 }
 
 void SeriesSystem::set_dependent_state(
@@ -95,9 +95,9 @@ void SeriesSystem::set_dependent_state(
   Vecf available = maximum(e.size - e.fixed_size, Vecf::Zero());
   float offset;
   if (props.direction == Direction::Horizontal) {
-    offset = props.outer_padding.left - props.scroll_pos;
+    offset = theme->layout_outer_padding - props.scroll_pos;
   } else {
-    offset = props.outer_padding.top - props.scroll_pos;
+    offset = theme->layout_outer_padding - props.scroll_pos;
   }
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
@@ -120,22 +120,22 @@ void SeriesSystem::set_dependent_state(
             (child->dynamic_size.x / children_dynamic_size.x) * available.x;
       }
       if (child->dynamic_size.y > 0) {
-        child->size.y = e.size.y - props.outer_padding.size().y;
+        child->size.y = e.size.y - 2.f * theme->layout_outer_padding;
       }
 
       child->position.x = e.position.x + offset;
-      offset += child->size.x + props.inner_padding;
+      offset += child->size.x + theme->layout_inner_padding;
 
       switch (props.alignment) {
       case Alignment::Min:
-        child->position.y = e.position.y + props.outer_padding.top;
+        child->position.y = e.position.y + theme->layout_outer_padding;
         break;
       case Alignment::Center:
         child->position.y = e.position.y + e.size.y / 2 - child->size.y / 2;
         break;
       case Alignment::Max:
         child->position.y = e.position.y + e.size.y - child->size.y -
-                            props.outer_padding.bottom;
+                            theme->layout_outer_padding;
         break;
       default:
         assert(false);
@@ -148,22 +148,22 @@ void SeriesSystem::set_dependent_state(
             (child->dynamic_size.y / children_dynamic_size.y) * available.y;
       }
       if (child->dynamic_size.x > 0) {
-        child->size.x = e.size.x - props.outer_padding.size().x;
+        child->size.x = e.size.x - 2.f * theme->layout_outer_padding;
       }
 
       child->position.y = e.position.y + offset;
-      offset += child->size.y + props.inner_padding;
+      offset += child->size.y + theme->layout_inner_padding;
 
       switch (props.alignment) {
       case Alignment::Min:
-        child->position.x = e.position.x + props.outer_padding.left;
+        child->position.x = e.position.x + theme->layout_outer_padding;
         break;
       case Alignment::Center:
         child->position.x = e.position.x + e.size.x / 2 - child->size.x / 2;
         break;
       case Alignment::Max:
-        child->position.x =
-            e.position.x + e.size.x - child->size.x - props.outer_padding.right;
+        child->position.x = e.position.x + e.size.x - child->size.x -
+                            theme->layout_outer_padding;
         break;
       default:
         assert(false);
@@ -175,7 +175,7 @@ void SeriesSystem::set_dependent_state(
 
 void SeriesSystem::render(const Element& e, Renderer& renderer) {
   const auto& props = *e.props.cast<SeriesProps>();
-  renderer.queue_box(e.box(), props.bg_color, 0, Color::Black(), 0);
+  renderer.queue_box(e.box(), theme->layout_color_bg, 0, Color::Black(), 0);
 }
 
 bool SeriesSystem::scroll_event(Element& e, const ScrollEvent& event) {

@@ -17,11 +17,9 @@ void FloatingSystem::set_dependent_state(
 
   Vecf position = e.float_box.lower;
   Vecf size = e.float_box.size();
-  if (props.title_bar_enable) {
-    const auto& bar = props.title_bar;
-    position.y += bar.border_width.size().y + bar.padding.size().y +
-                  fm->text_height(props.text_style);
-  }
+  // Title bar size
+  position.y += 2 * theme->input_border_width + 2 * theme->text_padding +
+                fm->text_height(theme->text_font, theme->text_size);
 
   float fixed_size_y = 0;
   float dynamic_size_y = 0;
@@ -57,73 +55,62 @@ void FloatingSystem::set_dependent_state(
     e.float_box.upper = e.float_box.lower + type->size;
   }
 
-  if (!props.title_bar_enable) {
-    return;
-  }
-  const auto& bar = props.title_bar;
   auto& bar_box = props.title_bar_box;
-
   bar_box.lower = e.float_box.lower;
   bar_box.upper.x = e.float_box.upper.x;
-  bar_box.upper.y = e.float_box.lower.y + fm->text_height(props.text_style) +
-                    bar.border_width.size().y + bar.padding.size().y;
+  bar_box.upper.y = e.float_box.lower.y +
+                    fm->text_height(theme->text_font, theme->text_size) +
+                    2.f * (theme->input_border_width + theme->text_padding);
 
   props.title_bar_text_width =
-      e.float_box.size().x - bar.border_width.size().x - bar.padding.size().x;
+      e.float_box.size().x -
+      2.f * (theme->input_border_width + theme->text_padding);
 
-  if (!props.close_button_enable) {
-    return;
-  }
-  const auto& button = props.close_button;
   auto& button_box = props.close_button_box;
-
-  Vecf text_size = fm->text_size("close", props.text_style, LengthWrap());
-  Vecf button_size = text_size + button.padding.size();
-  props.title_bar_text_width -= (button_size.x + bar.padding.left);
+  Vecf text_size =
+      fm->text_size("close", theme->text_font, theme->text_size, LengthWrap());
+  Vecf button_size = text_size + 2.f * Vecf::Constant(theme->text_padding);
+  props.title_bar_text_width -= (button_size.x + theme->text_padding);
   props.title_bar_text_width = std::max(0.f, props.title_bar_text_width);
 
-  button_box.upper = bar_box.upper - bar.border_width.offset_opposite();
+  button_box.upper = bar_box.upper - Vecf::Constant(theme->input_border_width);
   button_box.lower = button_box.upper - button_size;
 }
 
 void FloatingSystem::render(const Element& e, Renderer& renderer) {
   auto& props = *e.props.cast<FloatingProps>();
 
-  renderer.queue_box(e.float_box, props.bg_color, 0, Color::Black(), 0);
-
-  if (!props.title_bar_enable) {
-    return;
-  }
-  const auto& bar = props.title_bar;
+  renderer.queue_box(e.float_box, theme->layout_color_bg, 0, Color::Black(), 0);
 
   renderer.queue_box(
       props.title_bar_box,
-      bar.bg_color,
-      bar.border_width,
-      bar.border_color,
+      theme->layout_color_bg,
+      theme->input_border_width,
+      theme->input_color_border,
       0);
 
   renderer.queue_text(
-      e.float_box.lower + bar.border_width.offset() + bar.padding.offset(),
+      e.float_box.lower +
+          Vecf::Constant(theme->input_border_width + theme->text_padding),
       props.title,
-      props.text_style,
+      theme->text_font,
+      theme->text_size,
+      theme->text_color,
       LengthFixed(props.title_bar_text_width));
-
-  if (!props.close_button_enable) {
-    return;
-  }
 
   renderer.queue_box(
       props.close_button_box,
-      props.close_button.color,
+      theme->input_color_bg,
       0,
       Color::Black(),
       0);
 
   renderer.queue_text(
-      props.close_button_box.lower + bar.padding.offset(),
+      props.close_button_box.lower + Vecf::Constant(theme->text_padding),
       "close",
-      props.text_style,
+      theme->text_font,
+      theme->text_size,
+      theme->text_color,
       LengthWrap());
 }
 
@@ -132,13 +119,6 @@ bool FloatingSystem::mouse_event(Element& e, const MouseEvent& event) {
     return false;
   }
   auto& props = *e.props.cast<FloatingProps>();
-  if (!props.title_bar_enable) {
-    return false;
-  }
-
-  if (!props.title_bar_enable || !props.close_button_enable) {
-    return false;
-  }
 
   if (!props.close_button_box.contains(event.position)) {
     return false;

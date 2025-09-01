@@ -7,11 +7,16 @@ void ButtonSystem::set_input_state(
     const ConstElementList& children) {
   const auto& props = *e.props.cast<ButtonProps>();
 
-  e.fixed_size = props.border_width.size() + props.padding.size();
+  e.fixed_size =
+      2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
   e.dynamic_size = Vecf::Zero();
   e.floating = false;
 
-  Vecf text_size = fm->text_size(props.text, props.text_style, props.width);
+  Vecf text_size = fm->text_size(
+      props.text,
+      theme->text_font,
+      theme->text_size,
+      props.width);
   e.fixed_size.y += text_size.y;
 
   if (auto width = std::get_if<LengthFixed>(&props.width)) {
@@ -29,32 +34,38 @@ void ButtonSystem::render(const Element& e, Renderer& renderer) {
 
   Color bg_color;
   if (props.down) {
-    bg_color = props.bg_color.multiply(props.input_style.active_color_factor);
+    bg_color = theme->input_color_bg_active;
   } else if (e.hovered) {
-    bg_color = props.bg_color.multiply(props.input_style.hover_color_factor);
+    bg_color = theme->input_color_bg_hover;
   } else {
-    bg_color = props.bg_color;
+    bg_color = theme->input_color_bg;
   }
 
   Color border_color;
   if (e.in_focus_tree) {
-    border_color =
-        props.border_color.multiply(props.input_style.focus_color_factor);
+    border_color = theme->input_color_border_focus;
   } else {
-    border_color = props.border_color;
+    border_color = theme->input_color_border;
   }
 
   renderer.queue_box(
       e.box(),
       bg_color,
-      props.border_width,
+      theme->input_border_width,
       border_color,
-      props.radius);
+      theme->input_radius);
 
   Vecf text_position =
-      e.position + props.border_width.offset() + props.padding.offset();
+      e.position +
+      Vecf::Constant(theme->input_border_width + theme->text_padding);
 
-  renderer.queue_text(text_position, props.text, props.text_style, props.width);
+  renderer.queue_text(
+      text_position,
+      props.text,
+      theme->text_font,
+      theme->text_size,
+      theme->text_color,
+      props.width);
 }
 
 bool ButtonSystem::mouse_event(Element& e, const MouseEvent& event) {
