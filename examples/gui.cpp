@@ -51,7 +51,10 @@ int main() {
         if (gui.section_begin("Open me")) {
           if (gui.series_begin()) {
             gui.text_box("Hello :)");
-            gui.text_input("");
+            if (gui.labelled_begin("Input")) {
+              gui.text_input("");
+              gui.labelled_end();
+            }
             gui.series_end();
           }
           gui.section_end();

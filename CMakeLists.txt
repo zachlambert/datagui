@@ -24,6 +24,7 @@ add_library(datagui SHARED
   src/element/checkbox.cpp
   src/element/dropdown.cpp
   src/element/floating.cpp
+  src/element/labelled.cpp
   src/element/section.cpp
   src/element/series.cpp
   src/element/text_box.cpp

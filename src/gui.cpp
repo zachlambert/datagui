@@ -8,6 +8,7 @@
 #include "datagui/element/checkbox.hpp"
 #include "datagui/element/dropdown.hpp"
 #include "datagui/element/floating.hpp"
+#include "datagui/element/labelled.hpp"
 #include "datagui/element/section.hpp"
 #include "datagui/element/series.hpp"
 #include "datagui/element/text_box.hpp"
@@ -28,6 +29,7 @@ Gui::Gui(const Window::Config& config) : window(config) {
   systems.emplace<CheckboxSystem>(fm, theme);
   systems.emplace<DropdownSystem>(fm, theme);
   systems.emplace<FloatingSystem>(fm, theme);
+  systems.emplace<LabelledSystem>(fm, theme);
   systems.emplace<SectionSystem>(fm, theme);
   systems.emplace<SeriesSystem>(theme);
   systems.emplace<TextBoxSystem>(fm, theme);
@@ -53,6 +55,22 @@ bool Gui::series_begin() {
 }
 
 void Gui::series_end() {
+  tree.up();
+}
+
+bool Gui::labelled_begin(const std::string& label) {
+  auto element = tree.next();
+  auto& props = get_labelled(systems, *element, label);
+
+  if (tree.down_if()) {
+    DATAGUI_LOG("Gui::labelled_begin", "DOWN");
+    return true;
+  }
+  DATAGUI_LOG("Gui::labelled_begin", "SKIP");
+  return false;
+}
+
+void Gui::labelled_end() {
   tree.up();
 }
 
