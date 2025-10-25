@@ -6,6 +6,7 @@
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/writer.hpp"
 #include "datagui/element/series.hpp"
+#include "datagui/gui_args.hpp"
 #include "datagui/tree/tree.hpp"
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
@@ -91,6 +92,10 @@ public:
     return var;
   }
 
+  SeriesArgs& args_series() {
+    return args_series_;
+  }
+
 private:
   void render();
   void calculate_sizes();
@@ -118,6 +123,8 @@ private:
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;
+
+  SeriesArgs args_series_;
 };
 
 } // namespace datagui

@@ -1,12 +1,11 @@
 #pragma once
 
+#include "datagui/gui_args.hpp"
 #include "datagui/tree/element.hpp"
 #include "datagui/tree/tree.hpp"
 #include <datapack/datapack.hpp>
 
 namespace datagui {
-
-class Gui;
 
 class GuiReader : public datapack::Reader {
 public:

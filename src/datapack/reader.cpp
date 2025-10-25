@@ -106,7 +106,8 @@ void GuiReader::optional_end() {
 }
 
 int GuiReader::variant_begin(const std::span<const char*>& labels) {
-  get_series(systems, *tree.next());
+  auto& series = get_series(systems, *tree.next());
+  // series.no_padding = true;
 
   DATAGUI_LOG("GuiReader::variant_begin", "DOWN (1)");
   tree.down();

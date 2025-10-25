@@ -39,6 +39,8 @@ bool Gui::running() const {
 bool Gui::series_begin() {
   auto element = tree.next();
   auto& props = get_series(systems, *element);
+  args_series_.apply(props);
+  args_series_.reset();
 
   if (tree.down_if()) {
     DATAGUI_LOG("Gui::series_begin", "DOWN");

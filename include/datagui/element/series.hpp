@@ -12,6 +12,7 @@ struct SeriesProps {
   Alignment alignment = Alignment::Center;
   Length length = LengthWrap();
   Length width = LengthDynamic(1);
+  bool no_padding = false;
 };
 
 class SeriesSystem : public ElementSystem {

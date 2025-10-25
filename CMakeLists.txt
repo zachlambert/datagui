@@ -39,6 +39,7 @@ add_library(datagui SHARED
   src/visual/window.cpp
 
   src/gui.cpp
+  src/gui_args.cpp
   src/log.cpp
   src/theme.cpp
 )
