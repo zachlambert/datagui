@@ -74,7 +74,10 @@ void GuiWriter::optional_begin(bool has_value) {
   auto& toggle = get_checkbox(systems, *tree.next(), false);
   toggle.checked = has_value;
 
-  get_series(systems, *tree.next());
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.no_padding = true;
+  }
 
   if (!has_value) {
     DATAGUI_LOG("GuiWriter::optional_begin", "UP (1) (no value)");
@@ -95,7 +98,11 @@ void GuiWriter::optional_end() {
 }
 
 void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
-  get_series(systems, *tree.next());
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.no_padding = true;
+    series.alignment = Alignment::Min;
+  }
 
   tree.down();
   DATAGUI_LOG("GuiWriter::variant_begin", "DOWN (1)");
@@ -112,7 +119,11 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   auto id_var = tree.variable<int>([&]() { return 0; });
   id_var.mutate(value);
 
-  get_series(systems, *tree.next(value));
+  {
+    auto& series = get_series(systems, *tree.next(value));
+    series.no_padding = true;
+    series.alignment = Alignment::Min;
+  }
 
   tree.down();
   DATAGUI_LOG("GuiWriter::variant_begin", "DOWN (2)");
@@ -126,18 +137,36 @@ void GuiWriter::variant_end() {
 }
 
 void GuiWriter::object_begin() {
-  get_series(systems, *tree.next());
+  auto& series = get_series(systems, *tree.next());
+  series.alignment = Alignment::Min;
+  series.no_padding = true;
 
   DATAGUI_LOG("GuiWriter::object_begin", "DOWN");
   tree.down();
+  at_object_begin = true;
 }
 
 void GuiWriter::object_next(const char* key) {
+  if (!at_object_begin) {
+    tree.up();
+  }
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.direction = Direction::Horizontal;
+    series.width = LengthWrap();
+    series.alignment = Alignment::Min;
+    tree.down();
+  }
+  at_object_begin = false;
   auto& props = get_text_box(systems, *tree.next());
   props.text = key;
 }
 
 void GuiWriter::object_end() {
+  if (!at_object_begin) {
+    tree.up();
+  }
+  at_object_begin = false;
   DATAGUI_LOG("GuiWriter::object_end", "UP");
   tree.up();
 }
@@ -159,7 +188,12 @@ void GuiWriter::tuple_end() {
 }
 
 void GuiWriter::list_begin() {
-  get_series(systems, *tree.next());
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.alignment = Alignment::Min;
+    series.no_padding = true;
+  }
+
   DATAGUI_LOG("GuiWriter::list_begin", "DOWN (1)");
   tree.down();
 
@@ -168,7 +202,11 @@ void GuiWriter::list_begin() {
       tree.variable<std::vector<int>>([]() { return std::vector<int>(); });
   list_stack.push(state);
 
-  get_series(systems, *tree.next());
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.alignment = Alignment::Min;
+    series.no_padding = true;
+  }
   DATAGUI_LOG("GuiWriter::list_begin", "DOWN (2)");
   tree.down();
 }

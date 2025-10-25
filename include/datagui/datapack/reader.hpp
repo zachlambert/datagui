@@ -48,6 +48,7 @@ private:
     std::size_t index;
   };
   std::stack<ListState> list_stack;
+  bool at_object_begin = false;
 };
 
 } // namespace datagui

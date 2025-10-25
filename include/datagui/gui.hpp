@@ -56,13 +56,20 @@ public:
   template <typename T>
   requires datapack::writeable<T> && datapack::readable<T>
   Variable<T> edit_variable(const T& initial_value = T()) {
-    get_series(systems, *tree.next());
+    {
+      auto& series = get_series(systems, *tree.next());
+      series.no_padding = true;
+    }
+
     DATAGUI_LOG("Gui::edit_variable", "DOWN (1)");
     tree.down();
 
     auto var = variable<T>(initial_value);
 
-    get_series(systems, *tree.next());
+    {
+      auto& series = get_series(systems, *tree.next());
+      series.no_padding = true;
+    }
 
     if (!tree.down_if()) {
       DATAGUI_LOG("Gui::edit_variable", "UP (1) (no revisit)");

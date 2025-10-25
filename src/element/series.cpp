@@ -11,8 +11,8 @@ void SeriesSystem::set_input_state(
   e.dynamic_size = Vecf::Zero();
   e.floating = false;
 
-  float outer_padding = props.no_padding ? 0.f : outer_padding;
-  float inner_padding = props.no_padding ? 0.f : inner_padding;
+  float outer_padding = props.no_padding ? 0.f : theme->layout_outer_padding;
+  float inner_padding = props.no_padding ? 0.f : theme->layout_inner_padding;
 
   // Primary direction
 
@@ -95,8 +95,8 @@ void SeriesSystem::set_dependent_state(
     const ElementList& children) {
 
   const auto& props = *e.props.cast<SeriesProps>();
-  float outer_padding = props.no_padding ? 0.f : outer_padding;
-  float inner_padding = props.no_padding ? 0.f : inner_padding;
+  float outer_padding = props.no_padding ? 0.f : theme->layout_outer_padding;
+  float inner_padding = props.no_padding ? 0.f : theme->layout_inner_padding;
 
   Vecf available = maximum(e.size - e.fixed_size, Vecf::Zero());
   float offset = outer_padding - props.scroll_pos;
