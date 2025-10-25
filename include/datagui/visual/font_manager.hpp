@@ -1,7 +1,8 @@
 #pragma once
 
+#include "datagui/font.hpp"
 #include "datagui/geometry.hpp"
-#include "datagui/style.hpp"
+#include "datagui/layout.hpp"
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -80,8 +81,12 @@ private:
 class FontManager {
 public:
   const FontStructure& font_structure(Font font, int font_size);
-  Vecf text_size(const std::string& text, const TextStyle& style, Length width);
-  float text_height(const TextStyle& style);
+  Vecf text_size(
+      const std::string& text,
+      Font font,
+      int font_size,
+      Length width);
+  float text_height(Font font, int font_size);
 
 private:
   std::unordered_map<std::pair<Font, int>, FontStructure> fonts;

@@ -264,12 +264,14 @@ void selection_key_event(
 }
 
 void render_selection(
-    const FontStructure& font,
-    const TextStyle& style,
-    Length width,
     const std::string& text,
     const Vecf& origin,
     const TextSelection& selection,
+    const FontStructure& font,
+    Color cursor_color,
+    Color highlight_color,
+    int cursor_width,
+    Length width,
     Renderer& renderer) {
 
   // Render cursor only
@@ -278,9 +280,9 @@ void render_selection(
     Vecf offset = cursor_offset(font, text, width, selection.begin);
     renderer.queue_box(
         Boxf(
-            origin + offset - Vecf(float(style.cursor_width) / 2, 0),
-            origin + offset + Vecf(style.cursor_width, font.line_height)),
-        style.cursor_color,
+            origin + offset - Vecf(float(cursor_width) / 2, 0),
+            origin + offset + Vecf(cursor_width, font.line_height)),
+        cursor_color,
         0,
         Color::Black(),
         0);
@@ -310,7 +312,7 @@ void render_selection(
       to_offset.y += font.line_height;
       renderer.queue_box(
           Boxf(origin + from_offset, origin + to_offset),
-          style.highlight_color,
+          highlight_color,
           0,
           Color::Black(),
           0);
@@ -326,7 +328,7 @@ void render_selection(
   Vecf to_offset = offset + Vecf(0, font.line_height);
   renderer.queue_box(
       Boxf(origin + from_offset, origin + to_offset),
-      style.highlight_color,
+      highlight_color,
       0,
       Color::Black(),
       0);

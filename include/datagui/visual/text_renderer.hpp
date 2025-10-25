@@ -3,6 +3,7 @@
 #include "datagui/color.hpp"
 #include "datagui/geometry.hpp"
 #include "datagui/visual/font_manager.hpp"
+#include <memory>
 #include <stack>
 #include <string>
 #include <vector>

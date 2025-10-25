@@ -7,7 +7,8 @@ void CheckboxSystem::set_input_state(
     const ConstElementList& children) {
   const auto& props = *e.props.cast<CheckboxProps>();
 
-  e.fixed_size = Vecf::Constant(props.size);
+  float size = fm->text_height(theme->text_font, theme->text_size);
+  e.fixed_size = Vecf::Constant(size);
   e.dynamic_size = Vecf::Zero();
   e.floating = false;
 }
@@ -17,10 +18,10 @@ void CheckboxSystem::render(const Element& e, Renderer& renderer) {
 
   renderer.queue_box(
       e.box(),
-      props.bg_color,
-      props.border_width,
-      props.border_color,
-      props.radius);
+      theme->input_color_bg,
+      theme->input_border_width,
+      theme->input_color_border,
+      0);
 
   if (!props.checked) {
     return;
@@ -28,23 +29,14 @@ void CheckboxSystem::render(const Element& e, Renderer& renderer) {
 
   Boxf icon_box;
   icon_box.lower = minimum(
-      e.position + props.border_width.offset() + props.inner_padding.offset(),
+      e.position + Vecf::Constant(theme->input_border_width * 2.f),
       e.box().center());
   icon_box.upper = maximum(
-      e.position + e.size - props.border_width.offset_opposite() -
-          props.inner_padding.offset_opposite(),
+      e.position + e.size - Vecf::Constant(theme->input_border_width * 2.f),
       e.box().center());
 
-  float icon_radius = 0;
-  if (!e.box().empty() && props.radius > 0) {
-    float size_ratio = std::min(
-        icon_box.size().x / e.box().size().x,
-        icon_box.size().y / e.box().size().y);
-    icon_radius = std::max<float>(0, size_ratio * props.radius);
-  }
-
   renderer
-      .queue_box(icon_box, props.icon_color, 0, Color::Black(), icon_radius);
+      .queue_box(icon_box, theme->input_color_bg_active, 0, Color::Black(), 0);
 }
 
 bool CheckboxSystem::mouse_event(Element& e, const MouseEvent& event) {

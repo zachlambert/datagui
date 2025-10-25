@@ -6,6 +6,7 @@
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/writer.hpp"
 #include "datagui/element/series.hpp"
+#include "datagui/gui_args.hpp"
 #include "datagui/tree/tree.hpp"
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
@@ -56,9 +57,8 @@ public:
   requires datapack::writeable<T> && datapack::readable<T>
   Variable<T> edit_variable(const T& initial_value = T()) {
     {
-      auto element = tree.next();
-      auto& props = get_series(systems, *element);
-      props.set_style(*sm);
+      auto& series = get_series(systems, *tree.next());
+      series.no_padding = true;
     }
 
     DATAGUI_LOG("Gui::edit_variable", "DOWN (1)");
@@ -67,9 +67,8 @@ public:
     auto var = variable<T>(initial_value);
 
     {
-      auto element = tree.next();
-      auto& props = get_series(systems, *element);
-      props.set_style(*sm);
+      auto& series = get_series(systems, *tree.next());
+      series.no_padding = true;
     }
 
     if (!tree.down_if()) {
@@ -81,7 +80,7 @@ public:
 
     if (var.modified_external()) {
       DATAGUI_LOG("Gui::edit_variable", "Write variable -> GUI");
-      GuiWriter(systems, tree, sm).value(*var);
+      GuiWriter(systems, tree).value(*var);
     } else {
       DATAGUI_LOG("Gui::edit_variable", "Read GUI -> variable");
       T new_value;
@@ -100,8 +99,8 @@ public:
     return var;
   }
 
-  void style(const Style& style) {
-    sm->push(style);
+  SeriesArgs& args_series() {
+    return args_series_;
   }
 
 private:
@@ -124,13 +123,15 @@ private:
 #endif
 
   std::shared_ptr<FontManager> fm;
-  std::shared_ptr<StyleManager> sm;
+  std::shared_ptr<Theme> theme;
   Renderer renderer;
   ElementSystemList systems;
 
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;
+
+  SeriesArgs args_series_;
 };
 
 } // namespace datagui

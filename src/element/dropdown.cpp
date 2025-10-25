@@ -9,11 +9,16 @@ void DropdownSystem::set_input_state(
 
   float max_item_width = 0;
   for (const auto& choice : props.choices) {
-    Vecf choice_size = fm->text_size(choice, props.text_style, LengthWrap());
+    Vecf choice_size =
+        fm->text_size(choice, theme->text_font, theme->text_size, LengthWrap());
     max_item_width = std::max(max_item_width, choice_size.x);
   }
   if (props.choices.empty()) {
-    Vecf none_size = fm->text_size("<none>", props.text_style, LengthWrap());
+    Vecf none_size = fm->text_size(
+        "<none>",
+        theme->text_font,
+        theme->text_size,
+        LengthWrap());
     max_item_width = std::max(max_item_width, none_size.x);
   }
 
@@ -27,8 +32,9 @@ void DropdownSystem::set_input_state(
   } else if (auto width = std::get_if<LengthDynamic>(&props.width)) {
     e.dynamic_size.x = width->weight;
   }
-  e.fixed_size += props.border_width.size() + props.padding.size();
-  e.fixed_size.y += fm->text_height(props.text_style);
+  e.fixed_size +=
+      2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
+  e.fixed_size.y += fm->text_height(theme->text_font, theme->text_size);
 
   e.floating = props.open && !props.choices.empty();
 }
@@ -42,9 +48,10 @@ void DropdownSystem::set_dependent_state(
   }
 
   const auto& props = *e.props.cast<DropdownProps>();
-  e.float_box.upper.y += (props.choices.size() - 1) *
-                         (fm->text_height(props.text_style) +
-                          props.padding.size().y + props.inner_border_width);
+  e.float_box.upper.y +=
+      (props.choices.size() - 1) *
+      (fm->text_height(theme->text_font, theme->text_size) +
+       2.f * theme->text_padding + theme->input_border_width);
 }
 
 void DropdownSystem::render(const Element& e, Renderer& renderer) {
@@ -53,9 +60,9 @@ void DropdownSystem::render(const Element& e, Renderer& renderer) {
   if (!props.open || props.choices.empty()) {
     renderer.queue_box(
         e.box(),
-        props.bg_color,
-        props.border_width,
-        props.border_color,
+        theme->input_color_bg,
+        theme->input_border_width,
+        theme->input_color_border,
         0);
 
     std::string text =
@@ -63,64 +70,53 @@ void DropdownSystem::render(const Element& e, Renderer& renderer) {
                     : "<none>";
 
     renderer.queue_text(
-        e.position + props.border_width.offset() + props.padding.offset(),
+        e.position +
+            Vecf::Constant(theme->input_border_width + theme->text_padding),
         text,
-        props.text_style,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
         LengthFixed(
-            e.size.x - props.border_width.size().x - props.padding.size().x));
+            e.size.x -
+            2.f * (theme->input_border_width + theme->text_padding)));
     return;
   }
-
-  BoxDims top_border = props.border_width;
-  top_border.bottom = props.inner_border_width;
-  BoxDims inner_border = props.border_width;
-  inner_border.top = props.inner_border_width;
-  inner_border.bottom = props.inner_border_width;
-  BoxDims bottom_border = props.border_width;
-  bottom_border.top = props.inner_border_width;
 
   Vecf offset = Vecf::Zero();
 
   for (int i = 0; i < props.choices.size(); i++) {
-    const BoxDims* border;
-    if (props.choices.size() == 1) {
-      border = &props.border_width;
-    } else if (i == 0) {
-      border = &top_border;
-    } else if (i == props.choices.size() - 1) {
-      border = &bottom_border;
-    } else {
-      border = &inner_border;
-    }
-
     Vecf position = e.position + offset;
     Vecf size = Vecf(
         e.size.x,
-        fm->text_height(props.text_style) + props.padding.size().y +
-            border->size().y);
+        fm->text_height(theme->text_font, theme->text_size) +
+            2.f * (theme->text_padding + theme->input_border_width));
 
     Color bg_color;
     if (i == props.choice) {
-      bg_color = props.bg_color.multiply(props.input_style.active_color_factor);
+      bg_color = theme->input_color_bg_active;
     } else {
-      bg_color = props.bg_color;
+      bg_color = theme->input_color_bg;
     }
     renderer.queue_box(
         Boxf(position, position + size),
         bg_color,
-        *border,
-        props.border_color,
+        theme->input_border_width,
+        theme->input_color_border,
         0);
 
     renderer.queue_text(
-        position + border->offset() + props.padding.offset(),
+        position +
+            Vecf::Constant(theme->input_border_width + theme->text_padding),
         props.choices[i],
-        props.text_style,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
         LengthFixed(
-            e.size.x - props.border_width.size().x - props.padding.size().x));
+            e.size.x -
+            2.f * (theme->input_border_width + theme->text_padding)));
 
-    offset.y += border->top + props.padding.size().y +
-                fm->text_height(props.text_style);
+    offset.y += theme->input_border_width + 2 * theme->text_padding +
+                fm->text_height(theme->text_font, theme->text_size);
   }
 }
 
@@ -138,42 +134,23 @@ bool DropdownSystem::mouse_event(Element& e, const MouseEvent& event) {
     return false;
   }
 
-  BoxDims top_border = props.border_width;
-  top_border.bottom = props.inner_border_width;
-  BoxDims inner_border = props.border_width;
-  inner_border.top = props.inner_border_width;
-  inner_border.bottom = props.inner_border_width;
-  BoxDims bottom_border = props.border_width;
-  bottom_border.top = props.inner_border_width;
-
   Vecf offset = Vecf::Zero();
   int clicked = -1;
 
   for (int i = 0; i < props.choices.size(); i++) {
-    const BoxDims* border;
-    if (props.choices.size() == 1) {
-      border = &props.border_width;
-    } else if (i == 0) {
-      border = &top_border;
-    } else if (i == props.choices.size() - 1) {
-      border = &bottom_border;
-    } else {
-      border = &inner_border;
-    }
-
     Vecf position = e.position + offset;
     Vecf size = Vecf(
         e.size.x,
-        fm->text_height(props.text_style) + props.padding.size().y +
-            border->size().y);
+        fm->text_height(theme->text_font, theme->text_size) +
+            2.f * (theme->text_padding + theme->input_border_width));
 
     if (Boxf(position, position + size).contains(event.position)) {
       clicked = i;
       break;
     }
 
-    offset.y += border->top + props.padding.size().y +
-                fm->text_height(props.text_style);
+    offset.y += theme->input_border_width + 2.f * theme->text_padding +
+                fm->text_height(theme->text_font, theme->text_size);
   }
 
   if (clicked != -1) {

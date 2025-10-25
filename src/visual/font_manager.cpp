@@ -330,9 +330,10 @@ const FontStructure& FontManager::font_structure(Font font, int font_size) {
 
 Vecf FontManager::text_size(
     const std::string& text,
-    const TextStyle& style,
+    Font font,
+    int font_size,
     Length width) {
-  const auto& fs = font_structure(style.font, style.font_size);
+  const auto& fs = font_structure(font, font_size);
 
   auto fixed_width = std::get_if<LengthFixed>(&width);
 
@@ -366,8 +367,8 @@ Vecf FontManager::text_size(
   }
 }
 
-float FontManager::text_height(const TextStyle& style) {
-  const auto& fs = font_structure(style.font, style.font_size);
+float FontManager::text_height(Font font, int font_size) {
+  const auto& fs = font_structure(font, font_size);
   return fs.line_height;
 }
 

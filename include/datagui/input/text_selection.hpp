@@ -1,7 +1,6 @@
 #pragma once
 
 #include "datagui/input/event.hpp"
-#include "datagui/style.hpp"
 #include "datagui/visual/font_manager.hpp"
 #include "datagui/visual/renderer.hpp"
 
@@ -55,12 +54,14 @@ void selection_text_event(
     const TextEvent& event);
 
 void render_selection(
-    const FontStructure& font,
-    const TextStyle& style,
-    Length width,
     const std::string& text,
     const Vecf& origin,
     const TextSelection& selection,
+    const FontStructure& font,
+    Color cursor_color,
+    Color highlight_color,
+    int cursor_width,
+    Length width,
     Renderer& renderer);
 
 } // namespace datagui

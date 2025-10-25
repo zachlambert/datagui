@@ -1,39 +1,23 @@
 #pragma once
 
 #include "datagui/input/text_selection.hpp"
-#include "datagui/style.hpp"
+#include "datagui/theme.hpp"
 #include "datagui/tree/element.hpp"
 
 namespace datagui {
 
 struct TextInputProps {
-  // Style
-  Length width = LengthDynamic();
-  BoxDims padding = 5;
-  Color bg_color = Color::White();
-  BoxDims border_width = 2;
-  Color border_color = Color::Black();
-  TextStyle text_style;
-  InputStyle input_style;
-
-  // Data
   std::string text;
   bool changed = false;
-
-  void set_style(const StyleManager& sm) {
-    sm.text_input_width(width);
-    sm.text_padding(padding);
-    sm.text_input_bg_color(bg_color);
-    sm.text_input_border_width(border_width);
-    sm.text_input_border_color(border_color);
-    text_style.apply(sm);
-    input_style.apply(sm);
-  }
+  Length width = LengthDynamic(1);
 };
 
 class TextInputSystem : public ElementSystem {
 public:
-  TextInputSystem(std::shared_ptr<FontManager> fm) : fm(fm) {}
+  TextInputSystem(
+      std::shared_ptr<FontManager> fm,
+      std::shared_ptr<Theme> theme) :
+      fm(fm), theme(theme) {}
 
   void set_input_state(Element& element, const ConstElementList& children)
       override;
@@ -48,6 +32,7 @@ public:
 
 private:
   std::shared_ptr<FontManager> fm;
+  std::shared_ptr<Theme> theme;
   std::string active_text;
   TextSelection active_selection;
 };

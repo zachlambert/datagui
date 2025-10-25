@@ -4,6 +4,7 @@
 #include "datagui/input/event.hpp"
 #include "datagui/types/unique_any.hpp"
 #include "datagui/visual/renderer.hpp"
+#include <assert.h>
 #include <vector>
 
 namespace datagui {

@@ -20,16 +20,16 @@ using namespace std::placeholders;
 
 Gui::Gui(const Window::Config& config) : window(config) {
   fm = std::make_shared<FontManager>();
-  sm = std::make_shared<StyleManager>();
+  theme = std::make_shared<Theme>(theme_default());
   renderer.init(fm);
 
-  systems.emplace<ButtonSystem>(fm);
-  systems.emplace<CheckboxSystem>(fm);
-  systems.emplace<DropdownSystem>(fm);
-  systems.emplace<FloatingSystem>(fm);
-  systems.emplace<SeriesSystem>();
-  systems.emplace<TextBoxSystem>(fm);
-  systems.emplace<TextInputSystem>(fm);
+  systems.emplace<ButtonSystem>(fm, theme);
+  systems.emplace<CheckboxSystem>(fm, theme);
+  systems.emplace<DropdownSystem>(fm, theme);
+  systems.emplace<FloatingSystem>(fm, theme);
+  systems.emplace<SeriesSystem>(theme);
+  systems.emplace<TextBoxSystem>(fm, theme);
+  systems.emplace<TextInputSystem>(fm, theme);
 }
 
 bool Gui::running() const {
@@ -39,12 +39,11 @@ bool Gui::running() const {
 bool Gui::series_begin() {
   auto element = tree.next();
   auto& props = get_series(systems, *element);
-
-  props.set_style(*sm);
+  args_series_.apply(props);
+  args_series_.reset();
 
   if (tree.down_if()) {
     DATAGUI_LOG("Gui::series_begin", "DOWN");
-    sm->down();
     return true;
   }
   DATAGUI_LOG("Gui::series_begin", "SKIP");
@@ -52,15 +51,12 @@ bool Gui::series_begin() {
 }
 
 void Gui::series_end() {
-  sm->up();
   tree.up();
 }
 
 void Gui::text_box(const std::string& text) {
   auto element = tree.next();
   auto& props = get_text_box(systems, *element);
-
-  props.set_style(*sm);
   props.text = text;
 }
 
@@ -69,7 +65,6 @@ bool Gui::button(const std::string& text) {
   auto& props = get_button(systems, *element);
 
   props.text = text;
-  props.set_style(*sm);
   if (props.released) {
     DATAGUI_LOG("Gui::button", "Button released");
     props.released = false;
@@ -82,8 +77,6 @@ const std::string* Gui::text_input(const std::string& initial_value) {
   auto element = tree.next();
   auto& props = get_text_input(systems, *element, initial_value);
 
-  props.set_style(*sm);
-
   if (props.changed) {
     DATAGUI_LOG("Gui::text_input(initial_value)", "Text input changed");
     props.changed = false;
@@ -95,8 +88,6 @@ const std::string* Gui::text_input(const std::string& initial_value) {
 void Gui::text_input(const Variable<std::string>& value) {
   auto element = tree.next();
   auto& props = get_text_input(systems, *element, *value);
-
-  props.set_style(*sm);
 
   if (props.changed) {
     DATAGUI_LOG("Gui::text_input(variable)", "Text input changed");
@@ -112,8 +103,6 @@ const bool* Gui::checkbox(bool initial_value) {
   auto element = tree.next();
   auto& props = get_checkbox(systems, *element, initial_value);
 
-  props.set_style(*sm);
-
   if (props.changed) {
     DATAGUI_LOG(
         "Gui::checkbox(initial_value)",
@@ -128,8 +117,6 @@ const bool* Gui::checkbox(bool initial_value) {
 void Gui::checkbox(const Variable<bool>& value) {
   auto element = tree.next();
   auto& props = get_checkbox(systems, *element, *value);
-
-  props.set_style(*sm);
 
   if (props.changed) {
     DATAGUI_LOG(
@@ -153,8 +140,6 @@ const int* Gui::dropdown(
   auto element = tree.next();
   auto& props = get_dropdown(systems, *element, choices, initial_choice);
 
-  props.set_style(*sm);
-
   if (props.changed) {
     DATAGUI_LOG(
         "Gui::dropdown(initial_value)",
@@ -171,8 +156,6 @@ void Gui::dropdown(
     const Variable<int>& choice) {
   auto element = tree.next();
   auto& props = get_dropdown(systems, *element, choices, *choice);
-
-  props.set_style(*sm);
 
   if (props.changed) {
     DATAGUI_LOG(
@@ -192,7 +175,6 @@ bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
   auto props = get_floating(systems, *element, *open);
 
   props.title = title;
-  props.set_style(*sm);
 
   if (props.open_changed) {
     DATAGUI_LOG(
@@ -212,15 +194,10 @@ bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
   if (!*open) {
     return false;
   }
-  if (tree.down_if()) {
-    sm->down();
-    return true;
-  }
-  return false;
+  return tree.down_if();
 }
 
 void Gui::floating_end() {
-  sm->up();
   tree.up();
 }
 
@@ -319,9 +296,8 @@ void Gui::render() {
         ss << "\nlayer: " << element->layer;
         std::string debug_text = ss.str();
 
-        TextStyle text_style;
-        text_style.font_size = 24;
-        auto text_size = fm->text_size(debug_text, text_style, LengthWrap());
+        auto text_size =
+            fm->text_size(debug_text, Font::DejaVuSans, 24, LengthWrap());
 
         renderer.queue_box(
             Boxf(
@@ -334,7 +310,9 @@ void Gui::render() {
         renderer.queue_text(
             window.size() - text_size - Vecf::Constant(10),
             debug_text,
-            text_style,
+            Font::DejaVuSans,
+            24,
+            Color::Black(),
             LengthWrap());
       }
     }

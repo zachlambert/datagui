@@ -91,7 +91,10 @@ bool GuiReader::optional_begin() {
     return false;
   }
 
-  get_series(systems, *tree.next());
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.no_padding = true;
+  }
 
   DATAGUI_LOG("GuiReader::optional_begin", "DOWN (1) (has value)");
   tree.down();
@@ -106,7 +109,11 @@ void GuiReader::optional_end() {
 }
 
 int GuiReader::variant_begin(const std::span<const char*>& labels) {
-  get_series(systems, *tree.next());
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.no_padding = true;
+    series.alignment = Alignment::Min;
+  }
 
   DATAGUI_LOG("GuiReader::variant_begin", "DOWN (1)");
   tree.down();
@@ -127,7 +134,11 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
     changed = true;
   }
 
-  get_series(systems, *tree.next(id));
+  {
+    auto& series = get_series(systems, *tree.next(id));
+    series.no_padding = true;
+    series.alignment = Alignment::Min;
+  }
 
   DATAGUI_LOG("GuiReader::variant_begin", "DOWN (2)");
   tree.down();
@@ -143,17 +154,36 @@ void GuiReader::variant_end() {
 }
 
 void GuiReader::object_begin() {
-  get_series(systems, *tree.next());
+  auto& series = get_series(systems, *tree.next());
+  series.alignment = Alignment::Min;
+  series.no_padding = true;
+
   DATAGUI_LOG("GuiReader::object_begin", "DOWN");
   tree.down();
+  at_object_begin = true;
 }
 
 void GuiReader::object_next(const char* key) {
+  if (!at_object_begin) {
+    tree.up();
+  }
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.direction = Direction::Horizontal;
+    series.width = LengthWrap();
+    series.alignment = Alignment::Min;
+    tree.down();
+  }
+  at_object_begin = false;
   auto& props = get_text_box(systems, *tree.next());
   props.text = key;
 }
 
 void GuiReader::object_end() {
+  if (!at_object_begin) {
+    tree.up();
+  }
+  at_object_begin = false;
   DATAGUI_LOG("GuiReader::object_begin", "UP");
   tree.up();
 }
@@ -174,7 +204,12 @@ void GuiReader::tuple_end() {
 }
 
 void GuiReader::list_begin() {
-  get_series(systems, *tree.next());
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.alignment = Alignment::Min;
+    series.no_padding = true;
+  }
+
   DATAGUI_LOG("GuiReader::list_begin", "DOWN (1)");
   tree.down();
 
@@ -186,7 +221,11 @@ void GuiReader::list_begin() {
   state.index = 0;
   list_stack.push(state);
 
-  get_series(systems, *tree.next());
+  {
+    auto& series = get_series(systems, *tree.next());
+    series.alignment = Alignment::Min;
+    series.no_padding = true;
+  }
   DATAGUI_LOG("GuiReader::list_begin", "DOWN (2)");
   tree.down();
 }
