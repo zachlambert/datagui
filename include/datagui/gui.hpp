@@ -27,6 +27,12 @@ public:
   bool series_begin();
   void series_end();
 
+  bool labelled_begin(const std::string& label);
+  void labelled_end();
+
+  bool section_begin(const std::string& label);
+  void section_end();
+
   void text_box(const std::string& text);
 
   bool button(const std::string& text);

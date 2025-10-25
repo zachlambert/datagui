@@ -48,6 +48,18 @@ int main() {
           gui.series_end();
         }
 
+        if (gui.section_begin("Open me")) {
+          if (gui.series_begin()) {
+            gui.text_box("Hello :)");
+            if (gui.labelled_begin("Input")) {
+              gui.text_input("");
+              gui.labelled_end();
+            }
+            gui.series_end();
+          }
+          gui.section_end();
+        }
+
         gui.series_end();
       }
       gui.end();
