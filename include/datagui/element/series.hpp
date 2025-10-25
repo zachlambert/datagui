@@ -11,7 +11,7 @@ struct SeriesProps {
   Direction direction = Direction::Vertical;
   Alignment alignment = Alignment::Center;
   Length length = LengthWrap();
-  Length width = LengthDynamic();
+  Length width = LengthDynamic(1);
 };
 
 class SeriesSystem : public ElementSystem {

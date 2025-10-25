@@ -1,5 +1,4 @@
 #include "datagui/element/text_box.hpp"
-#include "datagui/visual/text_renderer.hpp"
 
 namespace datagui {
 
@@ -14,7 +13,7 @@ void TextBoxSystem::set_input_state(
                      theme->text_font,
                      theme->text_size,
                      LengthWrap()) +
-                 Vecf::Constant(theme->text_padding);
+                 Vecf::Constant(2 * theme->text_padding);
   e.dynamic_size = Vecf::Zero();
   e.floating = false;
 }

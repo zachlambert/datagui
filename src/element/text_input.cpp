@@ -8,16 +8,14 @@ void TextInputSystem::set_input_state(
     const ConstElementList& children) {
   const auto& props = *e.props.cast<TextInputProps>();
 
+  const std::string& text = e.focused ? active_text : props.text;
   e.fixed_size =
       2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
   e.dynamic_size = Vecf::Zero();
   e.floating = 0;
 
-  Vecf text_size = fm->text_size(
-      props.text,
-      theme->text_font,
-      theme->text_size,
-      props.width);
+  Vecf text_size =
+      fm->text_size(text, theme->text_font, theme->text_size, props.width);
   e.fixed_size.y += text_size.y;
 
   if (auto width = std::get_if<LengthFixed>(&props.width)) {

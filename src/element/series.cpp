@@ -84,7 +84,7 @@ void SeriesSystem::set_input_state(
     }
   }
 
-  e.fixed_size += Vecf::Constant(theme->layout_outer_padding);
+  e.fixed_size += Vecf::Constant(2 * theme->layout_outer_padding);
 }
 
 void SeriesSystem::set_dependent_state(
