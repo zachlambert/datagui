@@ -1,6 +1,5 @@
 #pragma once
 
-#include "datagui/gui_args.hpp"
 #include "datagui/tree/element.hpp"
 #include "datagui/tree/tree.hpp"
 #include <datapack/datapack.hpp>

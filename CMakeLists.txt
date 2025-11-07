@@ -34,6 +34,8 @@ add_library(datagui SHARED
 
   src/tree/tree.cpp
 
+  src/viewport/viewport.cpp
+
   src/visual/font_manager.cpp
   src/visual/geometry_renderer.cpp
   src/visual/shader.cpp
