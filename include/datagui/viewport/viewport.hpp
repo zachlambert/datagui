@@ -15,12 +15,11 @@ public:
   Viewport& operator=(Viewport&&) = delete;
 
   void init(std::size_t width, std::size_t height);
-
-protected:
-  void bind_framebuffer() const;
-  void unbind_framebuffer() const;
+  void update();
 
 private:
+  virtual void render() = 0;
+
   std::size_t width;
   std::size_t height;
   unsigned int texture;

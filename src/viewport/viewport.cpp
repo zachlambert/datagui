@@ -44,11 +44,9 @@ void Viewport::init(std::size_t width, std::size_t height) {
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture, 0);
 }
 
-void Viewport::bind_framebuffer() const {
+void Viewport::update() {
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-}
-
-void Viewport::unbind_framebuffer() const {
+  render();
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
