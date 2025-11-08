@@ -44,7 +44,7 @@ private:
     float radius;
     Color bg_color;
     Color border_color;
-    BoxDims border_width;
+    float border_width;
     Boxf mask;
   };
   std::vector<Element> elements;
