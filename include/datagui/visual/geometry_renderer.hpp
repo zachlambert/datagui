@@ -22,7 +22,11 @@ public:
   void render(const Vecf& viewport_size);
 
   void push_mask(const Boxf& mask) {
-    masks.push(mask);
+    if (masks.empty()) {
+      masks.push(mask);
+    } else {
+      masks.push(intersection(masks.top(), mask));
+    }
   }
   void pop_mask() {
     masks.pop();

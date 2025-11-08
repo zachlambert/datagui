@@ -234,7 +234,6 @@ void GeometryRenderer::queue_box(
   } else {
     element.mask = masks.top();
   }
-  printf("Mask size: %zu\n", masks.size());
   elements.push_back(element);
 }
 
