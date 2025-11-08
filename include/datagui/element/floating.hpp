@@ -43,7 +43,7 @@ inline FloatingProps& get_floating(
     assert(element.system != -1);
     assert(!element.props);
     element.props = UniqueAny::Make<FloatingProps>();
-    auto props = *element.props.cast<FloatingProps>();
+    auto& props = *element.props.cast<FloatingProps>();
     props.open = initial_open_value;
   }
   auto props = element.props.cast<FloatingProps>();

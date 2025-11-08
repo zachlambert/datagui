@@ -65,9 +65,12 @@ void DropdownSystem::render(const Element& e, Renderer& renderer) {
         theme->input_color_border,
         0);
 
-    std::string text =
-        !props.open ? props.choice == -1 ? "" : props.choices[props.choice]
-                    : "<none>";
+    std::string text;
+    if (props.choices.empty() || props.choice == -1) {
+      text = "<none>";
+    } else {
+      text = props.choices[props.choice];
+    }
 
     renderer.queue_text(
         e.position +

@@ -246,7 +246,6 @@ void Gui::end() {
 }
 
 void Gui::poll() {
-  // TODO: Can some of this be put in end() ?
   calculate_sizes();
   render();
   event_handling();
@@ -356,11 +355,11 @@ void Gui::render() {
 
 #if 0
     if (element->floating) {
-      res.geometry_renderer.push_mask(element->float_box);
-      res.text_renderer.push_mask(element->float_box);
+      renderer.push_mask(element->float_box);
+      renderer.push_mask(element->float_box);
     } else {
-      res.geometry_renderer.push_mask(element->box());
-      res.text_renderer.push_mask(element->box());
+      renderer.push_mask(element->box());
+      renderer.push_mask(element->box());
     }
 #endif
 

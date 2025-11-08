@@ -35,6 +35,11 @@ int main() {
           gui.text_box("Hello " + *name);
         }
 
+        const std::vector<std::string> colors = {"red", "green", "blue"};
+        if (auto value = gui.dropdown(colors, 0)) {
+          std::cout << "Selected " << colors[*value] << "!" << std::endl;
+        }
+
         gui.text_box("Timer: " + std::to_string(*timer));
 
         if (gui.button("Reset")) {
