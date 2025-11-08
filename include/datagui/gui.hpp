@@ -111,6 +111,9 @@ public:
 
 private:
   void render();
+#ifdef DATAGUI_DEBUG
+  void debug_render();
+#endif
   void calculate_sizes();
 
   void event_handling();

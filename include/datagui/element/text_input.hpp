@@ -46,7 +46,7 @@ inline TextInputProps& get_text_input(
     assert(element.system != -1);
     assert(!element.props);
     element.props = UniqueAny::Make<TextInputProps>();
-    auto props = *element.props.cast<TextInputProps>();
+    auto& props = *element.props.cast<TextInputProps>();
     props.text = initial_value;
   }
   auto props = element.props.cast<TextInputProps>();

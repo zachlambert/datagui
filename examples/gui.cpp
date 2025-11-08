@@ -35,6 +35,14 @@ int main() {
           gui.text_box("Hello " + *name);
         }
 
+        gui.args_series().length_fixed(100);
+        if (gui.series_begin()) {
+          for (std::size_t i = 0; i < 10; i++) {
+            gui.text_input("Item " + std::to_string(i));
+          }
+          gui.series_end();
+        }
+
         const std::vector<std::string> colors = {"red", "green", "blue"};
         if (auto value = gui.dropdown(colors, 0)) {
           std::cout << "Selected " << colors[*value] << "!" << std::endl;

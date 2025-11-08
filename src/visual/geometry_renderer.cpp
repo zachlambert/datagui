@@ -2,6 +2,7 @@
 #include "datagui/visual/shader.hpp"
 #include <GL/glew.h>
 #include <array>
+#include <assert.h>
 #include <string>
 
 namespace datagui {
@@ -233,10 +234,13 @@ void GeometryRenderer::queue_box(
   } else {
     element.mask = masks.top();
   }
+  printf("Mask size: %zu\n", masks.size());
   elements.push_back(element);
 }
 
 void GeometryRenderer::render(const Vecf& viewport_size) {
+  assert(masks.empty());
+
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,

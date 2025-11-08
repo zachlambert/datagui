@@ -1,6 +1,7 @@
 #include "datagui/visual/text_renderer.hpp"
 #include "datagui/visual/shader.hpp"
 #include <GL/glew.h>
+#include <assert.h>
 #include <string>
 
 namespace datagui {
@@ -168,6 +169,8 @@ void TextRenderer::queue_text(
 }
 
 void TextRenderer::render(const Vecf& viewport_size) {
+  assert(masks.empty());
+
   glUseProgram(gl_data.program_id);
   glBindVertexArray(gl_data.VAO);
   glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);

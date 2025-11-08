@@ -273,8 +273,6 @@ void Gui::render() {
 
   while (true) {
     if (layer_stack.empty()) {
-      renderer.render(window.size());
-      renderer.render(window.size());
       if (queued_elements.empty()) {
         break;
       }
@@ -285,83 +283,24 @@ void Gui::render() {
     auto& state = layer_stack.top();
     const auto& element = state.element;
 
+    if (element->hidden) {
+      layer_stack.pop();
+      continue;
+    }
     if (!state.first_visit) {
-#if 0
       renderer.pop_mask();
-#endif
       layer_stack.pop();
       continue;
     }
     state.first_visit = false;
 
-    if (element->hidden) {
-      continue;
-    }
     systems.get(*element).render(*element, renderer);
 
-#ifdef DATAGUI_DEBUG
-    if (debug_mode_) {
-      renderer.queue_box(
-          Boxf(element->position, element->position + element->size),
-          Color::Clear(),
-          2,
-          element->focused         ? Color::Blue()
-          : element->in_focus_tree ? Color::Red()
-                                   : Color::Green(),
-          0);
-
-      if (element->floating) {
-        renderer.queue_box(
-            element->float_box,
-            Color::Clear(),
-            2,
-            element->in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1),
-            0);
-      }
-
-      if (element->focused) {
-        std::stringstream ss;
-
-        ss << element.debug();
-        ss << "\nfixed: " << element->fixed_size.x << ", "
-           << element->fixed_size.y;
-        ss << "\ndynamic: " << element->dynamic_size.x << ", "
-           << element->dynamic_size.y;
-        ss << "\nsize: " << element->size.x << ", " << element->size.y;
-        ss << "\nlayer: " << element->layer;
-        std::string debug_text = ss.str();
-
-        auto text_size =
-            fm->text_size(debug_text, Font::DejaVuSans, 24, LengthWrap());
-
-        renderer.queue_box(
-            Boxf(
-                window.size() - text_size - Vecf::Constant(15),
-                window.size() - Vecf::Constant(5)),
-            Color::White(),
-            2,
-            Color::Black(),
-            0);
-        renderer.queue_text(
-            window.size() - text_size - Vecf::Constant(10),
-            debug_text,
-            Font::DejaVuSans,
-            24,
-            Color::Black(),
-            LengthWrap());
-      }
-    }
-#endif
-
-#if 0
     if (element->floating) {
-      renderer.push_mask(element->float_box);
       renderer.push_mask(element->float_box);
     } else {
       renderer.push_mask(element->box());
-      renderer.push_mask(element->box());
     }
-#endif
 
     for (auto child = element.first_child(); child; child = child.next()) {
       if (child->layer == current_layer) {
@@ -371,9 +310,108 @@ void Gui::render() {
       }
     }
   }
+#ifdef DATAGUI_DEBUG
+  if (debug_mode_) {
+    debug_render();
+  }
+#endif
+  renderer.render(window.size());
 
   window.render_end();
 }
+
+#ifdef DATAGUI_DEBUG
+void Gui::debug_render() {
+  struct State {
+    ConstElementPtr element;
+    bool first_visit;
+    State(ConstElementPtr element) : element(element), first_visit(true) {}
+  };
+  std::stack<State> layer_stack;
+  layer_stack.emplace(tree.root());
+
+  ConstElementPtr focused;
+
+  while (!layer_stack.empty()) {
+    auto& state = layer_stack.top();
+    auto element = state.element;
+
+    if (element->hidden) {
+      layer_stack.pop();
+      continue;
+    }
+    if (!state.first_visit) {
+      renderer.pop_mask();
+      layer_stack.pop();
+      continue;
+    }
+    state.first_visit = false;
+
+    renderer.queue_box(
+        Boxf(element->position, element->position + element->size),
+        Color::Clear(),
+        2,
+        element->focused         ? Color::Blue()
+        : element->in_focus_tree ? Color::Red()
+                                 : Color::Green(),
+        0);
+
+    if (element->floating) {
+      renderer.queue_box(
+          element->float_box,
+          Color::Clear(),
+          2,
+          element->in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1),
+          0);
+    }
+
+    if (element->floating) {
+      renderer.push_mask(element->float_box);
+    } else {
+      renderer.push_mask(element->box());
+    }
+
+    for (auto child = element.first_child(); child; child = child.next()) {
+      layer_stack.push(child);
+    }
+
+    if (element->focused) {
+      focused = element;
+    }
+  }
+
+  if (focused) {
+    std::stringstream ss;
+
+    ss << focused.debug();
+    ss << "\nfixed: " << focused->fixed_size.x << ", " << focused->fixed_size.y;
+    ss << "\ndynamic: " << focused->dynamic_size.x << ", "
+       << focused->dynamic_size.y;
+    ss << "\nsize: " << focused->size.x << ", " << focused->size.y;
+    ss << "\nlayer: " << focused->layer;
+    std::string debug_text = ss.str();
+
+    auto text_size =
+        fm->text_size(debug_text, Font::DejaVuSans, 24, LengthWrap());
+
+    renderer.queue_box(
+        Boxf(
+            window.size() - text_size - Vecf::Constant(15),
+            window.size() - Vecf::Constant(5)),
+        Color::White(),
+        2,
+        Color::Black(),
+        0);
+    renderer.queue_text(
+        window.size() - text_size - Vecf::Constant(10),
+        debug_text,
+        Font::DejaVuSans,
+        24,
+        Color::Black(),
+        LengthWrap());
+  }
+}
+#endif
 
 void Gui::calculate_sizes() {
   {
