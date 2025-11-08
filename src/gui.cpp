@@ -253,6 +253,7 @@ void Gui::poll() {
 
 void Gui::render() {
   window.render_begin();
+  renderer.render_begin(window.size());
 
   struct State {
     ConstElementPtr element;
@@ -273,6 +274,7 @@ void Gui::render() {
 
   while (true) {
     if (layer_stack.empty()) {
+      renderer.render();
       if (queued_elements.empty()) {
         break;
       }
@@ -313,9 +315,10 @@ void Gui::render() {
 #ifdef DATAGUI_DEBUG
   if (debug_mode_) {
     debug_render();
+    renderer.render();
   }
 #endif
-  renderer.render(window.size());
+  renderer.render_end();
 
   window.render_end();
 }

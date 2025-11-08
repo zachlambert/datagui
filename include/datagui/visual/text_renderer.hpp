@@ -4,7 +4,6 @@
 #include "datagui/geometry.hpp"
 #include "datagui/visual/font_manager.hpp"
 #include <memory>
-#include <stack>
 #include <string>
 #include <vector>
 
@@ -20,21 +19,10 @@ public:
       Font font,
       int font_size,
       Color text_color,
-      Length width);
+      Length width,
+      const Boxf& mask);
 
   void render(const Vecf& viewport_size);
-
-  void push_mask(const Boxf& mask) {
-    if (masks.empty()) {
-      masks.push(mask);
-    } else {
-      masks.push(intersection(masks.top(), mask));
-    }
-  }
-
-  void pop_mask() {
-    masks.pop();
-  }
 
 private:
   struct Vertex {
@@ -53,7 +41,6 @@ private:
 
   std::shared_ptr<FontManager> fm;
   std::vector<Command> commands;
-  std::stack<Boxf> masks;
 
   struct {
     // Shader

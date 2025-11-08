@@ -220,7 +220,8 @@ void GeometryRenderer::queue_box(
     const Color& bg_color,
     BoxDims border_width,
     Color border_color,
-    float radius) {
+    float radius,
+    const Boxf& mask) {
 
   Element element;
   element.offset = box.lower;
@@ -229,17 +230,11 @@ void GeometryRenderer::queue_box(
   element.bg_color = bg_color;
   element.border_color = border_color;
   element.border_width = border_width.left; // TEMP: Replace argument with float
-  if (masks.empty()) {
-    element.mask = box;
-  } else {
-    element.mask = masks.top();
-  }
+  element.mask = mask;
   elements.push_back(element);
 }
 
 void GeometryRenderer::render(const Vecf& viewport_size) {
-  assert(masks.empty());
-
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,

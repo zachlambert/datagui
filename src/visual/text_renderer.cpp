@@ -87,7 +87,8 @@ void TextRenderer::queue_text(
     Font font,
     int font_size,
     Color text_color,
-    Length width) {
+    Length width,
+    const Boxf& mask) {
 
   const auto& fs = fm->font_structure(font, font_size);
 
@@ -133,30 +134,28 @@ void TextRenderer::queue_text(
     Boxf box(pos, pos + c.size);
     Boxf uv = c.uv;
 
-    if (!masks.empty()) {
-      if (!intersects(masks.top(), box)) {
-        // Not visible
-        continue;
-      }
-      if (!contains(masks.top(), box)) {
-        // Partially obscured -> alter box and uv
-        Boxf new_box = intersection(masks.top(), box);
-        Boxf new_uv;
-        new_uv.lower.x = uv.lower.x + uv.size().x *
-                                          (new_box.lower.x - box.lower.x) /
-                                          box.size().x;
-        new_uv.lower.y = uv.lower.y + uv.size().x *
-                                          (new_box.lower.x - box.lower.x) /
-                                          box.size().x;
-        new_uv.upper.x = uv.lower.x + uv.size().x *
-                                          (new_box.upper.x - box.lower.x) /
-                                          box.size().x;
-        new_uv.upper.y = uv.lower.y + uv.size().y *
-                                          (new_box.upper.y - box.lower.y) /
-                                          box.size().y;
-        box = new_box;
-        uv = new_uv;
-      }
+    if (!intersects(mask, box)) {
+      // Not visible
+      continue;
+    }
+    if (!contains(mask, box)) {
+      // Partially obscured -> alter box and uv
+      Boxf new_box = intersection(mask, box);
+      Boxf new_uv;
+      new_uv.lower.x = uv.lower.x + uv.size().x *
+                                        (new_box.lower.x - box.lower.x) /
+                                        box.size().x;
+      new_uv.lower.y = uv.lower.y + uv.size().x *
+                                        (new_box.lower.x - box.lower.x) /
+                                        box.size().x;
+      new_uv.upper.x = uv.lower.x + uv.size().x *
+                                        (new_box.upper.x - box.lower.x) /
+                                        box.size().x;
+      new_uv.upper.y = uv.lower.y + uv.size().y *
+                                        (new_box.upper.y - box.lower.y) /
+                                        box.size().y;
+      box = new_box;
+      uv = new_uv;
     }
 
     vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
@@ -169,8 +168,6 @@ void TextRenderer::queue_text(
 }
 
 void TextRenderer::render(const Vecf& viewport_size) {
-  assert(masks.empty());
-
   glUseProgram(gl_data.program_id);
   glBindVertexArray(gl_data.VAO);
   glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);

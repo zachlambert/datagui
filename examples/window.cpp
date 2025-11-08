@@ -18,31 +18,36 @@ int main() {
   box.lower = Vecf(50, 50);
   box.upper = Vecf(300, 300);
 
+  Boxf mask(Vecf::Zero(), window.size());
+
   while (window.running()) {
     window.render_begin();
 
-    geometry.queue_box(box, Color::Red(), 5, Color::Black(), 0);
+    geometry.queue_box(box, Color::Red(), 5, Color::Black(), 0, mask);
     text.queue_text(
         Vecf(400, 100),
         "Hello",
         Font::DejaVuSans,
         20,
         Color::Blue(),
-        LengthWrap());
+        LengthWrap(),
+        mask);
     text.queue_text(
         Vecf(400, 150),
         "Hello",
         Font::DejaVuSansMono,
         40,
         Color::Blue(),
-        LengthWrap());
+        LengthWrap(),
+        mask);
     text.queue_text(
         Vecf(400, 220),
         "Hello",
         Font::DejaVuSerif,
         60,
         Color::Blue(),
-        LengthWrap());
+        LengthWrap(),
+        mask);
 
     geometry.render(window.size());
     text.render(window.size());
