@@ -29,15 +29,12 @@ struct Element {
     return Boxf(position, position + size);
   }
 
-  Boxf layer_box;
-  int layer = 0;
   bool floating = false;
+  FloatingType floating_type = FloatingTypeRelative(Vecf::Zero(), Vecf::Zero());
   Boxf float_box;
   int float_priority = 0;
 
   // Event handling
-  Boxf hitbox; // = box or float_box
-  Boxf hitbox_bounds;
   bool in_focus_tree = false;
   bool focused = false;
   bool hovered = false;

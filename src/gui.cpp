@@ -252,65 +252,49 @@ void Gui::poll() {
 }
 
 void Gui::render() {
+  auto render_tree = [this](ConstElementPtr root) { //
+    struct State {
+      ConstElementPtr element;
+      bool first_visit;
+      State(ConstElementPtr element) : element(element), first_visit(true) {}
+    };
+    std::stack<State> stack;
+    stack.push(root);
+
+    while (!stack.empty()) {
+      auto& state = stack.top();
+      const auto& element = state.element;
+
+      if (element->hidden || (element != root && element->floating)) {
+        stack.pop();
+        continue;
+      }
+
+      if (!state.first_visit) {
+        renderer.pop_mask();
+        stack.pop();
+        continue;
+      }
+      state.first_visit = false;
+
+      systems.get(*element).render(*element, renderer);
+      renderer.push_mask(element->box());
+
+      for (auto child = element.first_child(); child; child = child.next()) {
+        stack.push(child);
+      }
+    }
+  };
+
   window.render_begin();
   renderer.render_begin(window.size());
 
-  struct State {
-    ConstElementPtr element;
-    bool first_visit;
-    State(ConstElementPtr element) : element(element), first_visit(true) {}
-  };
-  std::stack<State> layer_stack;
-  layer_stack.emplace(tree.root());
+  render_tree(tree.root());
+  renderer.render();
 
-  struct Compare {
-    bool operator()(const ConstElementPtr& lhs, const ConstElementPtr& rhs) {
-      return lhs->layer >= rhs->layer;
-    }
-  };
-  std::priority_queue<ConstElementPtr, std::vector<ConstElementPtr>, Compare>
-      queued_elements;
-  int current_layer = layer_stack.top().element->layer;
-
-  while (true) {
-    if (layer_stack.empty()) {
-      renderer.render();
-      if (queued_elements.empty()) {
-        break;
-      }
-      current_layer = queued_elements.top()->layer;
-      layer_stack.emplace(queued_elements.top());
-      queued_elements.pop();
-    }
-    auto& state = layer_stack.top();
-    const auto& element = state.element;
-
-    if (element->hidden) {
-      layer_stack.pop();
-      continue;
-    }
-    if (!state.first_visit) {
-      renderer.pop_mask();
-      layer_stack.pop();
-      continue;
-    }
-    state.first_visit = false;
-
-    systems.get(*element).render(*element, renderer);
-
-    if (element->floating) {
-      renderer.push_mask(element->float_box);
-    } else {
-      renderer.push_mask(element->box());
-    }
-
-    for (auto child = element.first_child(); child; child = child.next()) {
-      if (child->layer == current_layer) {
-        layer_stack.push(child);
-      } else {
-        queued_elements.push(child);
-      }
-    }
+  for (auto element : floating_elements) {
+    render_tree(element);
+    renderer.render();
   }
 #ifdef DATAGUI_DEBUG
   if (debug_mode_) {
@@ -318,8 +302,8 @@ void Gui::render() {
     renderer.render();
   }
 #endif
-  renderer.render_end();
 
+  renderer.render_end();
   window.render_end();
 }
 
@@ -391,7 +375,9 @@ void Gui::debug_render() {
     ss << "\ndynamic: " << focused->dynamic_size.x << ", "
        << focused->dynamic_size.y;
     ss << "\nsize: " << focused->size.x << ", " << focused->size.y;
-    ss << "\nlayer: " << focused->layer;
+    if (focused->floating) {
+      ss << "\nfloating priority: " << focused->float_priority;
+    }
     std::string debug_text = ss.str();
 
     auto text_size =
@@ -417,6 +403,7 @@ void Gui::debug_render() {
 #endif
 
 void Gui::calculate_sizes() {
+  floating_elements.clear();
   {
     struct State {
       ElementPtr element;
@@ -455,52 +442,15 @@ void Gui::calculate_sizes() {
   }
 
   {
-    struct Compare {
-      bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
-        return lhs->float_priority > rhs->float_priority;
-      }
-    };
-    struct Layer {
-      ConstElementPtr root;
-      std::priority_queue<ElementPtr, std::vector<ElementPtr>, Compare>
-          floating;
-      Layer(ConstElementPtr root) : root(root) {}
-    };
-
-    std::stack<Layer> layers;
     std::stack<ElementPtr> stack;
     {
       auto root = tree.root();
       root->position = Vecf::Zero();
       root->size = window.size();
-      root->layer_box = root->box();
-      root->layer = 0;
       stack.push(root);
-      layers.emplace(root);
     }
-    int next_layer = 1;
 
-    while (true) {
-      if (stack.empty()) {
-        if (layers.empty()) {
-          break;
-        }
-        Layer& layer = layers.top();
-        if (layer.floating.empty()) {
-          layers.pop();
-          continue;
-        }
-
-        ElementPtr next_floating = layer.floating.top();
-        next_floating->layer_box = layer.root->box();
-        next_floating->layer = next_layer;
-        next_layer++;
-        stack.push(next_floating);
-        layers.emplace(next_floating);
-
-        layer.floating.pop();
-      }
-
+    while (!stack.empty()) {
       auto element = stack.top();
       stack.pop();
 
@@ -508,14 +458,22 @@ void Gui::calculate_sizes() {
         continue;
       }
 
-      if (element->floating && element != layers.top().root) {
-        // TODO: Handle this
-#if 0
-        if (element.is_new()) {
-          element->float_priority = next_float_priority++;
+      if (element->floating) {
+        floating_elements.insert(element);
+
+        if (auto type =
+                std::get_if<FloatingTypeAbsolute>(&element->floating_type)) {
+          element->float_box.lower = type->margin.offset();
+          element->float_box.upper =
+              window.size() - type->margin.offset_opposite();
+        } else if (
+            auto type =
+                std::get_if<FloatingTypeRelative>(&element->floating_type)) {
+          element->float_box.lower = element->position + type->offset;
+          element->float_box.upper = element->float_box.lower + type->size;
+        } else {
+          assert(false);
         }
-#endif
-        layers.top().floating.push(element);
         continue;
       }
 
@@ -526,51 +484,7 @@ void Gui::calculate_sizes() {
       systems.get(*element).set_dependent_state(*element, children);
 
       for (auto child = element.first_child(); child; child = child.next()) {
-        child->layer_box = element->layer_box;
-        child->layer = element->layer;
         stack.push(child);
-      }
-    }
-  }
-
-  {
-    struct State {
-      ElementPtr element;
-      bool first_visit;
-      State(ElementPtr element) : element(element), first_visit(true) {}
-    };
-
-    std::stack<State> stack;
-    stack.emplace(tree.root());
-
-    while (!stack.empty()) {
-      State& state = stack.top();
-      auto element = state.element;
-
-      if (element->hidden) {
-        stack.pop();
-        continue;
-      }
-
-      // If the node has children, process these first
-      if (element.first_child() && state.first_visit) {
-        state.first_visit = false;
-        for (auto child = element.first_child(); child; child = child.next()) {
-          stack.emplace(child);
-        }
-        continue;
-      }
-      stack.pop();
-
-      if (element->floating) {
-        element->hitbox = element->float_box;
-      } else {
-        element->hitbox = element->box();
-      }
-      element->hitbox_bounds = element->hitbox;
-      for (auto child = element.first_child(); child; child = child.next()) {
-        element->hitbox_bounds =
-            bounding(element->hitbox_bounds, child->hitbox);
       }
     }
   }
@@ -639,32 +553,44 @@ void Gui::event_handling() {
 }
 
 ElementPtr Gui::get_leaf_node(const Vecf& position) {
-  ElementPtr leaf = ElementPtr();
-  int leaf_layer = -1;
+  auto get_tree_leaf = [this, &position](ElementPtr root) -> ElementPtr {
+    ElementPtr leaf = ElementPtr();
 
-  std::stack<ElementPtr> stack;
-  stack.push(tree.root());
+    std::stack<ElementPtr> stack;
+    stack.push(root);
 
-  while (!stack.empty()) {
-    auto element = stack.top();
-    stack.pop();
+    while (!stack.empty()) {
+      auto element = stack.top();
+      stack.pop();
 
-    if (!element->hitbox_bounds.contains(position)) {
-      continue;
-    }
-
-    if (element->hitbox.contains(position) && element->layer >= leaf_layer) {
+      if (element->floating) {
+        if (element != root) {
+          continue;
+        } else if (!element->float_box.contains(position)) {
+          continue;
+        }
+      } else if (!element->box().contains(position)) {
+        continue;
+      }
       leaf = element;
-      leaf_layer = element->layer;
-    }
 
-    auto child = element.first_child();
-    while (child) {
-      stack.push(child);
-      child = child.next();
+      auto child = element.first_child();
+      while (child) {
+        stack.push(child);
+        child = child.next();
+      }
+    }
+    return leaf;
+  };
+
+  for (auto iter = floating_elements.rbegin(); iter != floating_elements.rend();
+       iter++) {
+    auto leaf = get_tree_leaf(*iter);
+    if (leaf) {
+      return leaf;
     }
   }
-  return leaf;
+  return get_tree_leaf(tree.root());
 }
 
 void Gui::event_handling_left_click(const MouseEvent& event) {
@@ -728,14 +654,18 @@ void Gui::event_handling_scroll(const ScrollEvent& event) {
 void Gui::set_tree_focus(ElementPtr element, bool focused) {
   element->focused = focused;
   element->in_focus_tree = focused;
-  if (focused) {
+
+  bool found_floating = false;
+  if (focused && element->floating) {
+    found_floating = true;
     element->float_priority = next_float_priority++;
   }
 
   element = element.parent();
   while (element) {
     element->in_focus_tree = focused;
-    if (focused) {
+    if (focused && !found_floating && element->floating) {
+      found_floating = true;
       element->float_priority = next_float_priority++;
     }
     element = element.parent();

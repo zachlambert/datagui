@@ -43,9 +43,12 @@ int main() {
           gui.series_end();
         }
 
-        const std::vector<std::string> colors = {"red", "green", "blue"};
-        if (auto value = gui.dropdown(colors, 0)) {
-          std::cout << "Selected " << colors[*value] << "!" << std::endl;
+        if (gui.series_begin()) {
+          const std::vector<std::string> colors = {"red", "green", "blue"};
+          if (auto value = gui.dropdown(colors, 0)) {
+            std::cout << "Selected " << colors[*value] << "!" << std::endl;
+          }
+          gui.series_end();
         }
 
         gui.text_box("Timer: " + std::to_string(*timer));

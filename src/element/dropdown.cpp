@@ -36,7 +36,20 @@ void DropdownSystem::set_input_state(
       2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
   e.fixed_size.y += fm->text_height(theme->text_font, theme->text_size);
 
-  e.floating = props.open && !props.choices.empty();
+  if (!props.choices.empty()) {
+    e.floating = props.open;
+
+    Vecf dropdown_size;
+    dropdown_size.x = e.fixed_size.x;
+    dropdown_size.y = props.choices.size() *
+                          fm->text_height(theme->text_font, theme->text_size) +
+                      (props.choices.size() + 1) *
+                          (theme->input_border_width + theme->text_padding);
+    e.floating_type = FloatingTypeRelative(Vecf::Zero(), dropdown_size);
+
+  } else {
+    e.floating = false;
+  }
 }
 
 void DropdownSystem::set_dependent_state(

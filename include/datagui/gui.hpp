@@ -11,6 +11,7 @@
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace datagui {
@@ -139,6 +140,13 @@ private:
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;
+
+  struct Compare {
+    bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
+      return lhs->float_priority <= rhs->float_priority;
+    }
+  };
+  std::set<ElementPtr, Compare> floating_elements;
 
   SeriesArgs args_series_;
 };

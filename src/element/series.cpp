@@ -189,8 +189,6 @@ void SeriesSystem::render(const Element& e, Renderer& renderer) {
 
       float ratio = e.size.y / (props.overrun + e.size.y);
       float location = props.scroll_pos / (props.overrun + e.size.y);
-      printf("Ratio: %f\n", ratio);
-      printf("Location: %f\n", location);
 
       fg.lower.x = e.position.x + e.size.x - theme->scroll_bar_width;
       fg.upper.x = e.position.x + e.size.x;

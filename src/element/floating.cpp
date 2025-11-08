@@ -5,9 +5,11 @@ namespace datagui {
 void FloatingSystem::set_input_state(
     Element& e,
     const ConstElementList& children) {
+  auto& props = *e.props.cast<FloatingProps>();
   e.fixed_size = Vecf::Zero();
   e.dynamic_size = Vecf::Zero();
   e.floating = true;
+  e.floating_type = props.float_type;
 }
 
 void FloatingSystem::set_dependent_state(
@@ -44,15 +46,6 @@ void FloatingSystem::set_dependent_state(
       child->size.y += available_y * child->dynamic_size.y / dynamic_size_y;
     }
     position.y += child->size.y;
-  }
-
-  if (auto type = std::get_if<FloatingTypeAbsolute>(&props.float_type)) {
-    e.float_box.lower = e.layer_box.lower + type->margin.offset();
-    e.float_box.upper = e.layer_box.upper - type->margin.offset_opposite();
-  }
-  if (auto type = std::get_if<FloatingTypeRelative>(&props.float_type)) {
-    e.float_box.lower = e.box().lower + type->offset;
-    e.float_box.upper = e.float_box.lower + type->size;
   }
 
   auto& bar_box = props.title_bar_box;
