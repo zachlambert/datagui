@@ -41,10 +41,8 @@ void SeriesSystem::set_input_state(
   }
   if (auto length = std::get_if<LengthFixed>(&props.length)) {
     if (props.direction == Direction::Horizontal) {
-      props.overrun = std::max(e.fixed_size.x - length->value, 0.f);
       e.fixed_size.x = length->value;
     } else {
-      props.overrun = std::max(e.fixed_size.y - length->value, 0.f);
       e.fixed_size.y = length->value;
     }
   } else if (auto length = std::get_if<LengthDynamic>(&props.length)) {
@@ -201,13 +199,22 @@ void SeriesSystem::render(const Element& e, Renderer& renderer) {
       float ratio = e.size.y / (props.overrun + e.size.y);
       float location = props.scroll_pos / (props.overrun + e.size.y);
 
-      fg.lower.x = e.position.x + e.size.x - theme->scroll_bar_width;
-      fg.upper.x = e.position.x + e.size.x;
+      fg = bg;
       fg.lower.y = e.position.y + location * e.size.y;
       fg.upper.y = e.position.y + (location + ratio) * e.size.y;
 
     } else {
-      // TODO
+      bg.lower.x = e.position.x;
+      bg.upper.x = e.position.x + e.size.x;
+      bg.lower.y = e.position.y + e.size.y - theme->scroll_bar_width;
+      bg.upper.y = e.position.y + e.size.y;
+
+      float ratio = e.size.x / (props.overrun + e.size.x);
+      float location = props.scroll_pos / (props.overrun + e.size.x);
+
+      fg = bg;
+      fg.lower.x = e.position.x + location * e.size.x;
+      fg.upper.x = e.position.x + (location + ratio) * e.size.x;
     }
     renderer.queue_box(bg, theme->scroll_bar_bg, 0, Color::Black(), 0);
     renderer.queue_box(fg, theme->scroll_bar_fg, 0, Color::Black(), 0);
