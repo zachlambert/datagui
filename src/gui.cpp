@@ -208,7 +208,7 @@ void Gui::dropdown(
 
 bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
   auto element = tree.next();
-  auto props = get_floating(systems, *element, *open);
+  auto& props = get_floating(systems, *element, *open);
 
   props.title = title;
 
@@ -227,13 +227,25 @@ bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
     props.open = *open;
   }
 
-  if (!*open) {
+  if (!props.open && !element->hidden) {
+    props.content_id++;
+  }
+  element->hidden = !props.open;
+
+  if (!props.open) {
     return false;
   }
-  return tree.down_if();
+  if (tree.down_if()) {
+    auto wrapper = tree.next(props.content_id);
+    get_series(systems, *wrapper);
+    tree.down();
+    return true;
+  }
+  return false;
 }
 
 void Gui::floating_end() {
+  tree.up();
   tree.up();
 }
 
@@ -252,7 +264,7 @@ void Gui::poll() {
 }
 
 void Gui::render() {
-  auto render_tree = [this](ConstElementPtr root) { //
+  auto render_tree = [this](ConstElementPtr root) {
     struct State {
       ConstElementPtr element;
       bool first_visit;
@@ -278,7 +290,8 @@ void Gui::render() {
       state.first_visit = false;
 
       systems.get(*element).render(*element, renderer);
-      renderer.push_mask(element->box());
+      renderer.push_mask(
+          element->floating ? element->float_box : element->box());
 
       for (auto child = element.first_child(); child; child = child.next()) {
         stack.push(child);
@@ -460,7 +473,6 @@ void Gui::calculate_sizes() {
 
       if (element->floating) {
         floating_elements.insert(element);
-
         if (auto type =
                 std::get_if<FloatingTypeAbsolute>(&element->floating_type)) {
           element->float_box.lower = type->margin.offset();
@@ -474,7 +486,6 @@ void Gui::calculate_sizes() {
         } else {
           assert(false);
         }
-        continue;
       }
 
       std::vector<Element*> children;

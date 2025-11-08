@@ -9,7 +9,7 @@ void FloatingSystem::set_input_state(
   e.fixed_size = Vecf::Zero();
   e.dynamic_size = Vecf::Zero();
   e.floating = true;
-  e.floating_type = props.float_type;
+  e.floating_type = FloatingTypeAbsolute(BoxDims(theme->popup_margin));
 }
 
 void FloatingSystem::set_dependent_state(
@@ -73,7 +73,12 @@ void FloatingSystem::set_dependent_state(
 void FloatingSystem::render(const Element& e, Renderer& renderer) {
   auto& props = *e.props.cast<FloatingProps>();
 
-  renderer.queue_box(e.float_box, theme->layout_color_bg, 0, Color::Black(), 0);
+  renderer.queue_box(
+      e.float_box,
+      theme->layout_color_bg,
+      theme->popup_border_width,
+      Color::Black(),
+      0);
 
   renderer.queue_box(
       props.title_bar_box,

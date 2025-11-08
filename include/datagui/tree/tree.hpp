@@ -355,6 +355,7 @@ Var<T> Tree::variable(const std::function<T()>& construct) {
       DATAGUI_LOG("Tree::variable", "Created internal variable: %i", variable);
     }
   }
+
   variable_current_ = variable;
   return Variable<T>(this, variable);
 }

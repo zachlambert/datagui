@@ -9,10 +9,10 @@ struct FloatingProps {
   std::string title;
   bool open = false;
   bool open_changed = false;
+  int content_id = 0;
   Boxf title_bar_box;
   float title_bar_text_width;
   Boxf close_button_box;
-  FloatingType float_type = FloatingTypeRelative(Vecf::Zero(), Vecf::Zero());
 };
 
 class FloatingSystem : public ElementSystem {

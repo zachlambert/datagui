@@ -29,6 +29,9 @@ struct Theme {
   Color input_color_border_focus = Color::Black();
   float input_border_width = 0;
   float input_radius = 0;
+
+  float popup_border_width = 0;
+  float popup_margin = 0;
 };
 
 Theme theme_default();
