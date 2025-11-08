@@ -31,7 +31,6 @@ struct Theme {
   float input_radius = 0;
 
   float popup_border_width = 0;
-  float popup_margin = 0;
 };
 
 Theme theme_default();

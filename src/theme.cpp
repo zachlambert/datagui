@@ -30,7 +30,6 @@ Theme theme_default() {
   theme.input_radius = 0;
 
   theme.popup_border_width = 4;
-  theme.popup_margin = 30;
 
   return theme;
 }

@@ -51,7 +51,11 @@ public:
       const std::vector<std::string>& choices,
       const Variable<int>& choice);
 
-  bool floating_begin(const Variable<bool>& open, const std::string& title);
+  bool floating_begin(
+      const Variable<bool>& open,
+      const std::string& title,
+      float width,
+      float height);
   void floating_end();
 
   template <typename T>
@@ -110,6 +114,10 @@ public:
     return args_series_;
   }
 
+  FloatingArgs& args_floating() {
+    return args_floating_;
+  }
+
 private:
   void render();
 #ifdef DATAGUI_DEBUG
@@ -149,6 +157,7 @@ private:
   std::set<ElementPtr, Compare> floating_elements;
 
   SeriesArgs args_series_;
+  FloatingArgs args_floating_;
 };
 
 } // namespace datagui

@@ -176,7 +176,12 @@ void SeriesSystem::set_dependent_state(
 
 void SeriesSystem::render(const Element& e, Renderer& renderer) {
   const auto& props = *e.props.cast<SeriesProps>();
-  renderer.queue_box(e.box(), theme->layout_color_bg, 0, Color::Black(), 0);
+
+  if (props.bg_color) {
+    renderer.queue_box(e.box(), *props.bg_color, 0, Color::Black(), 0);
+  } else {
+    renderer.queue_box(e.box(), Color::Clear(), 0, Color::Black(), 0);
+  }
 
   if (props.overrun > 0) {
     Boxf bg;

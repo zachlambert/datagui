@@ -40,6 +40,7 @@ add_library(datagui SHARED
   src/visual/text_renderer.cpp
   src/visual/window.cpp
 
+  src/geometry.cpp
   src/gui.cpp
   src/gui_args.cpp
   src/log.cpp

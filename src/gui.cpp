@@ -206,11 +206,20 @@ void Gui::dropdown(
   }
 }
 
-bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
+bool Gui::floating_begin(
+    const Variable<bool>& open,
+    const std::string& title,
+    float width,
+    float height) {
+
   auto element = tree.next();
   auto& props = get_floating(systems, *element, *open);
+  args_floating_.apply(props);
+  args_floating_.reset();
 
   props.title = title;
+  props.width = width;
+  props.height = height;
 
   if (props.open_changed) {
     DATAGUI_LOG(
@@ -228,24 +237,18 @@ bool Gui::floating_begin(const Variable<bool>& open, const std::string& title) {
   }
 
   if (!props.open && !element->hidden) {
-    props.content_id++;
+    tree.down();
+    tree.up();
   }
   element->hidden = !props.open;
 
   if (!props.open) {
     return false;
   }
-  if (tree.down_if()) {
-    auto wrapper = tree.next(props.content_id);
-    get_series(systems, *wrapper);
-    tree.down();
-    return true;
-  }
-  return false;
+  return tree.down_if();
 }
 
 void Gui::floating_end() {
-  tree.up();
   tree.up();
 }
 
@@ -475,9 +478,8 @@ void Gui::calculate_sizes() {
         floating_elements.insert(element);
         if (auto type =
                 std::get_if<FloatingTypeAbsolute>(&element->floating_type)) {
-          element->float_box.lower = type->margin.offset();
-          element->float_box.upper =
-              window.size() - type->margin.offset_opposite();
+          element->float_box.lower = window.size() / 2.f - type->size / 2.f;
+          element->float_box.upper = window.size() / 2.f + type->size / 2.f;
         } else if (
             auto type =
                 std::get_if<FloatingTypeRelative>(&element->floating_type)) {

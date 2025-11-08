@@ -101,8 +101,8 @@ inline BoxDims operator/(BoxDims lhs, float rhs) {
 }
 
 struct FloatingTypeAbsolute {
-  BoxDims margin;
-  FloatingTypeAbsolute(const BoxDims& margin) : margin(margin) {}
+  Vecf size;
+  FloatingTypeAbsolute(const Vecf& size) : size(size) {}
 };
 
 struct FloatingTypeRelative {
