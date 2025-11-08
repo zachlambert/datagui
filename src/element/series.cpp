@@ -94,12 +94,18 @@ void SeriesSystem::set_dependent_state(
     Element& e,
     const ElementList& children) {
 
-  const auto& props = *e.props.cast<SeriesProps>();
+  auto& props = *e.props.cast<SeriesProps>();
   float outer_padding = props.no_padding ? 0.f : theme->layout_outer_padding;
   float inner_padding = props.no_padding ? 0.f : theme->layout_inner_padding;
 
   Vecf available = maximum(e.size - e.fixed_size, Vecf::Zero());
   float offset = outer_padding - props.scroll_pos;
+
+  if (props.direction == Direction::Horizontal) {
+    props.overrun = std::max(e.fixed_size.x - e.size.x, 0.f);
+  } else {
+    props.overrun = std::max(e.fixed_size.y - e.size.y, 0.f);
+  }
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate

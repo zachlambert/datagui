@@ -7,19 +7,14 @@ void DropdownSystem::set_input_state(
     const ConstElementList& children) {
   const auto& props = *e.props.cast<DropdownProps>();
 
-  float max_item_width = 0;
+  const Vecf none_size =
+      fm->text_size("<none>", theme->text_font, theme->text_size, LengthWrap());
+
+  float max_item_width = none_size.x;
   for (const auto& choice : props.choices) {
     Vecf choice_size =
         fm->text_size(choice, theme->text_font, theme->text_size, LengthWrap());
     max_item_width = std::max(max_item_width, choice_size.x);
-  }
-  if (props.choices.empty()) {
-    Vecf none_size = fm->text_size(
-        "<none>",
-        theme->text_font,
-        theme->text_size,
-        LengthWrap());
-    max_item_width = std::max(max_item_width, none_size.x);
   }
 
   e.fixed_size = Vecf::Zero();
