@@ -14,8 +14,12 @@ Theme theme_default() {
   theme.text_cursor_color = Color::Gray(0.2);
 
   theme.layout_color_bg = Color::Gray(0.7);
-  theme.layout_outer_padding = 8;
+  theme.layout_outer_padding = 10;
   theme.layout_inner_padding = 4;
+
+  theme.scroll_bar_width = 6;
+  theme.scroll_bar_bg = Color::Gray(0.8);
+  theme.scroll_bar_fg = Color::Gray(0.3);
 
   theme.input_color_bg = Color::Gray(0.9);
   theme.input_color_bg_hover = Color::Gray(0.7);

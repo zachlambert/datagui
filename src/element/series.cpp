@@ -177,6 +177,32 @@ void SeriesSystem::set_dependent_state(
 void SeriesSystem::render(const Element& e, Renderer& renderer) {
   const auto& props = *e.props.cast<SeriesProps>();
   renderer.queue_box(e.box(), theme->layout_color_bg, 0, Color::Black(), 0);
+
+  if (props.overrun > 0) {
+    Boxf bg;
+    Boxf fg;
+    if (props.direction == Direction::Vertical) {
+      bg.lower.x = e.position.x + e.size.x - theme->scroll_bar_width;
+      bg.upper.x = e.position.x + e.size.x;
+      bg.lower.y = e.position.y;
+      bg.upper.y = e.position.y + e.size.y;
+
+      float ratio = e.size.y / (props.overrun + e.size.y);
+      float location = props.scroll_pos / (props.overrun + e.size.y);
+      printf("Ratio: %f\n", ratio);
+      printf("Location: %f\n", location);
+
+      fg.lower.x = e.position.x + e.size.x - theme->scroll_bar_width;
+      fg.upper.x = e.position.x + e.size.x;
+      fg.lower.y = e.position.y + location * e.size.y;
+      fg.upper.y = e.position.y + (location + ratio) * e.size.y;
+
+    } else {
+      // TODO
+    }
+    renderer.queue_box(bg, theme->scroll_bar_bg, 0, Color::Black(), 0);
+    renderer.queue_box(fg, theme->scroll_bar_fg, 0, Color::Black(), 0);
+  }
 }
 
 bool SeriesSystem::scroll_event(Element& e, const ScrollEvent& event) {

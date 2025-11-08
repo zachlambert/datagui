@@ -18,6 +18,10 @@ struct Theme {
   float layout_outer_padding = 0;
   float layout_inner_padding = 0;
 
+  float scroll_bar_width = 0;
+  Color scroll_bar_bg = Color::Black();
+  Color scroll_bar_fg = Color::Black();
+
   Color input_color_bg = Color::Black();
   Color input_color_bg_hover = Color::Black();
   Color input_color_bg_active = Color::Black();
