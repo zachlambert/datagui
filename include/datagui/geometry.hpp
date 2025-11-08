@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cmath>
+#ifdef DATAGUI_DEBUG
+#include <iostream>
+#endif
 
 namespace datagui {
 
@@ -237,5 +240,10 @@ template <typename T>
 Range<T> bounding(const Range<T>& a, const Range<T>& b) {
   return Range<T>(std::min(a.lower, b.lower), std::max(a.upper, b.upper));
 }
+
+#ifdef DATAGUI_DEBUG
+std::ostream& operator<<(std::ostream& os, Vecf& vec);
+std::ostream& operator<<(std::ostream& os, Boxf& vec);
+#endif
 
 } // namespace datagui

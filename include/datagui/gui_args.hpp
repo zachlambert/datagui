@@ -1,6 +1,8 @@
 #pragma once
 
+#include "datagui/color.hpp"
 #include "datagui/layout.hpp"
+#include <optional>
 
 namespace datagui {
 
@@ -40,6 +42,10 @@ public:
     no_padding_ = true;
   }
 
+  void bg_color(const Color& bg_color) {
+    bg_color_ = bg_color;
+  }
+
 private:
   void apply(SeriesProps& props) const;
 
@@ -49,13 +55,39 @@ private:
     length_ = LengthWrap();
     width_ = LengthDynamic(1);
     no_padding_ = false;
+    bg_color_ = std::nullopt;
   }
 
   Direction direction_;
   Alignment alignment_;
   Length length_;
   Length width_;
-  bool no_padding_ = false;
+  bool no_padding_;
+  std::optional<Color> bg_color_;
+
+  friend class Gui;
+};
+
+class FloatingProps;
+
+class FloatingArgs {
+public:
+  FloatingArgs() {
+    reset();
+  }
+
+  void bg_color(const Color& bg_color) {
+    bg_color_ = bg_color;
+  }
+
+private:
+  void apply(FloatingProps& props) const;
+
+  void reset() {
+    bg_color_ = std::nullopt;
+  }
+
+  std::optional<Color> bg_color_;
 
   friend class Gui;
 };

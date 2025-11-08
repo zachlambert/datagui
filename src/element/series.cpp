@@ -94,12 +94,18 @@ void SeriesSystem::set_dependent_state(
     Element& e,
     const ElementList& children) {
 
-  const auto& props = *e.props.cast<SeriesProps>();
+  auto& props = *e.props.cast<SeriesProps>();
   float outer_padding = props.no_padding ? 0.f : theme->layout_outer_padding;
   float inner_padding = props.no_padding ? 0.f : theme->layout_inner_padding;
 
   Vecf available = maximum(e.size - e.fixed_size, Vecf::Zero());
   float offset = outer_padding - props.scroll_pos;
+
+  if (props.direction == Direction::Horizontal) {
+    props.overrun = std::max(e.fixed_size.x - e.size.x, 0.f);
+  } else {
+    props.overrun = std::max(e.fixed_size.y - e.size.y, 0.f);
+  }
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
@@ -176,7 +182,36 @@ void SeriesSystem::set_dependent_state(
 
 void SeriesSystem::render(const Element& e, Renderer& renderer) {
   const auto& props = *e.props.cast<SeriesProps>();
-  renderer.queue_box(e.box(), theme->layout_color_bg, 0, Color::Black(), 0);
+
+  if (props.bg_color) {
+    renderer.queue_box(e.box(), *props.bg_color, 0, Color::Black(), 0);
+  } else {
+    renderer.queue_box(e.box(), Color::Clear(), 0, Color::Black(), 0);
+  }
+
+  if (props.overrun > 0) {
+    Boxf bg;
+    Boxf fg;
+    if (props.direction == Direction::Vertical) {
+      bg.lower.x = e.position.x + e.size.x - theme->scroll_bar_width;
+      bg.upper.x = e.position.x + e.size.x;
+      bg.lower.y = e.position.y;
+      bg.upper.y = e.position.y + e.size.y;
+
+      float ratio = e.size.y / (props.overrun + e.size.y);
+      float location = props.scroll_pos / (props.overrun + e.size.y);
+
+      fg.lower.x = e.position.x + e.size.x - theme->scroll_bar_width;
+      fg.upper.x = e.position.x + e.size.x;
+      fg.lower.y = e.position.y + location * e.size.y;
+      fg.upper.y = e.position.y + (location + ratio) * e.size.y;
+
+    } else {
+      // TODO
+    }
+    renderer.queue_box(bg, theme->scroll_bar_bg, 0, Color::Black(), 0);
+    renderer.queue_box(fg, theme->scroll_bar_fg, 0, Color::Black(), 0);
+  }
 }
 
 bool SeriesSystem::scroll_event(Element& e, const ScrollEvent& event) {

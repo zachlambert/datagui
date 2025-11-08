@@ -47,7 +47,7 @@ inline DropdownProps& get_dropdown(
     assert(element.system != -1);
     assert(!element.props);
     element.props = UniqueAny::Make<DropdownProps>();
-    auto props = *element.props.cast<DropdownProps>();
+    auto& props = *element.props.cast<DropdownProps>();
     props.choices = choices;
     props.choice = initial_choice;
   }

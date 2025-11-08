@@ -40,6 +40,7 @@ add_library(datagui SHARED
   src/visual/text_renderer.cpp
   src/visual/window.cpp
 
+  src/geometry.cpp
   src/gui.cpp
   src/gui_args.cpp
   src/log.cpp
@@ -78,8 +79,8 @@ target_link_libraries(example_gui datagui)
 # add_executable(example_gui2 examples/gui2.cpp)
 # target_link_libraries(example_gui2 datagui)
 
-# add_executable(example_gui_layers examples/gui_layers.cpp)
-# target_link_libraries(example_gui_layers datagui)
+add_executable(example_gui_layers examples/gui_layers.cpp)
+target_link_libraries(example_gui_layers datagui)
 
 add_executable(example_datapack examples/datapack.cpp)
 target_link_libraries(example_datapack datagui)

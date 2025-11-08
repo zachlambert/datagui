@@ -37,7 +37,7 @@ inline LabelledProps& get_labelled(
     assert(element.system != -1);
     assert(!element.props);
     element.props = UniqueAny::Make<LabelledProps>();
-    auto props = *element.props.cast<LabelledProps>();
+    auto& props = *element.props.cast<LabelledProps>();
   }
   auto props = element.props.cast<LabelledProps>();
   assert(props);

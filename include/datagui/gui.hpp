@@ -11,6 +11,7 @@
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace datagui {
@@ -50,7 +51,11 @@ public:
       const std::vector<std::string>& choices,
       const Variable<int>& choice);
 
-  bool floating_begin(const Variable<bool>& open, const std::string& title);
+  bool floating_begin(
+      const Variable<bool>& open,
+      const std::string& title,
+      float width,
+      float height);
   void floating_end();
 
   template <typename T>
@@ -109,8 +114,15 @@ public:
     return args_series_;
   }
 
+  FloatingArgs& args_floating() {
+    return args_floating_;
+  }
+
 private:
   void render();
+#ifdef DATAGUI_DEBUG
+  void debug_render();
+#endif
   void calculate_sizes();
 
   void event_handling();
@@ -137,7 +149,15 @@ private:
   ElementPtr element_hover;
   int next_float_priority = 0;
 
+  struct Compare {
+    bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
+      return lhs->float_priority <= rhs->float_priority;
+    }
+  };
+  std::set<ElementPtr, Compare> floating_elements;
+
   SeriesArgs args_series_;
+  FloatingArgs args_floating_;
 };
 
 } // namespace datagui

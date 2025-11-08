@@ -118,6 +118,10 @@ void Tree::end() {
 }
 
 ElementPtr Tree::next(int id) {
+  if (variables.size() > 0) {
+    assert(variables[0].data);
+  }
+
   DATAGUI_LOG("Tree::next", "NEXT: current=%i id=%i", current_, id);
 
   if (parent_ == -1) {

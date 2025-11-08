@@ -39,7 +39,7 @@ inline SectionProps& get_section(
     assert(element.system != -1);
     assert(!element.props);
     element.props = UniqueAny::Make<SectionProps>();
-    auto props = *element.props.cast<SectionProps>();
+    auto& props = *element.props.cast<SectionProps>();
     props.open = false;
   }
   auto props = element.props.cast<SectionProps>();

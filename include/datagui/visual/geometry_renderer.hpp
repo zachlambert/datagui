@@ -3,7 +3,6 @@
 #include "datagui/color.hpp"
 #include "datagui/geometry.hpp"
 #include "datagui/layout.hpp"
-#include <stack>
 #include <vector>
 
 namespace datagui {
@@ -17,16 +16,10 @@ public:
       const Color& bg_color,
       BoxDims border_width,
       Color border_color,
-      float radius);
+      float radius,
+      const Boxf& mask);
 
   void render(const Vecf& viewport_size);
-
-  void push_mask(const Boxf& mask) {
-    masks.push(mask);
-  }
-  void pop_mask() {
-    masks.pop();
-  }
 
 private:
   struct {
@@ -34,6 +27,7 @@ private:
     unsigned int program_id;
     // Uniforms
     unsigned int uniform_viewport_size;
+    unsigned int uniform_max_depth;
     // Array/buffer objects
     unsigned int VAO, static_VBO, instance_VBO;
   } gl_data;
@@ -44,12 +38,11 @@ private:
     float radius;
     Color bg_color;
     Color border_color;
-    BoxDims border_width;
+    float border_width;
     Boxf mask;
+    float depth;
   };
   std::vector<Element> elements;
-
-  std::stack<Boxf> masks;
 };
 
 } // namespace datagui

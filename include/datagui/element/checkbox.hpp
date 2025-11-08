@@ -39,7 +39,7 @@ inline CheckboxProps& get_checkbox(
     assert(element.system != -1);
     assert(!element.props);
     element.props = UniqueAny::Make<CheckboxProps>();
-    auto props = *element.props.cast<CheckboxProps>();
+    auto& props = *element.props.cast<CheckboxProps>();
     props.checked = initial_value;
   }
   auto props = element.props.cast<CheckboxProps>();
