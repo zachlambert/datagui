@@ -131,8 +131,8 @@ void Gui::text_input(const Var<std::string>& value) {
   } else if (value.version() != props.var_version) {
     DATAGUI_LOG("Gui::text_input(variable)", "Var modified");
     props.text = *value;
-    props.var_version = value.version();
   }
+  props.var_version = value.version();
 }
 
 const bool* Gui::checkbox(bool initial_value) {
@@ -154,23 +154,21 @@ void Gui::checkbox(const Var<bool>& value) {
   auto element = tree.next();
   auto& props = get_checkbox(systems, *element, *value);
 
-  // TODO
-#if 0
   if (props.changed) {
     DATAGUI_LOG(
         "Gui::checkbox(variable)",
         "Checkbox changed -> %s",
         BOOL_STR(props.checked));
-    value.set_internal(props.checked);
+    value.set(props.checked);
     props.changed = false;
-  } else if (value.modified_external()) {
+  } else if (value.version() != props.var_version) {
     DATAGUI_LOG(
         "Gui::checkbox(variable)",
         "Var modified -> %s",
         BOOL_STR(*value));
     props.checked = *value;
   }
-#endif
+  props.var_version = value.version();
 }
 
 const int* Gui::dropdown(
@@ -196,20 +194,18 @@ void Gui::dropdown(
   auto element = tree.next();
   auto& props = get_dropdown(systems, *element, choices, *choice);
 
-  // TODO
-#if 0
   if (props.changed) {
     DATAGUI_LOG(
         "Gui::dropdown(variable)",
         "Dropdown changed -> %i",
         props.choice);
-    choice.set_internal(props.choice);
+    choice.set(props.choice);
     props.changed = false;
-  } else if (choice.modified_external()) {
+  } else if (choice.version() != props.var_version) {
     DATAGUI_LOG("Gui::dropdown(variable)", "Var modified -> %i", *choice);
     props.choice = *choice;
   }
-#endif
+  props.var_version = choice.version();
 }
 
 bool Gui::floating_begin(
@@ -227,23 +223,21 @@ bool Gui::floating_begin(
   props.width = width;
   props.height = height;
 
-  // TODO
-#if 0
   if (props.open_changed) {
     DATAGUI_LOG(
         "Gui::floating_begin",
         "Open changed -> %s",
         BOOL_STR(props.open));
     props.open_changed = false;
-    open.set_internal(props.open);
-  } else if (open.modified_external()) {
+    open.set(props.open);
+  } else if (open.version() != props.open_var_version) {
     DATAGUI_LOG(
         "Gui::floating_begin",
         "Open variable changed -> %s",
         BOOL_STR(*open));
     props.open = *open;
   }
-#endif
+  props.open_var_version = open.version();
 
   if (!props.open && !element->hidden) {
     tree.down();

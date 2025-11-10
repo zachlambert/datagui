@@ -13,6 +13,7 @@ struct FloatingProps {
 
   bool open = false;
   bool open_changed = false;
+  int open_var_version = 0;
   int content_id = 0;
 
   Boxf title_bar_box;

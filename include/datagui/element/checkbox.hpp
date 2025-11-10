@@ -9,6 +9,7 @@ namespace datagui {
 struct CheckboxProps {
   bool checked = false;
   bool changed = false;
+  int var_version = 0;
 };
 
 class CheckboxSystem : public ElementSystem {

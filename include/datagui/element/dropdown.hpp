@@ -11,6 +11,7 @@ struct DropdownProps {
   int choice = -1;
   int choice_hovered = -1;
   bool changed = false;
+  int var_version = 0;
   bool open = false;
   Length width = LengthWrap();
 };
