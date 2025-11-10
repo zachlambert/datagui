@@ -38,7 +38,6 @@ bool Tree::begin() {
   }
 
   if (elements[root_].revisit) {
-    elements[root_].revisit = false;
     DATAGUI_LOG("Tree::begin", "BEGIN");
     DATAGUI_LOG_INDENT(1);
     active_ = true;
@@ -201,12 +200,12 @@ int Tree::create_element(int parent, int prev, int id) {
 
   if (prev != -1) {
     elements[prev].next = element;
-  } else {
+  } else if (parent != -1) {
     elements[parent].first_child = element;
   }
   if (next != -1) {
     elements[next].prev = element;
-  } else {
+  } else if (parent != -1) {
     elements[parent].last_child = element;
   }
   return element;

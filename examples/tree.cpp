@@ -34,8 +34,7 @@ int main() {
       std::cout << "> ";
       std::getline(std::cin, line);
       if (!line.empty()) {
-        *name = line;
-        name.set_modified();
+        name.set(line);
       }
     }
   }

@@ -85,8 +85,8 @@ target_link_libraries(example_tree datagui)
 # add_executable(example_datapack examples/datapack.cpp)
 # target_link_libraries(example_datapack datagui)
 
-# add_executable(log_terminal util/log_terminal.cpp)
-# target_link_libraries(log_terminal datagui)
+add_executable(log_terminal util/log_terminal.cpp)
+target_link_libraries(log_terminal datagui)
 
 # # Create install target
 
