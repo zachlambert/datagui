@@ -3,8 +3,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#if 0
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/writer.hpp"
+#endif
 #include "datagui/element/series.hpp"
 #include "datagui/gui_args.hpp"
 #include "datagui/tree/tree.hpp"
@@ -39,34 +41,35 @@ public:
   bool button(const std::string& text);
 
   const std::string* text_input(const std::string& initial_value);
-  void text_input(const Variable<std::string>& value);
+  void text_input(const Var<std::string>& value);
 
   const bool* checkbox(bool initial_value = false);
-  void checkbox(const Variable<bool>& value);
+  void checkbox(const Var<bool>& value);
 
   const int* dropdown(
       const std::vector<std::string>& choices,
       int initial_choice = -1);
   void dropdown(
       const std::vector<std::string>& choices,
-      const Variable<int>& choice);
+      const Var<int>& choice);
 
   bool floating_begin(
-      const Variable<bool>& open,
+      const Var<bool>& open,
       const std::string& title,
       float width,
       float height);
   void floating_end();
 
   template <typename T>
-  Variable<T> variable(const T& initial_value = T()) {
+  Var<T> variable(const T& initial_value = T()) {
     // Capture initial_value by value
     return tree.variable<T>(initial_value);
   }
 
+#if 0
   template <typename T>
   requires datapack::writeable<T> && datapack::readable<T>
-  Variable<T> edit_variable(const T& initial_value = T()) {
+  Var<T> edit_variable(const T& initial_value = T()) {
     {
       auto& series = get_series(systems, *tree.next());
       series.no_padding = true;
@@ -109,6 +112,7 @@ public:
 
     return var;
   }
+#endif
 
   SeriesArgs& args_series() {
     return args_series_;

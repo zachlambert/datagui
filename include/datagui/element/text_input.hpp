@@ -10,6 +10,7 @@ struct TextInputProps {
   std::string text;
   bool changed = false;
   Length width = LengthDynamic(1);
+  int var_version = 0;
 };
 
 class TextInputSystem : public ElementSystem {

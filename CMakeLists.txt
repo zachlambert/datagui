@@ -20,31 +20,31 @@ add_library(datagui SHARED
   # src/datapack/reader.cpp
   # src/datapack/writer.cpp
 
-  # src/element/button.cpp
-  # src/element/checkbox.cpp
-  # src/element/dropdown.cpp
-  # src/element/floating.cpp
-  # src/element/labelled.cpp
-  # src/element/section.cpp
-  # src/element/series.cpp
-  # src/element/text_box.cpp
-  # src/element/text_input.cpp
+  src/element/button.cpp
+  src/element/checkbox.cpp
+  src/element/dropdown.cpp
+  src/element/floating.cpp
+  src/element/labelled.cpp
+  src/element/section.cpp
+  src/element/series.cpp
+  src/element/text_box.cpp
+  src/element/text_input.cpp
 
-  # src/input/text_selection.cpp
+  src/input/text_selection.cpp
 
   src/tree/tree.cpp
 
-  # src/visual/font_manager.cpp
-  # src/visual/geometry_renderer.cpp
-  # src/visual/shader.cpp
-  # src/visual/text_renderer.cpp
-  # src/visual/window.cpp
+  src/visual/font_manager.cpp
+  src/visual/geometry_renderer.cpp
+  src/visual/shader.cpp
+  src/visual/text_renderer.cpp
+  src/visual/window.cpp
 
-  # src/geometry.cpp
-  # src/gui.cpp
-  # src/gui_args.cpp
+  src/geometry.cpp
+  src/gui.cpp
+  src/gui_args.cpp
   src/log.cpp
-  # src/theme.cpp
+  src/theme.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
@@ -67,11 +67,11 @@ endif()
 add_executable(example_tree examples/tree.cpp)
 target_link_libraries(example_tree datagui)
 
-# add_executable(example_window examples/window.cpp)
-# target_link_libraries(example_window datagui)
+add_executable(example_window examples/window.cpp)
+target_link_libraries(example_window datagui)
 
-# add_executable(example_gui_new examples/gui_new.cpp)
-# target_link_libraries(example_gui_new datagui)
+add_executable(example_gui_basic examples/gui_basic.cpp)
+target_link_libraries(example_gui_basic datagui)
 
 # add_executable(example_gui examples/gui.cpp)
 # target_link_libraries(example_gui datagui)

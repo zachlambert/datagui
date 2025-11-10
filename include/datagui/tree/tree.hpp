@@ -255,6 +255,10 @@ private:
     assert(data_ptr);
   }
 
+  int version() const {
+    return tree->variables[variable].version;
+  }
+
   Tree* tree;
   int variable;
   data_ptr_t data_ptr;
@@ -264,11 +268,11 @@ private:
   template <typename T_, bool Const_>
   friend class Var_;
 
-#if 0
-  // For the following methods
   friend class GuiWriter;
   friend class GuiReader;
   friend class Gui;
+#if 0
+  // For the following methods
 
   void mutate(const T& value) const {
     tree->variables[variable].data = UniqueAny::Make<T>(value);
@@ -358,15 +362,13 @@ public:
     return tree->element_debug(index);
   }
 
-#if 0
   void revisit(bool revisit = true) const {
     if (!revisit) {
       return;
     }
     DATAGUI_LOG("ElementPtr_::revisit", "REVISIT: element=%i", index);
-    tree->queue_revisit_.emplace_back(index);
+    tree->elements[index].revisit |= revisit;
   }
-#endif
 
   template <
       bool OtherConst,

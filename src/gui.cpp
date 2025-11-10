@@ -1,6 +1,5 @@
 #include "datagui/gui.hpp"
 #include "datagui/log.hpp"
-#include <queue>
 #include <sstream>
 #include <stack>
 
@@ -121,17 +120,18 @@ const std::string* Gui::text_input(const std::string& initial_value) {
   return nullptr;
 }
 
-void Gui::text_input(const Variable<std::string>& value) {
+void Gui::text_input(const Var<std::string>& value) {
   auto element = tree.next();
   auto& props = get_text_input(systems, *element, *value);
 
   if (props.changed) {
     DATAGUI_LOG("Gui::text_input(variable)", "Text input changed");
-    value.set_internal(props.text);
+    *value = props.text;
     props.changed = false;
-  } else if (value.modified_external()) {
-    DATAGUI_LOG("Gui::text_input(variable)", "Variable modified");
+  } else if (value.version() != props.var_version) {
+    DATAGUI_LOG("Gui::text_input(variable)", "Var modified");
     props.text = *value;
+    props.var_version = value.version();
   }
 }
 
@@ -150,10 +150,12 @@ const bool* Gui::checkbox(bool initial_value) {
   return nullptr;
 }
 
-void Gui::checkbox(const Variable<bool>& value) {
+void Gui::checkbox(const Var<bool>& value) {
   auto element = tree.next();
   auto& props = get_checkbox(systems, *element, *value);
 
+  // TODO
+#if 0
   if (props.changed) {
     DATAGUI_LOG(
         "Gui::checkbox(variable)",
@@ -164,10 +166,11 @@ void Gui::checkbox(const Variable<bool>& value) {
   } else if (value.modified_external()) {
     DATAGUI_LOG(
         "Gui::checkbox(variable)",
-        "Variable modified -> %s",
+        "Var modified -> %s",
         BOOL_STR(*value));
     props.checked = *value;
   }
+#endif
 }
 
 const int* Gui::dropdown(
@@ -189,10 +192,12 @@ const int* Gui::dropdown(
 
 void Gui::dropdown(
     const std::vector<std::string>& choices,
-    const Variable<int>& choice) {
+    const Var<int>& choice) {
   auto element = tree.next();
   auto& props = get_dropdown(systems, *element, choices, *choice);
 
+  // TODO
+#if 0
   if (props.changed) {
     DATAGUI_LOG(
         "Gui::dropdown(variable)",
@@ -201,13 +206,14 @@ void Gui::dropdown(
     choice.set_internal(props.choice);
     props.changed = false;
   } else if (choice.modified_external()) {
-    DATAGUI_LOG("Gui::dropdown(variable)", "Variable modified -> %i", *choice);
+    DATAGUI_LOG("Gui::dropdown(variable)", "Var modified -> %i", *choice);
     props.choice = *choice;
   }
+#endif
 }
 
 bool Gui::floating_begin(
-    const Variable<bool>& open,
+    const Var<bool>& open,
     const std::string& title,
     float width,
     float height) {
@@ -221,6 +227,8 @@ bool Gui::floating_begin(
   props.width = width;
   props.height = height;
 
+  // TODO
+#if 0
   if (props.open_changed) {
     DATAGUI_LOG(
         "Gui::floating_begin",
@@ -235,6 +243,7 @@ bool Gui::floating_begin(
         BOOL_STR(*open));
     props.open = *open;
   }
+#endif
 
   if (!props.open && !element->hidden) {
     tree.down();
