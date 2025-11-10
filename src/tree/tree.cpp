@@ -22,74 +22,23 @@ bool Tree::begin() {
     return true;
   }
 
-  // Clear revisit flags
-
-  std::stack<int> stack;
-  stack.push(root_);
-  while (!stack.empty()) {
-    int element = stack.top();
-    auto& element_d = elements[element];
-    stack.pop();
-
-    if (!element_d.revisit) {
-      // Element and descendents have revisit=false,
-      // no need to continue down this subtree
-      continue;
+  auto now = clock_t::now();
+  for (const auto& dep : dependencies) {
+    bool revisit;
+    if (auto type = std::get_if<DependencyVar>(&dep.dependency)) {
+      revisit = variables[type->variable].version != type->version;
+    } else if (auto type = std::get_if<DependencyCondition>(&dep.dependency)) {
+      revisit = type->condition();
+    } else if (auto type = std::get_if<DependencyTimeout>(&dep.dependency)) {
+      revisit = type->timepoint >= now;
     }
-    element_d.revisit = false;
-
-    int child = element_d.first_child;
-    while (child != -1) {
-      stack.push(child);
-      child = elements[child].next;
+    if (revisit) {
+      set_revisit(dep.element);
     }
   }
-
-  // Applied queued revisit flags
-
-  for (auto element : queue_revisit_) {
-    DATAGUI_LOG("Tree::begin", "Element revisit: %i", element);
-    set_revisit(element);
-  }
-  queue_revisit_.clear();
-
-  // Clear variable modified flags
-
-  for (int variable : modified_variables_) {
-    variables[variable].modified = false;
-    variables[variable].modified_internal = false;
-  }
-  modified_variables_.clear();
-
-  // Apply queued variable modified flags
-
-  for (auto [variable, internal] : queue_modified_variables_) {
-    auto& variable_d = variables[variable];
-    DATAGUI_LOG(
-        "Tree::begin",
-        "Variable modify: element=%i var=%i",
-        variable_d.element,
-        variable);
-
-    // Revisit node
-    if (variable_d.element == -1) {
-      set_revisit(root_);
-    } else {
-      set_revisit(variable_d.element);
-    }
-
-    // Apply new data
-    variable_d.data = std::move(variable_d.data_new);
-    variable_d.modified = true;
-    variable_d.modified_internal = internal;
-    assert(variable_d.data);
-
-    // Keep track of what is modified, to clear next iteration
-    modified_variables_.push_back(variable);
-  }
-  queue_modified_variables_.clear();
 
   if (elements[root_].revisit) {
+    elements[root_].revisit = false;
     DATAGUI_LOG("Tree::begin", "BEGIN");
     DATAGUI_LOG_INDENT(1);
     active_ = true;
@@ -169,6 +118,8 @@ bool Tree::down_if() {
   if (!elements[current_].revisit) {
     return false;
   }
+  elements[current_].revisit = false;
+
   DATAGUI_LOG("Tree::down", "DOWN (if): element=%i", current_);
   parent_ = current_;
   current_ = -1;
@@ -181,10 +132,16 @@ bool Tree::down_if() {
   variable_stack_.push(variable_current_);
   variable_current_ = -1;
   depth++;
+
+  // Dependencies must be re-created each time
+  clear_dependencies(parent_);
+
   return true;
 }
 
 void Tree::down() {
+  elements[current_].revisit = false;
+
   DATAGUI_LOG("Tree::down", "DOWN (force): element=%i", current_);
   parent_ = current_;
   current_ = -1;
@@ -197,6 +154,9 @@ void Tree::down() {
   variable_stack_.push(variable_current_);
   variable_current_ = -1;
   depth++;
+
+  // Dependencies must be re-created each time
+  clear_dependencies(parent_);
 }
 
 void Tree::up() {
@@ -273,12 +233,9 @@ void Tree::remove_element(int element) {
         elements[node.parent].last_child = node.prev;
       }
 
-      int variable = node.first_variable;
-      while (variable != -1) {
-        int next = variables[variable].next;
-        remove_variable(variable);
-        variable = next;
-      }
+      clear_variables(element);
+      clear_dependencies(element);
+
       elements.pop(element);
 
       continue;
@@ -293,10 +250,6 @@ void Tree::remove_element(int element) {
 
 int Tree::create_variable(int element) {
   int variable = variables.emplace(element);
-
-  // Initialise as modified
-  variables[variable].modified = true;
-  modified_variables_.push_back(variable);
 
   int prev;
   if (element == -1) {
@@ -322,19 +275,35 @@ int Tree::create_variable(int element) {
   return variable;
 }
 
-void Tree::remove_variable(int variable) {
-  auto& node = variables[variable];
-  if (node.prev != -1) {
-    variables[node.prev].next = node.next;
+void Tree::clear_variables(int element) {
+  int var = elements[element].first_variable;
+  while (var != -1) {
+    int next = variables[var].next;
+    variables.pop(var);
+    var = next;
+  }
+}
+
+void Tree::create_dependency(int element, const Dependency& value) {
+  int dep = dependencies.emplace(element, value);
+
+  int first_dep = elements[element].first_dependency;
+  if (first_dep == -1) {
+    elements[element].first_dependency = dep;
   } else {
-    elements[node.element].first_variable = node.next;
+    assert(dependencies[first_dep].element == element);
+    dependencies[dep].next = first_dep;
+    dependencies[first_dep].prev = dep;
   }
+}
 
-  if (node.next != -1) {
-    variables[node.next].prev = node.prev;
+void Tree::clear_dependencies(int element) {
+  int dep = elements[element].first_dependency;
+  while (dep != -1) {
+    int next = variables[dep].next;
+    dependencies.pop(dep);
+    dep = next;
   }
-
-  variables.pop(variable);
 }
 
 void Tree::set_revisit(int element) {
@@ -378,11 +347,10 @@ void Tree::set_revisit(int element) {
 std::string Tree::element_debug(int element) const {
   std::string result = "";
   result += "Element: " + std::to_string(element);
-  result += "\nVersion: " + std::to_string(elements[element].version);
 
   int variable = elements[element].first_variable;
   if (variable != -1) {
-    result += "\nVariables:";
+    result += "\nVars:";
     while (variable != -1) {
       result += " " + std::to_string(variable) + ", ";
       variable = variables[variable].next;
@@ -395,14 +363,14 @@ int Tree::get_variable(UniqueAny&& value) {
   int variable;
 
   if (parent_ == -1) {
-    // Variables are "external" - not within any container element
+    // Vars are "external" - not within any container element
     if (variable_current_ == -1) {
       variable = external_first_variable_;
     } else {
       variable = variables[external_first_variable_].next;
     }
   } else {
-    // Variables are within a container element
+    // Vars are within a container element
     if (variable_current_ == -1) {
       variable = elements[parent_].first_variable;
     } else {
@@ -423,7 +391,7 @@ int Tree::get_variable(UniqueAny&& value) {
   }
 
   variable_current_ = variable;
-  return Variable<T>(this, variable);
+  return variable;
 }
 
 } // namespace datagui

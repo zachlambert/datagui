@@ -7,7 +7,7 @@ int main() {
   using namespace datagui;
 
   Tree tree;
-  Variable<std::string> name;
+  Var<std::string> name;
 
   while (true) {
     if (tree.begin()) {
@@ -19,10 +19,9 @@ int main() {
         tree.next();
         tree.next();
         if (tree.down_if()) {
+          tree.on_variable(ConstVar<std::string>(name));
           tree.next();
-          if (name.modified()) {
-            std::cout << "Name: " << *name << std::endl;
-          }
+          std::cout << "Name: " << *name << std::endl;
           tree.up();
         }
         tree.up();
@@ -35,7 +34,8 @@ int main() {
       std::cout << "> ";
       std::getline(std::cin, line);
       if (!line.empty()) {
-        name.set(line);
+        *name = line;
+        name.set_modified();
       }
     }
   }
