@@ -9,6 +9,7 @@ namespace datagui {
 struct SeriesProps {
   float overrun = 0;
   float scroll_pos = 0;
+  float scroll_content_length = 0;
 
   Direction direction = Direction::Vertical;
   Alignment alignment = Alignment::Center;

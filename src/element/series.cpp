@@ -39,6 +39,12 @@ void SeriesSystem::set_input_state(
       }
     }
   }
+  if (props.direction == Direction::Horizontal) {
+    props.scroll_content_length = e.fixed_size.x;
+  } else {
+    props.scroll_content_length = e.fixed_size.y;
+  }
+
   if (auto length = std::get_if<LengthFixed>(&props.length)) {
     if (props.direction == Direction::Horizontal) {
       e.fixed_size.x = length->value;
@@ -100,9 +106,9 @@ void SeriesSystem::set_dependent_state(
   float offset = outer_padding - props.scroll_pos;
 
   if (props.direction == Direction::Horizontal) {
-    props.overrun = std::max(e.fixed_size.x - e.size.x, 0.f);
+    props.overrun = std::max(props.scroll_content_length - e.size.x, 0.f);
   } else {
-    props.overrun = std::max(e.fixed_size.y - e.size.y, 0.f);
+    props.overrun = std::max(props.scroll_content_length - e.size.y, 0.f);
   }
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to

@@ -51,6 +51,7 @@ int main() {
           gui.series_end();
         }
 
+        gui.on_variable(timer);
         gui.text_box("Timer: " + std::to_string(*timer));
 
         if (gui.button("Reset")) {

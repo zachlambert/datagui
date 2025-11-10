@@ -281,6 +281,7 @@ void Tree::clear_variables(int element) {
     variables.pop(var);
     var = next;
   }
+  elements[element].first_variable = -1;
 }
 
 void Tree::create_dependency(int element, const Dependency& value) {
@@ -294,12 +295,13 @@ void Tree::create_dependency(int element, const Dependency& value) {
     dependencies[dep].next = first_dep;
     dependencies[first_dep].prev = dep;
   }
+  elements[element].first_dependency = -1;
 }
 
 void Tree::clear_dependencies(int element) {
   int dep = elements[element].first_dependency;
   while (dep != -1) {
-    int next = variables[dep].next;
+    int next = dependencies[dep].next;
     dependencies.pop(dep);
     dep = next;
   }
