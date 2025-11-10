@@ -66,6 +66,11 @@ public:
     return tree.variable<T>(initial_value);
   }
 
+  template <typename T, bool Const>
+  void on_variable(const Var_<T, Const>& variable) {
+    tree.on_variable<T, Const>(variable);
+  }
+
 #if 0
   template <typename T>
   requires datapack::writeable<T> && datapack::readable<T>

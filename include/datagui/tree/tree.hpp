@@ -120,8 +120,8 @@ public:
   template <typename T>
   Var<T> variable(const T& initial_value = T());
 
-  template <typename T>
-  void on_variable(const ConstVar<T>& var);
+  template <typename T, bool Const>
+  void on_variable(const Var_<T, Const>& var);
   void on_condition(const std::function<bool()>& condition) {
     if (parent_ == -1) {
       throw UsageError("Cannot add a dependency at the root");
@@ -367,7 +367,7 @@ public:
       return;
     }
     DATAGUI_LOG("ElementPtr_::revisit", "REVISIT: element=%i", index);
-    tree->elements[index].revisit |= revisit;
+    tree->set_revisit(index);
   }
 
   template <
@@ -410,8 +410,8 @@ Var<T> Tree::variable(const T& initial_value) {
   return Var<T>(this, get_variable(UniqueAny::Make<T>(initial_value)));
 }
 
-template <typename T>
-void Tree::on_variable(const ConstVar<T>& var) {
+template <typename T, bool Const>
+void Tree::on_variable(const Var_<T, Const>& var) {
   if (var.tree != this) {
     throw UsageError("Cannot depend on a variable from another tree");
   }

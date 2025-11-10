@@ -126,7 +126,7 @@ void Gui::text_input(const Var<std::string>& value) {
 
   if (props.changed) {
     DATAGUI_LOG("Gui::text_input(variable)", "Text input changed");
-    *value = props.text;
+    value.set(props.text);
     props.changed = false;
   } else if (value.version() != props.var_version) {
     DATAGUI_LOG("Gui::text_input(variable)", "Var modified");

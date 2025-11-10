@@ -19,7 +19,7 @@ int main() {
         tree.next();
         tree.next();
         if (tree.down_if()) {
-          tree.on_variable(ConstVar<std::string>(name));
+          tree.on_variable(name);
           tree.next();
           std::cout << "Name: " << *name << std::endl;
           tree.up();
