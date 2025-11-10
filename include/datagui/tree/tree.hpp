@@ -83,7 +83,12 @@ public:
   ConstElementPtr root() const;
 
   template <typename T>
-  Var<T> variable(const std::function<T()>& construct = []() { return T(); });
+  Var<T> variable(const T& initial_value = T());
+
+  template <typename T>
+  void depend_variable(const ConstVar<T>& var) {
+    //
+  }
 
   int get_id() {
     return next_id++;
@@ -93,6 +98,7 @@ private:
   int create_element(int parent, int prev, int id);
   void remove_element(int node);
 
+  int get_variable(UniqueAny&& value);
   int create_variable(int element);
   void remove_variable(int variable);
 
@@ -325,39 +331,8 @@ private:
 };
 
 template <typename T>
-Var<T> Tree::variable(const std::function<T()>& construct) {
-  int variable;
-
-  if (parent_ == -1) {
-    // Variables are "external" - not within any container element
-    if (variable_current_ == -1) {
-      variable = external_first_variable_;
-    } else {
-      variable = variables[external_first_variable_].next;
-    }
-  } else {
-    // Variables are within a container element
-    if (variable_current_ == -1) {
-      variable = elements[parent_].first_variable;
-    } else {
-      variable = variables[variable_current_].next;
-    }
-  }
-
-  if (variable == -1) {
-    if (parent_ == -1) {
-      variable = create_variable(-1);
-      variables[variable].data = UniqueAny::Make<T>(construct());
-      DATAGUI_LOG("Tree::variable", "Created external variable: %i", variable);
-    } else {
-      variable = create_variable(parent_);
-      variables[variable].data = UniqueAny::Make<T>(construct());
-      DATAGUI_LOG("Tree::variable", "Created internal variable: %i", variable);
-    }
-  }
-
-  variable_current_ = variable;
-  return Variable<T>(this, variable);
+Var<T> Tree::variable(const T& initial_value) {
+  return Variable<T>(this, get_variable(UniqueAny::Make(initial_value)));
 }
 
 inline ElementPtr Tree::root() {

@@ -391,4 +391,39 @@ std::string Tree::element_debug(int element) const {
   return result;
 }
 
+int Tree::get_variable(UniqueAny&& value) {
+  int variable;
+
+  if (parent_ == -1) {
+    // Variables are "external" - not within any container element
+    if (variable_current_ == -1) {
+      variable = external_first_variable_;
+    } else {
+      variable = variables[external_first_variable_].next;
+    }
+  } else {
+    // Variables are within a container element
+    if (variable_current_ == -1) {
+      variable = elements[parent_].first_variable;
+    } else {
+      variable = variables[variable_current_].next;
+    }
+  }
+
+  if (variable == -1) {
+    if (parent_ == -1) {
+      variable = create_variable(-1);
+      variables[variable].data = std::move(value);
+      DATAGUI_LOG("Tree::variable", "Created external variable: %i", variable);
+    } else {
+      variable = create_variable(parent_);
+      variables[variable].data = std::move(value);
+      DATAGUI_LOG("Tree::variable", "Created internal variable: %i", variable);
+    }
+  }
+
+  variable_current_ = variable;
+  return Variable<T>(this, variable);
+}
+
 } // namespace datagui

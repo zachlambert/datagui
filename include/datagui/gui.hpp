@@ -61,7 +61,7 @@ public:
   template <typename T>
   Variable<T> variable(const T& initial_value = T()) {
     // Capture initial_value by value
-    return tree.variable<T>([initial_value]() { return initial_value; });
+    return tree.variable<T>(initial_value);
   }
 
   template <typename T>
