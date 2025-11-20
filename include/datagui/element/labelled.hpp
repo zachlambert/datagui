@@ -6,10 +6,6 @@
 
 namespace datagui {
 
-struct LabelledProps {
-  std::string label;
-};
-
 class LabelledSystem : public ElementSystem {
 public:
   LabelledSystem(

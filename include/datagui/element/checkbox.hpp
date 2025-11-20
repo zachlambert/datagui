@@ -6,11 +6,6 @@
 
 namespace datagui {
 
-struct CheckboxProps {
-  bool checked = false;
-  bool changed = false;
-};
-
 class CheckboxSystem : public ElementSystem {
 public:
   CheckboxSystem(

@@ -6,15 +6,6 @@
 
 namespace datagui {
 
-struct DropdownProps {
-  std::vector<std::string> choices;
-  int choice = -1;
-  int choice_hovered = -1;
-  bool changed = false;
-  bool open = false;
-  Length width = LengthWrap();
-};
-
 class DropdownSystem : public ElementSystem {
 public:
   DropdownSystem(

@@ -5,10 +5,6 @@
 
 namespace datagui {
 
-struct TextBoxProps {
-  std::string text;
-};
-
 class TextBoxSystem : public ElementSystem {
 public:
   TextBoxSystem(std::shared_ptr<FontManager> fm, std::shared_ptr<Theme> theme) :

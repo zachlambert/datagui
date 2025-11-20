@@ -6,14 +6,6 @@
 
 namespace datagui {
 
-struct ButtonProps {
-  // Data
-  std::string text;
-  bool released = false;
-  bool down = false;
-  Length width = LengthWrap();
-};
-
 class ButtonSystem : public ElementSystem {
 public:
   ButtonSystem(std::shared_ptr<FontManager> fm, std::shared_ptr<Theme> theme) :

@@ -6,11 +6,6 @@
 
 namespace datagui {
 
-struct SectionProps {
-  std::string label;
-  bool open = false;
-};
-
 class SectionSystem : public ElementSystem {
 public:
   SectionSystem(std::shared_ptr<FontManager> fm, std::shared_ptr<Theme> theme) :

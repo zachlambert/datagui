@@ -6,12 +6,6 @@
 
 namespace datagui {
 
-struct TextInputProps {
-  std::string text;
-  bool changed = false;
-  Length width = LengthDynamic(1);
-};
-
 class TextInputSystem : public ElementSystem {
 public:
   TextInputSystem(

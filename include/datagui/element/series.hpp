@@ -6,18 +6,6 @@
 
 namespace datagui {
 
-struct SeriesProps {
-  float overrun = 0;
-  float scroll_pos = 0;
-
-  Direction direction = Direction::Vertical;
-  Alignment alignment = Alignment::Center;
-  Length length = LengthWrap();
-  Length width = LengthDynamic(1);
-  bool no_padding = false;
-  std::optional<Color> bg_color;
-};
-
 class SeriesSystem : public ElementSystem {
 public:
   SeriesSystem(std::shared_ptr<Theme> theme) : theme(theme) {}
