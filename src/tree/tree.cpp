@@ -28,13 +28,13 @@ void Tree::poll() {
   }
 }
 
-int Tree::create_element(int parent, int prev, int id, PropsType type) {
+int Tree::create_element(int parent, int prev, int id, Type type) {
   int element = elements.emplace();
   auto& node = elements[element];
   node.parent = parent;
   node.id = id;
-  node.props_type = type;
-  node.props_index = emplace_props(type);
+  node.type = type;
+  node.type_index = emplace_type(type);
 
   node.prev = prev;
   int next;
@@ -63,12 +63,12 @@ int Tree::create_element(int parent, int prev, int id, PropsType type) {
   return element;
 }
 
-void Tree::reset_element(int element, int id, PropsType type) {
+void Tree::reset_element(int element, int id, Type type) {
   auto& node = elements[element];
   node.id = id;
-  pop_props(node.props_type, node.props_index);
-  node.props_type = type;
-  node.props_index = emplace_props(type);
+  pop_type(node.type, node.type_index);
+  node.type = type;
+  node.type_index = emplace_type(type);
 }
 
 void Tree::remove_element(int element) {
@@ -95,7 +95,7 @@ void Tree::remove_element(int element) {
       clear_variables(element);
       clear_dependencies(element);
 
-      pop_props(elements[element].props_type, elements[element].props_index);
+      pop_type(elements[element].type, elements[element].type_index);
       elements.pop(element);
 
       continue;
@@ -108,60 +108,60 @@ void Tree::remove_element(int element) {
   }
 }
 
-int Tree::emplace_props(PropsType type) {
+int Tree::emplace_type(Type type) {
   switch (type) {
-  case PropsType::Button:
-    return button_props.emplace();
-  case PropsType::Checkbox:
-    return checkbox_props.emplace();
-  case PropsType::Dropdown:
-    return dropdown_props.emplace();
-  case PropsType::Floating:
-    return floating_props.emplace();
-  case PropsType::Labelled:
-    return labelled_props.emplace();
-  case PropsType::Section:
-    return section_props.emplace();
-  case PropsType::Series:
-    return series_props.emplace();
-  case PropsType::TextBox:
-    return text_box_props.emplace();
-  case PropsType::TextInput:
-    return text_input_props.emplace();
+  case Type::Button:
+    return button.emplace();
+  case Type::Checkbox:
+    return checkbox.emplace();
+  case Type::Dropdown:
+    return dropdown.emplace();
+  case Type::Floating:
+    return floating.emplace();
+  case Type::Labelled:
+    return labelled.emplace();
+  case Type::Section:
+    return section.emplace();
+  case Type::Series:
+    return series.emplace();
+  case Type::TextBox:
+    return text_box.emplace();
+  case Type::TextInput:
+    return text_input.emplace();
   default:
     assert(false);
     return -1;
   }
 }
 
-void Tree::pop_props(PropsType type, std::size_t index) {
+void Tree::pop_type(Type type, std::size_t index) {
   switch (type) {
-  case PropsType::Button:
-    button_props.pop(index);
+  case Type::Button:
+    button.pop(index);
     break;
-  case PropsType::Checkbox:
-    checkbox_props.pop(index);
+  case Type::Checkbox:
+    checkbox.pop(index);
     break;
-  case PropsType::Dropdown:
-    dropdown_props.pop(index);
+  case Type::Dropdown:
+    dropdown.pop(index);
     break;
-  case PropsType::Floating:
-    floating_props.pop(index);
+  case Type::Floating:
+    floating.pop(index);
     break;
-  case PropsType::Labelled:
-    labelled_props.pop(index);
+  case Type::Labelled:
+    labelled.pop(index);
     break;
-  case PropsType::Section:
-    section_props.pop(index);
+  case Type::Section:
+    section.pop(index);
     break;
-  case PropsType::Series:
-    series_props.pop(index);
+  case Type::Series:
+    series.pop(index);
     break;
-  case PropsType::TextBox:
-    text_box_props.pop(index);
+  case Type::TextBox:
+    text_box.pop(index);
     break;
-  case PropsType::TextInput:
-    text_input_props.pop(index);
+  case Type::TextInput:
+    text_input.pop(index);
     break;
   default:
     assert(false);

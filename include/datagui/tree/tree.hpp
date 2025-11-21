@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/tree/element.hpp"
-#include "datagui/tree/props.hpp"
+#include "datagui/tree/state.hpp"
 #include "datagui/tree/unique_any.hpp"
 #include "datagui/tree/vector_map.hpp"
 #include <assert.h>
@@ -31,9 +31,9 @@ class Tree {
     int first_variable = -1;
     int first_dependency = -1;
 
-    Element element;
-    PropsType props_type;
-    std::size_t props_index;
+    State state;
+    Type type;
+    std::size_t type_index;
   };
 
   // ===========================================================
@@ -202,31 +202,26 @@ public:
 
   template <bool IsConst>
   class ElementPtr_ {
-    using tree_ptr_t = std::conditional_t<IsConst, const Tree*, Tree*>;
-    using ptr_t = std::conditional_t<IsConst, const Element*, Element*>;
-    using ref_t = std::conditional_t<IsConst, const Element&, Element&>;
-
   public:
-    PropsType props_type() const {
-      return tree->elements[index].props_type;
+    Type type() const {
+      return tree->elements[index].type;
     }
 
-#define PROPS_METHOD(Props, props) \
-  std::conditional_t<IsConst, const Props&, Props&> props() const { \
+#define PROPS_METHOD(Type, type) \
+  std::conditional_t<IsConst, const Type&, Type&> type() const { \
     const auto& element = tree->elements[index]; \
-    assert(Props::TYPE == element.props_type); \
-    return tree->props[element.props_index]; \
+    return tree->type[element.type_index]; \
   }
 
-    PROPS_METHOD(ButtonProps, button_props)
-    PROPS_METHOD(CheckboxProps, checkbox_props)
-    PROPS_METHOD(DropdownProps, dropdown_props)
-    PROPS_METHOD(FloatingProps, floating_props)
-    PROPS_METHOD(LabelledProps, labelled_props)
-    PROPS_METHOD(SectionProps, section_props)
-    PROPS_METHOD(SeriesProps, series_props)
-    PROPS_METHOD(TextBoxProps, text_box_props)
-    PROPS_METHOD(TextInputProps, text_input_props)
+    PROPS_METHOD(Button, button)
+    PROPS_METHOD(Checkbox, checkbox)
+    PROPS_METHOD(Dropdown, dropdown)
+    PROPS_METHOD(Floating, floating)
+    PROPS_METHOD(Labelled, labelled)
+    PROPS_METHOD(Section, section)
+    PROPS_METHOD(Series, series)
+    PROPS_METHOD(TextBox, text_box)
+    PROPS_METHOD(TextInput, text_input)
 
 #undef PROPS_METHOD
 
@@ -240,17 +235,14 @@ public:
       return ElementPtr_(tree, parent, tree->elements[index].next);
     }
 
-    ref_t operator*() const {
-      return tree->elements[index].element;
-    }
-    ptr_t operator->() const {
-      return &tree->elements[index].element;
+    std::conditional_t<IsConst, const State&, State&> state() const {
+      return tree->elements[index].state;
     }
 
     bool exists() const {
       return index != -1;
     }
-    void create(PropsType type, int id = -1) {
+    void create(Type type, int id = -1) {
       if (parent == -1) {
         index = tree->create_element(parent, -1, id, type);
       } else {
@@ -258,7 +250,7 @@ public:
         index = tree->create_element(parent, prev, id, type);
       }
     }
-    void reset(PropsType type, int id) const {
+    void reset(Type type, int id) const {
       tree->reset_element(index, id, type);
     }
     ElementPtr_ erase() const {
@@ -327,12 +319,12 @@ public:
     ElementPtr_() : tree(nullptr), parent(-1), index(-1) {}
 
   private:
+    using tree_ptr_t = std::conditional_t<IsConst, const Tree*, Tree*>;
     ElementPtr_(tree_ptr_t tree, int parent, int index) :
         tree(tree), parent(parent), index(index) {}
 
     tree_ptr_t tree;
     int parent;
-    PropsType type;
     int index;
 
     friend class Tree;
@@ -356,12 +348,12 @@ public:
   }
 
 private:
-  int create_element(int parent, int prev, int id, PropsType type);
-  void reset_element(int node, int id, PropsType type);
+  int create_element(int parent, int prev, int id, Type type);
+  void reset_element(int node, int id, Type type);
   void remove_element(int node);
 
-  int emplace_props(PropsType type);
-  void pop_props(PropsType type, std::size_t index);
+  int emplace_type(Type type);
+  void pop_type(Type type, std::size_t index);
 
   int create_variable(int element);
   void clear_variables(int element);
@@ -376,15 +368,15 @@ private:
   VectorMap<VarNode> variables;
   VectorMap<DependencyNode> dependencies;
 
-  VectorMap<ButtonProps> button_props;
-  VectorMap<CheckboxProps> checkbox_props;
-  VectorMap<DropdownProps> dropdown_props;
-  VectorMap<FloatingProps> floating_props;
-  VectorMap<LabelledProps> labelled_props;
-  VectorMap<SectionProps> section_props;
-  VectorMap<SeriesProps> series_props;
-  VectorMap<TextBoxProps> text_box_props;
-  VectorMap<TextInputProps> text_input_props;
+  VectorMap<Button> button;
+  VectorMap<Checkbox> checkbox;
+  VectorMap<Dropdown> dropdown;
+  VectorMap<Floating> floating;
+  VectorMap<Labelled> labelled;
+  VectorMap<Section> section;
+  VectorMap<Series> series;
+  VectorMap<TextBox> text_box;
+  VectorMap<TextInput> text_input;
 };
 
 using ElementPtr = Tree::ElementPtr;

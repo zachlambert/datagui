@@ -8,37 +8,37 @@ TEST(Tree, CreateElements) {
 
   auto node = tree.root();
   ASSERT_FALSE(node.exists());
-  node.create(PropsType::Series);
+  node.create(Type::Series);
   ASSERT_TRUE(node.exists());
-  ASSERT_EQ(node.props_type(), PropsType::Series);
+  ASSERT_EQ(node.type(), Type::Series);
   {
-    auto& element = *node;
-    element.position = Vecf(1, 2);
-    auto& props = node.series_props();
-    props.bg_color = Color::Red();
+    auto& state = node.state();
+    state.position = Vecf(1, 2);
+    auto& series = node.series();
+    series.bg_color = Color::Red();
   }
 
   node = node.child();
   ASSERT_FALSE(node.exists());
-  node.create(PropsType::Button);
+  node.create(Type::Button);
   ASSERT_TRUE(node.exists());
-  ASSERT_EQ(node.props_type(), PropsType::Button);
+  ASSERT_EQ(node.type(), Type::Button);
   {
-    auto& element = *node;
-    element.position = Vecf(1, 2);
-    auto& props = node.button_props();
-    props.down = true;
+    auto& state = node.state();
+    state.position = Vecf(1, 2);
+    auto& button = node.button();
+    button.down = true;
   }
 
   node = node.next();
   ASSERT_FALSE(node.exists());
-  node.create(PropsType::TextInput);
+  node.create(Type::TextInput);
   ASSERT_TRUE(node.exists());
-  ASSERT_EQ(node.props_type(), PropsType::TextInput);
+  ASSERT_EQ(node.type(), Type::TextInput);
   {
-    auto& element = *node;
-    element.position = Vecf(1, 2);
-    auto& props = node.text_input_props();
-    props.text = "hello";
+    auto& state = node.state();
+    state.position = Vecf(1, 2);
+    auto& text_input = node.text_input();
+    text_input.text = "hello";
   }
 }
