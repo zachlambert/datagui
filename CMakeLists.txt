@@ -18,8 +18,8 @@ find_package(Freetype REQUIRED)
 
 add_library(datagui SHARED
   src/geometry.cpp
-  # src/log.cpp
-  # src/theme.cpp
+  src/log.cpp
+  src/theme.cpp
 
   src/element/tree.cpp
 
