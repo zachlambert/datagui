@@ -1,4 +1,4 @@
-#include "datagui/tree/vector_map.hpp"
+#include "datagui/element/vector_map.hpp"
 #include <gtest/gtest.h>
 
 TEST(VectorMap, EmplaceAndPop) {

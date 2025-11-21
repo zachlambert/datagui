@@ -17,7 +17,7 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-  src/tree/tree.cpp
+  src/element/tree.cpp
 
   # src/datapack/reader.cpp
   # src/datapack/writer.cpp

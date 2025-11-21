@@ -1,4 +1,4 @@
-#include "datagui/tree/tree.hpp"
+#include "datagui/element/tree.hpp"
 #include <gtest/gtest.h>
 
 TEST(Tree, CreateElements) {

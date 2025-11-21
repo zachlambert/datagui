@@ -1,9 +1,9 @@
 #pragma once
 
-#include "datagui/tree/element.hpp"
-#include "datagui/tree/state.hpp"
-#include "datagui/tree/unique_any.hpp"
-#include "datagui/tree/vector_map.hpp"
+#include "datagui/element/element.hpp"
+#include "datagui/element/state.hpp"
+#include "datagui/element/unique_any.hpp"
+#include "datagui/element/vector_map.hpp"
 #include <assert.h>
 #include <chrono>
 #include <functional>
