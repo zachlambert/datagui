@@ -1,109 +1,109 @@
-#include "datagui/element/dropdown.hpp"
+#include "datagui/system/dropdown.hpp"
 
 namespace datagui {
 
-void DropdownSystem::set_input_state(
-    Element& e,
-    const ConstElementList& children) {
-  const auto& props = *e.props.cast<DropdownProps>();
+void DropdownSystem::set_input_state(ElementPtr element) {
+  auto& state = element.state();
+  const auto& dropdown = element.dropdown();
 
   const Vecf none_size =
       fm->text_size("<none>", theme->text_font, theme->text_size, LengthWrap());
 
   float max_item_width = none_size.x;
-  for (const auto& choice : props.choices) {
+  for (const auto& choice : dropdown.choices) {
     Vecf choice_size =
         fm->text_size(choice, theme->text_font, theme->text_size, LengthWrap());
     max_item_width = std::max(max_item_width, choice_size.x);
   }
 
-  e.fixed_size = Vecf::Zero();
-  e.dynamic_size = Vecf::Zero();
+  state.fixed_size = Vecf::Zero();
+  state.dynamic_size = Vecf::Zero();
 
-  if (auto width = std::get_if<LengthFixed>(&props.width)) {
-    e.fixed_size.x = std::min(max_item_width, width->value);
-  } else if (std::get_if<LengthWrap>(&props.width)) {
-    e.fixed_size.x = max_item_width;
-  } else if (auto width = std::get_if<LengthDynamic>(&props.width)) {
-    e.dynamic_size.x = width->weight;
+  if (auto width = std::get_if<LengthFixed>(&dropdown.width)) {
+    state.fixed_size.x = std::min(max_item_width, width->value);
+  } else if (std::get_if<LengthWrap>(&dropdown.width)) {
+    state.fixed_size.x = max_item_width;
+  } else if (auto width = std::get_if<LengthDynamic>(&dropdown.width)) {
+    state.dynamic_size.x = width->weight;
   }
-  e.fixed_size +=
+  state.fixed_size +=
       2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
-  e.fixed_size.y += fm->text_height(theme->text_font, theme->text_size);
+  state.fixed_size.y += fm->text_height(theme->text_font, theme->text_size);
 
-  if (!props.choices.empty()) {
-    e.floating = props.open;
+  if (!dropdown.choices.empty()) {
+    state.floating = dropdown.open;
 
     Vecf dropdown_size;
-    dropdown_size.x = e.fixed_size.x;
-    dropdown_size.y = props.choices.size() *
+    dropdown_size.x = state.fixed_size.x;
+    dropdown_size.y = dropdown.choices.size() *
                           fm->text_height(theme->text_font, theme->text_size) +
-                      (props.choices.size() + 1) *
+                      (dropdown.choices.size() + 1) *
                           (theme->input_border_width + theme->text_padding);
-    e.floating_type = FloatingTypeRelative(Vecf::Zero(), dropdown_size);
+    state.floating_type = FloatingTypeRelative(Vecf::Zero(), dropdown_size);
 
   } else {
-    e.floating = false;
+    state.floating = false;
   }
 }
 
-void DropdownSystem::set_dependent_state(
-    Element& e,
-    const ElementList& children) {
-  e.float_box = e.box();
-  if (!e.floating) {
+void DropdownSystem::set_dependent_state(ElementPtr element) {
+  auto& state = element.state();
+  const auto& dropdown = element.dropdown();
+
+  state.float_box = state.box();
+  if (!state.floating) {
     return;
   }
 
-  const auto& props = *e.props.cast<DropdownProps>();
-  e.float_box.upper.y +=
-      (props.choices.size() - 1) *
+  state.float_box.upper.y +=
+      (dropdown.choices.size() - 1) *
       (fm->text_height(theme->text_font, theme->text_size) +
        2.f * theme->text_padding + theme->input_border_width);
 }
 
-void DropdownSystem::render(const Element& e, Renderer& renderer) {
-  const auto& props = *e.props.cast<DropdownProps>();
+void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
+  const auto& state = element.state();
+  const auto& dropdown = element.dropdown();
 
-  if (!props.open || props.choices.empty()) {
+  if (!dropdown.open || dropdown.choices.empty()) {
     renderer.queue_box(
-        e.box(),
+        state.box(),
         theme->input_color_bg,
         theme->input_border_width,
         theme->input_color_border,
         0);
 
     std::string text;
-    if (props.choices.empty() || props.choice == -1) {
+    if (dropdown.choices.empty() || dropdown.choice == -1) {
       text = "<none>";
     } else {
-      text = props.choices[props.choice];
+      text = dropdown.choices[dropdown.choice];
     }
 
     renderer.queue_text(
-        e.position +
+        state.position +
             Vecf::Constant(theme->input_border_width + theme->text_padding),
         text,
         theme->text_font,
         theme->text_size,
         theme->text_color,
         LengthFixed(
-            e.size.x -
+            state.size.x -
             2.f * (theme->input_border_width + theme->text_padding)));
     return;
   }
 
   Vecf offset = Vecf::Zero();
 
-  for (int i = 0; i < props.choices.size(); i++) {
-    Vecf position = e.position + offset;
+  for (int i = 0; i < dropdown.choices.size(); i++) {
+    Vecf position = state.position + offset;
     Vecf size = Vecf(
-        e.size.x,
+        state.size.x,
         fm->text_height(theme->text_font, theme->text_size) +
             2.f * (theme->text_padding + theme->input_border_width));
 
     Color bg_color;
-    if (i == props.choice) {
+    if (i == dropdown.choice) {
       bg_color = theme->input_color_bg_active;
     } else {
       bg_color = theme->input_color_bg;
@@ -118,12 +118,12 @@ void DropdownSystem::render(const Element& e, Renderer& renderer) {
     renderer.queue_text(
         position +
             Vecf::Constant(theme->input_border_width + theme->text_padding),
-        props.choices[i],
+        dropdown.choices[i],
         theme->text_font,
         theme->text_size,
         theme->text_color,
         LengthFixed(
-            e.size.x -
+            state.size.x -
             2.f * (theme->input_border_width + theme->text_padding)));
 
     offset.y += theme->input_border_width + 2 * theme->text_padding +
@@ -131,27 +131,28 @@ void DropdownSystem::render(const Element& e, Renderer& renderer) {
   }
 }
 
-bool DropdownSystem::mouse_event(Element& e, const MouseEvent& event) {
-  auto& props = *e.props.cast<DropdownProps>();
+bool DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+  const auto& state = element.state();
+  auto& dropdown = element.dropdown();
 
   if (event.action != MouseAction::Press) {
     return false;
   }
-  if (!props.open) {
-    props.open = true;
+  if (!dropdown.open) {
+    dropdown.open = true;
     return false;
   }
-  if (props.choices.empty()) {
+  if (dropdown.choices.empty()) {
     return false;
   }
 
   Vecf offset = Vecf::Zero();
   int clicked = -1;
 
-  for (int i = 0; i < props.choices.size(); i++) {
-    Vecf position = e.position + offset;
+  for (int i = 0; i < dropdown.choices.size(); i++) {
+    Vecf position = state.position + offset;
     Vecf size = Vecf(
-        e.size.x,
+        state.size.x,
         fm->text_height(theme->text_font, theme->text_size) +
             2.f * (theme->text_padding + theme->input_border_width));
 
@@ -165,24 +166,24 @@ bool DropdownSystem::mouse_event(Element& e, const MouseEvent& event) {
   }
 
   if (clicked != -1) {
-    if (props.choice != clicked) {
-      props.changed = true;
-      props.choice = clicked;
+    if (dropdown.choice != clicked) {
+      dropdown.changed = true;
+      dropdown.choice = clicked;
     }
-    props.open = false;
+    dropdown.open = false;
     return true;
   }
   return false;
 }
 
-void DropdownSystem::focus_enter(Element& e) {
-  auto& props = *e.props.cast<DropdownProps>();
-  props.open = true;
+void DropdownSystem::focus_enter(ElementPtr element) {
+  auto& dropdown = element.dropdown();
+  dropdown.open = true;
 }
 
-bool DropdownSystem::focus_leave(Element& e, bool success) {
-  auto& props = *e.props.cast<DropdownProps>();
-  props.open = false;
+bool DropdownSystem::focus_leave(ElementPtr element, bool success) {
+  auto& dropdown = element.dropdown();
+  dropdown.open = false;
   return false;
 }
 
