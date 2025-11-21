@@ -29,17 +29,17 @@ add_library(datagui SHARED
   src/visual/text_renderer.cpp
   src/visual/window.cpp
 
-  # src/input/text_selection.cpp
+  src/input/text_selection.cpp
 
-  # src/system/button.cpp
-  # src/system/checkbox.cpp
-  # src/system/dropdown.cpp
-  # src/system/floating.cpp
-  # src/system/labelled.cpp
-  # src/system/section.cpp
-  # src/system/series.cpp
-  # src/system/text_box.cpp
-  # src/system/text_input.cpp
+  src/system/button.cpp
+  src/system/checkbox.cpp
+  src/system/dropdown.cpp
+  src/system/floating.cpp
+  src/system/labelled.cpp
+  src/system/section.cpp
+  src/system/series.cpp
+  src/system/text_box.cpp
+  src/system/text_input.cpp
 
   # src/datapack/reader.cpp
   # src/datapack/writer.cpp

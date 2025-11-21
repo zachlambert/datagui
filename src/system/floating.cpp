@@ -40,7 +40,8 @@ void FloatingSystem::set_dependent_state(ElementPtr element) {
 
     Vecf button_size = text_size + 2.f * Vecf::Constant(theme->text_padding);
     floating.title_bar_text_width -= (button_size.x + theme->text_padding);
-    floating.title_bar_text_width = std::max(0.f, props.title_bar_text_width);
+    floating.title_bar_text_width =
+        std::max(0.f, floating.title_bar_text_width);
 
     box.upper = floating.title_bar_box.upper -
                 Vecf::Constant(theme->input_border_width);
