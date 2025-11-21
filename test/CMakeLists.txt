@@ -19,3 +19,5 @@ function(create_test name)
 endfunction()
 
 create_test(tree)
+create_test(unique_any)
+create_test(vector_map)

@@ -38,16 +38,16 @@ public:
     return *this;
   }
 
-  bool contains(std::size_t i) const {
-    return i < valid.size() && valid[i];
+  bool contains(int i) const {
+    return i >= 0 && i < valid.size() && valid[i];
   }
 
-  const T& operator[](std::size_t i) const {
+  const T& operator[](int i) const {
     assert(valid[i]);
     return (const T&)data[i];
   }
 
-  T& operator[](std::size_t i) {
+  T& operator[](int i) {
     assert(valid[i]);
     return (T&)data[i];
   }
@@ -114,14 +114,13 @@ public:
     }
 
   private:
-    Iterator_(parent_t parent, std::size_t index) :
-        parent(parent), index(index) {
+    Iterator_(parent_t parent, int index) : parent(parent), index(index) {
       while (index < parent->data.size() && !parent->valid[index]) {
         index++;
       }
     }
     parent_t parent;
-    std::size_t index;
+    int index;
     friend class VectorMap;
   };
   using ConstIterator = Iterator_<true>;

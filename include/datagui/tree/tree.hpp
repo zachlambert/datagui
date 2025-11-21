@@ -214,7 +214,7 @@ public:
 #define PROPS_METHOD(Props, props) \
   std::conditional_t<IsConst, const Props&, Props&> props() const { \
     const auto& element = tree->elements[index]; \
-    assert(Props::TYPE == element.type); \
+    assert(Props::TYPE == element.props_type); \
     return tree->props[element.props_index]; \
   }
 
@@ -371,7 +371,7 @@ private:
 
   void set_dirty(int node);
 
-  int root_;
+  int root_ = -1;
   VectorMap<ElementNode> elements;
   VectorMap<VarNode> variables;
   VectorMap<DependencyNode> dependencies;

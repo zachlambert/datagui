@@ -37,8 +37,17 @@ int Tree::create_element(int parent, int prev, int id, PropsType type) {
   node.props_index = emplace_props(type);
 
   node.prev = prev;
-  int next = (prev == -1) ? parent == -1 ? root_ : elements[parent].first_child
-                          : elements[prev].next;
+  int next;
+  if (prev != -1) {
+    next = elements[prev].next;
+  } else if (parent != -1) {
+    next = elements[parent].first_child;
+  } else {
+    assert(root_ == -1);
+    assert(prev == -1);
+    root_ = element;
+    next = -1;
+  }
   node.next = next;
 
   if (prev != -1) {
