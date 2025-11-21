@@ -51,16 +51,12 @@ void FloatingSystem::set_dependent_state(ElementPtr element) {
   if (!child.exists()) {
     return;
   }
+  for (auto other = child.next(); other.exists(); other = other.next()) {
+    other.state().hidden = true;
+  }
 
   child.state().position = floating.title_bar_box.top_left();
   child.state().size = state.float_box.upper - child.state().position;
-
-  // Hide excess children
-  child = child.next();
-  while (child.exists()) {
-    child.state().hidden = true;
-    child = child.next();
-  }
 }
 
 void FloatingSystem::render(ConstElementPtr element, Renderer& renderer) {
