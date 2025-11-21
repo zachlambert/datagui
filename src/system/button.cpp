@@ -1,87 +1,88 @@
-#include "datagui/element/button.hpp"
+#include "datagui/system/button.hpp"
 
 namespace datagui {
 
-void ButtonSystem::set_input_state(
-    Element& e,
-    const ConstElementList& children) {
-  const auto& props = *e.props.cast<ButtonProps>();
+void ButtonSystem::set_input_state(ElementPtr element) {
+  auto& state = element.state();
+  const auto& button = element.button();
 
-  e.fixed_size =
+  state.fixed_size =
       2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
-  e.dynamic_size = Vecf::Zero();
-  e.floating = false;
+  state.dynamic_size = Vecf::Zero();
+  state.floating = false;
 
   Vecf text_size = fm->text_size(
-      props.text,
+      button.text,
       theme->text_font,
       theme->text_size,
-      props.width);
-  e.fixed_size.y += text_size.y;
+      button.width);
+  state.fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&props.width)) {
-    e.fixed_size.x += width->value;
+  if (auto width = std::get_if<LengthFixed>(&button.width)) {
+    state.fixed_size.x += width->value;
   } else {
-    e.fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&props.width)) {
-      e.dynamic_size.x = width->weight;
+    state.fixed_size.x += text_size.x;
+    if (auto width = std::get_if<LengthDynamic>(&button.width)) {
+      state.dynamic_size.x = width->weight;
     }
   }
 }
 
-void ButtonSystem::render(const Element& e, Renderer& renderer) {
-  const auto& props = *e.props.cast<ButtonProps>();
+void ButtonSystem::render(ConstElementPtr element, Renderer& renderer) {
+  const auto& state = element.state();
+  const auto& button = element.button();
 
   Color bg_color;
-  if (props.down) {
+  if (button.down) {
     bg_color = theme->input_color_bg_active;
-  } else if (e.hovered) {
+  } else if (state.hovered) {
     bg_color = theme->input_color_bg_hover;
   } else {
     bg_color = theme->input_color_bg;
   }
 
   Color border_color;
-  if (e.in_focus_tree) {
+  if (state.in_focus_tree) {
     border_color = theme->input_color_border_focus;
   } else {
     border_color = theme->input_color_border;
   }
 
   renderer.queue_box(
-      e.box(),
+      state.box(),
       bg_color,
       theme->input_border_width,
       border_color,
       theme->input_radius);
 
   Vecf text_position =
-      e.position +
+      state.position +
       Vecf::Constant(theme->input_border_width + theme->text_padding);
 
   renderer.queue_text(
       text_position,
-      props.text,
+      button.text,
       theme->text_font,
       theme->text_size,
       theme->text_color,
-      props.width);
+      button.width);
 }
 
-bool ButtonSystem::mouse_event(Element& e, const MouseEvent& event) {
-  auto& props = *e.props.cast<ButtonProps>();
+bool ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+  const auto& state = element.state();
+  auto& button = element.button();
 
   if (event.button != MouseButton::Left) {
     return false;
   }
   switch (event.action) {
   case MouseAction::Press:
-    props.down = true;
+    button.down = true;
     break;
   case MouseAction::Release:
-    props.down = false;
-    if (e.box().contains(event.position)) {
-      props.released = true;
+    button.down = false;
+    if (state.box().contains(event.position)) {
+      button.released = true;
       return true;
     }
     break;
@@ -91,18 +92,18 @@ bool ButtonSystem::mouse_event(Element& e, const MouseEvent& event) {
   return false;
 }
 
-bool ButtonSystem::key_event(Element& e, const KeyEvent& event) {
-  auto& props = *e.props.cast<ButtonProps>();
+bool ButtonSystem::key_event(ElementPtr element, const KeyEvent& event) {
+  auto& button = element.button();
   if (event.key != Key::Enter) {
     return false;
   }
   switch (event.action) {
   case KeyAction::Press:
-    props.down = true;
+    button.down = true;
     break;
   case KeyAction::Release:
-    props.down = false;
-    props.released = true;
+    button.down = false;
+    button.released = true;
     return true;
   default:
     break;
