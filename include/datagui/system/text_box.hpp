@@ -1,35 +1,21 @@
 #pragma once
 
+#include "datagui/system/system.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/tree/element.hpp"
+#include "datagui/visual/font_manager.hpp"
 
 namespace datagui {
 
-class TextBoxSystem : public ElementSystem {
+class TextBoxSystem : public System {
 public:
   TextBoxSystem(std::shared_ptr<FontManager> fm, std::shared_ptr<Theme> theme) :
       fm(fm), theme(theme) {}
-  void set_input_state(Element& element, const ConstElementList& children)
-      override;
-  void render(const Element& element, Renderer& renderer) override;
+  void set_input_state(ElementPtr element) override;
+  void render(ConstElementPtr element, Renderer& renderer) override;
 
 private:
   std::shared_ptr<FontManager> fm;
   std::shared_ptr<Theme> theme;
 };
-
-inline TextBoxProps& get_text_box(
-    ElementSystemList& systems,
-    Element& element) {
-  if (element.system == -1) {
-    element.system = systems.find<TextBoxSystem>();
-    assert(element.system != -1);
-    assert(!element.props);
-    element.props = UniqueAny::Make<TextBoxProps>();
-  }
-  auto props = element.props.cast<TextBoxProps>();
-  assert(props);
-  return *props;
-}
 
 } // namespace datagui

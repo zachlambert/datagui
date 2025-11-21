@@ -1,21 +1,19 @@
 #pragma once
 
+#include "datagui/system/system.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/tree/element.hpp"
 #include <optional>
 
 namespace datagui {
 
-class SeriesSystem : public ElementSystem {
+class SeriesSystem : public System {
 public:
   SeriesSystem(std::shared_ptr<Theme> theme) : theme(theme) {}
 
-  void set_input_state(Element& element, const ConstElementList& children)
-      override;
-  void set_dependent_state(Element& element, const ElementList& children)
-      override;
-  void render(const Element& element, Renderer& renderer) override;
-  bool scroll_event(Element& element, const ScrollEvent& event) override;
+  void set_input_state(ElementPtr element) override;
+  void set_dependent_state(ElementPtr element) override;
+  void render(ConstElementPtr element, Renderer& renderer) override;
+  bool scroll_event(ElementPtr element, const ScrollEvent& event) override;
 
 private:
   std::shared_ptr<Theme> theme;
