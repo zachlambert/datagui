@@ -208,7 +208,7 @@ public:
 
   public:
     PropsType props_type() const {
-      return tree->elements[index].type;
+      return tree->elements[index].props_type;
     }
 
 #define PROPS_METHOD(Props, props) \
