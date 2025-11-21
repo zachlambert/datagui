@@ -2,8 +2,8 @@
 
 #include "datagui/tree/element.hpp"
 #include "datagui/tree/props.hpp"
-#include "datagui/types/unique_any.hpp"
-#include "datagui/types/vector_map.hpp"
+#include "datagui/tree/unique_any.hpp"
+#include "datagui/tree/vector_map.hpp"
 #include <assert.h>
 #include <chrono>
 #include <functional>
