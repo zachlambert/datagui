@@ -1,238 +1,40 @@
 #include "datagui/tree/tree.hpp"
-#include "datagui/log.hpp"
 #include <assert.h>
 #include <stack>
 
 namespace datagui {
 
-bool Tree::begin() {
-  assert(parent_ == -1);
-  assert(current_ == -1);
-  assert(variable_stack_.empty());
+static int g_next_id_ = 0;
 
-  if (active_) {
-    throw UsageError(
-        "Didn't call end() after a previous begin() call returned true");
-  }
-
-  if (root_ == -1) {
-    DATAGUI_LOG("Tree::begin", "BEGIN");
-    DATAGUI_LOG_INDENT(1);
-    active_ = true;
-    return true;
-  }
-
-  // Clear revisit flags
-
-  std::stack<int> stack;
-  stack.push(root_);
-  while (!stack.empty()) {
-    int element = stack.top();
-    auto& element_d = elements[element];
-    stack.pop();
-
-    if (!element_d.revisit) {
-      // Element and descendents have revisit=false,
-      // no need to continue down this subtree
-      continue;
-    }
-    element_d.revisit = false;
-
-    int child = element_d.first_child;
-    while (child != -1) {
-      stack.push(child);
-      child = elements[child].next;
-    }
-  }
-
-  // Applied queued revisit flags
-
-  for (auto element : queue_revisit_) {
-    DATAGUI_LOG("Tree::begin", "Element revisit: %i", element);
-    set_revisit(element);
-  }
-  queue_revisit_.clear();
-
-  // Clear variable modified flags
-
-  for (int variable : modified_variables_) {
-    variables[variable].modified = false;
-    variables[variable].modified_internal = false;
-  }
-  modified_variables_.clear();
-
-  // Apply queued variable modified flags
-
-  for (auto [variable, internal] : queue_modified_variables_) {
-    auto& variable_d = variables[variable];
-    DATAGUI_LOG(
-        "Tree::begin",
-        "Variable modify: element=%i var=%i",
-        variable_d.element,
-        variable);
-
-    // Revisit node
-    if (variable_d.element == -1) {
-      set_revisit(root_);
-    } else {
-      set_revisit(variable_d.element);
-    }
-
-    // Apply new data
-    variable_d.data = std::move(variable_d.data_new);
-    variable_d.modified = true;
-    variable_d.modified_internal = internal;
-    assert(variable_d.data);
-
-    // Keep track of what is modified, to clear next iteration
-    modified_variables_.push_back(variable);
-  }
-  queue_modified_variables_.clear();
-
-  if (elements[root_].revisit) {
-    DATAGUI_LOG("Tree::begin", "BEGIN");
-    DATAGUI_LOG_INDENT(1);
-    active_ = true;
-    return true;
-  }
-  return false;
+int generate_id() {
+  return g_next_id_++;
 }
 
-void Tree::end() {
-  if (!active_) {
-    throw UsageError("Called end() without calling begin() previously and "
-                     "having it return true");
-  }
-  active_ = false;
-  DATAGUI_LOG_INDENT(-1);
-  DATAGUI_LOG("Tree::end", "END");
-
-  if (parent_ != -1) {
-    throw UsageError("Didn't call down and up the same number of times");
-  }
-  assert(variable_stack_.empty());
-
-  assert(parent_ == -1);
-  assert(current_ == root_);
-  current_ = -1;
-}
-
-ElementPtr Tree::next(int id) {
-  if (variables.size() > 0) {
-    assert(variables[0].data);
-  }
-
-  DATAGUI_LOG("Tree::next", "NEXT: current=%i id=%i", current_, id);
-
-  if (parent_ == -1) {
-    if (current_ != -1) {
-      throw UsageError("Cannot call next more than once at the root");
+void Tree::poll() {
+  auto now = clock_t::now();
+  for (auto& dep : dependencies) {
+    bool dirty;
+    if (auto type = std::get_if<DependencyVar>(&dep.dependency)) {
+      dirty = variables[type->variable].version != type->version;
+      type->version = variables[type->variable].version;
+    } else if (auto type = std::get_if<DependencyCondition>(&dep.dependency)) {
+      dirty = type->condition();
+    } else if (auto type = std::get_if<DependencyTimeout>(&dep.dependency)) {
+      dirty = type->timepoint >= now;
     }
-    if (root_ == -1) {
-      root_ = create_element(-1, -1, id);
-      DATAGUI_LOG("Tree::next", "Created root: element=%i id=%i", root_, id);
-    } else if (elements[root_].id != id) {
-      throw UsageError("TODO: Handle overwriting root");
+    if (dirty) {
+      set_dirty(dep.element);
     }
-    current_ = root_;
-
-  } else {
-
-    int prev = current_;
-    int iter = current_ == -1 ? elements[parent_].first_child
-                              : elements[current_].next;
-    while (iter != -1) {
-      if (elements[iter].id == id) {
-        break;
-      }
-      int to_remove = iter;
-      iter = elements[iter].next;
-      remove_element(to_remove);
-    }
-
-    if (iter == -1) {
-      current_ = create_element(parent_, prev, id);
-      DATAGUI_LOG(
-          "Tree::next",
-          "Created element: element=%i id=%i",
-          current_,
-          id);
-    } else {
-      current_ = iter;
-    }
-  }
-
-  return ElementPtr(this, current_);
-}
-
-bool Tree::down_if() {
-  if (!elements[current_].revisit) {
-    return false;
-  }
-  DATAGUI_LOG("Tree::down", "DOWN (if): element=%i", current_);
-  parent_ = current_;
-  current_ = -1;
-
-  if (variable_current_ != -1) {
-    DATAGUI_LOG("Tree::down", "pushed variable %i", variable_current_);
-  }
-  DATAGUI_LOG_INDENT(1);
-
-  variable_stack_.push(variable_current_);
-  variable_current_ = -1;
-  depth++;
-  return true;
-}
-
-void Tree::down() {
-  DATAGUI_LOG("Tree::down", "DOWN (force): element=%i", current_);
-  parent_ = current_;
-  current_ = -1;
-
-  if (variable_current_ != -1) {
-    DATAGUI_LOG("Tree::down", "pushed variable %i", variable_current_);
-  }
-  DATAGUI_LOG_INDENT(1);
-
-  variable_stack_.push(variable_current_);
-  variable_current_ = -1;
-  depth++;
-}
-
-void Tree::up() {
-  depth--;
-  assert(depth >= 0);
-  DATAGUI_LOG_INDENT(-1);
-
-  if (parent_ == -1) {
-    throw UsageError("Called up too many times");
-  }
-
-  int remove_from =
-      current_ == -1 ? elements[parent_].first_child : elements[current_].next;
-
-  while (remove_from != -1) {
-    int next = elements[remove_from].next;
-    remove_element(remove_from);
-    remove_from = next;
-  }
-
-  current_ = parent_;
-  parent_ = elements[current_].parent;
-  DATAGUI_LOG("Tree::up", "UP: element=%i", current_);
-
-  variable_current_ = variable_stack_.top();
-  variable_stack_.pop();
-  if (variable_current_ != -1) {
-    DATAGUI_LOG("Tree::up", "popped variable %i", variable_current_);
   }
 }
 
-int Tree::create_element(int parent, int prev, int id) {
+int Tree::create_element(int parent, int prev, int id, PropsType type) {
   int element = elements.emplace();
   auto& node = elements[element];
   node.parent = parent;
   node.id = id;
+  node.props_type = type;
+  node.props_index = emplace_props(type);
 
   node.prev = prev;
   int next = (prev == -1) ? parent == -1 ? root_ : elements[parent].first_child
@@ -241,15 +43,23 @@ int Tree::create_element(int parent, int prev, int id) {
 
   if (prev != -1) {
     elements[prev].next = element;
-  } else {
+  } else if (parent != -1) {
     elements[parent].first_child = element;
   }
   if (next != -1) {
     elements[next].prev = element;
-  } else {
+  } else if (parent != -1) {
     elements[parent].last_child = element;
   }
   return element;
+}
+
+void Tree::reset_element(int element, int id, PropsType type) {
+  auto& node = elements[element];
+  node.id = id;
+  pop_props(node.props_type, node.props_index);
+  node.props_type = type;
+  node.props_index = emplace_props(type);
 }
 
 void Tree::remove_element(int element) {
@@ -273,12 +83,10 @@ void Tree::remove_element(int element) {
         elements[node.parent].last_child = node.prev;
       }
 
-      int variable = node.first_variable;
-      while (variable != -1) {
-        int next = variables[variable].next;
-        remove_variable(variable);
-        variable = next;
-      }
+      clear_variables(element);
+      clear_dependencies(element);
+
+      pop_props(elements[element].props_type, elements[element].props_index);
       elements.pop(element);
 
       continue;
@@ -291,27 +99,75 @@ void Tree::remove_element(int element) {
   }
 }
 
+int Tree::emplace_props(PropsType type) {
+  switch (type) {
+  case PropsType::Button:
+    return button_props.emplace();
+  case PropsType::Checkbox:
+    return checkbox_props.emplace();
+  case PropsType::Dropdown:
+    return dropdown_props.emplace();
+  case PropsType::Floating:
+    return floating_props.emplace();
+  case PropsType::Labelled:
+    return labelled_props.emplace();
+  case PropsType::Section:
+    return section_props.emplace();
+  case PropsType::Series:
+    return series_props.emplace();
+  case PropsType::TextBox:
+    return text_box_props.emplace();
+  case PropsType::TextInput:
+    return text_input_props.emplace();
+  default:
+    assert(false);
+    return -1;
+  }
+}
+
+void Tree::pop_props(PropsType type, std::size_t index) {
+  switch (type) {
+  case PropsType::Button:
+    button_props.pop(index);
+    break;
+  case PropsType::Checkbox:
+    checkbox_props.pop(index);
+    break;
+  case PropsType::Dropdown:
+    dropdown_props.pop(index);
+    break;
+  case PropsType::Floating:
+    floating_props.pop(index);
+    break;
+  case PropsType::Labelled:
+    labelled_props.pop(index);
+    break;
+  case PropsType::Section:
+    section_props.pop(index);
+    break;
+  case PropsType::Series:
+    series_props.pop(index);
+    break;
+  case PropsType::TextBox:
+    text_box_props.pop(index);
+    break;
+  case PropsType::TextInput:
+    text_input_props.pop(index);
+    break;
+  default:
+    assert(false);
+  }
+}
+
 int Tree::create_variable(int element) {
   int variable = variables.emplace(element);
 
-  // Initialise as modified
-  variables[variable].modified = true;
-  modified_variables_.push_back(variable);
-
   int prev;
-  if (element == -1) {
-    if (external_first_variable_ == -1) {
-      external_first_variable_ = variable;
-      return variable;
-    }
-    prev = external_first_variable_;
-  } else {
-    if (elements[element].first_variable == -1) {
-      elements[element].first_variable = variable;
-      return variable;
-    }
-    prev = elements[element].first_variable;
+  if (elements[element].first_variable == -1) {
+    elements[element].first_variable = variable;
+    return variable;
   }
+  prev = elements[element].first_variable;
 
   while (variables[prev].next != -1) {
     prev = variables[prev].next;
@@ -322,38 +178,55 @@ int Tree::create_variable(int element) {
   return variable;
 }
 
-void Tree::remove_variable(int variable) {
-  auto& node = variables[variable];
-  if (node.prev != -1) {
-    variables[node.prev].next = node.next;
-  } else {
-    elements[node.element].first_variable = node.next;
+void Tree::clear_variables(int element) {
+  int var = elements[element].first_variable;
+  while (var != -1) {
+    int next = variables[var].next;
+    variables.pop(var);
+    var = next;
   }
-
-  if (node.next != -1) {
-    variables[node.next].prev = node.prev;
-  }
-
-  variables.pop(variable);
+  elements[element].first_variable = -1;
 }
 
-void Tree::set_revisit(int element) {
+void Tree::create_dependency(int element, const Dependency& value) {
+  int dep = dependencies.emplace(element, value);
+  int first_dep = elements[element].first_dependency;
+  if (first_dep == -1) {
+    elements[element].first_dependency = dep;
+  } else {
+    assert(dependencies[first_dep].element == element);
+    dependencies[dep].next = first_dep;
+    dependencies[first_dep].prev = dep;
+  }
+}
+
+void Tree::clear_dependencies(int element) {
+  int dep = elements[element].first_dependency;
+  while (dep != -1) {
+    int next = dependencies[dep].next;
+    dependencies.pop(dep);
+    dep = next;
+  }
+  elements[element].first_dependency = -1;
+}
+
+void Tree::set_dirty(int element) {
   if (element == -1) {
     return;
   }
 
-  // Set revisit = true on element and descendents
+  // Set dirty = true on element and descendents
   std::stack<int> stack;
   stack.push(element);
   while (!stack.empty()) {
     int element = stack.top();
     stack.pop();
 
-    if (elements[element].revisit) {
-      // Revisit is already set to true, no need to update
+    if (elements[element].dirty) {
+      // dirty is already set to true, no need to update
       continue;
     }
-    elements[element].revisit = true;
+    elements[element].dirty = true;
 
     int child = elements[element].first_child;
     while (child != -1) {
@@ -362,33 +235,17 @@ void Tree::set_revisit(int element) {
     }
   }
 
-  // Set revisit = true on anscestors
+  // Set dirty = true on anscestors
   int iter = elements[element].parent;
   while (iter != -1) {
-    if (elements[iter].revisit) {
-      // Revisit already set here, must mean already set
+    if (elements[iter].dirty) {
+      // dirty already set here, must mean already set
       // for ancestors too
       break;
     }
-    elements[iter].revisit = true;
+    elements[iter].dirty = true;
     iter = elements[iter].parent;
   }
-}
-
-std::string Tree::element_debug(int element) const {
-  std::string result = "";
-  result += "Element: " + std::to_string(element);
-  result += "\nVersion: " + std::to_string(elements[element].version);
-
-  int variable = elements[element].first_variable;
-  if (variable != -1) {
-    result += "\nVariables:";
-    while (variable != -1) {
-      result += " " + std::to_string(variable) + ", ";
-      variable = variables[variable].next;
-    }
-  }
-  return result;
 }
 
 } // namespace datagui
