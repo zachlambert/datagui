@@ -1,146 +1,152 @@
-#include "datagui/element/series.hpp"
+#include "datagui/system/series.hpp"
 
 namespace datagui {
 
-void SeriesSystem::set_input_state(
-    Element& e,
-    const ConstElementList& children) {
-  auto& props = *e.props.cast<SeriesProps>();
+void SeriesSystem::set_input_state(ElementPtr element) {
+  auto& state = element.state();
+  auto& series = element.series();
 
-  e.fixed_size = Vecf::Zero();
-  e.dynamic_size = Vecf::Zero();
-  e.floating = false;
+  state.fixed_size = Vecf::Zero();
+  state.dynamic_size = Vecf::Zero();
+  state.floating = false;
 
-  float outer_padding = props.no_padding ? 0.f : theme->layout_outer_padding;
-  float inner_padding = props.no_padding ? 0.f : theme->layout_inner_padding;
+  float outer_padding = series.no_padding ? 0.f : theme->layout_outer_padding;
+  float inner_padding = series.no_padding ? 0.f : theme->layout_inner_padding;
 
   // Primary direction
 
   {
-    for (auto child : children) {
-      if (child->hidden || child->zero_size()) {
+    std::size_t child_count = 0;
+    for (auto child = element.child(); child.exists(); child = child.next()) {
+      const auto& c_state = child.state();
+      if (c_state.hidden || c_state.zero_size()) {
         continue;
       }
 
-      if (props.direction == Direction::Horizontal) {
-        e.fixed_size.x += child->fixed_size.x;
-        e.dynamic_size.x += child->dynamic_size.x;
+      if (series.direction == Direction::Horizontal) {
+        state.fixed_size.x += c_state.fixed_size.x;
+        state.dynamic_size.x += c_state.dynamic_size.x;
       } else {
-        e.fixed_size.y += child->fixed_size.y;
-        e.dynamic_size.y += child->dynamic_size.y;
+        state.fixed_size.y += c_state.fixed_size.y;
+        state.dynamic_size.y += c_state.dynamic_size.y;
       }
+      child_count++;
     }
 
-    if (!children.empty()) {
-      if (props.direction == Direction::Horizontal) {
-        e.fixed_size.x += (children.size() - 1) * inner_padding;
+    if (child_count > 0) {
+      if (series.direction == Direction::Horizontal) {
+        state.fixed_size.x += (child_count - 1) * inner_padding;
       } else {
-        e.fixed_size.y += (children.size() - 1) * inner_padding;
+        state.fixed_size.y += (child_count - 1) * inner_padding;
       }
     }
   }
-  if (auto length = std::get_if<LengthFixed>(&props.length)) {
-    if (props.direction == Direction::Horizontal) {
-      e.fixed_size.x = length->value;
+  if (auto length = std::get_if<LengthFixed>(&series.length)) {
+    if (series.direction == Direction::Horizontal) {
+      state.fixed_size.x = length->value;
     } else {
-      e.fixed_size.y = length->value;
+      state.fixed_size.y = length->value;
     }
-  } else if (auto length = std::get_if<LengthDynamic>(&props.length)) {
-    if (props.direction == Direction::Horizontal) {
-      e.dynamic_size.y = length->weight;
+  } else if (auto length = std::get_if<LengthDynamic>(&series.length)) {
+    if (series.direction == Direction::Horizontal) {
+      state.dynamic_size.y = length->weight;
     } else {
-      e.dynamic_size.x = length->weight;
+      state.dynamic_size.x = length->weight;
     }
   }
 
   // Secondary direction
 
-  if (auto width = std::get_if<LengthFixed>(&props.width)) {
-    if (props.direction == Direction::Horizontal) {
-      e.fixed_size.y = width->value;
+  if (auto width = std::get_if<LengthFixed>(&series.width)) {
+    if (series.direction == Direction::Horizontal) {
+      state.fixed_size.y = width->value;
     } else {
-      e.fixed_size.x = width->value;
+      state.fixed_size.x = width->value;
     }
   } else {
-    for (auto child : children) {
-      if (child->hidden || child->zero_size()) {
+    for (auto child = element.child(); child.exists(); child = child.next()) {
+      const auto& c_state = child.state();
+      if (c_state.hidden || c_state.zero_size()) {
         continue;
       }
 
-      if (props.direction == Direction::Horizontal) {
-        e.fixed_size.y = std::max(e.fixed_size.y, child->fixed_size.y);
-        e.dynamic_size.y = std::max(e.dynamic_size.y, child->dynamic_size.y);
+      if (series.direction == Direction::Horizontal) {
+        state.fixed_size.y = std::max(state.fixed_size.y, c_state.fixed_size.y);
+        state.dynamic_size.y =
+            std::max(state.dynamic_size.y, c_state.dynamic_size.y);
       } else {
-        e.fixed_size.x = std::max(e.fixed_size.x, child->fixed_size.x);
-        e.dynamic_size.x = std::max(e.dynamic_size.x, child->dynamic_size.x);
+        state.fixed_size.x = std::max(state.fixed_size.x, c_state.fixed_size.x);
+        state.dynamic_size.x =
+            std::max(state.dynamic_size.x, c_state.dynamic_size.x);
       }
     }
 
-    if (auto width = std::get_if<LengthDynamic>(&props.width)) {
-      if (props.direction == Direction::Horizontal) {
-        e.dynamic_size.y = width->weight;
+    if (auto width = std::get_if<LengthDynamic>(&series.width)) {
+      if (series.direction == Direction::Horizontal) {
+        state.dynamic_size.y = width->weight;
       } else {
-        e.dynamic_size.x = width->weight;
+        state.dynamic_size.x = width->weight;
       }
     }
   }
 
-  e.fixed_size += Vecf::Constant(2 * outer_padding);
+  state.fixed_size += Vecf::Constant(2 * outer_padding);
 }
 
-void SeriesSystem::set_dependent_state(
-    Element& e,
-    const ElementList& children) {
+void SeriesSystem::set_dependent_state(ElementPtr element) {
+  const auto& state = element.state();
+  auto& series = element.series();
 
-  auto& props = *e.props.cast<SeriesProps>();
-  float outer_padding = props.no_padding ? 0.f : theme->layout_outer_padding;
-  float inner_padding = props.no_padding ? 0.f : theme->layout_inner_padding;
+  float outer_padding = series.no_padding ? 0.f : theme->layout_outer_padding;
+  float inner_padding = series.no_padding ? 0.f : theme->layout_inner_padding;
 
-  Vecf available = maximum(e.size - e.fixed_size, Vecf::Zero());
-  float offset = outer_padding - props.scroll_pos;
+  Vecf available = maximum(state.size - state.fixed_size, Vecf::Zero());
+  float offset = outer_padding - series.scroll_pos;
 
-  if (props.direction == Direction::Horizontal) {
-    props.overrun = std::max(e.fixed_size.x - e.size.x, 0.f);
+  if (series.direction == Direction::Horizontal) {
+    series.overrun = std::max(state.fixed_size.x - state.size.x, 0.f);
   } else {
-    props.overrun = std::max(e.fixed_size.y - e.size.y, 0.f);
+    series.overrun = std::max(state.fixed_size.y - state.size.y, 0.f);
   }
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
   Vecf children_dynamic_size = Vecf::Zero();
-  for (auto child : children) {
-    children_dynamic_size += child->dynamic_size;
+  for (auto child = element.child(); child.exists(); child = child.next()) {
+    children_dynamic_size += child.state().dynamic_size;
   }
 
-  for (auto child : children) {
-    if (child->hidden || child->zero_size()) {
+  for (auto child = element.child(); child.exists(); child = child.next()) {
+    auto& c_state = child.state();
+    if (c_state.hidden || c_state.zero_size()) {
       continue;
     }
 
-    child->size = child->fixed_size;
+    c_state.size = c_state.fixed_size;
 
-    if (props.direction == Direction::Horizontal) {
-      if (child->dynamic_size.x > 0) {
-        child->size.x +=
-            (child->dynamic_size.x / children_dynamic_size.x) * available.x;
+    if (series.direction == Direction::Horizontal) {
+      if (c_state.dynamic_size.x > 0) {
+        c_state.size.x +=
+            (c_state.dynamic_size.x / children_dynamic_size.x) * available.x;
       }
-      if (child->dynamic_size.y > 0) {
-        child->size.y = e.size.y - 2.f * outer_padding;
+      if (c_state.dynamic_size.y > 0) {
+        c_state.size.y = state.size.y - 2.f * outer_padding;
       }
 
-      child->position.x = e.position.x + offset;
-      offset += child->size.x + inner_padding;
+      c_state.position.x = state.position.x + offset;
+      offset += c_state.size.x + inner_padding;
 
-      switch (props.alignment) {
+      switch (series.alignment) {
       case Alignment::Min:
-        child->position.y = e.position.y + outer_padding;
+        c_state.position.y = state.position.y + outer_padding;
         break;
       case Alignment::Center:
-        child->position.y = e.position.y + e.size.y / 2 - child->size.y / 2;
+        c_state.position.y =
+            state.position.y + state.size.y / 2 - c_state.size.y / 2;
         break;
       case Alignment::Max:
-        child->position.y =
-            e.position.y + e.size.y - child->size.y - outer_padding;
+        c_state.position.y =
+            state.position.y + state.size.y - c_state.size.y - outer_padding;
         break;
       default:
         assert(false);
@@ -148,27 +154,28 @@ void SeriesSystem::set_dependent_state(
       }
 
     } else {
-      if (child->dynamic_size.y > 0) {
-        child->size.y +=
-            (child->dynamic_size.y / children_dynamic_size.y) * available.y;
+      if (c_state.dynamic_size.y > 0) {
+        c_state.size.y +=
+            (c_state.dynamic_size.y / children_dynamic_size.y) * available.y;
       }
-      if (child->dynamic_size.x > 0) {
-        child->size.x = e.size.x - 2.f * outer_padding;
+      if (c_state.dynamic_size.x > 0) {
+        c_state.size.x = state.size.x - 2.f * outer_padding;
       }
 
-      child->position.y = e.position.y + offset;
-      offset += child->size.y + inner_padding;
+      c_state.position.y = state.position.y + offset;
+      offset += c_state.size.y + inner_padding;
 
-      switch (props.alignment) {
+      switch (series.alignment) {
       case Alignment::Min:
-        child->position.x = e.position.x + outer_padding;
+        c_state.position.x = state.position.x + outer_padding;
         break;
       case Alignment::Center:
-        child->position.x = e.position.x + e.size.x / 2 - child->size.x / 2;
+        c_state.position.x =
+            state.position.x + state.size.x / 2 - c_state.size.x / 2;
         break;
       case Alignment::Max:
-        child->position.x =
-            e.position.x + e.size.x - child->size.x - outer_padding;
+        c_state.position.x =
+            state.position.x + state.size.x - c_state.size.x - outer_padding;
         break;
       default:
         assert(false);
@@ -178,61 +185,63 @@ void SeriesSystem::set_dependent_state(
   }
 }
 
-void SeriesSystem::render(const Element& e, Renderer& renderer) {
-  const auto& props = *e.props.cast<SeriesProps>();
+void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
+  const auto& state = element.state();
+  const auto& series = element.series();
 
-  if (props.bg_color) {
-    renderer.queue_box(e.box(), *props.bg_color, 0, Color::Black(), 0);
+  if (series.bg_color) {
+    renderer.queue_box(state.box(), *series.bg_color, 0, Color::Black(), 0);
   } else {
-    renderer.queue_box(e.box(), Color::Clear(), 0, Color::Black(), 0);
+    renderer.queue_box(state.box(), Color::Clear(), 0, Color::Black(), 0);
   }
 
-  if (props.overrun > 0) {
+  if (series.overrun > 0) {
     Boxf bg;
     Boxf fg;
-    if (props.direction == Direction::Vertical) {
-      bg.lower.x = e.position.x + e.size.x - theme->scroll_bar_width;
-      bg.upper.x = e.position.x + e.size.x;
-      bg.lower.y = e.position.y;
-      bg.upper.y = e.position.y + e.size.y;
+    if (series.direction == Direction::Vertical) {
+      bg.lower.x = state.position.x + state.size.x - theme->scroll_bar_width;
+      bg.upper.x = state.position.x + state.size.x;
+      bg.lower.y = state.position.y;
+      bg.upper.y = state.position.y + state.size.y;
 
-      float ratio = e.size.y / (props.overrun + e.size.y);
-      float location = props.scroll_pos / (props.overrun + e.size.y);
+      float ratio = state.size.y / (series.overrun + state.size.y);
+      float location = series.scroll_pos / (series.overrun + state.size.y);
 
       fg = bg;
-      fg.lower.y = e.position.y + location * e.size.y;
-      fg.upper.y = e.position.y + (location + ratio) * e.size.y;
+      fg.lower.y = state.position.y + location * state.size.y;
+      fg.upper.y = state.position.y + (location + ratio) * state.size.y;
 
     } else {
-      bg.lower.x = e.position.x;
-      bg.upper.x = e.position.x + e.size.x;
-      bg.lower.y = e.position.y + e.size.y - theme->scroll_bar_width;
-      bg.upper.y = e.position.y + e.size.y;
+      bg.lower.x = state.position.x;
+      bg.upper.x = state.position.x + state.size.x;
+      bg.lower.y = state.position.y + state.size.y - theme->scroll_bar_width;
+      bg.upper.y = state.position.y + state.size.y;
 
-      float ratio = e.size.x / (props.overrun + e.size.x);
-      float location = props.scroll_pos / (props.overrun + e.size.x);
+      float ratio = state.size.x / (series.overrun + state.size.x);
+      float location = series.scroll_pos / (series.overrun + state.size.x);
 
       fg = bg;
-      fg.lower.x = e.position.x + location * e.size.x;
-      fg.upper.x = e.position.x + (location + ratio) * e.size.x;
+      fg.lower.x = state.position.x + location * state.size.x;
+      fg.upper.x = state.position.x + (location + ratio) * state.size.x;
     }
     renderer.queue_box(bg, theme->scroll_bar_bg, 0, Color::Black(), 0);
     renderer.queue_box(fg, theme->scroll_bar_fg, 0, Color::Black(), 0);
   }
 }
 
-bool SeriesSystem::scroll_event(Element& e, const ScrollEvent& event) {
-  auto& props = *e.props.cast<SeriesProps>();
-  if (props.overrun == 0) {
+bool SeriesSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
+  auto& series = element.series();
+
+  if (series.overrun == 0) {
     return false;
   }
-  if (props.scroll_pos == props.overrun && event.amount > 0 ||
-      props.scroll_pos == 0 && event.amount < 0) {
+  if (series.scroll_pos == series.overrun && event.amount > 0 ||
+      series.scroll_pos == 0 && event.amount < 0) {
     return false;
   }
 
-  props.scroll_pos =
-      std::clamp(props.scroll_pos + event.amount, 0.f, props.overrun);
+  series.scroll_pos =
+      std::clamp(series.scroll_pos + event.amount, 0.f, series.overrun);
   return true;
 }
 

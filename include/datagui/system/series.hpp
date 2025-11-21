@@ -2,7 +2,6 @@
 
 #include "datagui/system/system.hpp"
 #include "datagui/theme.hpp"
-#include <optional>
 
 namespace datagui {
 
@@ -18,17 +17,5 @@ public:
 private:
   std::shared_ptr<Theme> theme;
 };
-
-inline SeriesProps& get_series(ElementSystemList& systems, Element& element) {
-  if (element.system == -1) {
-    element.system = systems.find<SeriesSystem>();
-    assert(element.system != -1);
-    assert(!element.props);
-    element.props = UniqueAny::Make<SeriesProps>();
-  }
-  auto props = element.props.cast<SeriesProps>();
-  assert(props);
-  return *props;
-}
 
 } // namespace datagui

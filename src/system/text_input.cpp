@@ -1,57 +1,56 @@
-#include "datagui/element/text_input.hpp"
-#include "datagui/log.hpp"
+#include "datagui/system/text_input.hpp"
 
 namespace datagui {
 
-void TextInputSystem::set_input_state(
-    Element& e,
-    const ConstElementList& children) {
-  const auto& props = *e.props.cast<TextInputProps>();
+void TextInputSystem::set_input_state(ElementPtr element) {
+  auto& state = element.state();
+  const auto& text_input = element.text_input();
 
-  const std::string& text = e.focused ? active_text : props.text;
-  e.fixed_size =
+  const std::string& text = state.focused ? active_text : text_input.text;
+  state.fixed_size =
       2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
-  e.dynamic_size = Vecf::Zero();
-  e.floating = 0;
+  state.dynamic_size = Vecf::Zero();
+  state.floating = 0;
 
   Vecf text_size =
-      fm->text_size(text, theme->text_font, theme->text_size, props.width);
-  e.fixed_size.y += text_size.y;
+      fm->text_size(text, theme->text_font, theme->text_size, text_input.width);
+  state.fixed_size.y += text_size.y;
 
-  if (auto width = std::get_if<LengthFixed>(&props.width)) {
-    e.fixed_size.x += width->value;
+  if (auto width = std::get_if<LengthFixed>(&text_input.width)) {
+    state.fixed_size.x += width->value;
   } else {
-    e.fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&props.width)) {
-      e.dynamic_size.x = width->weight;
+    state.fixed_size.x += text_size.x;
+    if (auto width = std::get_if<LengthDynamic>(&text_input.width)) {
+      state.dynamic_size.x = width->weight;
     }
   }
 }
 
-void TextInputSystem::render(const Element& e, Renderer& renderer) {
-  const auto& props = *e.props.cast<TextInputProps>();
+void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
+  const auto& state = element.state();
+  const auto& text_input = element.text_input();
 
-  const std::string& text = e.focused ? active_text : props.text;
+  const std::string& text = state.focused ? active_text : text_input.text;
 
   Color border_color;
-  if (e.in_focus_tree) {
+  if (state.in_focus_tree) {
     border_color = theme->input_color_border_focus;
   } else {
     border_color = theme->input_color_border;
   }
 
   renderer.queue_box(
-      e.box(),
+      state.box(),
       theme->input_color_bg,
       theme->input_border_width,
       border_color,
       0);
 
   Vecf text_position =
-      e.position +
+      state.position +
       Vecf::Constant(theme->input_border_width + theme->text_padding);
 
-  if (e.focused) {
+  if (state.focused) {
     render_selection(
         text,
         text_position,
@@ -60,14 +59,14 @@ void TextInputSystem::render(const Element& e, Renderer& renderer) {
         theme->text_cursor_color,
         theme->text_highlight_color,
         theme->text_cursor_width,
-        props.width,
+        text_input.width,
         renderer);
   }
 
   Boxf mask;
-  mask.lower = e.position +
+  mask.lower = state.position +
                Vecf::Constant(theme->input_border_width + theme->text_padding);
-  mask.upper = e.position + e.size -
+  mask.upper = state.position + state.size -
                Vecf::Constant(theme->input_border_width + theme->text_padding);
 
   renderer.push_mask(mask);
@@ -77,25 +76,29 @@ void TextInputSystem::render(const Element& e, Renderer& renderer) {
       theme->text_font,
       theme->text_size,
       theme->text_color,
-      props.width);
+      text_input.width);
   renderer.pop_mask();
 }
 
-bool TextInputSystem::mouse_event(Element& e, const MouseEvent& event) {
-  const auto& props = *e.props.cast<TextInputProps>();
+bool TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+  const auto& state = element.state();
+  const auto& text_input = element.text_input();
 
   Vecf text_origin =
-      e.position +
+      state.position +
       Vecf::Constant(theme->input_border_width + theme->text_padding);
 
   const auto& font = fm->font_structure(theme->text_font, theme->text_size);
 
   if (event.action == MouseAction::Press) {
-    active_text = props.text;
+    active_text = text_input.text;
   }
 
-  std::size_t cursor_pos =
-      find_cursor(font, active_text, props.width, event.position - text_origin);
+  std::size_t cursor_pos = find_cursor(
+      font,
+      active_text,
+      text_input.width,
+      event.position - text_origin);
 
   if (event.action == MouseAction::Press) {
     active_selection.reset(cursor_pos);
@@ -106,21 +109,15 @@ bool TextInputSystem::mouse_event(Element& e, const MouseEvent& event) {
   return false;
 }
 
-bool TextInputSystem::key_event(Element& e, const KeyEvent& event) {
-  auto& props = *e.props.cast<TextInputProps>();
+bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
+  auto& text_input = element.text_input();
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
-    if (props.text != active_text) {
-      DATAGUI_LOG(
-          "TextInputSystem::key_event",
-          "Enter changed: %s -> %s",
-          props.text.c_str(),
-          active_text.c_str());
-      props.text = active_text;
-      props.changed = true;
+    if (text_input.text != active_text) {
+      text_input.text = active_text;
+      text_input.changed = true;
       return true;
     }
-    DATAGUI_LOG("TextInputSystem::key_event", "Enter unchanged");
     return false;
   }
 
@@ -128,23 +125,23 @@ bool TextInputSystem::key_event(Element& e, const KeyEvent& event) {
   return false;
 }
 
-bool TextInputSystem::text_event(Element& element, const TextEvent& event) {
+bool TextInputSystem::text_event(ElementPtr element, const TextEvent& event) {
   selection_text_event(active_text, active_selection, true, event);
   return false;
 }
 
-void TextInputSystem::focus_enter(Element& e) {
-  auto& props = *e.props.cast<TextInputProps>();
+void TextInputSystem::focus_enter(ElementPtr element) {
+  const auto& props = element.text_input();
 
   active_selection.reset(0);
   active_text = props.text;
 }
 
-bool TextInputSystem::focus_leave(Element& e, bool success) {
-  auto& props = *e.props.cast<TextInputProps>();
-  if (success && props.text != active_text) {
-    props.text = active_text;
-    props.changed = true;
+bool TextInputSystem::focus_leave(ElementPtr element, bool success) {
+  auto& text_input = element.text_input();
+  if (success && text_input.text != active_text) {
+    text_input.text = active_text;
+    text_input.changed = true;
     return true;
   }
   return false;
