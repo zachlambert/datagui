@@ -22,6 +22,7 @@ add_library(datagui SHARED
   src/theme.cpp
 
   src/element/tree.cpp
+  src/element/args.cpp
 
   src/visual/font_manager.cpp
   src/visual/geometry_renderer.cpp
@@ -41,11 +42,9 @@ add_library(datagui SHARED
   src/system/text_box.cpp
   src/system/text_input.cpp
 
+  # src/gui.cpp
   # src/datapack/reader.cpp
   # src/datapack/writer.cpp
-
-  # src/gui.cpp
-  # src/gui_args.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack

@@ -6,7 +6,7 @@
 
 namespace datagui {
 
-class SeriesProps;
+class Series;
 
 class SeriesArgs {
 public:
@@ -47,16 +47,8 @@ public:
   }
 
 private:
-  void apply(SeriesProps& props) const;
-
-  void reset() {
-    direction_ = Direction::Vertical;
-    alignment_ = Alignment::Center;
-    length_ = LengthWrap();
-    width_ = LengthDynamic(1);
-    no_padding_ = false;
-    bg_color_ = std::nullopt;
-  }
+  void apply(Series& series) const;
+  void reset();
 
   Direction direction_;
   Alignment alignment_;
@@ -68,7 +60,7 @@ private:
   friend class Gui;
 };
 
-class FloatingProps;
+class Floating;
 
 class FloatingArgs {
 public:
@@ -81,11 +73,8 @@ public:
   }
 
 private:
-  void apply(FloatingProps& props) const;
-
-  void reset() {
-    bg_color_ = std::nullopt;
-  }
+  void apply(Floating& props) const;
+  void reset();
 
   std::optional<Color> bg_color_;
 

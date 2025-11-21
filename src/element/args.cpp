@@ -1,11 +1,9 @@
-#include "datagui/gui_args.hpp"
-
-#include "datagui/element/floating.hpp"
-#include "datagui/element/series.hpp"
+#include "datagui/element/args.hpp"
+#include "datagui/element/element.hpp"
 
 namespace datagui {
 
-void SeriesArgs::apply(SeriesProps& props) const {
+void SeriesArgs::apply(Series& props) const {
   props.direction = direction_;
   props.alignment = alignment_;
   props.length = length_;
@@ -14,7 +12,7 @@ void SeriesArgs::apply(SeriesProps& props) const {
   props.bg_color = bg_color_;
 }
 
-void FloatingArgs::apply(FloatingProps& props) const {
+void FloatingArgs::apply(Floating& props) const {
   props.bg_color = bg_color_;
 }
 
