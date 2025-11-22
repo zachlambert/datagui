@@ -1,18 +1,16 @@
 #pragma once
 
 #include <assert.h>
+#include <cstring>
+#include <memory>
 #include <vector>
 
 namespace datagui {
 
-// NOTE:
-// Currently requires everything is default-constructable and assumes
-// that the memory cost for retaining popped nodes (until overwritten) is
-// unimportant.
 template <typename T>
 class VectorMap {
 public:
-  VectorMap() : size_(0) {}
+  VectorMap() : data(nullptr), data_size(0), data_capacity(0), size_(0) {}
 
   ~VectorMap() {
     destruct();
@@ -44,28 +42,30 @@ public:
 
   const T& operator[](int i) const {
     assert(valid[i]);
-    return (const T&)data[i];
+    return data[i];
   }
 
   T& operator[](int i) {
     assert(valid[i]);
-    return (T&)data[i];
+    return data[i];
   }
 
   template <typename... Args>
   int emplace(Args&&... args) {
     int index;
     if (free.empty()) {
-      index = data.size();
-      data.emplace_back();
+      index = data_size;
+      expand_data(data_size + 1);
       valid.push_back(false);
     } else {
       index = free.back();
       free.pop_back();
     }
-
+    assert(data_size == valid.size());
     assert(!valid[index]);
-    new ((T*)&data[index]) T(std::forward<Args>(args)...);
+    assert(index >= 0 && index < data_size);
+
+    new (&data[index]) T(std::forward<Args>(args)...);
     valid[index] = true;
     size_++;
     return index;
@@ -73,7 +73,7 @@ public:
 
   void pop(int index) {
     free.push_back(index);
-    ((T&)data[index]).~T();
+    data[index].~T();
     valid[index] = false;
     assert(size_ > 0);
     size_--;
@@ -96,9 +96,9 @@ public:
     }
 
     Iterator_& operator++() {
-      assert(index < parent->data.size());
+      assert(index < parent->data_size);
       index++;
-      while (index < parent->data.size() && !parent->valid[index]) {
+      while (index < parent->data_size && !parent->valid[index]) {
         index++;
       }
       return *this;
@@ -115,7 +115,7 @@ public:
 
   private:
     Iterator_(parent_t parent, int index) : parent(parent), index(index) {
-      while (index < parent->data.size() && !parent->valid[index]) {
+      while (index < parent->data_size && !parent->valid[index]) {
         index++;
       }
     }
@@ -130,70 +130,142 @@ public:
     return Iterator(this, 0);
   }
   Iterator end() {
-    return Iterator(this, data.size());
+    return Iterator(this, data_size);
   }
   Iterator begin() const {
     return ConstIterator(this, 0);
   }
   Iterator end() const {
-    return ConstIterator(this, data.size());
+    return ConstIterator(this, data_size);
   }
   Iterator cbegin() {
     return ConstIterator(this, 0);
   }
   Iterator cend() {
-    return ConstIterator(this, data.size());
+    return ConstIterator(this, data_size);
   }
 
 private:
-  void destruct() {
-    if constexpr (!std::is_trivially_destructible_v<T>) {
-      for (std::size_t i = 0; i < data.size(); i++) {
-        if (valid[i]) {
-          valid[i] = false;
-          ((T&)data[i]).~T();
-        }
+  void expand_data(std::size_t required) {
+    assert(required >= data_size);
+    if (required <= data_capacity) {
+      data_size = required;
+      return;
+    }
+    if (!data) {
+      std::size_t new_capacity = 1;
+      while (new_capacity < required) {
+        new_capacity *= 2;
       }
+      data = (T*)malloc(sizeof(T) * new_capacity);
+      data_size = required;
+      data_capacity = new_capacity;
+      return;
     }
+
+    std::size_t new_capacity = data_capacity * 2;
+    while (new_capacity < required) {
+      new_capacity *= 2;
+    }
+    T* new_data = (T*)malloc(sizeof(T) * new_capacity);
+    move_data(data, new_data, data_size);
+    ::free(data);
+    data = new_data;
+    data_size = required;
+    data_capacity = new_capacity;
   }
-  void copy_from(const VectorMap& other) {
-    valid = other.valid;
-    free = other.free;
-    size_ = other.size_;
-    if constexpr (std::is_trivially_constructible_v<T>) {
-      data = other.data;
+
+  void copy_data(const T* from, T* to, std::size_t size) {
+    if constexpr (std::is_trivially_copy_constructible_v<T>) {
+      memcpy(to, from, sizeof(T) * size);
     }
-    if constexpr (!std::is_trivially_constructible_v<T>) {
-      data.resize(other.data.size());
-      for (std::size_t i = 0; i < data.size(); i++) {
-        if (other->valid[i]) {
-          new (&data[i]) T(other[i]);
-        }
-      }
-    }
-  }
-  void move_from(const VectorMap& other) {
-    valid = std::move(other.valid);
-    free = std::move(other.free);
-    size_ = other.size_;
-    if (std::is_trivially_move_constructible_v<T>) {
-      data = std::move(other.data);
-    }
-    if (!std::is_trivially_move_constructible_v<T>) {
-      data.resize(other.data.size());
-      for (std::size_t i = 0; i < data.size(); i++) {
-        if (other->valid[i]) {
-          new (&data[i]) T(std::move(other[i]));
-          other->valid[i] = false;
-        }
+    if constexpr (!std::is_trivially_copy_constructible_v<T>) {
+      for (std::size_t i = 0; i < size; i++) {
+        new (to + i) T(from[i]);
       }
     }
   }
 
-  struct TBytes {
-    char dummy[sizeof(T)];
-  };
-  std::vector<TBytes> data;
+  void move_data(T* from, T* to, std::size_t size) {
+    if constexpr (std::is_trivially_move_constructible_v<T>) {
+      memcpy(to, from, sizeof(T) * size);
+    }
+    if constexpr (!std::is_trivially_move_constructible_v<T>) {
+      for (std::size_t i = 0; i < size; i++) {
+        new (to + i) T(std::move(from[i]));
+      }
+    }
+  }
+
+  void destruct_data() {
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+      for (std::size_t i = 0; i < data_size; i++) {
+        data[i].~T();
+      }
+    }
+  }
+
+  void destruct() {
+    assert(data_size == valid.size());
+    assert(data || (data_size == 0 && data_capacity == 0));
+    if (data) {
+      destruct_data();
+      ::free(data);
+      data_size = 0;
+      data_capacity = 0;
+    }
+    valid.clear();
+    free.clear();
+    size_ = 0;
+  }
+
+  void copy_from(const VectorMap& other) {
+    if (data) {
+      ::free(data);
+      data_size = 0;
+      data_capacity = 0;
+    }
+    if (other.data) {
+      data_size = other.data_size;
+      data_capacity = other.data_capacity;
+      data = (T*)malloc(data_capacity);
+      copy_data(other.data, data, data_size);
+    }
+
+    valid = other.valid;
+    free = other.free;
+    size_ = other.size_;
+  }
+
+  void move_from(VectorMap& other) {
+    if (data) {
+      ::free(data);
+      data_size = 0;
+      data_capacity = 0;
+    }
+    if (other.data) {
+      data_size = other.data_size;
+      data_capacity = other.data_capacity;
+      if constexpr (std::is_trivially_move_constructible_v<T>) {
+        data = other.data;
+        other.data = nullptr;
+      }
+      if constexpr (!std::is_trivially_move_constructible_v<T>) {
+        data = (T*)malloc(sizeof(data_capacity));
+        move_data(other.data, data, data_size);
+        other.data = nullptr;
+      }
+    }
+
+    valid = std::move(other.valid);
+    free = std::move(other.free);
+    size_ = other.size_;
+  }
+
+  T* data;
+  std::size_t data_size;
+  std::size_t data_capacity;
+
   std::vector<bool> valid;
   std::vector<int> free;
   std::size_t size_;

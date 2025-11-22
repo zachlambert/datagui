@@ -282,11 +282,12 @@ void Gui::render() {
       State(ConstElementPtr element) : element(element), first_visit(true) {}
     };
     std::stack<State> stack;
-    stack.push(root);
+    stack.emplace(root);
 
     while (!stack.empty()) {
       auto& state = stack.top();
       const auto& element = state.element;
+      assert(element);
 
       if (element.state().hidden ||
           (element != root && element.state().floating)) {
@@ -307,7 +308,7 @@ void Gui::render() {
                                    : element.state().box());
 
       for (auto child = element.child(); child; child = child.next()) {
-        stack.push(child);
+        stack.emplace(child);
       }
     }
   };

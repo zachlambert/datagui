@@ -22,6 +22,7 @@ public:
       BoxDims border_width,
       Color border_color,
       float radius) {
+    assert(!masks.empty());
     geometry_renderer.queue_box(
         box,
         bg_color,
@@ -38,6 +39,7 @@ public:
       int font_size,
       Color text_color,
       Length width) {
+    assert(!masks.empty());
     text_renderer.queue_text(
         origin,
         text,

@@ -17,16 +17,20 @@ int main() {
     if (gui.begin()) {
       if (gui.series_begin()) {
         gui.text_box("Welcome Screen!");
-        gui.text_input("Test");
+        gui.text_box("2");
+        gui.text_box("3");
+        gui.text_box("4");
+        gui.text_box("5");
+        // gui.text_input("Test");
 
 #if 0
         auto name = gui.variable<std::string>("");
 #endif
 
-#if 1
+#if 0
         if (gui.series_begin()) {
           gui.text_box("Name: ");
-          gui.text_input("Initial value");
+          // gui.text_input("Initial value");
           gui.series_end();
         }
 #endif
