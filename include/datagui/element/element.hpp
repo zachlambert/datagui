@@ -70,6 +70,7 @@ struct Section {
 };
 
 struct Series {
+  float content_length = 0;
   float overrun = 0;
   float scroll_pos = 0;
 

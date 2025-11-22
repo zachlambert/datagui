@@ -40,6 +40,12 @@ void SeriesSystem::set_input_state(ElementPtr element) {
         state.fixed_size.y += (child_count - 1) * inner_padding;
       }
     }
+
+    if (series.direction == Direction::Horizontal) {
+      series.content_length = state.fixed_size.x;
+    } else {
+      series.content_length = state.fixed_size.y;
+    }
   }
   if (auto length = std::get_if<LengthFixed>(&series.length)) {
     if (series.direction == Direction::Horizontal) {
@@ -104,9 +110,9 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
   float offset = outer_padding - series.scroll_pos;
 
   if (series.direction == Direction::Horizontal) {
-    series.overrun = std::max(state.fixed_size.x - state.size.x, 0.f);
+    series.overrun = std::max(series.content_length - state.size.x, 0.f);
   } else {
-    series.overrun = std::max(state.fixed_size.y - state.size.y, 0.f);
+    series.overrun = std::max(series.content_length - state.size.y, 0.f);
   }
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to

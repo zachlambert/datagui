@@ -366,7 +366,9 @@ public:
 
     template <typename T, bool Const>
     void add_variable_dep(const Var_<T, Const>& var) const {
-      tree->create_dependency(index, DependencyVar(var.variable, var.version));
+      tree->create_dependency(
+          index,
+          DependencyVar(var.variable, var.version()));
     }
     void add_condition_dependency(const std::function<bool()>& condition) {
       tree->create_dependency(index, DependencyCondition(condition));
@@ -411,6 +413,7 @@ public:
   Tree() {}
 
   void poll();
+  void clear_dirty();
 
   ElementPtr root() {
     return ElementPtr(this, -1, root_);

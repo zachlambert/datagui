@@ -51,6 +51,7 @@ bool Gui::series_begin() {
   args_series_.reset();
 
   if (current.dirty()) {
+    current.clear_dependencies();
     stack.emplace(current, var_current);
     current = current.child();
     var_current = VarPtr();
@@ -72,6 +73,7 @@ bool Gui::labelled_begin(const std::string& label) {
   labelled.label = label;
 
   if (current.dirty()) {
+    current.clear_dependencies();
     stack.emplace(current, var_current);
     current = current.child();
     var_current = VarPtr();
@@ -92,6 +94,7 @@ bool Gui::section_begin(const std::string& label) {
   section.label = label;
 
   if (current.dirty()) {
+    current.clear_dependencies();
     stack.emplace(current, var_current);
     current = current.child();
     var_current = VarPtr();
@@ -187,6 +190,7 @@ const int* Gui::dropdown(
   auto& dropdown = current.dropdown();
   current = current.next();
 
+  dropdown.choices = choices;
   if (dropdown.changed) {
     dropdown.changed = false;
     return &dropdown.choice;
@@ -201,6 +205,7 @@ void Gui::dropdown(
   auto& dropdown = current.dropdown();
   current = current.next();
 
+  dropdown.choices = choices;
   if (dropdown.changed) {
     var.set(dropdown.choice);
     dropdown.changed = false;
@@ -242,6 +247,7 @@ bool Gui::floating_begin(
     return false;
   }
   if (current.dirty()) {
+    current.clear_dependencies();
     stack.emplace(current, var_current);
     current = current.child();
     var_current = VarPtr();
@@ -266,6 +272,7 @@ bool Gui::begin() {
 
 void Gui::end() {
   assert(stack.empty());
+  tree.clear_dirty();
 }
 
 void Gui::poll() {

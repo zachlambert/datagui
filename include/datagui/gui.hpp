@@ -33,6 +33,26 @@ public:
     key(std::hash<T>{}());
   }
 
+  template <typename T>
+  void depend_variable(const Var<T>& var) {
+    if (stack.empty()) {
+      return;
+    }
+    stack.top().first.add_variable_dep(var);
+  }
+  void depend_condition(const std::function<bool()>& condition) {
+    if (stack.empty()) {
+      return;
+    }
+    stack.top().first.add_condition_dependency(condition);
+  }
+  void depend_timeout(double period) {
+    if (stack.empty()) {
+      return;
+    }
+    stack.top().first.add_timeout_dependency(period);
+  }
+
   bool series_begin();
   void series_end();
 

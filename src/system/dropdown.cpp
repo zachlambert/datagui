@@ -138,6 +138,7 @@ bool DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   if (event.action != MouseAction::Press) {
     return false;
   }
+
   if (!dropdown.open) {
     dropdown.open = true;
     return false;

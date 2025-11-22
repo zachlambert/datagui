@@ -6,6 +6,7 @@ namespace datagui {
 
 void Tree::poll() {
   auto now = clock_t::now();
+
   for (auto& dep : dependencies) {
     bool dirty;
     if (auto type = std::get_if<DependencyVar>(&dep.dependency)) {
@@ -20,6 +21,12 @@ void Tree::poll() {
       assert(dep.element != -1);
       set_dirty(dep.element);
     }
+  }
+}
+
+void Tree::clear_dirty() {
+  for (auto& element : elements) {
+    element.dirty = false;
   }
 }
 
