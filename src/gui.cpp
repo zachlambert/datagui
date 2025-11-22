@@ -46,7 +46,7 @@ bool Gui::running() const {
 }
 
 bool Gui::series_begin() {
-  current.force(Type::Series);
+  current.expect(Type::Series, read_key());
   args_series_.apply(current.series());
   args_series_.reset();
 
@@ -67,7 +67,7 @@ void Gui::series_end() {
 }
 
 bool Gui::labelled_begin(const std::string& label) {
-  current.force(Type::Labelled);
+  current.expect(Type::Labelled, read_key());
   auto& labelled = current.labelled();
   labelled.label = label;
 
@@ -87,7 +87,7 @@ void Gui::labelled_end() {
 }
 
 bool Gui::section_begin(const std::string& label) {
-  current.force(Type::Section);
+  current.expect(Type::Section, read_key());
   auto& section = current.section();
   section.label = label;
 
@@ -108,7 +108,7 @@ void Gui::section_end() {
 }
 
 void Gui::text_box(const std::string& text) {
-  current.force(Type::TextBox);
+  current.expect(Type::TextBox, read_key());
   auto& text_box = current.text_box();
   current = current.next();
 
@@ -116,7 +116,7 @@ void Gui::text_box(const std::string& text) {
 }
 
 bool Gui::button(const std::string& text) {
-  current.force(Type::Button);
+  current.expect(Type::Button, read_key());
   auto& button = current.button();
   current = current.next();
 
@@ -129,7 +129,7 @@ bool Gui::button(const std::string& text) {
 }
 
 const std::string* Gui::text_input(const std::string& initial_value) {
-  current.force(Type::TextInput);
+  current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   current = current.next();
 
@@ -141,7 +141,7 @@ const std::string* Gui::text_input(const std::string& initial_value) {
 }
 
 void Gui::text_input(const Var<std::string>& var) {
-  current.force(Type::TextInput);
+  current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   current = current.next();
 
@@ -155,7 +155,7 @@ void Gui::text_input(const Var<std::string>& var) {
 }
 
 const bool* Gui::checkbox(bool initial_value) {
-  current.force(Type::Checkbox);
+  current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
   current = current.next();
 
@@ -167,7 +167,7 @@ const bool* Gui::checkbox(bool initial_value) {
 }
 
 void Gui::checkbox(const Var<bool>& var) {
-  current.force(Type::Checkbox);
+  current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
   current = current.next();
 
@@ -183,7 +183,7 @@ void Gui::checkbox(const Var<bool>& var) {
 const int* Gui::dropdown(
     const std::vector<std::string>& choices,
     int initial_choice) {
-  current.force(Type::Dropdown);
+  current.expect(Type::Dropdown, read_key());
   auto& dropdown = current.dropdown();
   current = current.next();
 
@@ -197,7 +197,7 @@ const int* Gui::dropdown(
 void Gui::dropdown(
     const std::vector<std::string>& choices,
     const Var<int>& var) {
-  current.force(Type::Dropdown);
+  current.expect(Type::Dropdown, read_key());
   auto& dropdown = current.dropdown();
   current = current.next();
 
@@ -215,7 +215,7 @@ bool Gui::floating_begin(
     const std::string& title,
     float width,
     float height) {
-  current.force(Type::Floating);
+  current.expect(Type::Floating, read_key());
   auto& floating = current.floating();
 
   args_floating_.apply(floating);

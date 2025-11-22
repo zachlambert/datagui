@@ -25,6 +25,14 @@ public:
   void end();
   void poll();
 
+  void key(std::size_t key) {
+    next_key = key;
+  }
+  template <typename T>
+  void key(const T& key) {
+    key(std::hash<T>{}());
+  }
+
   bool series_begin();
   void series_end();
 
@@ -89,54 +97,6 @@ public:
     return nullptr;
   }
 
-#if 0
-  template <typename T>
-  requires datapack::writeable<T> && datapack::readable<T>
-  Variable<T> edit_variable(const T& initial_value = T()) {
-    {
-      auto& series = get_series(systems, *tree.next());
-      series.no_padding = true;
-    }
-
-    DATAGUI_LOG("Gui::edit_variable", "DOWN (1)");
-    tree.down();
-
-    auto var = variable<T>(initial_value);
-
-    {
-      auto& series = get_series(systems, *tree.next());
-      series.no_padding = true;
-    }
-
-    if (!tree.down_if()) {
-      DATAGUI_LOG("Gui::edit_variable", "UP (1) (no revisit)");
-      tree.up();
-      return var;
-    }
-    DATAGUI_LOG("Gui::edit_variable", "DOWN (2) (revisit)");
-
-    if (var.modified_external()) {
-      DATAGUI_LOG("Gui::edit_variable", "Write variable -> GUI");
-      GuiWriter(systems, tree).value(*var);
-    } else {
-      DATAGUI_LOG("Gui::edit_variable", "Read GUI -> variable");
-      T new_value;
-      bool changed;
-      GuiReader(systems, tree, changed).value(new_value);
-      if (changed) {
-        var.set_internal(std::move(new_value));
-      }
-    }
-
-    DATAGUI_LOG("Gui::edit_variable", "UP (2) (after revisit)");
-    tree.up();
-    DATAGUI_LOG("Gui::edit_variable", "UP (1) (after revisit)");
-    tree.up();
-
-    return var;
-  }
-#endif
-
   SeriesArgs& args_series() {
     return args_series_;
   }
@@ -184,6 +144,13 @@ private:
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;
+
+  std::size_t read_key() {
+    std::size_t key = next_key;
+    next_key = 0;
+    return key;
+  }
+  std::size_t next_key = 0;
 
   struct Compare {
     bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {

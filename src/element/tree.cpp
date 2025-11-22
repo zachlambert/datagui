@@ -4,12 +4,6 @@
 
 namespace datagui {
 
-static int g_next_id_ = 0;
-
-int generate_id() {
-  return g_next_id_++;
-}
-
 void Tree::poll() {
   auto now = clock_t::now();
   for (auto& dep : dependencies) {

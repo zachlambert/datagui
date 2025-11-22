@@ -7,11 +7,15 @@
 #include <assert.h>
 #include <chrono>
 #include <functional>
+#include <stdexcept>
 #include <variant>
 
 namespace datagui {
 
-int generate_id();
+class ElementError : public std::runtime_error {
+public:
+  ElementError(const std::string& message) : std::runtime_error(message) {}
+};
 
 class Tree {
   using clock_t = std::chrono::high_resolution_clock;
@@ -20,7 +24,7 @@ class Tree {
   // ElementNode
 
   struct ElementNode {
-    int id;
+    std::size_t id;
     bool dirty = true;
 
     int parent = -1;
@@ -287,7 +291,7 @@ public:
       return index != -1;
     }
 
-    void create(Type type, int id = -1) {
+    void create(Type type, std::size_t id = 0) {
       assert(tree);
       if (parent_ == -1) {
         index = tree->create_element(parent_, -1, id, type);
@@ -297,7 +301,7 @@ public:
         index = tree->create_element(parent_, prev, id, type);
       }
     }
-    void reset(Type type, int id = -1) const {
+    void reset(Type type, std::size_t id = 0) const {
       assert(tree && index != -1);
       tree->reset_element(index, id, type);
     }
@@ -305,21 +309,21 @@ public:
       assert(tree && index != -1);
       int next = tree->elements[index].next;
       tree->remove_element(index);
-      return ElementPtr_(parent_, parent_, next);
+      return ElementPtr_(tree, parent_, next);
     }
 
-    bool force(Type type, int id = -1) {
+    void expect(Type type, std::size_t id = -1) {
       assert(tree);
+      while (index != -1 && id != tree->elements[index].id) {
+        (*this) = erase();
+      }
       if (index == -1) {
         create(type, id);
-        return true;
-      } else if (
-          id != tree->elements[index].id ||
-          type != tree->elements[index].type) {
-        reset(type);
-        return true;
+        return;
       }
-      return false;
+      if (type != tree->elements[index].type) {
+        throw ElementError("Incorrect type");
+      }
     }
 
     friend bool operator==(const ElementPtr_& lhs, const ElementPtr_& rhs) {
