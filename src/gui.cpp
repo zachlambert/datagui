@@ -268,8 +268,9 @@ void Gui::floating_end() {
 #endif
 
 bool Gui::begin() {
+  tree.poll();
   current = tree.root();
-  return current.dirty();
+  return !current.exists() || current.dirty();
 }
 
 void Gui::end() {

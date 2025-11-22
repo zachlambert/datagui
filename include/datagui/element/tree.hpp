@@ -227,8 +227,11 @@ public:
 
     ElementPtr_ parent() const {
       assert(index != -1);
-      assert(parent_ != -1);
-      return ElementPtr_(tree, tree->elements[parent_].parent, parent_);
+      if (parent_ == -1) {
+        return ElementPtr_(tree, -1, -1);
+      } else {
+        return ElementPtr_(tree, tree->elements[parent_].parent, parent_);
+      }
     }
 
     ElementPtr_ child() const {
