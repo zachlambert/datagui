@@ -10,7 +10,7 @@ namespace datagui {
 class System {
 public:
   virtual void set_input_state(ElementPtr element) = 0;
-  virtual void set_dependent_state(ElementPtr element) = 0;
+  virtual void set_dependent_state(ElementPtr element) {};
 
   virtual void render(ConstElementPtr element, Renderer& renderer) = 0;
 

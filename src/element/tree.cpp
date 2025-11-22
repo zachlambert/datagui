@@ -69,9 +69,12 @@ void Tree::reset_element(int element, int id, Type type) {
   pop_type(node.type, node.type_index);
   node.type = type;
   node.type_index = emplace_type(type);
+
+  // Clear children
+  remove_element(element, true);
 }
 
-void Tree::remove_element(int element) {
+void Tree::remove_element(int element, bool children_only) {
   std::stack<int> stack;
   stack.push(element);
 
@@ -81,6 +84,10 @@ void Tree::remove_element(int element) {
 
     if (node.first_child == -1) {
       stack.pop();
+      if (children_only && stack.empty()) {
+        return;
+      }
+
       if (node.prev != -1) {
         elements[node.prev].next = node.next;
       } else if (node.parent != -1) {

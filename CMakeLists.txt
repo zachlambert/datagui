@@ -42,7 +42,7 @@ add_library(datagui SHARED
   src/system/text_box.cpp
   src/system/text_input.cpp
 
-  # src/gui.cpp
+  src/gui.cpp
   # src/datapack/reader.cpp
   # src/datapack/writer.cpp
 )

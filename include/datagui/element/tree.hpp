@@ -225,14 +225,30 @@ public:
 
 #undef PROPS_METHOD
 
+    ElementPtr_ parent() const {
+      assert(index != -1);
+      assert(parent_ != -1);
+      return ElementPtr_(tree, tree->elements[parent_].parent, parent_);
+    }
+
     ElementPtr_ child() const {
       assert(index != -1);
       return ElementPtr_(tree, index, tree->elements[index].first_child);
     }
+    ElementPtr_ last_child() const {
+      assert(index != -1);
+      return ElementPtr_(tree, index, tree->elements[index].last_child);
+    }
+
     ElementPtr_ next() const {
       assert(index != -1);
-      assert(parent == tree->elements[index].parent);
-      return ElementPtr_(tree, parent, tree->elements[index].next);
+      assert(parent_ == tree->elements[index].parent);
+      return ElementPtr_(tree, parent_, tree->elements[index].next);
+    }
+    ElementPtr_ prev() const {
+      assert(index != -1);
+      assert(parent_ == tree->elements[index].parent);
+      return ElementPtr_(tree, parent_, tree->elements[index].prev);
     }
 
     std::conditional_t<IsConst, const State&, State&> state() const {
@@ -242,22 +258,39 @@ public:
     bool exists() const {
       return index != -1;
     }
+    operator bool() const {
+      return index != -1;
+    }
+
     void create(Type type, int id = -1) {
-      if (parent == -1) {
-        index = tree->create_element(parent, -1, id, type);
+      if (parent_ == -1) {
+        index = tree->create_element(parent_, -1, id, type);
       } else {
-        int prev = tree->elements[parent].last_child;
-        index = tree->create_element(parent, prev, id, type);
+        int prev = tree->elements[parent_].last_child;
+        index = tree->create_element(parent_, prev, id, type);
       }
     }
-    void reset(Type type, int id) const {
+    void reset(Type type, int id = -1) const {
       tree->reset_element(index, id, type);
     }
     ElementPtr_ erase() const {
       assert(index != -1);
       int next = tree->elements[index].next;
       tree->remove_element(index);
-      return ElementPtr_(parent, parent, next);
+      return ElementPtr_(parent_, parent_, next);
+    }
+
+    bool force(Type type, int id = -1) {
+      if (index == -1) {
+        create(type, id);
+        return true;
+      } else if (
+          id != tree->elements[index].id ||
+          type != tree->elements[index].type) {
+        reset(type);
+        return true;
+      }
+      return false;
     }
 
     friend bool operator==(const ElementPtr_& lhs, const ElementPtr_& rhs) {
@@ -308,23 +341,23 @@ public:
         bool OtherConst,
         typename = std::enable_if_t<IsConst || !OtherConst>>
     ElementPtr_(const ElementPtr_<OtherConst>& other) :
-        tree(other.tree), parent(other.parent), index(other.index) {}
+        tree(other.tree), parent_(other.parent_), index(other.index) {}
 
     template <
         bool OtherConst,
         typename = std::enable_if_t<IsConst || !OtherConst>>
     ElementPtr_(ElementPtr_<OtherConst>&& other) :
-        tree(other.tree), parent(other.parent), index(other.index) {}
+        tree(other.tree), parent_(other.parent_), index(other.index) {}
 
-    ElementPtr_() : tree(nullptr), parent(-1), index(-1) {}
+    ElementPtr_() : tree(nullptr), parent_(-1), index(-1) {}
 
   private:
     using tree_ptr_t = std::conditional_t<IsConst, const Tree*, Tree*>;
     ElementPtr_(tree_ptr_t tree, int parent, int index) :
-        tree(tree), parent(parent), index(index) {}
+        tree(tree), parent_(parent), index(index) {}
 
     tree_ptr_t tree;
-    int parent;
+    int parent_;
     int index;
 
     friend class Tree;
@@ -349,8 +382,8 @@ public:
 
 private:
   int create_element(int parent, int prev, int id, Type type);
-  void reset_element(int node, int id, Type type);
-  void remove_element(int node);
+  void reset_element(int element, int id, Type type);
+  void remove_element(int element, bool children_only = false);
 
   int emplace_type(Type type);
   void pop_type(Type type, std::size_t index);

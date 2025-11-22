@@ -3,11 +3,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "datagui/datapack/reader.hpp"
-#include "datagui/datapack/writer.hpp"
-#include "datagui/element/series.hpp"
-#include "datagui/gui_args.hpp"
-#include "datagui/tree/tree.hpp"
+#include "datagui/element/args.hpp"
+#include "datagui/element/tree.hpp"
+#include "datagui/system/system.hpp"
+#include "datagui/theme.hpp"
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>
@@ -28,14 +27,17 @@ public:
   bool series_begin();
   void series_end();
 
+#if 0
   bool labelled_begin(const std::string& label);
   void labelled_end();
 
   bool section_begin(const std::string& label);
   void section_end();
+#endif
 
   void text_box(const std::string& text);
 
+#if 0
   bool button(const std::string& text);
 
   const std::string* text_input(const std::string& initial_value);
@@ -109,6 +111,7 @@ public:
 
     return var;
   }
+#endif
 
   SeriesArgs& args_series() {
     return args_series_;
@@ -119,6 +122,10 @@ public:
   }
 
 private:
+  System& system(ConstElementPtr element) {
+    return *systems[static_cast<std::size_t>(element.type())];
+  }
+
   void render();
 #ifdef DATAGUI_DEBUG
   void debug_render();
@@ -136,6 +143,7 @@ private:
 
   Window window;
   Tree tree;
+
 #ifdef DATAGUI_DEBUG
   bool debug_mode_ = false;
 #endif
@@ -143,7 +151,10 @@ private:
   std::shared_ptr<FontManager> fm;
   std::shared_ptr<Theme> theme;
   Renderer renderer;
-  ElementSystemList systems;
+  std::vector<std::unique_ptr<System>> systems;
+
+  std::stack<ElementPtr> stack;
+  ElementPtr current;
 
   ElementPtr element_focus;
   ElementPtr element_hover;
@@ -151,7 +162,7 @@ private:
 
   struct Compare {
     bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
-      return lhs->float_priority <= rhs->float_priority;
+      return lhs.state().float_priority <= rhs.state().float_priority;
     }
   };
   std::set<ElementPtr, Compare> floating_elements;

@@ -19,6 +19,7 @@ enum class Type {
   TextBox,
   TextInput,
 };
+static constexpr std::size_t TypeCount = 9;
 
 struct Button {
   std::string text;

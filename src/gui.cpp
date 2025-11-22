@@ -4,15 +4,15 @@
 #include <sstream>
 #include <stack>
 
-#include "datagui/element/button.hpp"
-#include "datagui/element/checkbox.hpp"
-#include "datagui/element/dropdown.hpp"
-#include "datagui/element/floating.hpp"
-#include "datagui/element/labelled.hpp"
-#include "datagui/element/section.hpp"
-#include "datagui/element/series.hpp"
-#include "datagui/element/text_box.hpp"
-#include "datagui/element/text_input.hpp"
+#include "datagui/system/button.hpp"
+#include "datagui/system/checkbox.hpp"
+#include "datagui/system/dropdown.hpp"
+#include "datagui/system/floating.hpp"
+#include "datagui/system/labelled.hpp"
+#include "datagui/system/section.hpp"
+#include "datagui/system/series.hpp"
+#include "datagui/system/text_box.hpp"
+#include "datagui/system/text_input.hpp"
 
 #define BOOL_STR(value) (value ? "true" : "false")
 
@@ -25,15 +25,24 @@ Gui::Gui(const Window::Config& config) : window(config) {
   theme = std::make_shared<Theme>(theme_default());
   renderer.init(fm);
 
-  systems.emplace<ButtonSystem>(fm, theme);
-  systems.emplace<CheckboxSystem>(fm, theme);
-  systems.emplace<DropdownSystem>(fm, theme);
-  systems.emplace<FloatingSystem>(fm, theme);
-  systems.emplace<LabelledSystem>(fm, theme);
-  systems.emplace<SectionSystem>(fm, theme);
-  systems.emplace<SeriesSystem>(theme);
-  systems.emplace<TextBoxSystem>(fm, theme);
-  systems.emplace<TextInputSystem>(fm, theme);
+  systems.resize(TypeCount);
+  systems[(std::size_t)Type::Button] =
+      std::make_unique<ButtonSystem>(fm, theme);
+  systems[(std::size_t)Type::Checkbox] =
+      std::make_unique<CheckboxSystem>(fm, theme);
+  systems[(std::size_t)Type::Dropdown] =
+      std::make_unique<DropdownSystem>(fm, theme);
+  systems[(std::size_t)Type::Floating] =
+      std::make_unique<FloatingSystem>(fm, theme);
+  systems[(std::size_t)Type::Labelled] =
+      std::make_unique<LabelledSystem>(fm, theme);
+  systems[(std::size_t)Type::Section] =
+      std::make_unique<SectionSystem>(fm, theme);
+  systems[(std::size_t)Type::Series] = std::make_unique<SeriesSystem>(theme);
+  systems[(std::size_t)Type::TextBox] =
+      std::make_unique<TextBoxSystem>(fm, theme);
+  systems[(std::size_t)Type::TextInput] =
+      std::make_unique<TextInputSystem>(fm, theme);
 }
 
 bool Gui::running() const {
@@ -41,23 +50,24 @@ bool Gui::running() const {
 }
 
 bool Gui::series_begin() {
-  auto element = tree.next();
-  auto& props = get_series(systems, *element);
-  args_series_.apply(props);
+  current.force(Type::Series);
+  args_series_.apply(current.series());
   args_series_.reset();
 
-  if (tree.down_if()) {
-    DATAGUI_LOG("Gui::series_begin", "DOWN");
+  if (current.dirty()) {
+    stack.push(current);
+    current = current.child();
     return true;
   }
-  DATAGUI_LOG("Gui::series_begin", "SKIP");
   return false;
 }
 
 void Gui::series_end() {
-  tree.up();
+  current = stack.top();
+  stack.pop();
 }
 
+#if 0
 bool Gui::labelled_begin(const std::string& label) {
   auto element = tree.next();
   auto& props = get_labelled(systems, *element, label);
@@ -89,13 +99,16 @@ bool Gui::section_begin(const std::string& label) {
 void Gui::section_end() {
   tree.up();
 }
+#endif
 
 void Gui::text_box(const std::string& text) {
-  auto element = tree.next();
-  auto& props = get_text_box(systems, *element);
-  props.text = text;
+  current.force(Type::TextBox);
+  auto& text_box = current.text_box();
+  text_box.text = text;
+  current = current.next();
 }
 
+#if 0
 bool Gui::button(const std::string& text) {
   auto element = tree.next();
   auto& props = get_button(systems, *element);
@@ -252,12 +265,15 @@ void Gui::floating_end() {
   tree.up();
 }
 
+#endif
+
 bool Gui::begin() {
-  return tree.begin();
+  current = tree.root();
+  return current.dirty();
 }
 
 void Gui::end() {
-  tree.end();
+  assert(stack.empty());
 }
 
 void Gui::poll() {
@@ -280,7 +296,8 @@ void Gui::render() {
       auto& state = stack.top();
       const auto& element = state.element;
 
-      if (element->hidden || (element != root && element->floating)) {
+      if (element.state().hidden ||
+          (element != root && element.state().floating)) {
         stack.pop();
         continue;
       }
@@ -292,11 +309,12 @@ void Gui::render() {
       }
       state.first_visit = false;
 
-      systems.get(*element).render(*element, renderer);
+      system(element).render(element, renderer);
       renderer.push_mask(
-          element->floating ? element->float_box : element->box());
+          element.state().floating ? element.state().float_box
+                                   : element.state().box());
 
-      for (auto child = element.first_child(); child; child = child.next()) {
+      for (auto child = element.child(); child.exists(); child = child.next()) {
         stack.push(child);
       }
     }
@@ -339,7 +357,7 @@ void Gui::debug_render() {
     auto& state = layer_stack.top();
     auto element = state.element;
 
-    if (element->hidden) {
+    if (element.state().hidden) {
       layer_stack.pop();
       continue;
     }
@@ -351,48 +369,51 @@ void Gui::debug_render() {
     state.first_visit = false;
 
     renderer.queue_box(
-        Boxf(element->position, element->position + element->size),
+        Boxf(
+            element.state().position,
+            element.state().position + element.state().size),
         Color::Clear(),
         2,
-        element->focused         ? Color::Blue()
-        : element->in_focus_tree ? Color::Red()
-                                 : Color::Green(),
+        element.state().focused         ? Color::Blue()
+        : element.state().in_focus_tree ? Color::Red()
+                                        : Color::Green(),
         0);
 
-    if (element->floating) {
+    if (element.state().floating) {
       renderer.queue_box(
-          element->float_box,
+          element.state().float_box,
           Color::Clear(),
           2,
-          element->in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1),
+          element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1),
           0);
     }
 
-    if (element->floating) {
-      renderer.push_mask(element->float_box);
+    if (element.state().floating) {
+      renderer.push_mask(element.state().float_box);
     } else {
-      renderer.push_mask(element->box());
+      renderer.push_mask(element.state().box());
     }
 
-    for (auto child = element.first_child(); child; child = child.next()) {
+    for (auto child = element.child(); child.exists(); child = child.next()) {
       layer_stack.push(child);
     }
 
-    if (element->focused) {
+    if (element.state().focused) {
       focused = element;
     }
   }
 
-  if (focused) {
+  if (focused.exists()) {
     std::stringstream ss;
 
-    ss << focused.debug();
-    ss << "\nfixed: " << focused->fixed_size.x << ", " << focused->fixed_size.y;
-    ss << "\ndynamic: " << focused->dynamic_size.x << ", "
-       << focused->dynamic_size.y;
-    ss << "\nsize: " << focused->size.x << ", " << focused->size.y;
-    if (focused->floating) {
-      ss << "\nfloating priority: " << focused->float_priority;
+    ss << "fixed: " << focused.state().fixed_size.x << ", "
+       << focused.state().fixed_size.y;
+    ss << "\ndynamic: " << focused.state().dynamic_size.x << ", "
+       << focused.state().dynamic_size.y;
+    ss << "\nsize: " << focused.state().size.x << ", "
+       << focused.state().size.y;
+    if (focused.state().floating) {
+      ss << "\nfloating priority: " << focused.state().float_priority;
     }
     std::string debug_text = ss.str();
 
@@ -419,6 +440,10 @@ void Gui::debug_render() {
 #endif
 
 void Gui::calculate_sizes() {
+  if (!tree.root().exists()) {
+    return;
+  }
+
   floating_elements.clear();
   {
     struct State {
@@ -434,26 +459,23 @@ void Gui::calculate_sizes() {
       State& state = stack.top();
       auto element = state.element;
 
-      if (element->hidden) {
+      if (element.state().hidden) {
         stack.pop();
         continue;
       }
 
       // If the node has children, process these first
-      if (element.first_child() && state.first_visit) {
+      if (element.child().exists() && state.first_visit) {
         state.first_visit = false;
-        for (auto child = element.first_child(); child; child = child.next()) {
+        for (auto child = element.child(); child.exists();
+             child = child.next()) {
           stack.emplace(child);
         }
         continue;
       }
       stack.pop();
 
-      std::vector<const Element*> children;
-      for (auto child = element.first_child(); child; child = child.next()) {
-        children.push_back(child.get());
-      }
-      systems.get(*element).set_input_state(*element, children);
+      system(element).set_input_state(element);
     }
   }
 
@@ -461,8 +483,9 @@ void Gui::calculate_sizes() {
     std::stack<ElementPtr> stack;
     {
       auto root = tree.root();
-      root->position = Vecf::Zero();
-      root->size = window.size();
+      assert(root.exists());
+      root.state().position = Vecf::Zero();
+      root.state().size = window.size();
       stack.push(root);
     }
 
@@ -470,33 +493,33 @@ void Gui::calculate_sizes() {
       auto element = stack.top();
       stack.pop();
 
-      if (element->hidden) {
+      if (element.state().hidden) {
         continue;
       }
 
-      if (element->floating) {
+      if (element.state().floating) {
         floating_elements.insert(element);
-        if (auto type =
-                std::get_if<FloatingTypeAbsolute>(&element->floating_type)) {
-          element->float_box.lower = window.size() / 2.f - type->size / 2.f;
-          element->float_box.upper = window.size() / 2.f + type->size / 2.f;
+        if (auto type = std::get_if<FloatingTypeAbsolute>(
+                &element.state().floating_type)) {
+          element.state().float_box.lower =
+              window.size() / 2.f - type->size / 2.f;
+          element.state().float_box.upper =
+              window.size() / 2.f + type->size / 2.f;
         } else if (
-            auto type =
-                std::get_if<FloatingTypeRelative>(&element->floating_type)) {
-          element->float_box.lower = element->position + type->offset;
-          element->float_box.upper = element->float_box.lower + type->size;
+            auto type = std::get_if<FloatingTypeRelative>(
+                &element.state().floating_type)) {
+          element.state().float_box.lower =
+              element.state().position + type->offset;
+          element.state().float_box.upper =
+              element.state().float_box.lower + type->size;
         } else {
           assert(false);
         }
       }
 
-      std::vector<Element*> children;
-      for (auto child = element.first_child(); child; child = child.next()) {
-        children.push_back(child.get());
-      }
-      systems.get(*element).set_dependent_state(*element, children);
+      system(element).set_dependent_state(element);
 
-      for (auto child = element.first_child(); child; child = child.next()) {
+      for (auto child = element.child(); child.exists(); child = child.next()) {
         stack.push(child);
       }
     }
@@ -531,9 +554,9 @@ void Gui::event_handling() {
         handled = true;
         break;
       case Key::Escape:
-        if (element_focus) {
-          element_focus.revisit(
-              systems.get(*element_focus).focus_leave(*element_focus, false));
+        if (element_focus.exists()) {
+          element_focus.set_dirty(
+              system(element_focus).focus_leave(element_focus, false));
           set_tree_focus(element_focus, false);
           element_focus = ElementPtr();
         }
@@ -551,16 +574,16 @@ void Gui::event_handling() {
       }
     }
 
-    if (!handled && element_focus) {
-      element_focus.revisit(
-          systems.get(*element_focus).key_event(*element_focus, event));
+    if (!handled && element_focus.exists()) {
+      element_focus.set_dirty(
+          system(element_focus).key_event(element_focus, event));
     }
   }
 
   for (const auto& event : window.text_events()) {
-    if (element_focus) {
-      element_focus.revisit(
-          systems.get(*element_focus).text_event(*element_focus, event));
+    if (element_focus.exists()) {
+      element_focus.set_dirty(
+          system(element_focus).text_event(element_focus, event));
     }
   }
 }
@@ -576,21 +599,19 @@ ElementPtr Gui::get_leaf_node(const Vecf& position) {
       auto element = stack.top();
       stack.pop();
 
-      if (element->floating) {
+      if (element.state().floating) {
         if (element != root) {
           continue;
-        } else if (!element->float_box.contains(position)) {
+        } else if (!element.state().float_box.contains(position)) {
           continue;
         }
-      } else if (!element->box().contains(position)) {
+      } else if (!element.state().box().contains(position)) {
         continue;
       }
       leaf = element;
 
-      auto child = element.first_child();
-      while (child) {
+      for (auto child = element.child(); child.exists(); child = child.next()) {
         stack.push(child);
-        child = child.next();
       }
     }
     return leaf;
@@ -599,7 +620,7 @@ ElementPtr Gui::get_leaf_node(const Vecf& position) {
   for (auto iter = floating_elements.rbegin(); iter != floating_elements.rend();
        iter++) {
     auto leaf = get_tree_leaf(*iter);
-    if (leaf) {
+    if (leaf.exists()) {
       return leaf;
     }
   }
@@ -611,9 +632,9 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // Pass-through the hold or release event
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
-    if (element_focus) {
-      element_focus.revisit(
-          systems.get(*element_focus).mouse_event(*element_focus, event));
+    if (element_focus.exists()) {
+      element_focus.set_dirty(
+          system(element_focus).mouse_event(element_focus, event));
     }
     return;
   }
@@ -624,40 +645,40 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   element_focus = get_leaf_node(event.position);
 
   if (element_focus != prev_element_focus) {
-    if (prev_element_focus) {
-      prev_element_focus.revisit(systems.get(*prev_element_focus)
-                                     .focus_leave(*prev_element_focus, true));
+    if (prev_element_focus.exists()) {
+      prev_element_focus.set_dirty(
+          system(prev_element_focus).focus_leave(prev_element_focus, true));
       set_tree_focus(prev_element_focus, false);
     }
-    if (element_focus) {
+    if (element_focus.exists()) {
       // Only use focus_enter() for non-click focus enter (ie: tab into the
       // element)
       set_tree_focus(element_focus, true);
     }
   }
-  if (element_focus) {
-    element_focus.revisit(
-        systems.get(*element_focus).mouse_event(*element_focus, event));
+  if (element_focus.exists()) {
+    element_focus.set_dirty(
+        system(element_focus).mouse_event(element_focus, event));
   }
 }
 
 void Gui::event_handling_hover(const Vecf& mouse_pos) {
-  if (element_hover) {
-    element_hover->hovered = false;
+  if (element_hover.exists()) {
+    element_hover.state().hovered = false;
   }
 
   element_hover = get_leaf_node(mouse_pos);
-  if (!element_hover) {
+  if (!element_hover.exists()) {
     return;
   }
-  element_hover->hovered = true;
-  systems.get(*element_hover).mouse_hover(*element_hover, mouse_pos);
+  element_hover.state().hovered = true;
+  system(element_hover).mouse_hover(element_hover, mouse_pos);
 }
 
 void Gui::event_handling_scroll(const ScrollEvent& event) {
   ElementPtr element = get_leaf_node(event.position);
-  while (element) {
-    if (systems.get(*element).scroll_event(*element, event)) {
+  while (element.exists()) {
+    if (system(element).scroll_event(element, event)) {
       return;
     }
     element = element.parent();
@@ -665,38 +686,38 @@ void Gui::event_handling_scroll(const ScrollEvent& event) {
 }
 
 void Gui::set_tree_focus(ElementPtr element, bool focused) {
-  element->focused = focused;
-  element->in_focus_tree = focused;
+  element.state().focused = focused;
+  element.state().in_focus_tree = focused;
 
   bool found_floating = false;
-  if (focused && element->floating) {
+  if (focused && element.state().floating) {
     found_floating = true;
-    element->float_priority = next_float_priority++;
+    element.state().float_priority = next_float_priority++;
   }
 
   element = element.parent();
-  while (element) {
-    element->in_focus_tree = focused;
-    if (focused && !found_floating && element->floating) {
+  while (element.exists()) {
+    element.state().in_focus_tree = focused;
+    if (focused && !found_floating && element.state().floating) {
       found_floating = true;
-      element->float_priority = next_float_priority++;
+      element.state().float_priority = next_float_priority++;
     }
     element = element.parent();
   }
 }
 
 void Gui::focus_next(bool reverse) {
-  if (!tree.root()) {
+  if (!tree.root().exists()) {
     return;
   }
   auto next = element_focus;
 
   do {
     if (!reverse) {
-      if (!next) {
+      if (!next.exists()) {
         next = tree.root();
-      } else if (next.first_child()) {
-        next = next.first_child();
+      } else if (next.child()) {
+        next = next.child();
       } else if (next.next()) {
         next = next.next();
       } else {
@@ -722,16 +743,16 @@ void Gui::focus_next(bool reverse) {
         }
       }
     }
-  } while (next && next != tree.root() && next->hidden);
+  } while (next && next != tree.root() && next.state().hidden);
 
-  if (next == tree.root() && tree.root()->hidden) {
+  if (next == tree.root() && tree.root().state().hidden) {
     next = ElementPtr();
   }
 
   if (element_focus) {
     auto prev_element_focus = element_focus;
-    prev_element_focus.revisit(systems.get(*prev_element_focus)
-                                   .focus_leave(*prev_element_focus, true));
+    prev_element_focus.set_dirty(
+        system(prev_element_focus).focus_leave(prev_element_focus, true));
     set_tree_focus(element_focus, false);
   }
 
@@ -739,7 +760,7 @@ void Gui::focus_next(bool reverse) {
 
   if (element_focus) {
     set_tree_focus(element_focus, true);
-    systems.get(*element_focus).focus_enter(*element_focus);
+    system(element_focus).focus_enter(element_focus);
   }
 }
 
