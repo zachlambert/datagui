@@ -1,6 +1,4 @@
 #include "datagui/gui.hpp"
-#include "datagui/log.hpp"
-#include <queue>
 #include <sstream>
 #include <stack>
 
@@ -13,8 +11,6 @@
 #include "datagui/system/series.hpp"
 #include "datagui/system/text_box.hpp"
 #include "datagui/system/text_input.hpp"
-
-#define BOOL_STR(value) (value ? "true" : "false")
 
 namespace datagui {
 
@@ -55,62 +51,74 @@ bool Gui::series_begin() {
   args_series_.reset();
 
   if (current.dirty()) {
-    stack.push(current);
+    stack.emplace(current, var_current);
     current = current.child();
+    var_current = VarPtr();
     return true;
   }
+  current = current.next();
   return false;
 }
 
 void Gui::series_end() {
-  current = stack.top();
+  std::tie(current, var_current) = stack.top();
   stack.pop();
+  current = current.next();
 }
 
-#if 0
 bool Gui::labelled_begin(const std::string& label) {
-  auto element = tree.next();
-  auto& props = get_labelled(systems, *element, label);
+  current.force(Type::Labelled);
+  auto& labelled = current.labelled();
+  labelled.label = label;
 
-  if (tree.down_if()) {
-    DATAGUI_LOG("Gui::labelled_begin", "DOWN");
+  if (current.dirty()) {
+    stack.emplace(current, var_current);
+    current = current.child();
+    var_current = VarPtr();
     return true;
   }
-  DATAGUI_LOG("Gui::labelled_begin", "SKIP");
   return false;
 }
 
 void Gui::labelled_end() {
-  tree.up();
+  std::tie(current, var_current) = stack.top();
+  stack.pop();
+  current = current.next();
 }
 
 bool Gui::section_begin(const std::string& label) {
-  auto element = tree.next();
-  auto& props = get_section(systems, *element, label);
+  current.force(Type::Section);
+  auto& section = current.section();
+  section.label = label;
 
-  if (tree.down_if()) {
-    DATAGUI_LOG("Gui::section_begin", "DOWN");
+  if (current.dirty()) {
+    stack.emplace(current, var_current);
+    current = current.child();
+    var_current = VarPtr();
     return true;
   }
-  DATAGUI_LOG("Gui::section_begin", "SKIP");
+  current = current.next();
   return false;
 }
 
 void Gui::section_end() {
-  tree.up();
+  std::tie(current, var_current) = stack.top();
+  stack.pop();
+  current = current.next();
 }
-#endif
 
 void Gui::text_box(const std::string& text) {
   current.force(Type::TextBox);
   auto& text_box = current.text_box();
-  text_box.text = text;
   current = current.next();
+
+  text_box.text = text;
 }
 
 bool Gui::button(const std::string& text) {
   current.force(Type::Button);
   auto& button = current.button();
+  current = current.next();
 
   button.text = text;
   if (button.released) {
@@ -120,155 +128,139 @@ bool Gui::button(const std::string& text) {
   return false;
 }
 
-#if 0
 const std::string* Gui::text_input(const std::string& initial_value) {
-  auto element = tree.next();
-  auto& props = get_text_input(systems, *element, initial_value);
+  current.force(Type::TextInput);
+  auto& text_input = current.text_input();
+  current = current.next();
 
-  if (props.changed) {
-    DATAGUI_LOG("Gui::text_input(initial_value)", "Text input changed");
-    props.changed = false;
-    return &props.text;
+  if (text_input.changed) {
+    text_input.changed = false;
+    return &text_input.text;
   }
   return nullptr;
 }
 
-void Gui::text_input(const Variable<std::string>& value) {
-  auto element = tree.next();
-  auto& props = get_text_input(systems, *element, *value);
+void Gui::text_input(const Var<std::string>& var) {
+  current.force(Type::TextInput);
+  auto& text_input = current.text_input();
+  current = current.next();
 
-  if (props.changed) {
-    DATAGUI_LOG("Gui::text_input(variable)", "Text input changed");
-    value.set_internal(props.text);
-    props.changed = false;
-  } else if (value.modified_external()) {
-    DATAGUI_LOG("Gui::text_input(variable)", "Variable modified");
-    props.text = *value;
+  if (text_input.changed) {
+    var.set(text_input.text);
+    text_input.changed = false;
+  } else if (var.version() != text_input.var_version) {
+    text_input.text = *var;
   }
+  text_input.var_version = var.version();
 }
 
 const bool* Gui::checkbox(bool initial_value) {
-  auto element = tree.next();
-  auto& props = get_checkbox(systems, *element, initial_value);
+  current.force(Type::Checkbox);
+  auto& checkbox = current.checkbox();
+  current = current.next();
 
-  if (props.changed) {
-    DATAGUI_LOG(
-        "Gui::checkbox(initial_value)",
-        "Checkbox changed -> %s",
-        props.checked ? "true" : "false");
-    props.changed = false;
-    return &props.checked;
+  if (checkbox.changed) {
+    checkbox.changed = false;
+    return &checkbox.checked;
   }
   return nullptr;
 }
 
-void Gui::checkbox(const Variable<bool>& value) {
-  auto element = tree.next();
-  auto& props = get_checkbox(systems, *element, *value);
+void Gui::checkbox(const Var<bool>& var) {
+  current.force(Type::Checkbox);
+  auto& checkbox = current.checkbox();
+  current = current.next();
 
-  if (props.changed) {
-    DATAGUI_LOG(
-        "Gui::checkbox(variable)",
-        "Checkbox changed -> %s",
-        BOOL_STR(props.checked));
-    value.set_internal(props.checked);
-    props.changed = false;
-  } else if (value.modified_external()) {
-    DATAGUI_LOG(
-        "Gui::checkbox(variable)",
-        "Variable modified -> %s",
-        BOOL_STR(*value));
-    props.checked = *value;
+  if (checkbox.changed) {
+    var.set(checkbox.checked);
+    checkbox.changed = false;
+  } else if (var.version() != checkbox.var_version) {
+    checkbox.checked = *var;
   }
+  checkbox.var_version = var.version();
 }
 
 const int* Gui::dropdown(
     const std::vector<std::string>& choices,
     int initial_choice) {
-  auto element = tree.next();
-  auto& props = get_dropdown(systems, *element, choices, initial_choice);
+  current.force(Type::Dropdown);
+  auto& dropdown = current.dropdown();
+  current = current.next();
 
-  if (props.changed) {
-    DATAGUI_LOG(
-        "Gui::dropdown(initial_value)",
-        "Dropdown changed -> %i",
-        props.choice);
-    props.changed = false;
-    return &props.choice;
+  if (dropdown.changed) {
+    dropdown.changed = false;
+    return &dropdown.choice;
   }
   return nullptr;
 }
 
 void Gui::dropdown(
     const std::vector<std::string>& choices,
-    const Variable<int>& choice) {
-  auto element = tree.next();
-  auto& props = get_dropdown(systems, *element, choices, *choice);
+    const Var<int>& var) {
+  current.force(Type::Dropdown);
+  auto& dropdown = current.dropdown();
+  current = current.next();
 
-  if (props.changed) {
-    DATAGUI_LOG(
-        "Gui::dropdown(variable)",
-        "Dropdown changed -> %i",
-        props.choice);
-    choice.set_internal(props.choice);
-    props.changed = false;
-  } else if (choice.modified_external()) {
-    DATAGUI_LOG("Gui::dropdown(variable)", "Variable modified -> %i", *choice);
-    props.choice = *choice;
+  if (dropdown.changed) {
+    var.set(dropdown.choice);
+    dropdown.changed = false;
+  } else if (var.version() != dropdown.var_version) {
+    dropdown.choice = *var;
   }
+  dropdown.var_version = var.version();
 }
 
 bool Gui::floating_begin(
-    const Variable<bool>& open,
+    const Var<bool>& open_var,
     const std::string& title,
     float width,
     float height) {
+  current.force(Type::Floating);
+  auto& floating = current.floating();
 
-  auto element = tree.next();
-  auto& props = get_floating(systems, *element, *open);
-  args_floating_.apply(props);
+  args_floating_.apply(floating);
   args_floating_.reset();
 
-  props.title = title;
-  props.width = width;
-  props.height = height;
+  floating.title = title;
+  floating.width = width;
+  floating.height = height;
 
-  if (props.open_changed) {
-    DATAGUI_LOG(
-        "Gui::floating_begin",
-        "Open changed -> %s",
-        BOOL_STR(props.open));
-    props.open_changed = false;
-    open.set_internal(props.open);
-  } else if (open.modified_external()) {
-    DATAGUI_LOG(
-        "Gui::floating_begin",
-        "Open variable changed -> %s",
-        BOOL_STR(*open));
-    props.open = *open;
+  if (floating.open_changed) {
+    floating.open_changed = false;
+    open_var.set(floating.open);
+  } else if (open_var.version() != floating.open_var_version) {
+    floating.open = *open_var;
   }
+  floating.open_var_version = open_var.version();
 
-  if (!props.open && !element->hidden) {
-    tree.down();
-    tree.up();
+  if (!floating.open && !current.state().hidden) {
+    current.clear_children();
   }
-  element->hidden = !props.open;
+  current.state().hidden = !floating.open;
 
-  if (!props.open) {
+  if (!floating.open) {
     return false;
   }
-  return tree.down_if();
+  if (current.dirty()) {
+    stack.emplace(current, var_current);
+    current = current.child();
+    var_current = VarPtr();
+    return true;
+  }
+  current = current.next();
+  return false;
 }
 
 void Gui::floating_end() {
-  tree.up();
+  std::tie(current, var_current) = stack.top();
+  stack.pop();
+  current = current.next();
 }
-
-#endif
 
 bool Gui::begin() {
   tree.poll();
   current = tree.root();
+  var_current = VarPtr();
   return !current.exists() || current.dirty();
 }
 

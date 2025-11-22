@@ -160,8 +160,11 @@ public:
     VarPtr_ next() {
       return VarPtr_(tree, element, tree->variables[variable].next);
     }
-    bool exists() const {
+    operator bool() const {
       return variable != -1;
+    }
+    bool valid() const {
+      return element != -1 && tree->elements.contains(element);
     }
 
     template <typename T>
@@ -176,6 +179,8 @@ public:
     Var_<T, Const> as() {
       return Var_<T, Const>(tree, variable);
     }
+
+    VarPtr_() : tree(nullptr), element(-1), variable(-1) {}
 
   private:
     VarPtr_(Tree* tree, int element, int variable) :
@@ -241,6 +246,10 @@ public:
     ElementPtr_ last_child() const {
       assert(index != -1);
       return ElementPtr_(tree, index, tree->elements[index].last_child);
+    }
+    void clear_children() const {
+      assert(index != -1);
+      tree->remove_element(index, true); // Children only
     }
 
     ElementPtr_ next() const {
@@ -417,6 +426,9 @@ private:
 
 using ElementPtr = Tree::ElementPtr;
 using ConstElementPtr = Tree::ConstElementPtr;
+
+using VarPtr = Tree::VarPtr;
+using ConstVarPtr = Tree::ConstVarPtr;
 
 template <typename T>
 using Var = Tree::Var<T>;

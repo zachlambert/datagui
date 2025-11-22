@@ -31,6 +31,7 @@ struct Button {
 struct Checkbox {
   bool checked = false;
   bool changed = false;
+  bool var_version = 0;
 };
 
 struct Dropdown {
@@ -38,6 +39,7 @@ struct Dropdown {
   int choice = -1;
   int choice_hovered = -1;
   bool changed = false;
+  bool var_version = 0;
   bool open = false;
   Length width = LengthWrap();
 };
@@ -49,6 +51,7 @@ struct Floating {
 
   bool open = false;
   bool open_changed = false;
+  int open_var_version = 0;
   int content_id = 0;
 
   Boxf title_bar_box;
@@ -84,8 +87,10 @@ struct TextBox {
 
 struct TextInput {
   std::string text;
-  bool changed = false;
   Length width = LengthDynamic(1);
+
+  bool changed = false;
+  int var_version = 0;
 };
 
 } // namespace datagui

@@ -27,45 +27,52 @@ public:
   bool series_begin();
   void series_end();
 
-#if 0
   bool labelled_begin(const std::string& label);
   void labelled_end();
 
   bool section_begin(const std::string& label);
   void section_end();
-#endif
 
   void text_box(const std::string& text);
 
   bool button(const std::string& text);
 
-#if 0
   const std::string* text_input(const std::string& initial_value);
-  void text_input(const Variable<std::string>& value);
+  void text_input(const Var<std::string>& value);
 
   const bool* checkbox(bool initial_value = false);
-  void checkbox(const Variable<bool>& value);
+  void checkbox(const Var<bool>& value);
 
   const int* dropdown(
       const std::vector<std::string>& choices,
       int initial_choice = -1);
   void dropdown(
       const std::vector<std::string>& choices,
-      const Variable<int>& choice);
+      const Var<int>& choice);
 
   bool floating_begin(
-      const Variable<bool>& open,
+      const Var<bool>& open,
       const std::string& title,
       float width,
       float height);
   void floating_end();
 
   template <typename T>
-  Variable<T> variable(const T& initial_value = T()) {
-    // Capture initial_value by value
-    return tree.variable<T>([initial_value]() { return initial_value; });
+  Var<T> variable(const T& initial_value = T()) {
+    Var<T> result;
+    if (!var_current.valid()) {
+      var_current = current.var();
+    }
+    if (!var_current) {
+      result = var_current.create<T, false>(initial_value);
+    } else {
+      result = var_current.as<T>();
+    }
+    var_current = var_current.next();
+    return result;
   }
 
+#if 0
   template <typename T>
   requires datapack::writeable<T> && datapack::readable<T>
   Variable<T> edit_variable(const T& initial_value = T()) {
@@ -153,8 +160,9 @@ private:
   Renderer renderer;
   std::vector<std::unique_ptr<System>> systems;
 
-  std::stack<ElementPtr> stack;
+  std::stack<std::pair<ElementPtr, VarPtr>> stack;
   ElementPtr current;
+  VarPtr var_current;
 
   ElementPtr element_focus;
   ElementPtr element_hover;
