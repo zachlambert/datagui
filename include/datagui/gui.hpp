@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "datagui/datapack/edit.hpp"
 #include "datagui/element/args.hpp"
 #include "datagui/element/tree.hpp"
 #include "datagui/system/system.hpp"
@@ -75,6 +76,17 @@ public:
       var_current = var_current.next();
       return result;
     }
+  }
+
+  template <typename T>
+  const T* edit() {
+    if (series_begin()) {
+      // TODO: Accept function to only construct on initial value
+      auto schema = variable<datapack::Schema>(datapack::Schema::make<T>());
+      datapack_edit(*this, *schema);
+      series_end();
+    }
+    return nullptr;
   }
 
 #if 0

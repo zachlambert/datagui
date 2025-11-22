@@ -19,11 +19,10 @@ void SectionSystem::set_input_state(ElementPtr element) {
   state.floating = false;
 
   auto child = element.child();
-  if (!child) {
+  if (!child || !section.open) {
     return;
   }
 
-  state.fixed_size += Vecf::Constant(theme->layout_outer_padding);
   state.fixed_size.x = std::max(
       state.fixed_size.x,
       child.state().fixed_size.x + 2 * theme->layout_outer_padding);

@@ -43,6 +43,8 @@ add_library(datagui SHARED
   src/system/text_input.cpp
 
   src/gui.cpp
+
+  src/datapack/edit.cpp
   # src/datapack/reader.cpp
   # src/datapack/writer.cpp
 )

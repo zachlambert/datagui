@@ -35,21 +35,4 @@ struct Theme {
 
 Theme theme_default();
 
-#if 0
-struct TextStyle {
-  Font font = Font::DejaVuSans;
-  int font_size = 0;
-  Color text_color = Color::Black();
-  Color highlight_color = Color::Black();
-  float cursor_width = 0;
-  Color cursor_color = Color::Black();
-};
-
-struct InputStyle {
-  float active_color_factor = 0.6;
-  float hover_color_factor = 0.8;
-  float focus_color_factor = 0.8;
-};
-#endif
-
 } // namespace datagui
