@@ -3,8 +3,6 @@
 #include <iostream>
 
 int main() {
-  DATAGUI_LOG_INIT();
-
   datagui::Gui gui;
 
   auto timer = gui.variable<int>(0);

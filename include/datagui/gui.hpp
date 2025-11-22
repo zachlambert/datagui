@@ -59,17 +59,18 @@ public:
 
   template <typename T>
   Var<T> variable(const T& initial_value = T()) {
-    Var<T> result;
     if (!var_current.valid()) {
       var_current = current.var();
     }
     if (!var_current) {
-      result = var_current.create<T, false>(initial_value);
+      Var<T> result = var_current.create<T>(initial_value);
+      var_current = var_current.next();
+      return result;
     } else {
-      result = var_current.as<T>();
+      Var<T> result = var_current.as<T>();
+      var_current = var_current.next();
+      return result;
     }
-    var_current = var_current.next();
-    return result;
   }
 
 #if 0

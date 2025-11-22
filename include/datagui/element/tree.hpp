@@ -155,6 +155,9 @@ public:
   };
 
   template <bool Const>
+  class ElementPtr_;
+
+  template <bool Const>
   class VarPtr_ {
   public:
     VarPtr_ next() {
