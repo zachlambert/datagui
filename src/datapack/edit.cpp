@@ -3,9 +3,10 @@
 
 namespace datagui {
 
-void datapack_edit(Gui& gui, const datapack::Schema& schema) {
+bool datapack_edit(Gui& gui, const datapack::Schema& schema) {
   std::stack<datapack::Schema::Iterator> stack;
   auto iter = schema.begin();
+  bool changed = false;
 
   while (iter != schema.end()) {
     while (!stack.empty()) {
@@ -59,31 +60,42 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (iter.number()) {
-      gui.text_input("");
+      if (gui.text_input("0")) {
+        changed = true;
+      }
       iter = iter.next();
       continue;
     }
     if (iter.string()) {
-      gui.text_input("");
+      if (gui.text_input("")) {
+        changed = true;
+      }
       iter = iter.next();
       continue;
     }
     if (iter.boolean()) {
-      gui.checkbox(false);
+      if (gui.checkbox(false)) {
+        changed = true;
+      }
       iter = iter.next();
       continue;
     }
     if (auto enumerate = iter.enumerate()) {
-      gui.dropdown(enumerate->labels, -1);
+      if (gui.dropdown(enumerate->labels, -1)) {
+        changed = true;
+      }
       iter = iter.next();
       continue;
     }
     if (iter.binary()) {
-      gui.text_input("");
+      if (gui.text_input("")) {
+        changed = true;
+      }
       iter = iter.next();
       continue;
     }
   }
+  return changed;
 }
 
 } // namespace datagui

@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include "datagui/datapack/edit.hpp"
+#include "datagui/datapack/reader.hpp"
 #include "datagui/element/args.hpp"
 #include "datagui/element/tree.hpp"
 #include "datagui/system/system.hpp"
@@ -107,15 +108,60 @@ public:
   }
 
   template <typename T>
+  Var<T> variable(const std::function<T()>& construct) {
+    if (!var_current.valid()) {
+      if (stack.empty()) {
+        var_current = tree.var();
+      } else {
+        var_current = stack.top().first.var();
+      }
+    }
+    if (!var_current) {
+      Var<T> result = var_current.create<T>(construct());
+      var_current = var_current.next();
+      return result;
+    } else {
+      Var<T> result = var_current.as<T>();
+      var_current = var_current.next();
+      return result;
+    }
+  }
+
+  template <typename T>
   const T* edit() {
-    if (series_begin()) {
-      // TODO: Accept function to only construct on initial value
-      auto schema = variable<datapack::Schema>(datapack::Schema::make<T>());
-      datapack_edit(*this, *schema);
-      series_end();
+    if (!series_begin()) {
+      return nullptr;
+    }
+    auto value = variable<T>([] { return T(); });
+    auto schema = variable<datapack::Schema>(
+        []() { return datapack::Schema::make<T>(); });
+    ConstElementPtr node = current;
+    bool changed = datapack_edit(*this, *schema);
+    series_end();
+
+    if (changed) {
+      value.set(datapack_read<T>(node));
+      return &(*value);
     }
     return nullptr;
   }
+
+#if 0
+  template <typename T>
+  void edit(const Var<T>& var) {
+    auto var_version = variable<int>(0);
+    auto schema = variable<datapack::Schema>(
+        []() { return datapack::Schema::make<T>(); });
+
+    if (var.version() != *value_version) {
+      datapack_write(*this, *var);
+    } else {
+      datapack_edit(*this, *schema);
+      datapack_read(current.prev(), var.mut());
+      var_version
+    }
+  }
+#endif
 
   SeriesArgs& args_series() {
     return args_series_;

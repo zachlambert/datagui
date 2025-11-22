@@ -1,290 +1,209 @@
 #include "datagui/datapack/reader.hpp"
-
-#include "datagui/element/button.hpp"
-#include "datagui/element/checkbox.hpp"
-#include "datagui/element/dropdown.hpp"
-#include "datagui/element/series.hpp"
-#include "datagui/element/text_box.hpp"
-#include "datagui/element/text_input.hpp"
+#include <charconv>
+#include <datapack/encode/base64.hpp>
 
 namespace datagui {
 
-void GuiReader::number(datapack::NumberType type, void* value) {
-  auto& props = get_text_input(systems, *tree.next(), "0");
-  changed |= props.changed;
-  props.changed = false;
+template <typename T>
+T number_from_string(const std::string& string) {
+  T value;
+  auto error =
+      std::from_chars(string.data(), string.data() + string.size(), value).ec;
+  if (error != std::errc{}) {
+    return T(0);
+  }
+  return value;
+}
 
-  try {
-    switch (type) {
-    case datapack::NumberType::I32:
-      *(std::int32_t*)value = std::stoi(props.text);
-      break;
-    case datapack::NumberType::I64:
-      *(std::int64_t*)value = std::stol(props.text);
-      break;
-    case datapack::NumberType::U32:
-      *(std::uint32_t*)value = std::stoul(props.text);
-      break;
-    case datapack::NumberType::U64:
-      *(std::uint64_t*)value = std::stoul(props.text);
-      break;
-    case datapack::NumberType::U8:
-      *(std::uint8_t*)value = std::stoul(props.text);
-      break;
-    case datapack::NumberType::F32:
-      *(float*)value = std::stof(props.text);
-      break;
-    case datapack::NumberType::F64:
-      *(double*)value = std::stod(props.text);
-      break;
-    }
-  } catch (const std::invalid_argument& e) {
-    // TODO: Handle a better way
+void GuiReader::number(datapack::NumberType type, void* value) {
+  if (!node || node.type() != Type::TextInput) {
+    invalidate();
+    return;
+  }
+  const auto& text = node.text_input().text;
+
+  switch (type) {
+  case datapack::NumberType::I32:
+    *(std::int32_t*)value = number_from_string<std::int32_t>(text);
+    break;
+  case datapack::NumberType::I64:
+    *(std::int64_t*)value = number_from_string<std::int64_t>(text);
+    break;
+  case datapack::NumberType::U32:
+    *(std::uint32_t*)value = number_from_string<std::uint32_t>(text);
+    break;
+  case datapack::NumberType::U64:
+    *(std::uint64_t*)value = number_from_string<std::uint64_t>(text);
+    break;
+  case datapack::NumberType::U8:
+    *(std::uint8_t*)value = number_from_string<std::uint8_t>(text);
+    break;
+  case datapack::NumberType::F32:
+    *(float*)value = number_from_string<float>(text);
+    break;
+  case datapack::NumberType::F64:
+    *(double*)value = number_from_string<double>(text);
+    break;
   }
 }
 
 bool GuiReader::boolean() {
-  auto& props = get_checkbox(systems, *tree.next(), false);
-  changed |= props.changed;
-  props.changed = false;
-  return props.checked;
+  if (!node || node.type() != Type::Checkbox) {
+    invalidate();
+    return false;
+  }
+  return node.checkbox().checked;
 }
 
 const char* GuiReader::string() {
-  auto& props = get_text_input(systems, *tree.next(), "");
-  changed |= props.changed;
-  props.changed = false;
-  return props.text.c_str();
+  if (!node || node.type() != Type::TextInput) {
+    invalidate();
+    return "";
+  }
+  return node.text_input().text.c_str();
 }
 
 int GuiReader::enumerate(const std::span<const char*>& labels) {
-  std::vector<std::string> labels_str;
-  for (auto label : labels) {
-    labels_str.emplace_back(label);
+  if (!node || node.type() != Type::Dropdown) {
+    invalidate();
+    return 0;
   }
-
-  auto& props = get_dropdown(systems, *tree.next(), labels_str, 0);
-  changed |= props.changed;
-  props.changed = false;
-  return props.choice;
+  return node.dropdown().choice;
 }
 
 std::span<const std::uint8_t> GuiReader::binary() {
-  auto& props = get_text_box(systems, *tree.next());
-  props.text = "<binary not editable>";
-  return std::span<const std::uint8_t>((const std::uint8_t*)nullptr, 0);
+  if (!node || node.type() != Type::TextInput) {
+    invalidate();
+    return {};
+  }
+  try {
+    binary_temp = datapack::base64_decode(node.text_input().text);
+  } catch (const datapack::Base64Exception&) {
+    // TODO: Handle text input constraints internally
+    binary_temp.clear();
+  }
+  return binary_temp;
 }
 
 bool GuiReader::optional_begin() {
-  get_series(systems, *tree.next());
+  node = node.child();
 
-  tree.down();
-  DATAGUI_LOG("GuiReader::optional_begin", "DOWN (1)");
-
-  auto& toggle = get_checkbox(systems, *tree.next(), false);
-  changed |= toggle.changed;
-  toggle.changed = false;
-
-  if (!toggle.checked) {
-    DATAGUI_LOG("GuiReader::optional_begin", "UP (1) (no value)");
-    tree.up();
+  if (!node || node.type() != Type::Checkbox) {
+    invalidate();
+    node = node.parent();
     return false;
   }
-
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.no_padding = true;
+  bool has_value = node.checkbox().checked;
+  if (!has_value) {
+    node = node.parent();
+    return false;
   }
-
-  DATAGUI_LOG("GuiReader::optional_begin", "DOWN (1) (has value)");
-  tree.down();
+  node = node.next();
   return true;
 }
 
 void GuiReader::optional_end() {
-  DATAGUI_LOG("GuiReader::optional_end", "UP (2)");
-  tree.up();
-  DATAGUI_LOG("GuiReader::optional_end", "UP (1)");
-  tree.up();
+  node = node.parent();
 }
 
 int GuiReader::variant_begin(const std::span<const char*>& labels) {
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.no_padding = true;
-    series.alignment = Alignment::Min;
+  node = node.child();
+
+  if (!node || node.type() != Type::Dropdown) {
+    invalidate();
+    node = node.parent();
+    return 0;
   }
-
-  DATAGUI_LOG("GuiReader::variant_begin", "DOWN (1)");
-  tree.down();
-
-  std::vector<std::string> labels_str;
-  for (auto label : labels) {
-    labels_str.emplace_back(label);
-  }
-
-  auto& dropdown = get_dropdown(systems, *tree.next(), labels_str, 0);
-
-  auto id_var = tree.variable<int>([&]() { return tree.get_id(); });
-  int id = *id_var;
-  if (dropdown.changed) {
-    id = tree.get_id();
-    id_var.set(id);
-    dropdown.changed = false;
-    changed = true;
-  }
-
-  {
-    auto& series = get_series(systems, *tree.next(id));
-    series.no_padding = true;
-    series.alignment = Alignment::Min;
-  }
-
-  DATAGUI_LOG("GuiReader::variant_begin", "DOWN (2)");
-  tree.down();
-
-  return dropdown.choice;
+  int choice = node.dropdown().choice;
+  node = node.next();
+  return choice;
 }
 
 void GuiReader::variant_end() {
-  DATAGUI_LOG("GuiReader::variant_end", "UP (2)");
-  tree.up();
-  DATAGUI_LOG("GuiReader::variant_end", "UP (1)");
-  tree.up();
+  node = node.parent();
 }
 
 void GuiReader::object_begin() {
-  auto& series = get_series(systems, *tree.next());
-  series.alignment = Alignment::Min;
-  series.no_padding = true;
-
-  DATAGUI_LOG("GuiReader::object_begin", "DOWN");
-  tree.down();
+  if (!node || node.type() != Type::Series) {
+    invalidate();
+    return;
+  }
+  node = node.child();
   at_object_begin = true;
 }
 
 void GuiReader::object_next(const char* key) {
   if (!at_object_begin) {
-    tree.up();
-  }
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.direction = Direction::Horizontal;
-    series.width = LengthWrap();
-    series.alignment = Alignment::Min;
-    tree.down();
+    node = node.parent().next();
   }
   at_object_begin = false;
-  auto& props = get_text_box(systems, *tree.next());
-  props.text = key;
+  node = node.child();
 }
 
 void GuiReader::object_end() {
   if (!at_object_begin) {
-    tree.up();
+    if (node.next()) {
+      invalidate();
+    }
+    node = node.parent();
+  } else {
+    if (node.child()) {
+      invalidate();
+    }
   }
   at_object_begin = false;
-  DATAGUI_LOG("GuiReader::object_begin", "UP");
-  tree.up();
+  node = node.parent();
 }
 
 void GuiReader::tuple_begin() {
-  get_series(systems, *tree.next());
-  DATAGUI_LOG("GuiReader::tuple_begin", "DOWN");
-  tree.down();
+  if (!node || node.type() != Type::Series) {
+    invalidate();
+    return;
+  }
+  node = node.child();
+  at_object_begin = true;
 }
 
 void GuiReader::tuple_next() {
-  // Do nothing
+  if (!at_object_begin) {
+    node = node.next();
+  }
+  at_object_begin = false;
 }
 
 void GuiReader::tuple_end() {
-  DATAGUI_LOG("GuiReader::tuple_end", "UP");
-  tree.up();
+  if (at_object_begin) {
+    if (node) {
+      invalidate();
+    }
+  } else {
+    if (node.next()) {
+      invalidate();
+    }
+  }
+  at_object_begin = false;
+  node = node.parent();
 }
 
 void GuiReader::list_begin() {
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.alignment = Alignment::Min;
-    series.no_padding = true;
-  }
-
-  DATAGUI_LOG("GuiReader::list_begin", "DOWN (1)");
-  tree.down();
-
-  ListState state;
-  state.ids_var =
-      tree.variable<std::vector<int>>([]() { return std::vector<int>(); });
-  changed |= state.ids_var.modified();
-
-  state.index = 0;
-  list_stack.push(state);
-
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.alignment = Alignment::Min;
-    series.no_padding = true;
-  }
-  DATAGUI_LOG("GuiReader::list_begin", "DOWN (2)");
-  tree.down();
+  // Skip over button section
+  node = node.child().next().child();
+  at_object_begin = true;
 }
 
 bool GuiReader::list_next() {
-  auto& state = list_stack.top();
-
-  if (state.index == state.ids_var->size()) {
-    return false;
+  if (at_object_begin) {
+    at_object_begin = false;
+    return node;
   }
-
-  if (state.index != 0) {
-    DATAGUI_LOG("GuiReader::list_next", "UP (el %zu)", state.index - 1);
-    tree.up();
-  }
-
-  get_series(systems, *tree.next());
-  DATAGUI_LOG("GuiReader::list_next", "DOWN (el %zu)", state.index);
-  tree.down();
-
-  state.index++;
-  return true;
+  node = node.next();
+  return node;
 }
 
 void GuiReader::list_end() {
-  const auto& state = list_stack.top();
-
-  if (state.index != 0) {
-    DATAGUI_LOG("GuiReader::list_next", "UP (el %zu)", state.index - 1);
-    tree.up();
-  }
-
-  DATAGUI_LOG("GuiReader::list_end", "UP (2)");
-  tree.up();
-
-  auto& push_button = get_button(systems, *tree.next());
-  push_button.text = "Push";
-  if (push_button.released) {
-    push_button.released = false;
-    auto new_ids = *state.ids_var;
-    new_ids.push_back(tree.get_id());
-    state.ids_var.set(std::move(new_ids));
-  }
-
-  auto& pop_button = get_button(systems, *tree.next());
-  pop_button.text = "Pop";
-  if (pop_button.released) {
-    pop_button.released = false;
-    if (!state.ids_var->empty()) {
-      auto new_ids = *state.ids_var;
-      new_ids.pop_back();
-      state.ids_var.set(std::move(new_ids));
-    }
-  }
-
-  list_stack.pop();
-
-  DATAGUI_LOG("GuiReader::list_end", "UP (1)");
-  tree.up();
+  at_object_begin = false;
+  assert(at_object_begin && !node || !node.next());
+  node = node.parent().parent();
 }
 
 } // namespace datagui

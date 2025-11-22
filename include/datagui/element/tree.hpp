@@ -312,17 +312,24 @@ public:
       return ElementPtr_(tree, parent_, next);
     }
 
-    void expect(Type type, std::size_t id = -1) {
+    bool expect(Type type, std::size_t id = -1) {
       assert(tree);
       while (index != -1 && id != tree->elements[index].id) {
         (*this) = erase();
       }
       if (index == -1) {
         create(type, id);
-        return;
+        return true;
       }
       if (type != tree->elements[index].type) {
         throw ElementError("Incorrect type");
+      }
+      return false;
+    }
+    void expect_end() {
+      assert(tree);
+      while (index != -1) {
+        (*this) = erase();
       }
     }
 

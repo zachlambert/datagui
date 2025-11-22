@@ -132,10 +132,13 @@ bool Gui::button(const std::string& text) {
 }
 
 const std::string* Gui::text_input(const std::string& initial_value) {
-  current.expect(Type::TextInput, read_key());
+  bool is_new = current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   current = current.next();
 
+  if (is_new) {
+    text_input.text = initial_value;
+  }
   if (text_input.changed) {
     text_input.changed = false;
     return &text_input.text;
@@ -144,24 +147,27 @@ const std::string* Gui::text_input(const std::string& initial_value) {
 }
 
 void Gui::text_input(const Var<std::string>& var) {
-  current.expect(Type::TextInput, read_key());
+  bool is_new = current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   current = current.next();
 
   if (text_input.changed) {
     var.set(text_input.text);
     text_input.changed = false;
-  } else if (var.version() != text_input.var_version) {
+  } else if (is_new || var.version() != text_input.var_version) {
     text_input.text = *var;
   }
   text_input.var_version = var.version();
 }
 
 const bool* Gui::checkbox(bool initial_value) {
-  current.expect(Type::Checkbox, read_key());
+  bool is_new = current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
   current = current.next();
 
+  if (is_new) {
+    checkbox.checked = initial_value;
+  }
   if (checkbox.changed) {
     checkbox.changed = false;
     return &checkbox.checked;
@@ -170,14 +176,14 @@ const bool* Gui::checkbox(bool initial_value) {
 }
 
 void Gui::checkbox(const Var<bool>& var) {
-  current.expect(Type::Checkbox, read_key());
+  bool is_new = current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
   current = current.next();
 
   if (checkbox.changed) {
     var.set(checkbox.checked);
     checkbox.changed = false;
-  } else if (var.version() != checkbox.var_version) {
+  } else if (is_new || var.version() != checkbox.var_version) {
     checkbox.checked = *var;
   }
   checkbox.var_version = var.version();
@@ -186,11 +192,14 @@ void Gui::checkbox(const Var<bool>& var) {
 const int* Gui::dropdown(
     const std::vector<std::string>& choices,
     int initial_choice) {
-  current.expect(Type::Dropdown, read_key());
+  bool is_new = current.expect(Type::Dropdown, read_key());
   auto& dropdown = current.dropdown();
   current = current.next();
 
-  dropdown.choices = choices;
+  if (is_new) {
+    dropdown.choice = is_new;
+    dropdown.choices = choices;
+  }
   if (dropdown.changed) {
     dropdown.changed = false;
     return &dropdown.choice;
@@ -201,7 +210,7 @@ const int* Gui::dropdown(
 void Gui::dropdown(
     const std::vector<std::string>& choices,
     const Var<int>& var) {
-  current.expect(Type::Dropdown, read_key());
+  bool is_new = current.expect(Type::Dropdown, read_key());
   auto& dropdown = current.dropdown();
   current = current.next();
 
@@ -209,7 +218,7 @@ void Gui::dropdown(
   if (dropdown.changed) {
     var.set(dropdown.choice);
     dropdown.changed = false;
-  } else if (var.version() != dropdown.var_version) {
+  } else if (is_new || var.version() != dropdown.var_version) {
     dropdown.choice = *var;
   }
   dropdown.var_version = var.version();
@@ -220,7 +229,7 @@ bool Gui::floating_begin(
     const std::string& title,
     float width,
     float height) {
-  current.expect(Type::Floating, read_key());
+  bool is_new = current.expect(Type::Floating, read_key());
   auto& floating = current.floating();
 
   args_floating_.apply(floating);
@@ -233,7 +242,7 @@ bool Gui::floating_begin(
   if (floating.open_changed) {
     floating.open_changed = false;
     open_var.set(floating.open);
-  } else if (open_var.version() != floating.open_var_version) {
+  } else if (is_new || open_var.version() != floating.open_var_version) {
     floating.open = *open_var;
   }
   floating.open_var_version = open_var.version();

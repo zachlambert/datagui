@@ -5,6 +5,6 @@
 namespace datagui {
 
 class Gui;
-void datapack_edit(Gui& gui, const datapack::Schema& schema);
+bool datapack_edit(Gui& gui, const datapack::Schema& schema);
 
 } // namespace datagui

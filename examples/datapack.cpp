@@ -30,8 +30,7 @@ struct Person {
 };
 
 struct Foo {
-  int x;
-  int y;
+  double number;
   bool test;
   Person person;
   Shape shape;
@@ -69,11 +68,10 @@ DATAPACK_INLINE(Person, value, packer) {
 
 DATAPACK_INLINE(Foo, value, packer) {
   packer.object_begin();
-  packer.value("x", value.x);
-  packer.value("y", value.y);
+  packer.value("number", value.number);
+  packer.value("test", value.test);
   packer.value("person", value.person);
 #if 0
-  packer.value("test", value.test);
   packer.value("shape", value.shape);
   packer.value("points", value.points);
   packer.value("names", value.names);
@@ -87,7 +85,9 @@ int main() {
 
   while (gui.running()) {
     if (gui.begin()) {
-      gui.edit<Foo>();
+      if (auto value = gui.edit<Foo>()) {
+        std::cout << datapack::debug(*value) << std::endl;
+      }
     }
     gui.poll();
   }
