@@ -108,20 +108,19 @@ void Gui::text_box(const std::string& text) {
   current = current.next();
 }
 
-#if 0
 bool Gui::button(const std::string& text) {
-  auto element = tree.next();
-  auto& props = get_button(systems, *element);
+  current.force(Type::Button);
+  auto& button = current.button();
 
-  props.text = text;
-  if (props.released) {
-    DATAGUI_LOG("Gui::button", "Button released");
-    props.released = false;
+  button.text = text;
+  if (button.released) {
+    button.released = false;
     return true;
   }
   return false;
 }
 
+#if 0
 const std::string* Gui::text_input(const std::string& initial_value) {
   auto element = tree.next();
   auto& props = get_text_input(systems, *element, initial_value);

@@ -37,9 +37,9 @@ public:
 
   void text_box(const std::string& text);
 
-#if 0
   bool button(const std::string& text);
 
+#if 0
   const std::string* text_input(const std::string& initial_value);
   void text_input(const Variable<std::string>& value);
 
