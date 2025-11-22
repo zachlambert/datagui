@@ -243,18 +243,16 @@ bool Gui::floating_begin(
   }
   current.state().hidden = !floating.open;
 
-  if (!floating.open) {
+  if (!floating.open || !current.dirty()) {
+    current = current.next();
     return false;
   }
-  if (current.dirty()) {
-    current.clear_dependencies();
-    stack.emplace(current, var_current);
-    current = current.child();
-    var_current = VarPtr();
-    return true;
-  }
-  current = current.next();
-  return false;
+
+  current.clear_dependencies();
+  stack.emplace(current, var_current);
+  current = current.child();
+  var_current = VarPtr();
+  return true;
 }
 
 void Gui::floating_end() {

@@ -3,8 +3,6 @@
 #include <iostream>
 
 int main() {
-  DATAGUI_LOG_INIT();
-
   datagui::Gui gui;
 
   std::vector<std::string> choices;
