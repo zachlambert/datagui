@@ -5,36 +5,24 @@
 int main() {
   datagui::Gui gui;
 
-#if 0
   auto timer = gui.variable<int>(0);
   using clock_t = std::chrono::high_resolution_clock;
   auto next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
 
   auto timer_paused = gui.variable<bool>(false);
-#endif
 
   while (gui.running()) {
     if (gui.begin()) {
       if (gui.series_begin()) {
         gui.text_box("Welcome Screen!");
-        gui.text_box("2");
-        gui.text_box("3");
-        gui.text_box("4");
-        gui.text_box("5");
-        // gui.text_input("Test");
 
-#if 0
         auto name = gui.variable<std::string>("");
-#endif
 
-#if 0
         if (gui.series_begin()) {
           gui.text_box("Name: ");
-          // gui.text_input("Initial value");
+          gui.text_input(name);
           gui.series_end();
         }
-#endif
-#if 0
         if (auto value = gui.checkbox()) {
           std::cout << "Checked: " << *value << std::endl;
         }
@@ -86,21 +74,18 @@ int main() {
           gui.section_end();
         }
 
-#endif
         gui.series_end();
       }
       gui.end();
     }
     gui.poll();
 
-#if 0
     if (clock_t::now() > next_t) {
       if (!*timer_paused) {
         timer.set(*timer + 1);
       }
       next_t += clock_t::duration(std::chrono::seconds(1));
     }
-#endif
   }
   return 0;
 }
