@@ -49,10 +49,10 @@ void FloatingSystem::set_dependent_state(ElementPtr element) {
   }
 
   auto child = element.child();
-  if (!child.exists()) {
+  if (!child) {
     return;
   }
-  for (auto other = child.next(); other.exists(); other = other.next()) {
+  for (auto other = child.next(); other; other = other.next()) {
     other.state().hidden = true;
   }
 

@@ -17,7 +17,7 @@ void SeriesSystem::set_input_state(ElementPtr element) {
 
   {
     std::size_t child_count = 0;
-    for (auto child = element.child(); child.exists(); child = child.next()) {
+    for (auto child = element.child(); child; child = child.next()) {
       const auto& c_state = child.state();
       if (c_state.hidden || c_state.zero_size()) {
         continue;
@@ -64,7 +64,7 @@ void SeriesSystem::set_input_state(ElementPtr element) {
       state.fixed_size.x = width->value;
     }
   } else {
-    for (auto child = element.child(); child.exists(); child = child.next()) {
+    for (auto child = element.child(); child; child = child.next()) {
       const auto& c_state = child.state();
       if (c_state.hidden || c_state.zero_size()) {
         continue;
@@ -112,11 +112,11 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
   Vecf children_dynamic_size = Vecf::Zero();
-  for (auto child = element.child(); child.exists(); child = child.next()) {
+  for (auto child = element.child(); child; child = child.next()) {
     children_dynamic_size += child.state().dynamic_size;
   }
 
-  for (auto child = element.child(); child.exists(); child = child.next()) {
+  for (auto child = element.child(); child; child = child.next()) {
     auto& c_state = child.state();
     if (c_state.hidden || c_state.zero_size()) {
       continue;

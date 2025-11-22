@@ -98,19 +98,23 @@ public:
 
   public:
     const T& operator*() const {
+      assert(tree && variable != -1);
       auto data_ptr = tree->variables[variable].data.cast<T>();
       return *data_ptr;
     }
     const T* operator->() const {
+      assert(tree && variable != -1);
       auto data_ptr = tree->variables[variable].data.cast<T>();
       return data_ptr;
     }
     void set(const T& value) const {
+      assert(tree && variable != -1);
       static_assert(!IsConst);
       *tree->variables[variable].data.cast<T>() = value;
       tree->variables[variable].version++;
     }
     T& mut() const {
+      assert(tree && variable != -1);
       static_assert(!IsConst);
       tree->variables[variable].version++;
       return *tree->variables[variable].data.cast<T>();
@@ -167,11 +171,12 @@ public:
       return variable != -1;
     }
     bool valid() const {
-      return element != -1 && tree->elements.contains(element);
+      return tree;
     }
 
     template <typename T>
     Var_<T, Const> create(const T& value) {
+      assert(tree && variable == -1);
       variable = tree->create_variable(element);
       tree->variables[variable].data = UniqueAny::Make<T>(value);
       tree->variables[variable].version = 0;
@@ -180,6 +185,7 @@ public:
 
     template <typename T>
     Var_<T, Const> as() {
+      assert(tree && variable != -1);
       return Var_<T, Const>(tree, variable);
     }
 
@@ -195,6 +201,7 @@ public:
 
     template <bool Const_>
     friend class ElementPtr_;
+    friend class Tree;
   };
 
   using VarPtr = VarPtr_<false>;
@@ -212,13 +219,18 @@ public:
   class ElementPtr_ {
   public:
     Type type() const {
+      assert(tree && index != -1);
       return tree->elements[index].type;
     }
 
-#define PROPS_METHOD(Type, type) \
-  std::conditional_t<IsConst, const Type&, Type&> type() const { \
+#define PROPS_METHOD(T, name) \
+  std::conditional_t<IsConst, const T&, T&> name() const { \
+    assert(tree&& index != -1); \
+    assert(tree->elements.contains(index)); \
     const auto& element = tree->elements[index]; \
-    return tree->type[element.type_index]; \
+    assert(element.type == Type::T); \
+    assert(tree->name.contains(element.type_index)); \
+    return tree->name[element.type_index]; \
   }
 
     PROPS_METHOD(Button, button)
@@ -234,7 +246,7 @@ public:
 #undef PROPS_METHOD
 
     ElementPtr_ parent() const {
-      assert(index != -1);
+      assert(tree && index != -1);
       if (parent_ == -1) {
         return ElementPtr_(tree, -1, -1);
       } else {
@@ -243,59 +255,61 @@ public:
     }
 
     ElementPtr_ child() const {
-      assert(index != -1);
+      assert(tree && index != -1);
       return ElementPtr_(tree, index, tree->elements[index].first_child);
     }
     ElementPtr_ last_child() const {
-      assert(index != -1);
+      assert(tree && index != -1);
       return ElementPtr_(tree, index, tree->elements[index].last_child);
     }
     void clear_children() const {
-      assert(index != -1);
+      assert(tree && index != -1);
       tree->remove_element(index, true); // Children only
     }
 
     ElementPtr_ next() const {
-      assert(index != -1);
+      assert(tree && index != -1);
       assert(parent_ == tree->elements[index].parent);
       return ElementPtr_(tree, parent_, tree->elements[index].next);
     }
     ElementPtr_ prev() const {
-      assert(index != -1);
+      assert(tree && index != -1);
       assert(parent_ == tree->elements[index].parent);
       return ElementPtr_(tree, parent_, tree->elements[index].prev);
     }
 
     std::conditional_t<IsConst, const State&, State&> state() const {
+      assert(tree && index != -1);
       return tree->elements[index].state;
     }
 
-    bool exists() const {
-      return index != -1;
-    }
     operator bool() const {
       return index != -1;
     }
 
     void create(Type type, int id = -1) {
+      assert(tree);
       if (parent_ == -1) {
         index = tree->create_element(parent_, -1, id, type);
       } else {
+        assert(tree->elements.contains(parent_));
         int prev = tree->elements[parent_].last_child;
         index = tree->create_element(parent_, prev, id, type);
       }
     }
     void reset(Type type, int id = -1) const {
+      assert(tree && index != -1);
       tree->reset_element(index, id, type);
     }
     ElementPtr_ erase() const {
-      assert(index != -1);
+      assert(tree && index != -1);
       int next = tree->elements[index].next;
       tree->remove_element(index);
       return ElementPtr_(parent_, parent_, next);
     }
 
     bool force(Type type, int id = -1) {
+      assert(tree);
       if (index == -1) {
         create(type, id);
         return true;
@@ -313,29 +327,36 @@ public:
     }
 
     int id() const {
+      assert(tree && index != -1);
       return tree->elements[index].id;
     }
 
     bool dirty() const {
+      assert(tree && index != -1);
       return tree->elements[index].dirty;
     }
     void set_dirty(bool dirty = true) {
+      assert(tree && index != -1);
       if (dirty) {
         tree->set_dirty(index);
       }
     }
 
     void clear_vars() const {
+      assert(tree && index != -1);
       tree->clear_vars(index);
     }
     VarPtr var() const {
+      assert(tree && index != -1);
       return VarPtr(tree, index, tree->elements[index].first_variable);
     }
     ConstVarPtr const_var() const {
+      assert(tree && index != -1);
       return ConstVarPtr(tree, index, tree->elements[index].first_variable);
     }
 
     void clear_dependencies() const {
+      assert(tree && index != -1);
       tree->clear_dependencies(index);
     }
 
@@ -395,6 +416,10 @@ public:
     return ConstElementPtr(this, -1, root_);
   }
 
+  VarPtr var() {
+    return VarPtr(this, -1, external_var_);
+  }
+
 private:
   int create_element(int parent, int prev, int id, Type type);
   void reset_element(int element, int id, Type type);
@@ -415,6 +440,7 @@ private:
   VectorMap<ElementNode> elements;
   VectorMap<VarNode> variables;
   VectorMap<DependencyNode> dependencies;
+  int external_var_ = -1;
 
   VectorMap<Button> button;
   VectorMap<Checkbox> checkbox;

@@ -17,7 +17,7 @@ void LabelledSystem::set_input_state(ElementPtr element) {
   state.floating = false;
 
   auto child = element.child();
-  if (!child.exists()) {
+  if (!child) {
     return;
   }
   state.fixed_size.x +=
@@ -33,10 +33,10 @@ void LabelledSystem::set_dependent_state(ElementPtr element) {
   const auto& labelled = element.labelled();
 
   auto child = element.child();
-  if (!child.exists()) {
+  if (!child) {
     return;
   }
-  for (auto other = child.next(); other.exists(); other = other.next()) {
+  for (auto other = child.next(); other; other = other.next()) {
     other.state().hidden = true;
   }
 

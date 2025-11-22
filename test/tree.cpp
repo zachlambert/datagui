@@ -7,9 +7,9 @@ TEST(Tree, CreateElements) {
   Tree tree;
 
   auto node = tree.root();
-  ASSERT_FALSE(node.exists());
+  ASSERT_FALSE(node);
   node.create(Type::Series);
-  ASSERT_TRUE(node.exists());
+  ASSERT_TRUE(node);
   ASSERT_EQ(node.type(), Type::Series);
   {
     auto& state = node.state();
@@ -19,9 +19,9 @@ TEST(Tree, CreateElements) {
   }
 
   node = node.child();
-  ASSERT_FALSE(node.exists());
+  ASSERT_FALSE(node);
   node.create(Type::Button);
-  ASSERT_TRUE(node.exists());
+  ASSERT_TRUE(node);
   ASSERT_EQ(node.type(), Type::Button);
   {
     auto& state = node.state();
@@ -31,9 +31,9 @@ TEST(Tree, CreateElements) {
   }
 
   node = node.next();
-  ASSERT_FALSE(node.exists());
+  ASSERT_FALSE(node);
   node.create(Type::TextInput);
-  ASSERT_TRUE(node.exists());
+  ASSERT_TRUE(node);
   ASSERT_EQ(node.type(), Type::TextInput);
   {
     auto& state = node.state();

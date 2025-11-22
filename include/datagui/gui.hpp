@@ -60,7 +60,11 @@ public:
   template <typename T>
   Var<T> variable(const T& initial_value = T()) {
     if (!var_current.valid()) {
-      var_current = current.var();
+      if (stack.empty()) {
+        var_current = tree.var();
+      } else {
+        var_current = stack.top().first.var();
+      }
     }
     if (!var_current) {
       Var<T> result = var_current.create<T>(initial_value);

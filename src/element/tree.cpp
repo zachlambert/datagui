@@ -23,6 +23,7 @@ void Tree::poll() {
       dirty = type->timepoint >= now;
     }
     if (dirty) {
+      assert(dep.element != -1);
       set_dirty(dep.element);
     }
   }
@@ -179,11 +180,19 @@ int Tree::create_variable(int element) {
   int variable = variables.emplace(element);
 
   int prev;
-  if (elements[element].first_variable == -1) {
-    elements[element].first_variable = variable;
-    return variable;
+  if (element == -1) {
+    if (external_var_ == -1) {
+      external_var_ = variable;
+      return variable;
+    }
+    prev = external_var_;
+  } else {
+    if (elements[element].first_variable == -1) {
+      elements[element].first_variable = variable;
+      return variable;
+    }
+    prev = elements[element].first_variable;
   }
-  prev = elements[element].first_variable;
 
   while (variables[prev].next != -1) {
     prev = variables[prev].next;

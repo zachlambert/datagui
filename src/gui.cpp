@@ -261,7 +261,7 @@ bool Gui::begin() {
   tree.poll();
   current = tree.root();
   var_current = VarPtr();
-  return !current.exists() || current.dirty();
+  return !current || current.dirty();
 }
 
 void Gui::end() {
@@ -306,7 +306,7 @@ void Gui::render() {
           element.state().floating ? element.state().float_box
                                    : element.state().box());
 
-      for (auto child = element.child(); child.exists(); child = child.next()) {
+      for (auto child = element.child(); child; child = child.next()) {
         stack.push(child);
       }
     }
@@ -386,7 +386,7 @@ void Gui::debug_render() {
       renderer.push_mask(element.state().box());
     }
 
-    for (auto child = element.child(); child.exists(); child = child.next()) {
+    for (auto child = element.child(); child; child = child.next()) {
       layer_stack.push(child);
     }
 
@@ -395,7 +395,7 @@ void Gui::debug_render() {
     }
   }
 
-  if (focused.exists()) {
+  if (focused) {
     std::stringstream ss;
 
     ss << "fixed: " << focused.state().fixed_size.x << ", "
@@ -432,7 +432,7 @@ void Gui::debug_render() {
 #endif
 
 void Gui::calculate_sizes() {
-  if (!tree.root().exists()) {
+  if (!tree.root()) {
     return;
   }
 
@@ -457,10 +457,9 @@ void Gui::calculate_sizes() {
       }
 
       // If the node has children, process these first
-      if (element.child().exists() && state.first_visit) {
+      if (element.child() && state.first_visit) {
         state.first_visit = false;
-        for (auto child = element.child(); child.exists();
-             child = child.next()) {
+        for (auto child = element.child(); child; child = child.next()) {
           stack.emplace(child);
         }
         continue;
@@ -475,7 +474,7 @@ void Gui::calculate_sizes() {
     std::stack<ElementPtr> stack;
     {
       auto root = tree.root();
-      assert(root.exists());
+      assert(root);
       root.state().position = Vecf::Zero();
       root.state().size = window.size();
       stack.push(root);
@@ -511,7 +510,7 @@ void Gui::calculate_sizes() {
 
       system(element).set_dependent_state(element);
 
-      for (auto child = element.child(); child.exists(); child = child.next()) {
+      for (auto child = element.child(); child; child = child.next()) {
         stack.push(child);
       }
     }
@@ -546,7 +545,7 @@ void Gui::event_handling() {
         handled = true;
         break;
       case Key::Escape:
-        if (element_focus.exists()) {
+        if (element_focus) {
           element_focus.set_dirty(
               system(element_focus).focus_leave(element_focus, false));
           set_tree_focus(element_focus, false);
@@ -566,14 +565,14 @@ void Gui::event_handling() {
       }
     }
 
-    if (!handled && element_focus.exists()) {
+    if (!handled && element_focus) {
       element_focus.set_dirty(
           system(element_focus).key_event(element_focus, event));
     }
   }
 
   for (const auto& event : window.text_events()) {
-    if (element_focus.exists()) {
+    if (element_focus) {
       element_focus.set_dirty(
           system(element_focus).text_event(element_focus, event));
     }
@@ -602,7 +601,7 @@ ElementPtr Gui::get_leaf_node(const Vecf& position) {
       }
       leaf = element;
 
-      for (auto child = element.child(); child.exists(); child = child.next()) {
+      for (auto child = element.child(); child; child = child.next()) {
         stack.push(child);
       }
     }
@@ -612,7 +611,7 @@ ElementPtr Gui::get_leaf_node(const Vecf& position) {
   for (auto iter = floating_elements.rbegin(); iter != floating_elements.rend();
        iter++) {
     auto leaf = get_tree_leaf(*iter);
-    if (leaf.exists()) {
+    if (leaf) {
       return leaf;
     }
   }
@@ -624,7 +623,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // Pass-through the hold or release event
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
-    if (element_focus.exists()) {
+    if (element_focus) {
       element_focus.set_dirty(
           system(element_focus).mouse_event(element_focus, event));
     }
@@ -637,30 +636,30 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   element_focus = get_leaf_node(event.position);
 
   if (element_focus != prev_element_focus) {
-    if (prev_element_focus.exists()) {
+    if (prev_element_focus) {
       prev_element_focus.set_dirty(
           system(prev_element_focus).focus_leave(prev_element_focus, true));
       set_tree_focus(prev_element_focus, false);
     }
-    if (element_focus.exists()) {
+    if (element_focus) {
       // Only use focus_enter() for non-click focus enter (ie: tab into the
       // element)
       set_tree_focus(element_focus, true);
     }
   }
-  if (element_focus.exists()) {
+  if (element_focus) {
     element_focus.set_dirty(
         system(element_focus).mouse_event(element_focus, event));
   }
 }
 
 void Gui::event_handling_hover(const Vecf& mouse_pos) {
-  if (element_hover.exists()) {
+  if (element_hover) {
     element_hover.state().hovered = false;
   }
 
   element_hover = get_leaf_node(mouse_pos);
-  if (!element_hover.exists()) {
+  if (!element_hover) {
     return;
   }
   element_hover.state().hovered = true;
@@ -669,7 +668,7 @@ void Gui::event_handling_hover(const Vecf& mouse_pos) {
 
 void Gui::event_handling_scroll(const ScrollEvent& event) {
   ElementPtr element = get_leaf_node(event.position);
-  while (element.exists()) {
+  while (element) {
     if (system(element).scroll_event(element, event)) {
       return;
     }
@@ -688,7 +687,7 @@ void Gui::set_tree_focus(ElementPtr element, bool focused) {
   }
 
   element = element.parent();
-  while (element.exists()) {
+  while (element) {
     element.state().in_focus_tree = focused;
     if (focused && !found_floating && element.state().floating) {
       found_floating = true;
@@ -699,14 +698,14 @@ void Gui::set_tree_focus(ElementPtr element, bool focused) {
 }
 
 void Gui::focus_next(bool reverse) {
-  if (!tree.root().exists()) {
+  if (!tree.root()) {
     return;
   }
   auto next = element_focus;
 
   do {
     if (!reverse) {
-      if (!next.exists()) {
+      if (!next) {
         next = tree.root();
       } else if (next.child()) {
         next = next.child();
