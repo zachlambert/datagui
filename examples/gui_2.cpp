@@ -36,7 +36,7 @@ int main() {
       gui.args_series().length_fixed(100);
       if (gui.series()) {
         for (std::size_t i = 0; i < 10; i++) {
-          gui.text_input("Item " + std::to_string(i));
+          gui.text_input("Item " + std::to_string(i), {});
         }
         gui.end();
       }
@@ -67,7 +67,7 @@ int main() {
         if (gui.series()) {
           gui.text_box("Hello :)");
           if (gui.labelled("Input")) {
-            gui.text_input("");
+            gui.text_input("", {});
             gui.end();
           }
           gui.end();

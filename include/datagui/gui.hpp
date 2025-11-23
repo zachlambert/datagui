@@ -62,13 +62,9 @@ public:
 
   // Elements
 
-  void button(
-      const std::string& text,
-      const std::function<void()>& callback = {});
+  void button(const std::string& text, const std::function<void()>& callback);
 
-  void checkbox(
-      bool initial_value,
-      const std::function<void(bool)>& callback = {});
+  void checkbox(bool initial_value, const std::function<void(bool)>& callback);
   void checkbox(bool& value) {
     checkbox(value, [&value](bool new_value) { value = new_value; });
   }
@@ -77,7 +73,7 @@ public:
   void dropdown(
       const std::vector<std::string>& choices,
       int initial_choice,
-      const std::function<void(int)>& callback = {});
+      const std::function<void(int)>& callback);
   void dropdown(const std::vector<std::string>& choices, int& choice) {
     dropdown(choices, choice, [&choice](int new_choice) {
       choice = new_choice;
@@ -101,7 +97,7 @@ public:
 
   void text_input(
       const std::string& initial_value,
-      const std::function<void(const std::string& callback)>& callback = {});
+      const std::function<void(const std::string& callback)>& callback);
   void text_input(std::string& value) {
     text_input(value, [&value](const std::string& new_value) {
       value = new_value;
@@ -151,43 +147,45 @@ public:
     }
   }
 
-#if 0
   template <typename T>
-  const T* edit() {
-    if (!series_begin()) {
-      return nullptr;
+  void edit(const std::function<void(const T&)>& callback) {
+    if (!series()) {
+      return;
     }
-    auto value = variable<T>([] { return T(); });
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
-    ConstElementPtr node = current;
-    bool changed = datapack_edit(*this, *schema);
-    series_end();
+    datapack_edit(*this, *schema);
 
-    if (changed) {
-      value.set(datapack_read<T>(node));
-      return &(*value);
-    }
-    return nullptr;
+    auto node_capture = current.prev();
+    stack.top().first.state().event_handler = [=]() {
+      callback(datapack_read<T>(node_capture));
+    };
+    callback(datapack_read<T>(node_capture));
+    end();
   }
-#endif
 
-#if 0
   template <typename T>
   void edit(const Var<T>& var) {
+    if (!series()) {
+      return;
+    }
     auto var_version = variable<int>(0);
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
+    auto node_capture = current;
+    stack.top().first.state().event_handler = [=]() {
+      callback(datapack_read<T>(node_capture));
+    };
 
-    if (var.version() != *value_version) {
-      datapack_write(*this, *var);
+    if (var.version() != *var_version) {
+      var_version.set(var.version());
+      assert(false); // TODO: Not implemented
+      // datapack_write(*this, *var);
     } else {
       datapack_edit(*this, *schema);
-      datapack_read(current.prev(), var.mut());
-      var_version
     }
+    end();
   }
-#endif
 
   SeriesArgs& args_series() {
     return args_series_;

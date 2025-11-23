@@ -18,7 +18,7 @@ int main() {
       gui.args_floating().bg_color(datagui::Color::Hsl(180, 0.7, 0.7));
       if (gui.floating(window_1_open, "Floating 1", 400, 100)) {
         if (gui.series()) {
-          gui.text_input("Input");
+          gui.text_input("Input", {});
           gui.text_box("Here is some text");
           gui.text_box("Foo");
           gui.text_box("Bar");
@@ -42,7 +42,7 @@ int main() {
       gui.dropdown(choices, -1, [&](int choice) {
         std::cout << "Selected '" << choices[choice] << "'" << std::endl;
       });
-      gui.dropdown({}, -1);
+      gui.dropdown({}, -1, {});
       gui.text_box("Text below");
       gui.end();
     }

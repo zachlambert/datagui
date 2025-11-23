@@ -250,7 +250,7 @@ public:
 #undef PROPS_METHOD
 
     ElementPtr_ parent() const {
-      assert(tree && index != -1);
+      assert(tree);
       if (parent_ == -1) {
         return ElementPtr_(tree, -1, -1);
       } else {
@@ -277,8 +277,10 @@ public:
       return ElementPtr_(tree, parent_, tree->elements[index].next);
     }
     ElementPtr_ prev() const {
-      assert(tree && index != -1);
-      assert(parent_ == tree->elements[index].parent);
+      assert(tree);
+      if (index == -1) {
+        return ElementPtr_(tree, parent_, tree->elements[parent_].last_child);
+      }
       return ElementPtr_(tree, parent_, tree->elements[index].prev);
     }
 

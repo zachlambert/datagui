@@ -116,11 +116,13 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
   }
   int choice = node.dropdown().choice;
   node = node.next();
+  assert(node);
+  node = node.child();
   return choice;
 }
 
 void GuiReader::variant_end() {
-  node = node.parent();
+  node = node.parent().parent();
 }
 
 void GuiReader::object_begin() {
@@ -186,23 +188,40 @@ void GuiReader::tuple_end() {
 }
 
 void GuiReader::list_begin() {
-  // Skip over button section
-  node = node.child().next().child();
+  // List =
+  // series           # List wrapper
+  //   series         # Items wrapper
+  //     series       # Item 0 wrapper
+  //       <content>  # Item 0 content
+  //       button     # Remove button
+  //     series       # Item 1 wrapper
+  //       <content>  # Item 1 content
+  //       button     # Remove button
+  //     etc...
+  //   button         # New button
+
+  // list wrapper -> items wrapper -> item 0 wrapper
+  node = node.child().child();
   at_object_begin = true;
 }
 
 bool GuiReader::list_next() {
-  if (at_object_begin) {
-    at_object_begin = false;
-    return node;
+  if (!at_object_begin) {
+    // item (i-1) content -> item i wrapper
+    node = node.parent().next();
   }
-  node = node.next();
-  return node;
+  at_object_begin = false;
+  if (!node) {
+    return false;
+  }
+  // item i wrapper -> item i content
+  node = node.child();
+  assert(node);
+  return true;
 }
 
 void GuiReader::list_end() {
-  at_object_begin = false;
-  assert(at_object_begin && !node || !node.next());
+  // Item n wrapper -> items wrapper -> list wrapper
   node = node.parent().parent();
 }
 

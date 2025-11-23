@@ -44,8 +44,8 @@ add_library(datagui SHARED
 
   src/gui.cpp
 
-  # src/datapack/edit.cpp
-  # src/datapack/reader.cpp
+  src/datapack/edit.cpp
+  src/datapack/reader.cpp
   # src/datapack/writer.cpp
 )
 target_link_libraries(datagui

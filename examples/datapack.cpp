@@ -71,11 +71,9 @@ DATAPACK_INLINE(Foo, value, packer) {
   packer.value("number", value.number);
   packer.value("test", value.test);
   packer.value("person", value.person);
-#if 0
   packer.value("shape", value.shape);
   packer.value("points", value.points);
   packer.value("names", value.names);
-#endif
   packer.object_end();
 }
 } // namespace datapack
@@ -84,11 +82,9 @@ int main() {
   datagui::Gui gui;
 
   while (gui.running()) {
-    if (gui.begin()) {
-      if (auto value = gui.edit<Foo>()) {
-        std::cout << datapack::debug(*value) << std::endl;
-      }
-    }
+    gui.edit<Foo>([](const Foo& value) {
+      std::cout << datapack::debug(value) << std::endl;
+    });
     gui.poll();
   }
   return 0;

@@ -2,19 +2,22 @@
 #include "datagui/element/key_list.hpp"
 #include "datagui/gui.hpp"
 
+#include <datapack/debug.hpp>
+#include <iostream>
+
 namespace datagui {
 
-bool datapack_edit(Gui& gui, const datapack::Schema& schema) {
+void datapack_edit(Gui& gui, const datapack::Schema& schema) {
   std::stack<datapack::Schema::Iterator> stack;
   struct ListState {
     Var<KeyList> keys;
     std::size_t i;
-    bool children_open;
   };
   std::stack<ListState> list_stack;
 
+  std::cout << datapack::debug(schema) << std::endl;
+
   auto iter = schema.begin();
-  bool changed = false;
 
   while (iter != schema.end()) {
     while (iter != schema.end() && !stack.empty()) {
@@ -22,12 +25,12 @@ bool datapack_edit(Gui& gui, const datapack::Schema& schema) {
 
       if (parent.object_begin()) {
         if (iter != parent.next()) {
-          gui.section_end();
+          gui.end();
         }
         bool have_next = false;
         while (true) {
           if (iter.object_end()) {
-            gui.series_end();
+            gui.end();
             stack.pop();
             iter = iter.next();
             break;
@@ -36,7 +39,7 @@ bool datapack_edit(Gui& gui, const datapack::Schema& schema) {
           if (!object_next) {
             throw datapack::SchemaError("Expected ObjectNext");
           }
-          if (!gui.section_begin(object_next->key)) {
+          if (!gui.section(object_next->key)) {
             iter = iter.next().skip();
             continue;
           }
@@ -51,7 +54,7 @@ bool datapack_edit(Gui& gui, const datapack::Schema& schema) {
       }
       if (parent.tuple_begin()) {
         if (iter.tuple_end()) {
-          gui.series_end();
+          gui.end();
           stack.pop();
           iter = iter.next();
           continue;
@@ -60,41 +63,72 @@ bool datapack_edit(Gui& gui, const datapack::Schema& schema) {
           throw datapack::SchemaError("Expected TupleNext");
         }
         iter = iter.next();
+        break;
       }
       if (parent.list()) {
         assert(!list_stack.empty());
         auto& state = list_stack.top();
 
-        if (state.children_open && state.i != 0) {
-          if (gui.button("Remove")) {
-            state.keys.mut().remove(state.i);
-          } else {
-            state.i++;
-          }
-          gui.series_end();
+        if (state.i != 0) {
+          std::size_t remove_i = state.i - 1;
+          gui.button("Remove", [=]() { state.keys.mut().remove(remove_i); });
+          gui.end();
         }
 
         while (state.i < state.keys->size()) {
+          gui.key((*state.keys)[state.i]);
           gui.args_series().horizontal();
-          if (gui.series_begin()) {
+          if (gui.series()) {
             break;
           }
           state.i++;
         }
 
         if (state.i == state.keys->size()) {
-          if (state.children_open) {
-            gui.series_end();
-          }
-          if (gui.button("new")) {
-            state.keys.mut().append();
-          }
-          gui.series_end();
+          gui.end();
+          auto keys_var = state.keys;
+          gui.button("new", [keys_var]() { keys_var.mut().append(); });
+          gui.end();
           stack.pop();
           list_stack.pop();
+          iter = parent.skip();
           continue;
         }
+
+        state.i++;
         iter = parent.next();
+        break;
+      }
+      if (parent.optional()) {
+        if (iter != parent.next()) {
+          gui.end();
+          stack.pop();
+          continue;
+        }
+        break;
+      }
+      if (parent.variant_next()) {
+        if (iter != parent.next()) {
+          gui.end();
+          gui.end();
+          stack.pop();
+
+          while (iter != schema.end()) {
+            if (iter.variant_end()) {
+              iter = iter.next();
+              break;
+            }
+            if (!iter.variant_next()) {
+              throw datapack::SchemaError("Expected VariantNext");
+            }
+            iter = iter.next().skip();
+          }
+          if (iter == schema.end()) {
+            throw datapack::SchemaError("Unexpected end of schema");
+          }
+          continue;
+        }
+        break;
       }
       assert(false);
     }
@@ -103,7 +137,16 @@ bool datapack_edit(Gui& gui, const datapack::Schema& schema) {
     }
 
     if (iter.object_begin()) {
-      if (gui.series_begin()) {
+      if (gui.series()) {
+        stack.push(iter);
+        iter = iter.next();
+        continue;
+      }
+      iter = iter.skip();
+      continue;
+    }
+    if (iter.tuple_begin()) {
+      if (gui.series()) {
         stack.push(iter);
         iter = iter.next();
         continue;
@@ -112,57 +155,97 @@ bool datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (iter.list()) {
-      if (gui.series_begin()) {
-        stack.push(iter);
+      if (gui.series()) {
         auto keys = gui.variable<KeyList>();
-        if (gui.series_begin()) {
-          list_stack.push({keys, 0, true});
-        } else {
-          list_stack.push({keys, keys->size(), false});
+        if (gui.series()) {
+          gui.depend_variable(keys);
+          stack.push(iter);
+          list_stack.push({keys, 0});
+          iter = iter.next();
+          continue;
         }
-        iter = iter.next();
+        gui.button("new", [keys]() { keys.mut().append(); });
+      }
+      gui.end();
+      iter = iter.next().skip();
+    }
+    if (iter.optional()) {
+      if (gui.series()) {
+        auto has_value = gui.variable<bool>(false);
+        gui.checkbox(has_value);
+        gui.depend_variable(has_value);
+        if (*has_value) {
+          stack.push(iter);
+          iter = iter.next();
+          continue;
+        }
+        gui.end();
       }
       iter = iter.next().skip();
       continue;
     }
+    if (auto variant_begin = iter.variant_begin()) {
+      if (gui.series()) {
+        auto choice = gui.variable<int>(0);
+        gui.dropdown(variant_begin->labels, choice);
+
+        if (gui.series()) {
+          gui.depend_variable(choice);
+          iter = iter.next();
+          while (iter != schema.end()) {
+            if (iter.variant_end()) {
+              throw datapack::SchemaError("Didn't find matching VariantNext");
+            }
+            auto variant_next = iter.variant_next();
+            if (!variant_next) {
+              throw datapack::SchemaError("Expected VariantNext");
+            }
+            if (variant_next->index == *choice) {
+              break;
+            }
+            iter = iter.next().skip();
+          }
+          if (iter == schema.end()) {
+            throw datapack::SchemaError("Unexpected end of schema");
+          }
+          assert(iter.variant_next());
+          stack.push(iter);
+          iter = iter.next();
+          gui.key(*choice);
+          continue;
+        }
+        gui.end();
+      }
+      iter = iter.skip();
+      continue;
+    }
 
     if (iter.number()) {
-      if (gui.text_input("0")) {
-        changed = true;
-      }
+      gui.text_input("0", {});
       iter = iter.next();
       continue;
     }
     if (iter.string()) {
-      if (gui.text_input("")) {
-        changed = true;
-      }
+      gui.text_input("", {});
       iter = iter.next();
       continue;
     }
     if (iter.boolean()) {
-      if (gui.checkbox(false)) {
-        changed = true;
-      }
+      gui.checkbox(false, {});
       iter = iter.next();
       continue;
     }
     if (auto enumerate = iter.enumerate()) {
-      if (gui.dropdown(enumerate->labels, -1)) {
-        changed = true;
-      }
+      gui.dropdown(enumerate->labels, -1, {});
       iter = iter.next();
       continue;
     }
     if (iter.binary()) {
-      if (gui.text_input("")) {
-        changed = true;
-      }
+      gui.text_input("", {});
       iter = iter.next();
       continue;
     }
   }
-  return changed;
 }
 
 } // namespace datagui

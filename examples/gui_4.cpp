@@ -84,7 +84,7 @@ void edit_list_2(datagui::Gui& gui) {
       gui.args_series().width_wrap();
       gui.key((*keys)[i]);
       if (gui.series()) {
-        gui.text_input("");
+        gui.text_input("", {});
         gui.button("Remove", [=]() { keys.mut().remove(i); });
         gui.end();
       }

@@ -118,7 +118,6 @@ bool SectionSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   if (event.action == MouseAction::Release &&
       event.button == MouseButton::Left) {
     section.open = !section.open;
-    return true;
   }
   return false;
 }
@@ -128,7 +127,6 @@ bool SectionSystem::key_event(ElementPtr element, const KeyEvent& event) {
 
   if (event.action == KeyAction::Release && event.key == Key::Enter) {
     section.open = !section.open;
-    return true;
   }
   return false;
 }
