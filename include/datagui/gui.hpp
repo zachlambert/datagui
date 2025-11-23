@@ -200,10 +200,6 @@ public:
   }
 
 private:
-  System& system(ConstElementPtr element) {
-    return *systems[static_cast<std::size_t>(element.type())];
-  }
-
   void render();
 #ifdef DATAGUI_DEBUG
   void debug_render();
@@ -215,6 +211,7 @@ private:
   void event_handling_left_click(const MouseEvent& event);
   void event_handling_hover(const Vecf& mouse_pos);
   void event_handling_scroll(const ScrollEvent& event);
+  void trigger_handler(ConstElementPtr element);
 
   void set_tree_focus(ElementPtr element, bool focused);
   void focus_next(bool reverse);
@@ -255,6 +252,41 @@ private:
 
   SeriesArgs args_series_;
   FloatingArgs args_floating_;
+
+  // For convenience
+  System& system(ConstElementPtr element) {
+    return *systems[static_cast<std::size_t>(element.type())];
+  }
+  void set_input_state(ElementPtr element) {
+    system(element).set_input_state(element);
+  }
+  void set_dependent_state(ElementPtr element) {
+    system(element).set_dependent_state(element);
+  };
+  void render(ConstElementPtr element) {
+    system(element).render(element, renderer);
+  }
+  bool mouse_event(ElementPtr element, const MouseEvent& event) {
+    return system(element).mouse_event(element, event);
+  }
+  bool mouse_hover(ElementPtr element, const Vecf& mouse_pos) {
+    return system(element).mouse_hover(element, mouse_pos);
+  }
+  bool scroll_event(ElementPtr element, const ScrollEvent& event) {
+    return system(element).scroll_event(element, event);
+  }
+  bool key_event(ElementPtr element, const KeyEvent& event) {
+    return system(element).key_event(element, event);
+  }
+  bool text_event(ElementPtr element, const TextEvent& event) {
+    return system(element).text_event(element, event);
+  }
+  void focus_enter(ElementPtr element) {
+    system(element).focus_enter(element);
+  }
+  bool focus_leave(ElementPtr element, bool success) {
+    return system(element).focus_leave(element, success);
+  }
 };
 
 } // namespace datagui

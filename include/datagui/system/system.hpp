@@ -15,9 +15,11 @@ public:
   virtual void render(ConstElementPtr element, Renderer& renderer) = 0;
 
   // Mouse press, hold or release inside the element bounding box
+  // Returns true if event needs external handling
   virtual bool mouse_event(ElementPtr element, const MouseEvent& event) {
     return false;
   }
+  // Returns true if event needs external handling
   virtual bool mouse_hover(ElementPtr element, const Vecf& mouse_pos) {
     return false;
   }
@@ -26,10 +28,12 @@ public:
     return false;
   }
   // Key press, hold or release, while a node is focused
+  // Returns true if event needs external handling
   virtual bool key_event(ElementPtr element, const KeyEvent& event) {
     return false;
   }
   // Text input while a node is focused
+  // Returns true if event needs external handling
   virtual bool text_event(ElementPtr element, const TextEvent& event) {
     return false;
   }
@@ -38,6 +42,7 @@ public:
   virtual void focus_enter(ElementPtr element) {}
   // Node is unfocused via tab, escape or clicking on another node
   // success = should the changes be retained?
+  // Returns true if event needs external handling
   virtual bool focus_leave(ElementPtr element, bool success) {
     return false;
   }
