@@ -521,7 +521,7 @@ void Gui::event_handling() {
       case Key::Escape:
         if (element_focus) {
           if (focus_leave(element_focus, false)) {
-            trigger_handler(element_focus);
+            element_focus.set_dirty(true);
           }
           set_tree_focus(element_focus, false);
           element_focus = ElementPtr();
@@ -542,7 +542,7 @@ void Gui::event_handling() {
 
     if (!handled && element_focus) {
       if (key_event(element_focus, event)) {
-        trigger_handler(element_focus);
+        element_focus.set_dirty(true);
       }
     }
   }
@@ -550,7 +550,7 @@ void Gui::event_handling() {
   if (element_focus) {
     for (const auto& event : window.text_events()) {
       if (text_event(element_focus, event)) {
-        trigger_handler(element_focus);
+        element_focus.set_dirty(true);
       }
     }
   }
@@ -601,7 +601,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
     if (element_focus && mouse_event(element_focus, event)) {
-      trigger_handler(element_focus);
+      element_focus.set_dirty(true);
     }
     return;
   }
@@ -614,7 +614,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   if (element_focus != prev_element_focus) {
     if (prev_element_focus) {
       if (focus_leave(prev_element_focus, true)) {
-        trigger_handler(prev_element_focus);
+        prev_element_focus.set_dirty(true);
       }
       set_tree_focus(prev_element_focus, false);
     }
@@ -625,7 +625,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     }
   }
   if (element_focus && mouse_event(element_focus, event)) {
-    trigger_handler(element_focus);
+    element_focus.set_dirty(true);
   }
 }
 
@@ -646,16 +646,6 @@ void Gui::event_handling_scroll(const ScrollEvent& event) {
   ElementPtr element = get_leaf_node(event.position);
   while (element) {
     if (scroll_event(element, event)) {
-      return;
-    }
-    element = element.parent();
-  }
-}
-
-void Gui::trigger_handler(ConstElementPtr element) {
-  while (element) {
-    if (element.state().event_handler) {
-      element.state().event_handler();
       return;
     }
     element = element.parent();
@@ -729,7 +719,7 @@ void Gui::focus_next(bool reverse) {
   if (element_focus) {
     auto prev_element_focus = element_focus;
     if (focus_leave(prev_element_focus, true)) {
-      trigger_handler(prev_element_focus);
+      prev_element_focus.set_dirty(true);
     }
     set_tree_focus(element_focus, false);
   }

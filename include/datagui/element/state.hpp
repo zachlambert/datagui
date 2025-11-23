@@ -2,7 +2,6 @@
 
 #include "datagui/geometry.hpp"
 #include "datagui/layout.hpp"
-#include <functional>
 
 namespace datagui {
 
@@ -30,7 +29,6 @@ struct State {
   bool in_focus_tree = false;
   bool focused = false;
   bool hovered = false;
-  std::function<void()> event_handler;
 };
 
 } // namespace datagui

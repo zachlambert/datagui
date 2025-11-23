@@ -155,13 +155,10 @@ public:
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
     datapack_edit(*this, *schema);
-
     auto node_capture = current.prev();
-    stack.top().first.state().event_handler = [=]() {
-      callback(datapack_read<T>(node_capture));
-    };
-    callback(datapack_read<T>(node_capture));
     end();
+
+    callback(datapack_read<T>(node_capture));
   }
 
   template <typename T>
@@ -173,9 +170,6 @@ public:
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
     auto node_capture = current;
-    stack.top().first.state().event_handler = [=]() {
-      callback(datapack_read<T>(node_capture));
-    };
 
     if (var.version() != *var_version) {
       var_version.set(var.version());
@@ -185,6 +179,8 @@ public:
       datapack_edit(*this, *schema);
     }
     end();
+
+    var.set(datapack_read<T>(node_capture));
   }
 
   SeriesArgs& args_series() {
@@ -208,7 +204,6 @@ private:
   void event_handling_left_click(const MouseEvent& event);
   void event_handling_hover(const Vecf& mouse_pos);
   void event_handling_scroll(const ScrollEvent& event);
-  void trigger_handler(ConstElementPtr element);
 
   void set_tree_focus(ElementPtr element, bool focused);
   void focus_next(bool reverse);

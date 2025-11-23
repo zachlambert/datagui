@@ -2,9 +2,6 @@
 #include "datagui/element/key_list.hpp"
 #include "datagui/gui.hpp"
 
-#include <datapack/debug.hpp>
-#include <iostream>
-
 namespace datagui {
 
 void datapack_edit(Gui& gui, const datapack::Schema& schema) {
@@ -14,8 +11,6 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
     std::size_t i;
   };
   std::stack<ListState> list_stack;
-
-  std::cout << datapack::debug(schema) << std::endl;
 
   auto iter = schema.begin();
 
