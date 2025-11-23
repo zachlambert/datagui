@@ -14,16 +14,16 @@ int main() {
   while (gui.running()) {
     if (gui.begin()) {
       std::cout << "Revisit" << std::endl;
-      if (gui.series_begin()) {
+      if (gui.series()) {
         gui.text_box("Welcome Screen!");
 
         auto name = gui.variable<std::string>("");
 
-        if (gui.series_begin()) {
+        if (gui.series()) {
           gui.text_box("Name: ");
           gui.depend_variable(name);
           gui.text_input(name);
-          gui.series_end();
+          gui.end();
         }
         gui.checkbox(false, [](bool value) {
           std::cout << "Checked: " << value << std::endl;
@@ -36,19 +36,19 @@ int main() {
         }
 
         gui.args_series().length_fixed(100);
-        if (gui.series_begin()) {
+        if (gui.series()) {
           for (std::size_t i = 0; i < 10; i++) {
             gui.text_input("Item " + std::to_string(i));
           }
-          gui.series_end();
+          gui.end();
         }
 
-        if (gui.series_begin()) {
+        if (gui.series()) {
           const std::vector<std::string> colors = {"red", "green", "blue"};
           gui.dropdown(colors, 0, [colors](int choice) {
             std::cout << "Selected " << colors[choice] << "!" << std::endl;
           });
-          gui.series_end();
+          gui.end();
         }
 
         gui.depend_variable(timer);
@@ -59,25 +59,25 @@ int main() {
           next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
         });
 
-        if (gui.series_begin()) {
+        if (gui.series()) {
           gui.checkbox(timer_paused);
           gui.text_box("Paused");
-          gui.series_end();
+          gui.end();
         }
 
-        if (gui.section_begin("Open me")) {
-          if (gui.series_begin()) {
+        if (gui.section("Open me")) {
+          if (gui.series()) {
             gui.text_box("Hello :)");
-            if (gui.labelled_begin("Input")) {
+            if (gui.labelled("Input")) {
               gui.text_input("");
-              gui.labelled_end();
+              gui.end();
             }
-            gui.series_end();
+            gui.end();
           }
-          gui.section_end();
+          gui.end();
         }
 
-        gui.series_end();
+        gui.end();
       }
       gui.end();
     }

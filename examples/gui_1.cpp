@@ -7,12 +7,12 @@ int main() {
   while (gui.running()) {
     if (gui.begin()) {
       std::cout << "Revisit" << std::endl;
-      if (gui.series_begin()) {
+      if (gui.series()) {
         gui.text_box("Hello");
         gui.button("Click Me", []() { //
           std::cout << "Clicked" << std::endl;
         });
-        gui.series_end();
+        gui.end();
       }
       gui.end();
     }

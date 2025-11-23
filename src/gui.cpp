@@ -46,6 +46,7 @@ bool Gui::running() const {
 }
 
 bool Gui::begin() {
+  active = true;
   tree.poll();
   current = tree.root();
   var_current = VarPtr();
@@ -53,8 +54,16 @@ bool Gui::begin() {
 }
 
 void Gui::end() {
-  assert(stack.empty());
-  tree.clear_dirty();
+  if (stack.empty()) {
+    assert(active);
+    active = false;
+    tree.clear_dirty();
+  } else {
+    assert(!stack.empty());
+    std::tie(current, var_current) = stack.top();
+    stack.pop();
+    current = current.next();
+  }
 }
 
 void Gui::poll() {
@@ -123,7 +132,7 @@ void Gui::dropdown(
   dropdown.callback = [var](int value) { var.set(value); };
 }
 
-bool Gui::floating_begin(
+bool Gui::floating(
     const Var<bool>& open_var,
     const std::string& title,
     float width,
@@ -160,13 +169,7 @@ bool Gui::floating_begin(
   return true;
 }
 
-void Gui::floating_end() {
-  std::tie(current, var_current) = stack.top();
-  stack.pop();
-  current = current.next();
-}
-
-bool Gui::labelled_begin(const std::string& label) {
+bool Gui::labelled(const std::string& label) {
   current.expect(Type::Labelled, read_key());
   auto& labelled = current.labelled();
   labelled.label = label;
@@ -181,13 +184,7 @@ bool Gui::labelled_begin(const std::string& label) {
   return false;
 }
 
-void Gui::labelled_end() {
-  std::tie(current, var_current) = stack.top();
-  stack.pop();
-  current = current.next();
-}
-
-bool Gui::section_begin(const std::string& label) {
+bool Gui::section(const std::string& label) {
   current.expect(Type::Section, read_key());
   auto& section = current.section();
   section.label = label;
@@ -203,13 +200,7 @@ bool Gui::section_begin(const std::string& label) {
   return false;
 }
 
-void Gui::section_end() {
-  std::tie(current, var_current) = stack.top();
-  stack.pop();
-  current = current.next();
-}
-
-bool Gui::series_begin() {
+bool Gui::series() {
   current.expect(Type::Series, read_key());
   args_series_.apply(current.series());
   args_series_.reset();
@@ -223,12 +214,6 @@ bool Gui::series_begin() {
   }
   current = current.next();
   return false;
-}
-
-void Gui::series_end() {
-  std::tie(current, var_current) = stack.top();
-  stack.pop();
-  current = current.next();
 }
 
 void Gui::text_input(
@@ -666,7 +651,7 @@ void Gui::event_handling_scroll(const ScrollEvent& event) {
   }
 }
 
-void trigger_handler(ConstElementPtr element) {
+void Gui::trigger_handler(ConstElementPtr element) {
   while (element) {
     if (element.state().event_handler) {
       element.state().event_handler();

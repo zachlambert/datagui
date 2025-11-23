@@ -25,8 +25,11 @@ public:
 
   bool running() const;
   bool begin();
-  void end();
   void poll();
+
+  // Common end method
+
+  void end();
 
   // Key and dependencies
 
@@ -85,21 +88,17 @@ public:
       const std::vector<std::string>& choices,
       const Var<int>& choice);
 
-  bool floating_begin(
+  bool floating(
       const Var<bool>& open,
       const std::string& title,
       float width,
       float height);
-  void floating_end();
 
-  bool labelled_begin(const std::string& label);
-  void labelled_end();
+  bool labelled(const std::string& label);
 
-  bool section_begin(const std::string& label);
-  void section_end();
+  bool section(const std::string& label);
 
-  bool series_begin();
-  void series_end();
+  bool series();
 
   void text_input(
       const std::string& initial_value,
@@ -228,6 +227,7 @@ private:
   Renderer renderer;
   std::vector<std::unique_ptr<System>> systems;
 
+  bool active = false;
   std::stack<std::pair<ElementPtr, VarPtr>> stack;
   ElementPtr current;
   VarPtr var_current;
