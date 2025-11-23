@@ -65,14 +65,16 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
         auto& state = list_stack.top();
 
         if (state.i != 0) {
+          auto keys = state.keys;
           std::size_t remove_i = state.i - 1;
-          gui.button("Remove", [=]() { state.keys.mut().remove(remove_i); });
+          gui.button("Remove", [=]() { keys.mut().remove(remove_i); });
           gui.end();
         }
 
         while (state.i < state.keys->size()) {
           gui.key((*state.keys)[state.i]);
           gui.args_series().horizontal();
+          gui.args_series().width_wrap();
           if (gui.series()) {
             break;
           }
@@ -104,7 +106,6 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       }
       if (parent.variant_next()) {
         if (iter != parent.next()) {
-          gui.end();
           gui.end();
           stack.pop();
 
@@ -184,32 +185,29 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
         auto choice = gui.variable<int>(0);
         gui.dropdown(variant_begin->labels, choice);
 
-        if (gui.series()) {
-          gui.depend_variable(choice);
-          iter = iter.next();
-          while (iter != schema.end()) {
-            if (iter.variant_end()) {
-              throw datapack::SchemaError("Didn't find matching VariantNext");
-            }
-            auto variant_next = iter.variant_next();
-            if (!variant_next) {
-              throw datapack::SchemaError("Expected VariantNext");
-            }
-            if (variant_next->index == *choice) {
-              break;
-            }
-            iter = iter.next().skip();
+        gui.depend_variable(choice);
+        iter = iter.next();
+        while (iter != schema.end()) {
+          if (iter.variant_end()) {
+            throw datapack::SchemaError("Didn't find matching VariantNext");
           }
-          if (iter == schema.end()) {
-            throw datapack::SchemaError("Unexpected end of schema");
+          auto variant_next = iter.variant_next();
+          if (!variant_next) {
+            throw datapack::SchemaError("Expected VariantNext");
           }
-          assert(iter.variant_next());
-          stack.push(iter);
-          iter = iter.next();
-          gui.key(*choice);
-          continue;
+          if (variant_next->index == *choice) {
+            break;
+          }
+          iter = iter.next().skip();
         }
-        gui.end();
+        if (iter == schema.end()) {
+          throw datapack::SchemaError("Unexpected end of schema");
+        }
+        assert(iter.variant_next());
+        stack.push(iter);
+        iter = iter.next();
+        gui.key(*choice);
+        continue;
       }
       iter = iter.skip();
       continue;

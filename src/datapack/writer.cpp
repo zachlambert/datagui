@@ -1,11 +1,6 @@
 #include "datagui/datapack/writer.hpp"
-
-#include "datagui/element/button.hpp"
-#include "datagui/element/checkbox.hpp"
-#include "datagui/element/dropdown.hpp"
-#include "datagui/element/series.hpp"
-#include "datagui/element/text_box.hpp"
-#include "datagui/element/text_input.hpp"
+#include "datagui/gui.hpp"
+#include <datapack/encode/base64.hpp>
 
 namespace datagui {
 
@@ -35,18 +30,15 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
     break;
   }
 
-  auto& props = get_text_input(systems, *tree.next(), "0");
-  props.text = value_str;
+  gui.text_input(value_str, {});
 }
 
 void GuiWriter::boolean(bool value) {
-  auto& props = get_checkbox(systems, *tree.next(), false);
-  props.checked = value;
+  gui.checkbox(value, {});
 }
 
 void GuiWriter::string(const char* value) {
-  auto& props = get_text_input(systems, *tree.next(), "");
-  props.text = value;
+  gui.text_input(std::string(value), {});
 }
 
 void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
@@ -54,128 +46,68 @@ void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
   for (auto label : labels) {
     labels_str.emplace_back(label);
   }
-
-  auto& props = get_dropdown(systems, *tree.next(), labels_str, -1);
-  props.choices = labels_str;
-  props.choice = value;
+  gui.dropdown(labels_str, value, {});
 }
 
 void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
-  auto& props = get_text_box(systems, *tree.next());
-  props.text = "<binary not editable>";
+  std::string text = datapack::base64_encode(data);
+  gui.text_input(text, {});
 }
 
 void GuiWriter::optional_begin(bool has_value) {
-  get_series(systems, *tree.next());
-
-  DATAGUI_LOG("GuiWriter::optional_begin", "DOWN (1)");
-  tree.down();
-
-  auto& toggle = get_checkbox(systems, *tree.next(), false);
-  toggle.checked = has_value;
-
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.no_padding = true;
-  }
-
+  gui.series();
+  auto has_value_var = gui.variable<bool>(has_value);
+  gui.checkbox(has_value_var);
+  gui.depend_variable(has_value_var);
   if (!has_value) {
-    DATAGUI_LOG("GuiWriter::optional_begin", "UP (1) (no value)");
-    tree.up();
-    return;
+    gui.end();
   }
-
-  DATAGUI_LOG("GuiWriter::optional_begin", "DOWN (2) (has value)");
-  tree.down();
 }
 
 void GuiWriter::optional_end() {
-  DATAGUI_LOG("GuiWriter::object_end", "UP (2)");
-  tree.up();
-
-  DATAGUI_LOG("GuiWriter::object_end", "UP (1)");
-  tree.up();
+  gui.end();
 }
 
 void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.no_padding = true;
-    series.alignment = Alignment::Min;
-  }
-
-  tree.down();
-  DATAGUI_LOG("GuiWriter::variant_begin", "DOWN (1)");
-
   std::vector<std::string> labels_str;
   for (auto label : labels) {
     labels_str.emplace_back(label);
   }
 
-  auto& dropdown = get_dropdown(systems, *tree.next(), labels_str, -1);
-  dropdown.choices = labels_str;
-  dropdown.choice = value;
-
-  auto id_var = tree.variable<int>([&]() { return 0; });
-  id_var.mutate(value);
-
-  {
-    auto& series = get_series(systems, *tree.next(value));
-    series.no_padding = true;
-    series.alignment = Alignment::Min;
-  }
-
-  tree.down();
-  DATAGUI_LOG("GuiWriter::variant_begin", "DOWN (2)");
+  gui.series();
+  auto choice_var = gui.variable<int>(value);
+  gui.dropdown(labels_str, choice_var);
+  gui.depend_variable(choice_var);
+  gui.key(*choice_var);
 }
 
 void GuiWriter::variant_end() {
-  DATAGUI_LOG("GuiWriter::variant_end", "UP (2)");
-  tree.up();
-  DATAGUI_LOG("GuiWriter::variant_end", "UP (2)");
-  tree.up();
+  gui.end();
 }
 
 void GuiWriter::object_begin() {
-  auto& series = get_series(systems, *tree.next());
-  series.alignment = Alignment::Min;
-  series.no_padding = true;
-
-  DATAGUI_LOG("GuiWriter::object_begin", "DOWN");
-  tree.down();
+  gui.series();
   at_object_begin = true;
 }
 
 void GuiWriter::object_next(const char* key) {
   if (!at_object_begin) {
-    tree.up();
-  }
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.direction = Direction::Horizontal;
-    series.width = LengthWrap();
-    series.alignment = Alignment::Min;
-    tree.down();
+    gui.end();
   }
   at_object_begin = false;
-  auto& props = get_text_box(systems, *tree.next());
-  props.text = key;
+  gui.section(key);
 }
 
 void GuiWriter::object_end() {
   if (!at_object_begin) {
-    tree.up();
+    gui.end();
   }
   at_object_begin = false;
-  DATAGUI_LOG("GuiWriter::object_end", "UP");
-  tree.up();
+  gui.end();
 }
 
 void GuiWriter::tuple_begin() {
-  get_series(systems, *tree.next());
-
-  DATAGUI_LOG("GuiWriter::tuple_begin", "DOWN");
-  tree.down();
+  gui.series();
 }
 
 void GuiWriter::tuple_next() {
@@ -183,78 +115,54 @@ void GuiWriter::tuple_next() {
 }
 
 void GuiWriter::tuple_end() {
-  DATAGUI_LOG("GuiWriter::tuple_end", "UP");
-  tree.up();
+  gui.end();
 }
 
 void GuiWriter::list_begin() {
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.alignment = Alignment::Min;
-    series.no_padding = true;
-  }
+  gui.series();
 
-  DATAGUI_LOG("GuiWriter::list_begin", "DOWN (1)");
-  tree.down();
+  auto key_list = gui.variable<KeyList>();
+  ListState state = {key_list, 0};
 
-  ListState state;
-  state.ids_var =
-      tree.variable<std::vector<int>>([]() { return std::vector<int>(); });
-  list_stack.push(state);
-
-  {
-    auto& series = get_series(systems, *tree.next());
-    series.alignment = Alignment::Min;
-    series.no_padding = true;
-  }
-  DATAGUI_LOG("GuiWriter::list_begin", "DOWN (2)");
-  tree.down();
+  gui.series();
+  gui.depend_variable(key_list);
 }
 
 void GuiWriter::list_next() {
   auto& state = list_stack.top();
 
   if (state.index != 0) {
-    DATAGUI_LOG("GuiWriter::list_next", "UP (el %zu)", state.index - 1);
-    tree.up();
+    auto keys = state.keys;
+    std::size_t remove_i = state.index - 1;
+    gui.button("Remove", [=]() { keys.mut().remove(remove_i); });
+    gui.end();
   }
 
-  int element_id = tree.get_id();
-  state.ids.push_back(element_id);
+  assert(state.index == state.keys->size());
+  std::size_t new_key = state.keys.mut().append();
 
-  DATAGUI_LOG(
-      "GuiWriter::list_next",
-      "ELEMENT: index=%zu, id=%i",
-      state.index,
-      element_id);
+  gui.key((*state.keys)[state.index]);
+  gui.args_series().horizontal();
+  gui.args_series().width_wrap();
+  gui.series();
 
-  get_series(systems, *tree.next(element_id));
-  DATAGUI_LOG("GuiWriter::list_next", "DOWN (el %zu)", state.index);
   state.index++;
-
-  tree.down();
 }
 
 void GuiWriter::list_end() {
-  auto& state = list_stack.top();
-  state.ids_var.mutate(state.ids);
+  const auto& state = list_stack.top();
+  auto keys = state.keys;
 
   if (state.index != 0) {
-    DATAGUI_LOG("GuiWriter::list_end", "UP (el %zu)", state.index - 1);
-    tree.up();
+    std::size_t remove_i = state.index - 1;
+    gui.button("Remove", [=]() { keys.mut().remove(remove_i); });
+    gui.end();
   }
 
-  DATAGUI_LOG("GuiWriter::list_end", "UP (2)");
-  tree.up();
+  gui.end();
 
-  auto& push_button = get_button(systems, *tree.next());
-  push_button.text = "Push";
-
-  auto& pop_button = get_button(systems, *tree.next());
-  pop_button.text = "Pop";
-
-  DATAGUI_LOG("GuiWriter::list_end", "UP (1)");
-  tree.up();
+  gui.button("new", [=]() { keys.mut().append(); });
+  gui.end();
 }
 
 } // namespace datagui

@@ -117,12 +117,11 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
   int choice = node.dropdown().choice;
   node = node.next();
   assert(node);
-  node = node.child();
   return choice;
 }
 
 void GuiReader::variant_end() {
-  node = node.parent().parent();
+  node = node.parent();
 }
 
 void GuiReader::object_begin() {

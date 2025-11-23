@@ -1,9 +1,9 @@
 #pragma once
 
+#include "datagui/element/key_list.hpp"
 #include "datagui/element/tree.hpp"
 #include <datapack/datapack.hpp>
 #include <stack>
-#include <vector>
 
 namespace datagui {
 
@@ -40,9 +40,8 @@ private:
   Gui& gui;
 
   struct ListState {
-    std::vector<int> ids;
-    Var<std::vector<int>> ids_var;
-    std::size_t index = 0;
+    Var<KeyList> keys;
+    std::size_t index;
   };
   std::stack<ListState> list_stack;
   bool at_object_begin = false;
