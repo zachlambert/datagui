@@ -115,8 +115,10 @@ bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
     if (text_input.text != active_text) {
       text_input.text = active_text;
-      text_input.changed = true;
-      return true;
+      if (!text_input.callback) {
+        return true;
+      }
+      text_input.callback(text_input.text);
     }
     return false;
   }
@@ -141,8 +143,10 @@ bool TextInputSystem::focus_leave(ElementPtr element, bool success) {
   auto& text_input = element.text_input();
   if (success && text_input.text != active_text) {
     text_input.text = active_text;
-    text_input.changed = true;
-    return true;
+    if (!text_input.callback) {
+      return true;
+    }
+    text_input.callback(text_input.text);
   }
   return false;
 }

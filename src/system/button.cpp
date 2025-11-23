@@ -82,8 +82,10 @@ bool ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   case MouseAction::Release:
     button.down = false;
     if (state.box().contains(event.position)) {
-      button.released = true;
-      return true;
+      if (!button.callback) {
+        return true;
+      }
+      button.callback();
     }
     break;
   default:
@@ -103,8 +105,12 @@ bool ButtonSystem::key_event(ElementPtr element, const KeyEvent& event) {
     break;
   case KeyAction::Release:
     button.down = false;
-    button.released = true;
-    return true;
+    if (button.callback) {
+      button.callback();
+      return false;
+    } else {
+      return true;
+    }
   default:
     break;
   }

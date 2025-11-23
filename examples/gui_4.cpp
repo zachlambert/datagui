@@ -44,9 +44,9 @@ int main() {
               gui.text_input(new_desc);
               gui.labelled_end();
             }
-            if (gui.button("Add")) {
+            gui.button("Add", [=]() {
               persons.mut().push_back({*new_name, *new_desc});
-            }
+            });
             gui.series_end();
           }
           gui.series_end();

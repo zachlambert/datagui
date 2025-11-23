@@ -44,9 +44,11 @@ bool CheckboxSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
 
   if (event.action == MouseAction::Release &&
       event.button == MouseButton::Left) {
-    checkbox.changed = true;
     checkbox.checked = !checkbox.checked;
-    return true;
+    if (!checkbox.callback) {
+      return true;
+    }
+    checkbox.callback(checkbox.checked);
   }
   return false;
 }
@@ -55,9 +57,11 @@ bool CheckboxSystem::key_event(ElementPtr element, const KeyEvent& event) {
   auto& checkbox = element.checkbox();
 
   if (event.action == KeyAction::Release && event.key == Key::Enter) {
-    checkbox.changed = true;
     checkbox.checked = !checkbox.checked;
-    return true;
+    if (!checkbox.callback) {
+      return true;
+    }
+    checkbox.callback(checkbox.checked);
   }
   return false;
 }

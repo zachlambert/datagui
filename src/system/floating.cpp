@@ -117,7 +117,6 @@ bool FloatingSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     return false;
   }
   floating.open = false;
-  floating.open_changed = true;
   return true;
 }
 

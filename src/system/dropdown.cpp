@@ -167,12 +167,14 @@ bool DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   }
 
   if (clicked != -1) {
-    if (dropdown.choice != clicked) {
-      dropdown.changed = true;
-      dropdown.choice = clicked;
-    }
     dropdown.open = false;
-    return true;
+    if (dropdown.choice != clicked) {
+      dropdown.choice = clicked;
+      if (!dropdown.callback) {
+        return true;
+      }
+      dropdown.callback(dropdown.choice);
+    }
   }
   return false;
 }

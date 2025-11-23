@@ -21,10 +21,14 @@ class Gui {
 public:
   Gui(const Window::Config& window_config = Window::Config());
 
+  // Setup
+
   bool running() const;
   bool begin();
   void end();
   void poll();
+
+  // Key and dependencies
 
   void key(std::size_t key) {
     next_key = key;
@@ -54,28 +58,29 @@ public:
     stack.top().first.add_timeout_dependency(period);
   }
 
-  bool series_begin();
-  void series_end();
+  // Elements
 
-  bool labelled_begin(const std::string& label);
-  void labelled_end();
+  void button(
+      const std::string& text,
+      const std::function<void()>& callback = {});
 
-  bool section_begin(const std::string& label);
-  void section_end();
-
-  void text_box(const std::string& text);
-
-  bool button(const std::string& text);
-
-  const std::string* text_input(const std::string& initial_value);
-  void text_input(const Var<std::string>& value);
-
-  const bool* checkbox(bool initial_value = false);
+  void checkbox(
+      bool initial_value,
+      const std::function<void(bool)>& callback = {});
+  void checkbox(bool& value) {
+    checkbox(value, [&value](bool new_value) { value = new_value; });
+  }
   void checkbox(const Var<bool>& value);
 
-  const int* dropdown(
+  void dropdown(
       const std::vector<std::string>& choices,
-      int initial_choice = -1);
+      int initial_choice,
+      const std::function<void(int)>& callback = {});
+  void dropdown(const std::vector<std::string>& choices, int& choice) {
+    dropdown(choices, choice, [&choice](int new_choice) {
+      choice = new_choice;
+    });
+  }
   void dropdown(
       const std::vector<std::string>& choices,
       const Var<int>& choice);
@@ -86,6 +91,27 @@ public:
       float width,
       float height);
   void floating_end();
+
+  bool labelled_begin(const std::string& label);
+  void labelled_end();
+
+  bool section_begin(const std::string& label);
+  void section_end();
+
+  bool series_begin();
+  void series_end();
+
+  void text_input(
+      const std::string& initial_value,
+      const std::function<void(const std::string& callback)>& callback = {});
+  void text_input(std::string& value) {
+    text_input(value, [&value](const std::string& new_value) {
+      value = new_value;
+    });
+  }
+  void text_input(const Var<std::string>& value);
+
+  void text_box(const std::string& text);
 
   template <typename T>
   Var<T> variable(const T& initial_value = T()) {
@@ -127,6 +153,7 @@ public:
     }
   }
 
+#if 0
   template <typename T>
   const T* edit() {
     if (!series_begin()) {
@@ -145,6 +172,7 @@ public:
     }
     return nullptr;
   }
+#endif
 
 #if 0
   template <typename T>

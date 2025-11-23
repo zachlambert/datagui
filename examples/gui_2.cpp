@@ -20,12 +20,13 @@ int main() {
 
         if (gui.series_begin()) {
           gui.text_box("Name: ");
+          gui.depend_variable(name);
           gui.text_input(name);
           gui.series_end();
         }
-        if (auto value = gui.checkbox()) {
-          std::cout << "Checked: " << *value << std::endl;
-        }
+        gui.checkbox(false, [](bool value) {
+          std::cout << "Checked: " << value << std::endl;
+        });
 
         if (name->empty()) {
           gui.text_box("Hello... what is your name?");
@@ -43,19 +44,19 @@ int main() {
 
         if (gui.series_begin()) {
           const std::vector<std::string> colors = {"red", "green", "blue"};
-          if (auto value = gui.dropdown(colors, 0)) {
-            std::cout << "Selected " << colors[*value] << "!" << std::endl;
-          }
+          gui.dropdown(colors, 0, [colors](int choice) {
+            std::cout << "Selected " << colors[choice] << "!" << std::endl;
+          });
           gui.series_end();
         }
 
         gui.depend_variable(timer);
         gui.text_box("Timer: " + std::to_string(*timer));
 
-        if (gui.button("Reset")) {
+        gui.button("Reset", [&]() {
           timer.set(0);
           next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
-        }
+        });
 
         if (gui.series_begin()) {
           gui.checkbox(timer_paused);

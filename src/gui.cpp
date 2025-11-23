@@ -45,23 +45,122 @@ bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::series_begin() {
-  current.expect(Type::Series, read_key());
-  args_series_.apply(current.series());
-  args_series_.reset();
-
-  if (current.dirty()) {
-    current.clear_dependencies();
-    stack.emplace(current, var_current);
-    current = current.child();
-    var_current = VarPtr();
-    return true;
-  }
-  current = current.next();
-  return false;
+bool Gui::begin() {
+  tree.poll();
+  current = tree.root();
+  var_current = VarPtr();
+  return !current || current.dirty();
 }
 
-void Gui::series_end() {
+void Gui::end() {
+  assert(stack.empty());
+  tree.clear_dirty();
+}
+
+void Gui::poll() {
+  calculate_sizes();
+  render();
+  event_handling();
+}
+
+void Gui::button(
+    const std::string& text,
+    const std::function<void()>& callback) {
+  current.expect(Type::Button, read_key());
+  auto& button = current.button();
+  current = current.next();
+
+  button.text = text;
+  button.callback = callback;
+}
+
+void Gui::checkbox(
+    bool initial_value,
+    const std::function<void(bool)>& callback) {
+  bool is_new = current.expect(Type::Checkbox, read_key());
+  auto& checkbox = current.checkbox();
+  current = current.next();
+
+  checkbox.callback = callback;
+  if (is_new) {
+    checkbox.checked = initial_value;
+  }
+}
+
+void Gui::checkbox(const Var<bool>& var) {
+  bool is_new = current.expect(Type::Checkbox, read_key());
+  auto& checkbox = current.checkbox();
+  current = current.next();
+
+  checkbox.callback = [var](bool value) { var.set(value); };
+  checkbox.checked = *var;
+}
+
+void Gui::dropdown(
+    const std::vector<std::string>& choices,
+    int initial_choice,
+    const std::function<void(int)>& callback) {
+  bool is_new = current.expect(Type::Dropdown, read_key());
+  auto& dropdown = current.dropdown();
+  current = current.next();
+
+  if (is_new) {
+    dropdown.choice = initial_choice;
+  }
+  dropdown.choices = choices;
+  dropdown.callback = callback;
+}
+
+void Gui::dropdown(
+    const std::vector<std::string>& choices,
+    const Var<int>& var) {
+  bool is_new = current.expect(Type::Dropdown, read_key());
+  auto& dropdown = current.dropdown();
+  current = current.next();
+
+  dropdown.choices = choices;
+  dropdown.choice = *var;
+  dropdown.callback = [var](int value) { var.set(value); };
+}
+
+bool Gui::floating_begin(
+    const Var<bool>& open_var,
+    const std::string& title,
+    float width,
+    float height) {
+  bool is_new = current.expect(Type::Floating, read_key());
+  auto& floating = current.floating();
+
+  args_floating_.apply(floating);
+  args_floating_.reset();
+
+  floating.title = title;
+  floating.width = width;
+  floating.height = height;
+  floating.closed_callback = [open_var]() { open_var.set(false); };
+
+  if (*open_var != floating.open) {
+    floating.open = *open_var;
+  }
+
+  if (!floating.open && !current.state().hidden) {
+    current.clear_children();
+  }
+  current.state().hidden = !floating.open;
+
+  if (!floating.open || !current.dirty()) {
+    current = current.next();
+    return false;
+  }
+
+  current.clear_dependencies();
+  stack.emplace(current, var_current);
+  current = current.child();
+  var_current = VarPtr();
+  return true;
+}
+
+void Gui::floating_end() {
   std::tie(current, var_current) = stack.top();
   stack.pop();
   current = current.next();
@@ -110,28 +209,31 @@ void Gui::section_end() {
   current = current.next();
 }
 
-void Gui::text_box(const std::string& text) {
-  current.expect(Type::TextBox, read_key());
-  auto& text_box = current.text_box();
-  current = current.next();
+bool Gui::series_begin() {
+  current.expect(Type::Series, read_key());
+  args_series_.apply(current.series());
+  args_series_.reset();
 
-  text_box.text = text;
-}
-
-bool Gui::button(const std::string& text) {
-  current.expect(Type::Button, read_key());
-  auto& button = current.button();
-  current = current.next();
-
-  button.text = text;
-  if (button.released) {
-    button.released = false;
+  if (current.dirty()) {
+    current.clear_dependencies();
+    stack.emplace(current, var_current);
+    current = current.child();
+    var_current = VarPtr();
     return true;
   }
+  current = current.next();
   return false;
 }
 
-const std::string* Gui::text_input(const std::string& initial_value) {
+void Gui::series_end() {
+  std::tie(current, var_current) = stack.top();
+  stack.pop();
+  current = current.next();
+}
+
+void Gui::text_input(
+    const std::string& initial_value,
+    const std::function<void(const std::string&)>& callback) {
   bool is_new = current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   current = current.next();
@@ -139,11 +241,7 @@ const std::string* Gui::text_input(const std::string& initial_value) {
   if (is_new) {
     text_input.text = initial_value;
   }
-  if (text_input.changed) {
-    text_input.changed = false;
-    return &text_input.text;
-  }
-  return nullptr;
+  text_input.callback = callback;
 }
 
 void Gui::text_input(const Var<std::string>& var) {
@@ -151,141 +249,16 @@ void Gui::text_input(const Var<std::string>& var) {
   auto& text_input = current.text_input();
   current = current.next();
 
-  if (text_input.changed) {
-    var.set(text_input.text);
-    text_input.changed = false;
-  } else if (is_new || var.version() != text_input.var_version) {
-    text_input.text = *var;
-  }
-  text_input.var_version = var.version();
+  text_input.callback = [var](const std::string& value) { var.set(value); };
+  text_input.text = *var;
 }
 
-const bool* Gui::checkbox(bool initial_value) {
-  bool is_new = current.expect(Type::Checkbox, read_key());
-  auto& checkbox = current.checkbox();
+void Gui::text_box(const std::string& text) {
+  current.expect(Type::TextBox, read_key());
+  auto& text_box = current.text_box();
   current = current.next();
 
-  if (is_new) {
-    checkbox.checked = initial_value;
-  }
-  if (checkbox.changed) {
-    checkbox.changed = false;
-    return &checkbox.checked;
-  }
-  return nullptr;
-}
-
-void Gui::checkbox(const Var<bool>& var) {
-  bool is_new = current.expect(Type::Checkbox, read_key());
-  auto& checkbox = current.checkbox();
-  current = current.next();
-
-  if (checkbox.changed) {
-    var.set(checkbox.checked);
-    checkbox.changed = false;
-  } else if (is_new || var.version() != checkbox.var_version) {
-    checkbox.checked = *var;
-  }
-  checkbox.var_version = var.version();
-}
-
-const int* Gui::dropdown(
-    const std::vector<std::string>& choices,
-    int initial_choice) {
-  bool is_new = current.expect(Type::Dropdown, read_key());
-  auto& dropdown = current.dropdown();
-  current = current.next();
-
-  if (is_new) {
-    dropdown.choice = is_new;
-    dropdown.choices = choices;
-  }
-  if (dropdown.changed) {
-    dropdown.changed = false;
-    return &dropdown.choice;
-  }
-  return nullptr;
-}
-
-void Gui::dropdown(
-    const std::vector<std::string>& choices,
-    const Var<int>& var) {
-  bool is_new = current.expect(Type::Dropdown, read_key());
-  auto& dropdown = current.dropdown();
-  current = current.next();
-
-  dropdown.choices = choices;
-  if (dropdown.changed) {
-    var.set(dropdown.choice);
-    dropdown.changed = false;
-  } else if (is_new || var.version() != dropdown.var_version) {
-    dropdown.choice = *var;
-  }
-  dropdown.var_version = var.version();
-}
-
-bool Gui::floating_begin(
-    const Var<bool>& open_var,
-    const std::string& title,
-    float width,
-    float height) {
-  bool is_new = current.expect(Type::Floating, read_key());
-  auto& floating = current.floating();
-
-  args_floating_.apply(floating);
-  args_floating_.reset();
-
-  floating.title = title;
-  floating.width = width;
-  floating.height = height;
-
-  if (floating.open_changed) {
-    floating.open_changed = false;
-    open_var.set(floating.open);
-  } else if (is_new || open_var.version() != floating.open_var_version) {
-    floating.open = *open_var;
-  }
-  floating.open_var_version = open_var.version();
-
-  if (!floating.open && !current.state().hidden) {
-    current.clear_children();
-  }
-  current.state().hidden = !floating.open;
-
-  if (!floating.open || !current.dirty()) {
-    current = current.next();
-    return false;
-  }
-
-  current.clear_dependencies();
-  stack.emplace(current, var_current);
-  current = current.child();
-  var_current = VarPtr();
-  return true;
-}
-
-void Gui::floating_end() {
-  std::tie(current, var_current) = stack.top();
-  stack.pop();
-  current = current.next();
-}
-
-bool Gui::begin() {
-  tree.poll();
-  current = tree.root();
-  var_current = VarPtr();
-  return !current || current.dirty();
-}
-
-void Gui::end() {
-  assert(stack.empty());
-  tree.clear_dirty();
-}
-
-void Gui::poll() {
-  calculate_sizes();
-  render();
-  event_handling();
+  text_box.text = text;
 }
 
 void Gui::render() {
