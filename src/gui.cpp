@@ -54,16 +54,16 @@ void Gui::check_begin() {
 }
 
 void Gui::end() {
+  current.expect_end();
   assert(!stack.empty());
   std::tie(current, var_current) = stack.top();
   stack.pop();
   current = current.next();
-  if (stack.empty()) {
-    tree.clear_dirty();
-  }
 }
 
 void Gui::poll() {
+  assert(stack.empty());
+  tree.clear_dirty();
   calculate_sizes();
   render();
   event_handling();

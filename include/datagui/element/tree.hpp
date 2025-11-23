@@ -288,7 +288,7 @@ public:
     }
 
     operator bool() const {
-      return index != -1;
+      return tree && index != -1 && tree->elements.contains(index);
     }
 
     void create(Type type, std::size_t id = 0) {

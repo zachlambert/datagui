@@ -7,12 +7,13 @@ void edit_list_1(datagui::Gui& gui) {
   }
 
   struct Person {
-    const std::string name;
+    std::string name;
     std::string desc;
   };
   auto persons = gui.variable<std::vector<Person>>();
 
   if (gui.series()) {
+    gui.depend_variable(persons);
     for (std::size_t i = 0; i < persons->size(); i++) {
       const auto& person = (*persons)[i];
       gui.key(person.name);
@@ -26,6 +27,9 @@ void edit_list_1(datagui::Gui& gui) {
         });
         gui.end();
       }
+      gui.button("Remove", [=]() {
+        persons.mut().erase(persons->begin() + i);
+      });
       gui.end();
     }
     gui.end();
@@ -46,12 +50,30 @@ void edit_list_1(datagui::Gui& gui) {
 }
 
 void edit_list_2(datagui::Gui& gui) {
-  if (gui.series()) {
-    auto keys = gui.variable<datagui::KeyList>();
-    if (gui.series()) {
-      gui.end();
-    }
+  if (!gui.series()) {
+    return;
   }
+
+  auto keys = gui.variable<datagui::KeyList>();
+  if (gui.series()) {
+    gui.depend_variable(keys);
+    for (std::size_t i = 0; i < keys->size(); i++) {
+      gui.args_series().horizontal();
+      gui.args_series().width_wrap();
+      gui.key((*keys)[i]);
+      if (gui.series()) {
+        gui.text_input("");
+        gui.button("Remove", [=]() { keys.mut().remove(i); });
+        gui.end();
+      }
+    }
+    gui.end();
+  }
+  if (gui.series()) {
+    gui.button("Push", [=]() { keys.mut().append(); });
+    gui.end();
+  }
+  gui.end();
 }
 
 int main() {
