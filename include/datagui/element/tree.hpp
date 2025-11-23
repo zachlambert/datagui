@@ -312,7 +312,7 @@ public:
       return ElementPtr_(tree, parent_, next);
     }
 
-    bool expect(Type type, std::size_t id = -1) {
+    bool expect(Type type, std::size_t id = 0) {
       assert(tree);
       while (index != -1 && id != tree->elements[index].id) {
         (*this) = erase();
@@ -337,7 +337,7 @@ public:
       return lhs.index == rhs.index;
     }
 
-    int id() const {
+    std::size_t id() const {
       assert(tree && index != -1);
       return tree->elements[index].id;
     }
@@ -435,8 +435,8 @@ public:
   }
 
 private:
-  int create_element(int parent, int prev, int id, Type type);
-  void reset_element(int element, int id, Type type);
+  int create_element(int parent, int prev, std::size_t id, Type type);
+  void reset_element(int element, std::size_t id, Type type);
   void remove_element(int element, bool children_only = false);
 
   int emplace_type(Type type);

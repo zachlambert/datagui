@@ -41,9 +41,31 @@ void edit_list_1(datagui::Gui& gui) {
     auto new_desc = gui.variable<std::string>();
     gui.text_input(new_desc);
 
+    auto error = gui.variable<std::string>();
+
     gui.button("Add", [=]() {
+      if (new_name->empty()) {
+        error.set("Cannot have an empty name");
+        return;
+      }
+      auto existing = std::find_if(
+          persons->begin(),
+          persons->end(),
+          [&](const Person& person) { return person.name == *new_name; });
+      if (existing != persons->end()) {
+        error.set("Person with name '" + *new_name + "' already exists");
+        return;
+      }
       persons.mut().push_back({*new_name, *new_desc});
+      error.mut().clear();
     });
+
+    gui.depend_variable(error);
+    gui.key<std::string>("error box");
+    if (!error->empty()) {
+      gui.text_box("Error: " + *error);
+    }
+
     gui.end();
   }
   gui.end();

@@ -30,7 +30,7 @@ void Tree::clear_dirty() {
   }
 }
 
-int Tree::create_element(int parent, int prev, int id, Type type) {
+int Tree::create_element(int parent, int prev, std::size_t id, Type type) {
   int element = elements.emplace();
   auto& node = elements[element];
   node.parent = parent;
@@ -65,7 +65,7 @@ int Tree::create_element(int parent, int prev, int id, Type type) {
   return element;
 }
 
-void Tree::reset_element(int element, int id, Type type) {
+void Tree::reset_element(int element, std::size_t id, Type type) {
   auto& node = elements[element];
   node.id = id;
   pop_type(node.type, node.type_index);
