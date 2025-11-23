@@ -123,12 +123,14 @@ void GuiWriter::list_begin() {
 
   auto key_list = gui.variable<KeyList>();
   ListState state = {key_list, 0};
+  list_stack.push(state);
 
   gui.series();
   gui.depend_variable(key_list);
 }
 
 void GuiWriter::list_next() {
+  assert(!list_stack.empty());
   auto& state = list_stack.top();
 
   if (state.index != 0) {
@@ -150,6 +152,7 @@ void GuiWriter::list_next() {
 }
 
 void GuiWriter::list_end() {
+  assert(!list_stack.empty());
   const auto& state = list_stack.top();
   auto keys = state.keys;
 
@@ -163,6 +166,8 @@ void GuiWriter::list_end() {
 
   gui.button("new", [=]() { keys.mut().append(); });
   gui.end();
+
+  list_stack.pop();
 }
 
 } // namespace datagui

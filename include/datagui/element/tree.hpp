@@ -147,6 +147,11 @@ public:
     int version() const {
       return tree->variables[variable].version;
     }
+    void reset(const T& value) const {
+      assert(tree && variable != -1);
+      static_assert(!IsConst);
+      *tree->variables[variable].data.cast<T>() = value;
+    }
 
     Tree* tree;
     int variable;

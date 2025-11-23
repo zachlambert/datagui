@@ -88,13 +88,13 @@ void Gui::checkbox(
   current = current.next();
 
   checkbox.callback = callback;
-  if (is_new) {
+  if (is_new || overwrite) {
     checkbox.checked = initial_value;
   }
 }
 
 void Gui::checkbox(const Var<bool>& var) {
-  bool is_new = current.expect(Type::Checkbox, read_key());
+  current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
   current = current.next();
 
@@ -110,7 +110,7 @@ void Gui::dropdown(
   auto& dropdown = current.dropdown();
   current = current.next();
 
-  if (is_new) {
+  if (is_new || overwrite) {
     dropdown.choice = initial_choice;
   }
   dropdown.choices = choices;
@@ -120,7 +120,7 @@ void Gui::dropdown(
 void Gui::dropdown(
     const std::vector<std::string>& choices,
     const Var<int>& var) {
-  bool is_new = current.expect(Type::Dropdown, read_key());
+  current.expect(Type::Dropdown, read_key());
   auto& dropdown = current.dropdown();
   current = current.next();
 
@@ -135,7 +135,7 @@ bool Gui::floating(
     float width,
     float height) {
   check_begin();
-  bool is_new = current.expect(Type::Floating, read_key());
+  current.expect(Type::Floating, read_key());
   auto& floating = current.floating();
 
   args_floating_.apply(floating);
@@ -224,14 +224,14 @@ void Gui::text_input(
   auto& text_input = current.text_input();
   current = current.next();
 
-  if (is_new) {
+  if (is_new || overwrite) {
     text_input.text = initial_value;
   }
   text_input.callback = callback;
 }
 
 void Gui::text_input(const Var<std::string>& var) {
-  bool is_new = current.expect(Type::TextInput, read_key());
+  current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   current = current.next();
 

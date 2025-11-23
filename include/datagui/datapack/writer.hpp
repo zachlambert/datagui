@@ -47,4 +47,10 @@ private:
   bool at_object_begin = false;
 };
 
+template <typename T>
+T datapack_write(Gui& gui, const T& value) {
+  GuiWriter(gui).value(value);
+  return value;
+}
+
 } // namespace datagui

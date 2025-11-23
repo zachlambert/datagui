@@ -5,6 +5,7 @@
 
 #include "datagui/datapack/edit.hpp"
 #include "datagui/datapack/reader.hpp"
+#include "datagui/datapack/writer.hpp"
 #include "datagui/element/args.hpp"
 #include "datagui/element/tree.hpp"
 #include "datagui/system/system.hpp"
@@ -98,12 +99,12 @@ public:
   void text_input(
       const std::string& initial_value,
       const std::function<void(const std::string& callback)>& callback);
+  void text_input(const Var<std::string>& value);
   void text_input(std::string& value) {
     text_input(value, [&value](const std::string& new_value) {
       value = new_value;
     });
   }
-  void text_input(const Var<std::string>& value);
 
   void text_box(const std::string& text);
 
@@ -123,6 +124,9 @@ public:
     } else {
       Var<T> result = var_current.as<T>();
       var_current = var_current.next();
+      if (overwrite) {
+        result.reset(initial_value);
+      }
       return result;
     }
   }
@@ -166,6 +170,8 @@ public:
     if (!series()) {
       return;
     }
+    depend_variable(var);
+
     auto var_version = variable<int>(0);
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
@@ -173,14 +179,14 @@ public:
 
     if (var.version() != *var_version) {
       var_version.set(var.version());
-      assert(false); // TODO: Not implemented
-      // datapack_write(*this, *var);
+      overwrite = true;
+      datapack_write(*this, *var);
+      overwrite = false;
     } else {
       datapack_edit(*this, *schema);
+      var.set(datapack_read<T>(node_capture));
     }
     end();
-
-    var.set(datapack_read<T>(node_capture));
   }
 
   SeriesArgs& args_series() {
@@ -234,6 +240,7 @@ private:
     return key;
   }
   std::size_t next_key = 0;
+  bool overwrite = false; // Only used for datapack_write, special case
 
   struct Compare {
     bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {

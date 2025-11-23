@@ -82,9 +82,20 @@ int main() {
   datagui::Gui gui;
 
   while (gui.running()) {
-    gui.edit<Foo>([](const Foo& value) {
-      std::cout << datapack::debug(value) << std::endl;
-    });
+    if (gui.series()) {
+      auto value = gui.variable<Foo>();
+
+      gui.text_box("Edit");
+      gui.edit<Foo>([=](const Foo& new_value) {
+        std::cout << datapack::debug(new_value) << std::endl;
+        value.set(new_value);
+      });
+
+      gui.text_box("Edit + Overwritten by above");
+      gui.edit(value);
+
+      gui.end();
+    }
     gui.poll();
   }
   return 0;
