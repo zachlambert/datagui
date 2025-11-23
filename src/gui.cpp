@@ -45,24 +45,21 @@ bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::begin() {
-  active = true;
-  tree.poll();
-  current = tree.root();
-  var_current = VarPtr();
-  return !current || current.dirty();
+void Gui::check_begin() {
+  if (stack.empty()) {
+    tree.poll();
+    current = tree.root();
+    var_current = VarPtr();
+  }
 }
 
 void Gui::end() {
+  assert(!stack.empty());
+  std::tie(current, var_current) = stack.top();
+  stack.pop();
+  current = current.next();
   if (stack.empty()) {
-    assert(active);
-    active = false;
     tree.clear_dirty();
-  } else {
-    assert(!stack.empty());
-    std::tie(current, var_current) = stack.top();
-    stack.pop();
-    current = current.next();
   }
 }
 
@@ -137,6 +134,7 @@ bool Gui::floating(
     const std::string& title,
     float width,
     float height) {
+  check_begin();
   bool is_new = current.expect(Type::Floating, read_key());
   auto& floating = current.floating();
 
@@ -170,6 +168,7 @@ bool Gui::floating(
 }
 
 bool Gui::labelled(const std::string& label) {
+  check_begin();
   current.expect(Type::Labelled, read_key());
   auto& labelled = current.labelled();
   labelled.label = label;
@@ -185,6 +184,7 @@ bool Gui::labelled(const std::string& label) {
 }
 
 bool Gui::section(const std::string& label) {
+  check_begin();
   current.expect(Type::Section, read_key());
   auto& section = current.section();
   section.label = label;
@@ -201,6 +201,7 @@ bool Gui::section(const std::string& label) {
 }
 
 bool Gui::series() {
+  check_begin();
   current.expect(Type::Series, read_key());
   args_series_.apply(current.series());
   args_series_.reset();

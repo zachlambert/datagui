@@ -24,7 +24,6 @@ public:
   // Setup
 
   bool running() const;
-  bool begin();
   void poll();
 
   // Common end method
@@ -199,6 +198,7 @@ public:
   }
 
 private:
+  void check_begin();
   void render();
 #ifdef DATAGUI_DEBUG
   void debug_render();
@@ -227,7 +227,6 @@ private:
   Renderer renderer;
   std::vector<std::unique_ptr<System>> systems;
 
-  bool active = false;
   std::stack<std::pair<ElementPtr, VarPtr>> stack;
   ElementPtr current;
   VarPtr var_current;
