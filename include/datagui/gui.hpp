@@ -38,7 +38,7 @@ public:
   }
   template <typename T>
   void key(const T& key) {
-    key(std::hash<T>{}());
+    this->key(std::hash<T>{}(key));
   }
 
   template <typename T>
