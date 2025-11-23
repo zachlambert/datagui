@@ -153,20 +153,23 @@ public:
 
   template <typename T>
   void edit(const std::function<void(const T&)>& callback) {
+    bool is_new = !current;
     if (!series()) {
       return;
     }
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
     datapack_edit(*this, *schema);
-    auto node_capture = current.prev();
+    if (!is_new) {
+      auto node_capture = current.prev();
+      callback(datapack_read<T>(node_capture));
+    }
     end();
-
-    callback(datapack_read<T>(node_capture));
   }
 
   template <typename T>
   void edit(const Var<T>& var) {
+    bool is_new = !current;
     if (!series()) {
       return;
     }
@@ -175,16 +178,18 @@ public:
     auto var_version = variable<int>(0);
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
-    auto node_capture = current;
 
-    if (var.version() != *var_version) {
+    if (is_new || var.version() != *var_version) {
       var_version.set(var.version());
       overwrite = true;
       datapack_write(*this, *var);
       overwrite = false;
     } else {
       datapack_edit(*this, *schema);
-      var.set(datapack_read<T>(node_capture));
+      if (!is_new) {
+        auto node_capture = current.prev();
+        var.set(datapack_read<T>(node_capture));
+      }
     }
     end();
   }
