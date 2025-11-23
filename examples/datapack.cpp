@@ -24,10 +24,15 @@ struct Line {
 
 using Shape = std::variant<Point, Line>;
 
+struct Person {
+  std::string name;
+  int age;
+};
+
 struct Foo {
-  int x;
-  int y;
+  double number;
   bool test;
+  Person person;
   Shape shape;
   std::optional<std::array<double, 3>> points;
   std::vector<std::string> names;
@@ -54,11 +59,18 @@ DATAPACK_INLINE(Line, value, packer) {
   packer.object_end();
 }
 
+DATAPACK_INLINE(Person, value, packer) {
+  packer.object_begin();
+  packer.value("name", value.name);
+  packer.value("age", value.age);
+  packer.object_end();
+}
+
 DATAPACK_INLINE(Foo, value, packer) {
   packer.object_begin();
-  packer.value("x", value.x);
-  packer.value("y", value.y);
+  packer.value("number", value.number);
   packer.value("test", value.test);
+  packer.value("person", value.person);
   packer.value("shape", value.shape);
   packer.value("points", value.points);
   packer.value("names", value.names);
@@ -67,18 +79,21 @@ DATAPACK_INLINE(Foo, value, packer) {
 } // namespace datapack
 
 int main() {
-  DATAGUI_LOG_INIT();
   datagui::Gui gui;
 
   while (gui.running()) {
-    if (gui.begin()) {
-      if (gui.series_begin()) {
-        auto var = gui.edit_variable<Foo>();
-        if (var.modified()) {
-          std::cout << datapack::debug(*var) << std::endl;
-        }
-        gui.series_end();
-      }
+    if (gui.series()) {
+      auto value = gui.variable<Foo>();
+
+      gui.text_box("Edit");
+      gui.edit<Foo>([=](const Foo& new_value) {
+        std::cout << datapack::debug(new_value) << std::endl;
+        value.set(new_value);
+      });
+
+      gui.text_box("Edit + Overwritten by above");
+      gui.edit(value);
+
       gui.end();
     }
     gui.poll();

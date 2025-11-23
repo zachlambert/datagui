@@ -1,18 +1,13 @@
 #pragma once
 
-#include "datagui/gui_args.hpp"
-#include "datagui/tree/element.hpp"
-#include "datagui/tree/tree.hpp"
+#include "datagui/element/tree.hpp"
 #include <datapack/datapack.hpp>
 
 namespace datagui {
 
 class GuiReader : public datapack::Reader {
 public:
-  GuiReader(ElementSystemList& systems, Tree& tree, bool& changed) :
-      systems(systems), tree(tree), changed(changed) {
-    changed = false;
-  }
+  GuiReader(ConstElementPtr node) : node(node) {}
 
   void number(datapack::NumberType type, void* value) override;
   bool boolean() override;
@@ -39,16 +34,18 @@ public:
   void list_end() override;
 
 private:
-  ElementSystemList& systems;
-  Tree& tree;
-  bool& changed;
-
-  struct ListState {
-    Variable<std::vector<int>> ids_var;
-    std::size_t index;
-  };
-  std::stack<ListState> list_stack;
+  ConstElementPtr node;
+  std::vector<std::uint8_t> binary_temp;
   bool at_object_begin = false;
 };
+
+template <typename T>
+T datapack_read(ConstElementPtr node) {
+  GuiReader reader(node);
+  T value;
+  reader.value(value);
+  assert(reader.valid());
+  return value;
+}
 
 } // namespace datagui

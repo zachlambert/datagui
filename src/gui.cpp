@@ -1,20 +1,16 @@
 #include "datagui/gui.hpp"
-#include "datagui/log.hpp"
-#include <queue>
 #include <sstream>
 #include <stack>
 
-#include "datagui/element/button.hpp"
-#include "datagui/element/checkbox.hpp"
-#include "datagui/element/dropdown.hpp"
-#include "datagui/element/floating.hpp"
-#include "datagui/element/labelled.hpp"
-#include "datagui/element/section.hpp"
-#include "datagui/element/series.hpp"
-#include "datagui/element/text_box.hpp"
-#include "datagui/element/text_input.hpp"
-
-#define BOOL_STR(value) (value ? "true" : "false")
+#include "datagui/system/button.hpp"
+#include "datagui/system/checkbox.hpp"
+#include "datagui/system/dropdown.hpp"
+#include "datagui/system/floating.hpp"
+#include "datagui/system/labelled.hpp"
+#include "datagui/system/section.hpp"
+#include "datagui/system/series.hpp"
+#include "datagui/system/text_box.hpp"
+#include "datagui/system/text_input.hpp"
 
 namespace datagui {
 
@@ -25,245 +21,230 @@ Gui::Gui(const Window::Config& config) : window(config) {
   theme = std::make_shared<Theme>(theme_default());
   renderer.init(fm);
 
-  systems.emplace<ButtonSystem>(fm, theme);
-  systems.emplace<CheckboxSystem>(fm, theme);
-  systems.emplace<DropdownSystem>(fm, theme);
-  systems.emplace<FloatingSystem>(fm, theme);
-  systems.emplace<LabelledSystem>(fm, theme);
-  systems.emplace<SectionSystem>(fm, theme);
-  systems.emplace<SeriesSystem>(theme);
-  systems.emplace<TextBoxSystem>(fm, theme);
-  systems.emplace<TextInputSystem>(fm, theme);
+  systems.resize(TypeCount);
+  systems[(std::size_t)Type::Button] =
+      std::make_unique<ButtonSystem>(fm, theme);
+  systems[(std::size_t)Type::Checkbox] =
+      std::make_unique<CheckboxSystem>(fm, theme);
+  systems[(std::size_t)Type::Dropdown] =
+      std::make_unique<DropdownSystem>(fm, theme);
+  systems[(std::size_t)Type::Floating] =
+      std::make_unique<FloatingSystem>(fm, theme);
+  systems[(std::size_t)Type::Labelled] =
+      std::make_unique<LabelledSystem>(fm, theme);
+  systems[(std::size_t)Type::Section] =
+      std::make_unique<SectionSystem>(fm, theme);
+  systems[(std::size_t)Type::Series] = std::make_unique<SeriesSystem>(theme);
+  systems[(std::size_t)Type::TextBox] =
+      std::make_unique<TextBoxSystem>(fm, theme);
+  systems[(std::size_t)Type::TextInput] =
+      std::make_unique<TextInputSystem>(fm, theme);
 }
 
 bool Gui::running() const {
   return window.running();
 }
 
-bool Gui::series_begin() {
-  auto element = tree.next();
-  auto& props = get_series(systems, *element);
-  args_series_.apply(props);
-  args_series_.reset();
-
-  if (tree.down_if()) {
-    DATAGUI_LOG("Gui::series_begin", "DOWN");
-    return true;
-  }
-  DATAGUI_LOG("Gui::series_begin", "SKIP");
-  return false;
-}
-
-void Gui::series_end() {
-  tree.up();
-}
-
-bool Gui::labelled_begin(const std::string& label) {
-  auto element = tree.next();
-  auto& props = get_labelled(systems, *element, label);
-
-  if (tree.down_if()) {
-    DATAGUI_LOG("Gui::labelled_begin", "DOWN");
-    return true;
-  }
-  DATAGUI_LOG("Gui::labelled_begin", "SKIP");
-  return false;
-}
-
-void Gui::labelled_end() {
-  tree.up();
-}
-
-bool Gui::section_begin(const std::string& label) {
-  auto element = tree.next();
-  auto& props = get_section(systems, *element, label);
-
-  if (tree.down_if()) {
-    DATAGUI_LOG("Gui::section_begin", "DOWN");
-    return true;
-  }
-  DATAGUI_LOG("Gui::section_begin", "SKIP");
-  return false;
-}
-
-void Gui::section_end() {
-  tree.up();
-}
-
-void Gui::text_box(const std::string& text) {
-  auto element = tree.next();
-  auto& props = get_text_box(systems, *element);
-  props.text = text;
-}
-
-bool Gui::button(const std::string& text) {
-  auto element = tree.next();
-  auto& props = get_button(systems, *element);
-
-  props.text = text;
-  if (props.released) {
-    DATAGUI_LOG("Gui::button", "Button released");
-    props.released = false;
-    return true;
-  }
-  return false;
-}
-
-const std::string* Gui::text_input(const std::string& initial_value) {
-  auto element = tree.next();
-  auto& props = get_text_input(systems, *element, initial_value);
-
-  if (props.changed) {
-    DATAGUI_LOG("Gui::text_input(initial_value)", "Text input changed");
-    props.changed = false;
-    return &props.text;
-  }
-  return nullptr;
-}
-
-void Gui::text_input(const Variable<std::string>& value) {
-  auto element = tree.next();
-  auto& props = get_text_input(systems, *element, *value);
-
-  if (props.changed) {
-    DATAGUI_LOG("Gui::text_input(variable)", "Text input changed");
-    value.set_internal(props.text);
-    props.changed = false;
-  } else if (value.modified_external()) {
-    DATAGUI_LOG("Gui::text_input(variable)", "Variable modified");
-    props.text = *value;
+void Gui::check_begin() {
+  if (stack.empty()) {
+    tree.poll();
+    current = tree.root();
+    var_current = VarPtr();
   }
 }
 
-const bool* Gui::checkbox(bool initial_value) {
-  auto element = tree.next();
-  auto& props = get_checkbox(systems, *element, initial_value);
-
-  if (props.changed) {
-    DATAGUI_LOG(
-        "Gui::checkbox(initial_value)",
-        "Checkbox changed -> %s",
-        props.checked ? "true" : "false");
-    props.changed = false;
-    return &props.checked;
-  }
-  return nullptr;
+void Gui::end() {
+  current.expect_end();
+  assert(!stack.empty());
+  std::tie(current, var_current) = stack.top();
+  stack.pop();
+  current = current.next();
 }
 
-void Gui::checkbox(const Variable<bool>& value) {
-  auto element = tree.next();
-  auto& props = get_checkbox(systems, *element, *value);
+void Gui::poll() {
+  assert(stack.empty());
+  tree.clear_dirty();
+  calculate_sizes();
+  render();
+  event_handling();
+}
 
-  if (props.changed) {
-    DATAGUI_LOG(
-        "Gui::checkbox(variable)",
-        "Checkbox changed -> %s",
-        BOOL_STR(props.checked));
-    value.set_internal(props.checked);
-    props.changed = false;
-  } else if (value.modified_external()) {
-    DATAGUI_LOG(
-        "Gui::checkbox(variable)",
-        "Variable modified -> %s",
-        BOOL_STR(*value));
-    props.checked = *value;
+void Gui::button(
+    const std::string& text,
+    const std::function<void()>& callback) {
+  current.expect(Type::Button, read_key());
+  auto& button = current.button();
+  current = current.next();
+
+  button.text = text;
+  button.callback = callback;
+}
+
+void Gui::checkbox(
+    bool initial_value,
+    const std::function<void(bool)>& callback) {
+  bool is_new = current.expect(Type::Checkbox, read_key());
+  auto& checkbox = current.checkbox();
+  current = current.next();
+
+  checkbox.callback = callback;
+  if (is_new || overwrite) {
+    checkbox.checked = initial_value;
   }
 }
 
-const int* Gui::dropdown(
-    const std::vector<std::string>& choices,
-    int initial_choice) {
-  auto element = tree.next();
-  auto& props = get_dropdown(systems, *element, choices, initial_choice);
+void Gui::checkbox(const Var<bool>& var) {
+  current.expect(Type::Checkbox, read_key());
+  auto& checkbox = current.checkbox();
+  current = current.next();
 
-  if (props.changed) {
-    DATAGUI_LOG(
-        "Gui::dropdown(initial_value)",
-        "Dropdown changed -> %i",
-        props.choice);
-    props.changed = false;
-    return &props.choice;
-  }
-  return nullptr;
+  checkbox.callback = [var](bool value) { var.set(value); };
+  checkbox.checked = *var;
 }
 
 void Gui::dropdown(
     const std::vector<std::string>& choices,
-    const Variable<int>& choice) {
-  auto element = tree.next();
-  auto& props = get_dropdown(systems, *element, choices, *choice);
+    int initial_choice,
+    const std::function<void(int)>& callback) {
+  bool is_new = current.expect(Type::Dropdown, read_key());
+  auto& dropdown = current.dropdown();
+  current = current.next();
 
-  if (props.changed) {
-    DATAGUI_LOG(
-        "Gui::dropdown(variable)",
-        "Dropdown changed -> %i",
-        props.choice);
-    choice.set_internal(props.choice);
-    props.changed = false;
-  } else if (choice.modified_external()) {
-    DATAGUI_LOG("Gui::dropdown(variable)", "Variable modified -> %i", *choice);
-    props.choice = *choice;
+  if (is_new || overwrite) {
+    dropdown.choice = initial_choice;
   }
+  dropdown.choices = choices;
+  dropdown.callback = callback;
 }
 
-bool Gui::floating_begin(
-    const Variable<bool>& open,
+void Gui::dropdown(
+    const std::vector<std::string>& choices,
+    const Var<int>& var) {
+  current.expect(Type::Dropdown, read_key());
+  auto& dropdown = current.dropdown();
+  current = current.next();
+
+  dropdown.choices = choices;
+  dropdown.choice = *var;
+  dropdown.callback = [var](int value) { var.set(value); };
+}
+
+bool Gui::floating(
+    const Var<bool>& open_var,
     const std::string& title,
     float width,
     float height) {
+  check_begin();
+  current.expect(Type::Floating, read_key());
+  auto& floating = current.floating();
 
-  auto element = tree.next();
-  auto& props = get_floating(systems, *element, *open);
-  args_floating_.apply(props);
+  args_floating_.apply(floating);
   args_floating_.reset();
 
-  props.title = title;
-  props.width = width;
-  props.height = height;
+  floating.title = title;
+  floating.width = width;
+  floating.height = height;
+  floating.closed_callback = [open_var]() { open_var.set(false); };
 
-  if (props.open_changed) {
-    DATAGUI_LOG(
-        "Gui::floating_begin",
-        "Open changed -> %s",
-        BOOL_STR(props.open));
-    props.open_changed = false;
-    open.set_internal(props.open);
-  } else if (open.modified_external()) {
-    DATAGUI_LOG(
-        "Gui::floating_begin",
-        "Open variable changed -> %s",
-        BOOL_STR(*open));
-    props.open = *open;
+  if (*open_var != floating.open) {
+    floating.open = *open_var;
   }
 
-  if (!props.open && !element->hidden) {
-    tree.down();
-    tree.up();
+  if (!floating.open && !current.state().hidden) {
+    current.clear_children();
   }
-  element->hidden = !props.open;
+  current.state().hidden = !floating.open;
 
-  if (!props.open) {
+  if (!floating.open || !current.dirty()) {
+    current = current.next();
     return false;
   }
-  return tree.down_if();
+
+  current.clear_dependencies();
+  stack.emplace(current, var_current);
+  current = current.child();
+  var_current = VarPtr();
+  return true;
 }
 
-void Gui::floating_end() {
-  tree.up();
+bool Gui::labelled(const std::string& label) {
+  check_begin();
+  current.expect(Type::Labelled, read_key());
+  auto& labelled = current.labelled();
+  labelled.label = label;
+
+  if (current.dirty()) {
+    current.clear_dependencies();
+    stack.emplace(current, var_current);
+    current = current.child();
+    var_current = VarPtr();
+    return true;
+  }
+  return false;
 }
 
-bool Gui::begin() {
-  return tree.begin();
+bool Gui::section(const std::string& label) {
+  check_begin();
+  current.expect(Type::Section, read_key());
+  auto& section = current.section();
+  section.label = label;
+
+  if (current.dirty()) {
+    current.clear_dependencies();
+    stack.emplace(current, var_current);
+    current = current.child();
+    var_current = VarPtr();
+    return true;
+  }
+  current = current.next();
+  return false;
 }
 
-void Gui::end() {
-  tree.end();
+bool Gui::series() {
+  check_begin();
+  current.expect(Type::Series, read_key());
+  args_series_.apply(current.series());
+  args_series_.reset();
+
+  if (current.dirty()) {
+    current.clear_dependencies();
+    stack.emplace(current, var_current);
+    current = current.child();
+    var_current = VarPtr();
+    return true;
+  }
+  current = current.next();
+  return false;
 }
 
-void Gui::poll() {
-  calculate_sizes();
-  render();
-  event_handling();
+void Gui::text_input(
+    const std::string& initial_value,
+    const std::function<void(const std::string&)>& callback) {
+  bool is_new = current.expect(Type::TextInput, read_key());
+  auto& text_input = current.text_input();
+  current = current.next();
+
+  if (is_new || overwrite) {
+    text_input.text = initial_value;
+  }
+  text_input.callback = callback;
+}
+
+void Gui::text_input(const Var<std::string>& var) {
+  current.expect(Type::TextInput, read_key());
+  auto& text_input = current.text_input();
+  current = current.next();
+
+  text_input.callback = [var](const std::string& value) { var.set(value); };
+  text_input.text = *var;
+}
+
+void Gui::text_box(const std::string& text) {
+  current.expect(Type::TextBox, read_key());
+  auto& text_box = current.text_box();
+  current = current.next();
+
+  text_box.text = text;
 }
 
 void Gui::render() {
@@ -274,13 +255,15 @@ void Gui::render() {
       State(ConstElementPtr element) : element(element), first_visit(true) {}
     };
     std::stack<State> stack;
-    stack.push(root);
+    stack.emplace(root);
 
     while (!stack.empty()) {
       auto& state = stack.top();
       const auto& element = state.element;
+      assert(element);
 
-      if (element->hidden || (element != root && element->floating)) {
+      if (element.state().hidden ||
+          (element != root && element.state().floating)) {
         stack.pop();
         continue;
       }
@@ -292,12 +275,13 @@ void Gui::render() {
       }
       state.first_visit = false;
 
-      systems.get(*element).render(*element, renderer);
+      render(element);
       renderer.push_mask(
-          element->floating ? element->float_box : element->box());
+          element.state().floating ? element.state().float_box
+                                   : element.state().box());
 
-      for (auto child = element.first_child(); child; child = child.next()) {
-        stack.push(child);
+      for (auto child = element.child(); child; child = child.next()) {
+        stack.emplace(child);
       }
     }
   };
@@ -339,7 +323,7 @@ void Gui::debug_render() {
     auto& state = layer_stack.top();
     auto element = state.element;
 
-    if (element->hidden) {
+    if (element.state().hidden) {
       layer_stack.pop();
       continue;
     }
@@ -351,34 +335,36 @@ void Gui::debug_render() {
     state.first_visit = false;
 
     renderer.queue_box(
-        Boxf(element->position, element->position + element->size),
+        Boxf(
+            element.state().position,
+            element.state().position + element.state().size),
         Color::Clear(),
         2,
-        element->focused         ? Color::Blue()
-        : element->in_focus_tree ? Color::Red()
-                                 : Color::Green(),
+        element.state().focused         ? Color::Blue()
+        : element.state().in_focus_tree ? Color::Red()
+                                        : Color::Green(),
         0);
 
-    if (element->floating) {
+    if (element.state().floating) {
       renderer.queue_box(
-          element->float_box,
+          element.state().float_box,
           Color::Clear(),
           2,
-          element->in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1),
+          element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1),
           0);
     }
 
-    if (element->floating) {
-      renderer.push_mask(element->float_box);
+    if (element.state().floating) {
+      renderer.push_mask(element.state().float_box);
     } else {
-      renderer.push_mask(element->box());
+      renderer.push_mask(element.state().box());
     }
 
-    for (auto child = element.first_child(); child; child = child.next()) {
+    for (auto child = element.child(); child; child = child.next()) {
       layer_stack.push(child);
     }
 
-    if (element->focused) {
+    if (element.state().focused) {
       focused = element;
     }
   }
@@ -386,13 +372,14 @@ void Gui::debug_render() {
   if (focused) {
     std::stringstream ss;
 
-    ss << focused.debug();
-    ss << "\nfixed: " << focused->fixed_size.x << ", " << focused->fixed_size.y;
-    ss << "\ndynamic: " << focused->dynamic_size.x << ", "
-       << focused->dynamic_size.y;
-    ss << "\nsize: " << focused->size.x << ", " << focused->size.y;
-    if (focused->floating) {
-      ss << "\nfloating priority: " << focused->float_priority;
+    ss << "fixed: " << focused.state().fixed_size.x << ", "
+       << focused.state().fixed_size.y;
+    ss << "\ndynamic: " << focused.state().dynamic_size.x << ", "
+       << focused.state().dynamic_size.y;
+    ss << "\nsize: " << focused.state().size.x << ", "
+       << focused.state().size.y;
+    if (focused.state().floating) {
+      ss << "\nfloating priority: " << focused.state().float_priority;
     }
     std::string debug_text = ss.str();
 
@@ -419,6 +406,10 @@ void Gui::debug_render() {
 #endif
 
 void Gui::calculate_sizes() {
+  if (!tree.root()) {
+    return;
+  }
+
   floating_elements.clear();
   {
     struct State {
@@ -434,26 +425,22 @@ void Gui::calculate_sizes() {
       State& state = stack.top();
       auto element = state.element;
 
-      if (element->hidden) {
+      if (element.state().hidden) {
         stack.pop();
         continue;
       }
 
       // If the node has children, process these first
-      if (element.first_child() && state.first_visit) {
+      if (element.child() && state.first_visit) {
         state.first_visit = false;
-        for (auto child = element.first_child(); child; child = child.next()) {
+        for (auto child = element.child(); child; child = child.next()) {
           stack.emplace(child);
         }
         continue;
       }
       stack.pop();
 
-      std::vector<const Element*> children;
-      for (auto child = element.first_child(); child; child = child.next()) {
-        children.push_back(child.get());
-      }
-      systems.get(*element).set_input_state(*element, children);
+      set_input_state(element);
     }
   }
 
@@ -461,8 +448,9 @@ void Gui::calculate_sizes() {
     std::stack<ElementPtr> stack;
     {
       auto root = tree.root();
-      root->position = Vecf::Zero();
-      root->size = window.size();
+      assert(root);
+      root.state().position = Vecf::Zero();
+      root.state().size = window.size();
       stack.push(root);
     }
 
@@ -470,33 +458,33 @@ void Gui::calculate_sizes() {
       auto element = stack.top();
       stack.pop();
 
-      if (element->hidden) {
+      if (element.state().hidden) {
         continue;
       }
 
-      if (element->floating) {
+      if (element.state().floating) {
         floating_elements.insert(element);
-        if (auto type =
-                std::get_if<FloatingTypeAbsolute>(&element->floating_type)) {
-          element->float_box.lower = window.size() / 2.f - type->size / 2.f;
-          element->float_box.upper = window.size() / 2.f + type->size / 2.f;
+        if (auto type = std::get_if<FloatingTypeAbsolute>(
+                &element.state().floating_type)) {
+          element.state().float_box.lower =
+              window.size() / 2.f - type->size / 2.f;
+          element.state().float_box.upper =
+              window.size() / 2.f + type->size / 2.f;
         } else if (
-            auto type =
-                std::get_if<FloatingTypeRelative>(&element->floating_type)) {
-          element->float_box.lower = element->position + type->offset;
-          element->float_box.upper = element->float_box.lower + type->size;
+            auto type = std::get_if<FloatingTypeRelative>(
+                &element.state().floating_type)) {
+          element.state().float_box.lower =
+              element.state().position + type->offset;
+          element.state().float_box.upper =
+              element.state().float_box.lower + type->size;
         } else {
           assert(false);
         }
       }
 
-      std::vector<Element*> children;
-      for (auto child = element.first_child(); child; child = child.next()) {
-        children.push_back(child.get());
-      }
-      systems.get(*element).set_dependent_state(*element, children);
+      set_dependent_state(element);
 
-      for (auto child = element.first_child(); child; child = child.next()) {
+      for (auto child = element.child(); child; child = child.next()) {
         stack.push(child);
       }
     }
@@ -532,8 +520,9 @@ void Gui::event_handling() {
         break;
       case Key::Escape:
         if (element_focus) {
-          element_focus.revisit(
-              systems.get(*element_focus).focus_leave(*element_focus, false));
+          if (focus_leave(element_focus, false)) {
+            element_focus.set_dirty(true);
+          }
           set_tree_focus(element_focus, false);
           element_focus = ElementPtr();
         }
@@ -552,15 +541,17 @@ void Gui::event_handling() {
     }
 
     if (!handled && element_focus) {
-      element_focus.revisit(
-          systems.get(*element_focus).key_event(*element_focus, event));
+      if (key_event(element_focus, event)) {
+        element_focus.set_dirty(true);
+      }
     }
   }
 
-  for (const auto& event : window.text_events()) {
-    if (element_focus) {
-      element_focus.revisit(
-          systems.get(*element_focus).text_event(*element_focus, event));
+  if (element_focus) {
+    for (const auto& event : window.text_events()) {
+      if (text_event(element_focus, event)) {
+        element_focus.set_dirty(true);
+      }
     }
   }
 }
@@ -576,21 +567,19 @@ ElementPtr Gui::get_leaf_node(const Vecf& position) {
       auto element = stack.top();
       stack.pop();
 
-      if (element->floating) {
+      if (element.state().floating) {
         if (element != root) {
           continue;
-        } else if (!element->float_box.contains(position)) {
+        } else if (!element.state().float_box.contains(position)) {
           continue;
         }
-      } else if (!element->box().contains(position)) {
+      } else if (!element.state().box().contains(position)) {
         continue;
       }
       leaf = element;
 
-      auto child = element.first_child();
-      while (child) {
+      for (auto child = element.child(); child; child = child.next()) {
         stack.push(child);
-        child = child.next();
       }
     }
     return leaf;
@@ -611,9 +600,8 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // Pass-through the hold or release event
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
-    if (element_focus) {
-      element_focus.revisit(
-          systems.get(*element_focus).mouse_event(*element_focus, event));
+    if (element_focus && mouse_event(element_focus, event)) {
+      element_focus.set_dirty(true);
     }
     return;
   }
@@ -625,8 +613,9 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
 
   if (element_focus != prev_element_focus) {
     if (prev_element_focus) {
-      prev_element_focus.revisit(systems.get(*prev_element_focus)
-                                     .focus_leave(*prev_element_focus, true));
+      if (focus_leave(prev_element_focus, true)) {
+        prev_element_focus.set_dirty(true);
+      }
       set_tree_focus(prev_element_focus, false);
     }
     if (element_focus) {
@@ -635,29 +624,28 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
       set_tree_focus(element_focus, true);
     }
   }
-  if (element_focus) {
-    element_focus.revisit(
-        systems.get(*element_focus).mouse_event(*element_focus, event));
+  if (element_focus && mouse_event(element_focus, event)) {
+    element_focus.set_dirty(true);
   }
 }
 
 void Gui::event_handling_hover(const Vecf& mouse_pos) {
   if (element_hover) {
-    element_hover->hovered = false;
+    element_hover.state().hovered = false;
   }
 
   element_hover = get_leaf_node(mouse_pos);
   if (!element_hover) {
     return;
   }
-  element_hover->hovered = true;
-  systems.get(*element_hover).mouse_hover(*element_hover, mouse_pos);
+  element_hover.state().hovered = true;
+  mouse_hover(element_hover, mouse_pos);
 }
 
 void Gui::event_handling_scroll(const ScrollEvent& event) {
   ElementPtr element = get_leaf_node(event.position);
   while (element) {
-    if (systems.get(*element).scroll_event(*element, event)) {
+    if (scroll_event(element, event)) {
       return;
     }
     element = element.parent();
@@ -665,21 +653,21 @@ void Gui::event_handling_scroll(const ScrollEvent& event) {
 }
 
 void Gui::set_tree_focus(ElementPtr element, bool focused) {
-  element->focused = focused;
-  element->in_focus_tree = focused;
+  element.state().focused = focused;
+  element.state().in_focus_tree = focused;
 
   bool found_floating = false;
-  if (focused && element->floating) {
+  if (focused && element.state().floating) {
     found_floating = true;
-    element->float_priority = next_float_priority++;
+    element.state().float_priority = next_float_priority++;
   }
 
   element = element.parent();
   while (element) {
-    element->in_focus_tree = focused;
-    if (focused && !found_floating && element->floating) {
+    element.state().in_focus_tree = focused;
+    if (focused && !found_floating && element.state().floating) {
       found_floating = true;
-      element->float_priority = next_float_priority++;
+      element.state().float_priority = next_float_priority++;
     }
     element = element.parent();
   }
@@ -695,8 +683,8 @@ void Gui::focus_next(bool reverse) {
     if (!reverse) {
       if (!next) {
         next = tree.root();
-      } else if (next.first_child()) {
-        next = next.first_child();
+      } else if (next.child()) {
+        next = next.child();
       } else if (next.next()) {
         next = next.next();
       } else {
@@ -722,16 +710,17 @@ void Gui::focus_next(bool reverse) {
         }
       }
     }
-  } while (next && next != tree.root() && next->hidden);
+  } while (next && next != tree.root() && next.state().hidden);
 
-  if (next == tree.root() && tree.root()->hidden) {
+  if (next == tree.root() && tree.root().state().hidden) {
     next = ElementPtr();
   }
 
   if (element_focus) {
     auto prev_element_focus = element_focus;
-    prev_element_focus.revisit(systems.get(*prev_element_focus)
-                                   .focus_leave(*prev_element_focus, true));
+    if (focus_leave(prev_element_focus, true)) {
+      prev_element_focus.set_dirty(true);
+    }
     set_tree_focus(element_focus, false);
   }
 
@@ -739,7 +728,7 @@ void Gui::focus_next(bool reverse) {
 
   if (element_focus) {
     set_tree_focus(element_focus, true);
-    systems.get(*element_focus).focus_enter(*element_focus);
+    focus_enter(element_focus);
   }
 }
 

@@ -1,14 +1,16 @@
 #pragma once
 
-#include "datagui/tree/tree.hpp"
+#include "datagui/element/key_list.hpp"
+#include "datagui/element/tree.hpp"
 #include <datapack/datapack.hpp>
+#include <stack>
 
 namespace datagui {
 
+class Gui;
 class GuiWriter : public datapack::Writer {
 public:
-  GuiWriter(ElementSystemList& systems, Tree& tree) :
-      systems(systems), tree(tree) {}
+  GuiWriter(Gui& gui) : gui(gui) {}
 
   void number(datapack::NumberType type, const void* value) override;
   void boolean(bool value) override;
@@ -35,16 +37,20 @@ public:
   void list_end() override;
 
 private:
-  ElementSystemList& systems;
-  Tree& tree;
+  Gui& gui;
 
   struct ListState {
-    std::vector<int> ids;
-    Variable<std::vector<int>> ids_var;
-    std::size_t index = 0;
+    Var<KeyList> keys;
+    std::size_t index;
   };
   std::stack<ListState> list_stack;
   bool at_object_begin = false;
 };
+
+template <typename T>
+T datapack_write(Gui& gui, const T& value) {
+  GuiWriter(gui).value(value);
+  return value;
+}
 
 } // namespace datagui

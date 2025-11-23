@@ -18,10 +18,9 @@ int main() {
   box.lower = Vecf(50, 50);
   box.upper = Vecf(300, 300);
 
-  Boxf mask(Vecf::Zero(), window.size());
-
   while (window.running()) {
     window.render_begin();
+    Boxf mask(Vecf::Zero(), window.size());
 
     geometry.queue_box(box, Color::Red(), 5, Color::Black(), 0, mask);
     text.queue_text(

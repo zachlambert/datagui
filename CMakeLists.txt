@@ -17,22 +17,12 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
-  src/datapack/reader.cpp
-  src/datapack/writer.cpp
+  src/geometry.cpp
+  src/log.cpp
+  src/theme.cpp
 
-  src/element/button.cpp
-  src/element/checkbox.cpp
-  src/element/dropdown.cpp
-  src/element/floating.cpp
-  src/element/labelled.cpp
-  src/element/section.cpp
-  src/element/series.cpp
-  src/element/text_box.cpp
-  src/element/text_input.cpp
-
-  src/input/text_selection.cpp
-
-  src/tree/tree.cpp
+  src/element/tree.cpp
+  src/element/args.cpp
 
   src/visual/font_manager.cpp
   src/visual/geometry_renderer.cpp
@@ -40,11 +30,23 @@ add_library(datagui SHARED
   src/visual/text_renderer.cpp
   src/visual/window.cpp
 
-  src/geometry.cpp
+  src/input/text_selection.cpp
+
+  src/system/button.cpp
+  src/system/checkbox.cpp
+  src/system/dropdown.cpp
+  src/system/floating.cpp
+  src/system/labelled.cpp
+  src/system/section.cpp
+  src/system/series.cpp
+  src/system/text_box.cpp
+  src/system/text_input.cpp
+
   src/gui.cpp
-  src/gui_args.cpp
-  src/log.cpp
-  src/theme.cpp
+
+  src/datapack/edit.cpp
+  src/datapack/reader.cpp
+  src/datapack/writer.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
@@ -64,29 +66,8 @@ if (NOT BUILD_ADDITIONAL_TARGETS)
     return()
 endif()
 
-add_executable(example_tree examples/tree.cpp)
-target_link_libraries(example_tree datagui)
-
-add_executable(example_window examples/window.cpp)
-target_link_libraries(example_window datagui)
-
-add_executable(example_gui_new examples/gui_new.cpp)
-target_link_libraries(example_gui_new datagui)
-
-add_executable(example_gui examples/gui.cpp)
-target_link_libraries(example_gui datagui)
-
-# add_executable(example_gui2 examples/gui2.cpp)
-# target_link_libraries(example_gui2 datagui)
-
-add_executable(example_gui_layers examples/gui_layers.cpp)
-target_link_libraries(example_gui_layers datagui)
-
-add_executable(example_datapack examples/datapack.cpp)
-target_link_libraries(example_datapack datagui)
-
-add_executable(log_terminal util/log_terminal.cpp)
-target_link_libraries(log_terminal datagui)
+add_subdirectory(examples)
+add_subdirectory(test)
 
 # Create install target
 

@@ -3,11 +3,13 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include "datagui/datapack/edit.hpp"
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/writer.hpp"
-#include "datagui/element/series.hpp"
-#include "datagui/gui_args.hpp"
-#include "datagui/tree/tree.hpp"
+#include "datagui/element/args.hpp"
+#include "datagui/element/tree.hpp"
+#include "datagui/system/system.hpp"
+#include "datagui/theme.hpp"
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>
@@ -20,94 +22,176 @@ class Gui {
 public:
   Gui(const Window::Config& window_config = Window::Config());
 
+  // Setup
+
   bool running() const;
-  bool begin();
-  void end();
   void poll();
 
-  bool series_begin();
-  void series_end();
+  // Common end method
 
-  bool labelled_begin(const std::string& label);
-  void labelled_end();
+  void end();
 
-  bool section_begin(const std::string& label);
-  void section_end();
+  // Key and dependencies
 
-  void text_box(const std::string& text);
-
-  bool button(const std::string& text);
-
-  const std::string* text_input(const std::string& initial_value);
-  void text_input(const Variable<std::string>& value);
-
-  const bool* checkbox(bool initial_value = false);
-  void checkbox(const Variable<bool>& value);
-
-  const int* dropdown(
-      const std::vector<std::string>& choices,
-      int initial_choice = -1);
-  void dropdown(
-      const std::vector<std::string>& choices,
-      const Variable<int>& choice);
-
-  bool floating_begin(
-      const Variable<bool>& open,
-      const std::string& title,
-      float width,
-      float height);
-  void floating_end();
-
+  void key(std::size_t key) {
+    next_key = key;
+  }
   template <typename T>
-  Variable<T> variable(const T& initial_value = T()) {
-    // Capture initial_value by value
-    return tree.variable<T>([initial_value]() { return initial_value; });
+  void key(const T& key) {
+    this->key(std::hash<T>{}(key));
   }
 
   template <typename T>
-  requires datapack::writeable<T> && datapack::readable<T>
-  Variable<T> edit_variable(const T& initial_value = T()) {
-    {
-      auto& series = get_series(systems, *tree.next());
-      series.no_padding = true;
+  void depend_variable(const Var<T>& var) {
+    if (stack.empty()) {
+      return;
     }
-
-    DATAGUI_LOG("Gui::edit_variable", "DOWN (1)");
-    tree.down();
-
-    auto var = variable<T>(initial_value);
-
-    {
-      auto& series = get_series(systems, *tree.next());
-      series.no_padding = true;
+    stack.top().first.add_variable_dep(var);
+  }
+  void depend_condition(const std::function<bool()>& condition) {
+    if (stack.empty()) {
+      return;
     }
-
-    if (!tree.down_if()) {
-      DATAGUI_LOG("Gui::edit_variable", "UP (1) (no revisit)");
-      tree.up();
-      return var;
+    stack.top().first.add_condition_dependency(condition);
+  }
+  void depend_timeout(double period) {
+    if (stack.empty()) {
+      return;
     }
-    DATAGUI_LOG("Gui::edit_variable", "DOWN (2) (revisit)");
+    stack.top().first.add_timeout_dependency(period);
+  }
 
-    if (var.modified_external()) {
-      DATAGUI_LOG("Gui::edit_variable", "Write variable -> GUI");
-      GuiWriter(systems, tree).value(*var);
-    } else {
-      DATAGUI_LOG("Gui::edit_variable", "Read GUI -> variable");
-      T new_value;
-      bool changed;
-      GuiReader(systems, tree, changed).value(new_value);
-      if (changed) {
-        var.set_internal(std::move(new_value));
+  // Elements
+
+  void button(const std::string& text, const std::function<void()>& callback);
+
+  void checkbox(bool initial_value, const std::function<void(bool)>& callback);
+  void checkbox(bool& value) {
+    checkbox(value, [&value](bool new_value) { value = new_value; });
+  }
+  void checkbox(const Var<bool>& value);
+
+  void dropdown(
+      const std::vector<std::string>& choices,
+      int initial_choice,
+      const std::function<void(int)>& callback);
+  void dropdown(const std::vector<std::string>& choices, int& choice) {
+    dropdown(choices, choice, [&choice](int new_choice) {
+      choice = new_choice;
+    });
+  }
+  void dropdown(
+      const std::vector<std::string>& choices,
+      const Var<int>& choice);
+
+  bool floating(
+      const Var<bool>& open,
+      const std::string& title,
+      float width,
+      float height);
+
+  bool labelled(const std::string& label);
+
+  bool section(const std::string& label);
+
+  bool series();
+
+  void text_input(
+      const std::string& initial_value,
+      const std::function<void(const std::string& callback)>& callback);
+  void text_input(const Var<std::string>& value);
+  void text_input(std::string& value) {
+    text_input(value, [&value](const std::string& new_value) {
+      value = new_value;
+    });
+  }
+
+  void text_box(const std::string& text);
+
+  template <typename T>
+  Var<T> variable(const T& initial_value = T()) {
+    if (!var_current.valid()) {
+      if (stack.empty()) {
+        var_current = tree.var();
+      } else {
+        var_current = stack.top().first.var();
       }
     }
+    if (!var_current) {
+      Var<T> result = var_current.create<T>(initial_value);
+      var_current = var_current.next();
+      return result;
+    } else {
+      Var<T> result = var_current.as<T>();
+      var_current = var_current.next();
+      if (overwrite) {
+        result.reset(initial_value);
+      }
+      return result;
+    }
+  }
 
-    DATAGUI_LOG("Gui::edit_variable", "UP (2) (after revisit)");
-    tree.up();
-    DATAGUI_LOG("Gui::edit_variable", "UP (1) (after revisit)");
-    tree.up();
+  template <typename T>
+  Var<T> variable(const std::function<T()>& construct) {
+    if (!var_current.valid()) {
+      if (stack.empty()) {
+        var_current = tree.var();
+      } else {
+        var_current = stack.top().first.var();
+      }
+    }
+    if (!var_current) {
+      Var<T> result = var_current.create<T>(construct());
+      var_current = var_current.next();
+      return result;
+    } else {
+      Var<T> result = var_current.as<T>();
+      var_current = var_current.next();
+      return result;
+    }
+  }
 
-    return var;
+  template <typename T>
+  void edit(const std::function<void(const T&)>& callback) {
+    bool is_new = !current;
+    if (!series()) {
+      return;
+    }
+    auto schema = variable<datapack::Schema>(
+        []() { return datapack::Schema::make<T>(); });
+    datapack_edit(*this, *schema);
+    if (!is_new) {
+      auto node_capture = current.prev();
+      callback(datapack_read<T>(node_capture));
+    }
+    end();
+  }
+
+  template <typename T>
+  void edit(const Var<T>& var) {
+    bool is_new = !current;
+    if (!series()) {
+      return;
+    }
+    depend_variable(var);
+
+    auto var_version = variable<int>(0);
+    auto schema = variable<datapack::Schema>(
+        []() { return datapack::Schema::make<T>(); });
+
+    if (is_new || var.version() != *var_version) {
+      var_version.set(var.version());
+      overwrite = true;
+      datapack_write(*this, *var);
+      overwrite = false;
+    } else {
+      datapack_edit(*this, *schema);
+      if (!is_new) {
+        auto node_capture = current.prev();
+        var.set(datapack_read<T>(node_capture));
+      }
+    }
+    end();
   }
 
   SeriesArgs& args_series() {
@@ -119,6 +203,7 @@ public:
   }
 
 private:
+  void check_begin();
   void render();
 #ifdef DATAGUI_DEBUG
   void debug_render();
@@ -136,6 +221,7 @@ private:
 
   Window window;
   Tree tree;
+
 #ifdef DATAGUI_DEBUG
   bool debug_mode_ = false;
 #endif
@@ -143,21 +229,68 @@ private:
   std::shared_ptr<FontManager> fm;
   std::shared_ptr<Theme> theme;
   Renderer renderer;
-  ElementSystemList systems;
+  std::vector<std::unique_ptr<System>> systems;
+
+  std::stack<std::pair<ElementPtr, VarPtr>> stack;
+  ElementPtr current;
+  VarPtr var_current;
 
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;
 
+  std::size_t read_key() {
+    std::size_t key = next_key;
+    next_key = 0;
+    return key;
+  }
+  std::size_t next_key = 0;
+  bool overwrite = false; // Only used for datapack_write, special case
+
   struct Compare {
     bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
-      return lhs->float_priority <= rhs->float_priority;
+      return lhs.state().float_priority <= rhs.state().float_priority;
     }
   };
   std::set<ElementPtr, Compare> floating_elements;
 
   SeriesArgs args_series_;
   FloatingArgs args_floating_;
+
+  // For convenience
+  System& system(ConstElementPtr element) {
+    return *systems[static_cast<std::size_t>(element.type())];
+  }
+  void set_input_state(ElementPtr element) {
+    system(element).set_input_state(element);
+  }
+  void set_dependent_state(ElementPtr element) {
+    system(element).set_dependent_state(element);
+  };
+  void render(ConstElementPtr element) {
+    system(element).render(element, renderer);
+  }
+  bool mouse_event(ElementPtr element, const MouseEvent& event) {
+    return system(element).mouse_event(element, event);
+  }
+  bool mouse_hover(ElementPtr element, const Vecf& mouse_pos) {
+    return system(element).mouse_hover(element, mouse_pos);
+  }
+  bool scroll_event(ElementPtr element, const ScrollEvent& event) {
+    return system(element).scroll_event(element, event);
+  }
+  bool key_event(ElementPtr element, const KeyEvent& event) {
+    return system(element).key_event(element, event);
+  }
+  bool text_event(ElementPtr element, const TextEvent& event) {
+    return system(element).text_event(element, event);
+  }
+  void focus_enter(ElementPtr element) {
+    system(element).focus_enter(element);
+  }
+  bool focus_leave(ElementPtr element, bool success) {
+    return system(element).focus_leave(element, success);
+  }
 };
 
 } // namespace datagui

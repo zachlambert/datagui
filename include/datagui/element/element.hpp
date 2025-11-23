@@ -1,0 +1,127 @@
+#pragma once
+
+#include "datagui/color.hpp"
+#include "datagui/geometry.hpp"
+#include "datagui/layout.hpp"
+#include <functional>
+#include <optional>
+#include <vector>
+
+namespace datagui {
+
+enum class Type {
+  Button,
+  Checkbox,
+  Dropdown,
+  Floating,
+  Labelled,
+  Section,
+  Series,
+  TextBox,
+  TextInput,
+};
+static constexpr std::size_t TypeCount = 9;
+
+struct Button {
+  // Definition
+  std::string text;
+  std::function<void()> callback;
+
+  // Args
+  Length width = LengthWrap();
+
+  // State
+  bool down = false;
+};
+
+struct Checkbox {
+  // Definition
+  std::function<void(bool)> callback;
+
+  // State
+  bool checked = false;
+  int var_version = 0;
+};
+
+struct Dropdown {
+  // Definition
+  std::vector<std::string> choices;
+  std::function<void(int)> callback;
+
+  // State
+  int choice = -1;
+  bool var_version = 0;
+  int choice_hovered = -1;
+  bool open = false;
+  Length width = LengthWrap();
+};
+
+struct Floating {
+  // Definition
+  std::string title;
+  float width;
+  float height;
+  std::function<void()> closed_callback;
+
+  // Optional
+  std::optional<Color> bg_color;
+
+  // Dependent
+  Boxf title_bar_box;
+  float title_bar_text_width;
+  Boxf close_button_box;
+
+  // State
+  bool open = false;
+  int open_var_version = 0;
+  int content_id = 0;
+};
+
+struct Labelled {
+  // Definition
+  std::string label;
+};
+
+struct Section {
+  // Definition
+  std::string label;
+
+  // State
+  bool open = false;
+};
+
+struct Series {
+  // Args
+  Direction direction = Direction::Vertical;
+  Alignment alignment = Alignment::Center;
+  Length length = LengthWrap();
+  Length width = LengthDynamic(1);
+  bool no_padding = false;
+  std::optional<Color> bg_color;
+
+  // Dependent
+  float content_length = 0;
+
+  // State
+  float overrun = 0;
+  float scroll_pos = 0;
+};
+
+struct TextBox {
+  // Definition
+  std::string text;
+};
+
+struct TextInput {
+  // Definition
+  std::function<void(const std::string&)> callback;
+
+  // Args
+  Length width = LengthDynamic(1);
+
+  // State
+  std::string text;
+  int var_version = 0;
+};
+
+} // namespace datagui
