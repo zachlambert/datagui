@@ -55,6 +55,7 @@ void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
 }
 
 void GuiWriter::optional_begin(bool has_value) {
+  gui.args().tight();
   gui.series();
   auto has_value_var = gui.variable<bool>(has_value);
   gui.checkbox(has_value_var);
@@ -74,6 +75,7 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
     labels_str.emplace_back(label);
   }
 
+  gui.args().tight();
   gui.series();
   auto choice_var = gui.variable<int>(value);
   gui.dropdown(labels_str, choice_var);
@@ -86,6 +88,7 @@ void GuiWriter::variant_end() {
 }
 
 void GuiWriter::object_begin() {
+  gui.args().tight();
   gui.series();
   at_object_begin = true;
 }
@@ -107,6 +110,7 @@ void GuiWriter::object_end() {
 }
 
 void GuiWriter::tuple_begin() {
+  gui.args().tight();
   gui.series();
 }
 
@@ -119,12 +123,14 @@ void GuiWriter::tuple_end() {
 }
 
 void GuiWriter::list_begin() {
+  gui.args().tight();
   gui.series();
 
   auto key_list = gui.variable<KeyList>();
   ListState state = {key_list, 0};
   list_stack.push(state);
 
+  gui.args().tight();
   gui.series();
   gui.depend_variable(key_list);
 }
@@ -144,8 +150,7 @@ void GuiWriter::list_next() {
   std::size_t new_key = state.keys.mut().append();
 
   gui.key((*state.keys)[state.index]);
-  gui.args().series_horizontal();
-  gui.args().series_width_wrap();
+  gui.args().horizontal();
   gui.series();
 
   state.index++;

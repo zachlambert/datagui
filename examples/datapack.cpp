@@ -85,12 +85,14 @@ int main() {
     if (gui.series()) {
       auto value = gui.variable<Foo>();
 
+      gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit");
       gui.edit<Foo>([=](const Foo& new_value) {
         std::cout << datapack::debug(new_value) << std::endl;
         value.set(new_value);
       });
 
+      gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit + Overwritten by above");
       gui.edit(value);
 

@@ -80,8 +80,7 @@ void edit_list_2(datagui::Gui& gui) {
   if (gui.series()) {
     gui.depend_variable(keys);
     for (std::size_t i = 0; i < keys->size(); i++) {
-      gui.args().series_horizontal();
-      gui.args().series_width_wrap();
+      gui.args().horizontal();
       gui.key((*keys)[i]);
       if (gui.series()) {
         gui.text_input("", {});

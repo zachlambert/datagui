@@ -154,6 +154,7 @@ public:
   template <typename T>
   void edit(const std::function<void(const T&)>& callback) {
     bool is_new = !current;
+    args_.tight();
     if (!series()) {
       return;
     }
@@ -170,6 +171,7 @@ public:
   template <typename T>
   void edit(const Var<T>& var) {
     bool is_new = !current;
+    args_.tight();
     if (!series()) {
       return;
     }

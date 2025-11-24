@@ -61,34 +61,22 @@ public:
 
   // Series
 
-  Args& series_horizontal() {
+  Args& horizontal() {
     series_.direction = Direction::Horizontal;
+    series_.length = LengthDynamic();
+    series_.width = LengthWrap();
     return *this;
   }
-  Args& series_align_min() {
-    series_.alignment = Alignment::Min;
+  Args& align_center() {
+    series_.alignment = Alignment::Center;
     return *this;
   }
-  Args& series_align_max() {
+  Args& align_max() {
     series_.alignment = Alignment::Max;
     return *this;
   }
-
-  Args& series_length_fixed(float size) {
-    series_.length = LengthFixed(size);
-    return *this;
-  }
-  Args& series_length_dynamic(float weight) {
-    series_.length = LengthDynamic(weight);
-    return *this;
-  }
-
-  Args& series_width_fixed(float size) {
-    series_.width = LengthFixed(size);
-    return *this;
-  }
-  Args& series_width_wrap() {
-    series_.width = LengthWrap();
+  Args& length_fixed(float length) {
+    series_.length = LengthFixed(length);
     return *this;
   }
 
@@ -104,7 +92,7 @@ private:
 
   struct {
     Arg<Direction> direction = Direction::Vertical;
-    Arg<Alignment> alignment = Alignment::Center;
+    Arg<Alignment> alignment = Alignment::Min;
     Arg<Length> length = Length(LengthWrap());
     Arg<Length> width = Length(LengthDynamic(1));
   } series_;
