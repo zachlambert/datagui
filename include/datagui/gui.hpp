@@ -200,6 +200,8 @@ public:
 
 private:
   void check_begin();
+  void move_down();
+
   void render();
 #ifdef DATAGUI_DEBUG
   void debug_render();

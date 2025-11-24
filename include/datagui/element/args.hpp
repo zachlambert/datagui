@@ -90,10 +90,10 @@ private:
   Arg<bool> tight_ = false;
 
   struct {
-    Arg<Direction> direction = Direction::Horizontal;
-    Arg<Alignment> alignment;
-    Arg<Length> length;
-    Arg<Length> width;
+    Arg<Direction> direction = Direction::Vertical;
+    Arg<Alignment> alignment = Alignment::Center;
+    Arg<Length> length = Length(LengthWrap());
+    Arg<Length> width = Length(LengthDynamic(1));
   } series_;
 
   friend class Gui;

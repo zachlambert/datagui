@@ -73,8 +73,8 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
 
         while (state.i < state.keys->size()) {
           gui.key((*state.keys)[state.i]);
-          gui.args_series().horizontal();
-          gui.args_series().width_wrap();
+          gui.args().series_horizontal();
+          gui.args().series_width_wrap();
           if (gui.series()) {
             break;
           }

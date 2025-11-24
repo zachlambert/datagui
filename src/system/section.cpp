@@ -31,8 +31,7 @@ void SectionSystem::set_input_state(ElementPtr element) {
     content_size += 2.f * Vecf::Constant(theme->layout_outer_padding);
   }
 
-  section.header_size.x = std::max(state.fixed_size.x, content_size.x);
-  state.fixed_size.x = section.header_size.x;
+  state.fixed_size.x = std::max(state.fixed_size.x, content_size.x);
   if (section.open) {
     state.fixed_size.y += content_size.y;
   }
@@ -115,7 +114,9 @@ bool SectionSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   auto& section = element.section();
 
-  Boxf header_box(state.position, state.position + section.header_size);
+  Boxf header_box(
+      state.position,
+      state.position + Vecf(state.size.x, section.header_size.y));
 
   if (!header_box.contains(event.position)) {
     return false;

@@ -144,8 +144,8 @@ void GuiWriter::list_next() {
   std::size_t new_key = state.keys.mut().append();
 
   gui.key((*state.keys)[state.index]);
-  gui.args_series().horizontal();
-  gui.args_series().width_wrap();
+  gui.args().series_horizontal();
+  gui.args().series_width_wrap();
   gui.series();
 
   state.index++;
