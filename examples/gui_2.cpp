@@ -64,7 +64,9 @@ int main() {
         gui.end();
       }
 
+      gui.args().tight();
       if (gui.section("Open me")) {
+        gui.args().tight().series_align_min();
         if (gui.series()) {
           gui.text_box("Hello :)");
           if (gui.labelled("Input")) {

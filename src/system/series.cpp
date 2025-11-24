@@ -104,8 +104,14 @@ void SeriesSystem::set_input_state(ElementPtr element) {
 }
 
 void SeriesSystem::set_dependent_state(ElementPtr element) {
-  const auto& state = element.state();
+  auto& state = element.state();
   auto& series = element.series();
+
+  state.child_mask = state.box();
+  if (series.border) {
+    state.child_mask.lower += Vecf::Constant(theme->layout_border_width);
+    state.child_mask.upper -= Vecf::Constant(theme->layout_border_width);
+  }
 
   float outer_padding = series.tight ? 0.f : theme->layout_outer_padding;
   float inner_padding = series.tight ? 0.f : theme->layout_inner_padding;

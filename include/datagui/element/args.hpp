@@ -34,49 +34,62 @@ class Args {
 public:
   // Common
 
-  void text_color(const Color& text_color) {
+  Args& text_color(const Color& text_color) {
     text_color_ = text_color;
+    return *this;
   }
-  void text_size(int text_size) {
+  Args& text_size(int text_size) {
     text_size_ = text_size;
+    return *this;
   }
-  void bg_color(const Color& bg_color) {
+  Args& bg_color(const Color& bg_color) {
     bg_color_ = bg_color;
+    return *this;
   }
-  void header_color(const Color& header_color) {
+  Args& header_color(const Color& header_color) {
     header_color_ = header_color;
+    return *this;
   }
-  void border() {
+  Args& border() {
     border_ = true;
+    return *this;
   }
-  void tight() {
+  Args& tight() {
     tight_ = true;
+    return *this;
   }
 
   // Series
 
-  void series_horizontal() {
+  Args& series_horizontal() {
     series_.direction = Direction::Horizontal;
+    return *this;
   }
-  void series_align_min() {
+  Args& series_align_min() {
     series_.alignment = Alignment::Min;
+    return *this;
   }
-  void series_align_max() {
+  Args& series_align_max() {
     series_.alignment = Alignment::Max;
+    return *this;
   }
 
-  void series_length_fixed(float size) {
+  Args& series_length_fixed(float size) {
     series_.length = LengthFixed(size);
+    return *this;
   }
-  void series_length_dynamic(float weight) {
+  Args& series_length_dynamic(float weight) {
     series_.length = LengthDynamic(weight);
+    return *this;
   }
 
-  void series_width_fixed(float size) {
+  Args& series_width_fixed(float size) {
     series_.width = LengthFixed(size);
+    return *this;
   }
-  void series_width_wrap() {
+  Args& series_width_wrap() {
     series_.width = LengthWrap();
+    return *this;
   }
 
 private:

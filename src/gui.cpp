@@ -276,9 +276,7 @@ void Gui::render() {
       state.first_visit = false;
 
       render(element);
-      renderer.push_mask(
-          element.state().floating ? element.state().float_box
-                                   : element.state().box());
+      renderer.push_mask(element.state().child_mask);
 
       for (auto child = element.child(); child; child = child.next()) {
         stack.emplace(child);
@@ -354,11 +352,7 @@ void Gui::debug_render() {
           0);
     }
 
-    if (element.state().floating) {
-      renderer.push_mask(element.state().float_box);
-    } else {
-      renderer.push_mask(element.state().box());
-    }
+    renderer.push_mask(element.state().child_mask);
 
     for (auto child = element.child(); child; child = child.next()) {
       layer_stack.push(child);

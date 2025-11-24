@@ -38,11 +38,12 @@ void SectionSystem::set_input_state(ElementPtr element) {
 }
 
 void SectionSystem::set_dependent_state(ElementPtr element) {
-  const auto& state = element.state();
+  auto& state = element.state();
   const auto& section = element.section();
 
   auto child = element.child();
   if (!child) {
+    state.child_mask = state.box();
     return;
   }
   for (auto other = child.next(); other; other = other.next()) {
@@ -76,15 +77,22 @@ void SectionSystem::set_dependent_state(ElementPtr element) {
   } else {
     child.state().size.y = child.state().fixed_size.y;
   }
+
+  state.child_mask = child.state().box();
 }
 
 void SectionSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& section = element.section();
 
-  const Color& header_color =
+  Color header_color =
       section.header_color ? *section.header_color : theme->layout_color_bg;
   int border_width = section.border ? theme->layout_border_width : 0;
+  if (section.open) {
+    header_color.r += 0.5 * (1 - header_color.r);
+    header_color.g += 0.5 * (1 - header_color.g);
+    header_color.b += 0.5 * (1 - header_color.b);
+  }
 
   if (section.bg_color) {
     renderer.queue_box(state.box(), *section.bg_color, 0, Color::Black(), 0);

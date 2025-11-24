@@ -42,6 +42,7 @@ void FloatingSystem::set_dependent_state(ElementPtr element) {
 
   auto child = element.child();
   if (!child) {
+    state.child_mask = state.box();
     return;
   }
   for (auto other = child.next(); other; other = other.next()) {
@@ -50,6 +51,7 @@ void FloatingSystem::set_dependent_state(ElementPtr element) {
 
   child.state().position = floating.title_bar_box.top_left();
   child.state().size = state.float_box.upper - child.state().position;
+  state.child_mask = child.state().box();
 }
 
 void FloatingSystem::render(ConstElementPtr element, Renderer& renderer) {
