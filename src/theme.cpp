@@ -16,6 +16,8 @@ Theme theme_default() {
   theme.layout_color_bg = Color::Gray(0.7);
   theme.layout_outer_padding = 10;
   theme.layout_inner_padding = 4;
+  theme.layout_border_width = 4;
+  theme.layout_border_color = Color::Gray(0.3);
 
   theme.scroll_bar_width = 6;
   theme.scroll_bar_bg = Color::Gray(0.8);
@@ -29,7 +31,7 @@ Theme theme_default() {
   theme.input_border_width = 2;
   theme.input_radius = 0;
 
-  theme.popup_border_width = 4;
+  theme.header_color = Color::Gray(0.6);
 
   return theme;
 }

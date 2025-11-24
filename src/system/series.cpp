@@ -197,8 +197,6 @@ void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
 
   if (series.bg_color) {
     renderer.queue_box(state.box(), *series.bg_color, 0, Color::Black(), 0);
-  } else {
-    renderer.queue_box(state.box(), Color::Clear(), 0, Color::Black(), 0);
   }
 
   if (series.overrun > 0) {

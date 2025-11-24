@@ -1,82 +1,100 @@
 #pragma once
 
-#include "datagui/color.hpp"
-#include "datagui/layout.hpp"
+#include "datagui/element/tree.hpp"
 #include <optional>
 
 namespace datagui {
 
-class Series;
+class Args {
+  template <typename T>
+  class Arg {
+  public:
+    Arg(T default_value = T()) :
+        default_value(default_value), value(default_value) {}
 
-class SeriesArgs {
+    void operator=(const T& value) {
+      this->value = value;
+    }
+    void operator=(T&& value) {
+      this->value = std::move(value);
+    }
+    void consume(T& output) {
+      output = value;
+      value = default_value;
+    }
+
+  private:
+    const T default_value;
+    T value;
+  };
+
+  template <typename T>
+  using ArgOpt = Arg<std::optional<T>>;
+
 public:
-  SeriesArgs() {
-    reset();
-  }
+  // Common
 
-  void horizontal() {
-    direction_ = Direction::Horizontal;
+  void text_color(const Color& text_color) {
+    text_color_ = text_color;
   }
-  void align_min() {
-    alignment_ = Alignment::Min;
+  void text_size(int text_size) {
+    text_size_ = text_size;
   }
-  void align_max() {
-    alignment_ = Alignment::Max;
-  }
-
-  void length_fixed(float size) {
-    length_ = LengthFixed(size);
-  }
-  void length_dynamic(float weight) {
-    length_ = LengthDynamic(weight);
-  }
-
-  void width_fixed(float size) {
-    width_ = LengthFixed(size);
-  }
-  void width_wrap() {
-    width_ = LengthWrap();
-  }
-
-  void no_padding() {
-    no_padding_ = true;
-  }
-
   void bg_color(const Color& bg_color) {
     bg_color_ = bg_color;
   }
-
-private:
-  void apply(Series& series) const;
-  void reset();
-
-  Direction direction_;
-  Alignment alignment_;
-  Length length_;
-  Length width_;
-  bool no_padding_;
-  std::optional<Color> bg_color_;
-
-  friend class Gui;
-};
-
-class Floating;
-
-class FloatingArgs {
-public:
-  FloatingArgs() {
-    reset();
+  void header_color(const Color& header_color) {
+    header_color_ = header_color;
+  }
+  void border() {
+    border_ = true;
+  }
+  void tight() {
+    tight_ = true;
   }
 
-  void bg_color(const Color& bg_color) {
-    bg_color_ = bg_color;
+  // Series
+
+  void series_horizontal() {
+    series_.direction = Direction::Horizontal;
+  }
+  void series_align_min() {
+    series_.alignment = Alignment::Min;
+  }
+  void series_align_max() {
+    series_.alignment = Alignment::Max;
+  }
+
+  void series_length_fixed(float size) {
+    series_.length = LengthFixed(size);
+  }
+  void series_length_dynamic(float weight) {
+    series_.length = LengthDynamic(weight);
+  }
+
+  void series_width_fixed(float size) {
+    series_.width = LengthFixed(size);
+  }
+  void series_width_wrap() {
+    series_.width = LengthWrap();
   }
 
 private:
-  void apply(Floating& props) const;
-  void reset();
+  void apply(ElementPtr element);
 
-  std::optional<Color> bg_color_;
+  ArgOpt<Color> text_color_;
+  Arg<int> text_size_ = 0;
+  ArgOpt<Color> bg_color_;
+  ArgOpt<Color> header_color_;
+  Arg<bool> border_ = false;
+  Arg<bool> tight_ = false;
+
+  struct {
+    Arg<Direction> direction = Direction::Horizontal;
+    Arg<Alignment> alignment;
+    Arg<Length> length;
+    Arg<Length> width;
+  } series_;
 
   friend class Gui;
 };

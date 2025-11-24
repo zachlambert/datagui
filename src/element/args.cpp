@@ -3,30 +3,58 @@
 
 namespace datagui {
 
-void SeriesArgs::apply(Series& props) const {
-  props.direction = direction_;
-  props.alignment = alignment_;
-  props.length = length_;
-  props.width = width_;
-  props.no_padding = no_padding_;
-  props.bg_color = bg_color_;
-}
-
-void SeriesArgs::reset() {
-  direction_ = Direction::Vertical;
-  alignment_ = Alignment::Center;
-  length_ = LengthWrap();
-  width_ = LengthDynamic(1);
-  no_padding_ = false;
-  bg_color_ = std::nullopt;
-}
-
-void FloatingArgs::apply(Floating& props) const {
-  props.bg_color = bg_color_;
-}
-
-void FloatingArgs::reset() {
-  bg_color_ = std::nullopt;
+void Args::apply(ElementPtr element) {
+  switch (element.type()) {
+  case Type::Button: {
+    auto& button = element.button();
+    text_size_.consume(button.text_size);
+    text_color_.consume(button.text_color);
+    break;
+  }
+  case Type::Checkbox: {
+    break;
+  }
+  case Type::Dropdown: {
+    break;
+  }
+  case Type::Floating: {
+    auto& floating = element.floating();
+    header_color_.consume(floating.header_color);
+    bg_color_.consume(floating.bg_color);
+    break;
+  }
+  case Type::Labelled: {
+    break;
+  }
+  case Type::Section: {
+    auto& section = element.section();
+    header_color_.consume(section.header_color);
+    bg_color_.consume(section.bg_color);
+    border_.consume(section.border);
+    tight_.consume(section.tight);
+    break;
+  }
+  case Type::Series: {
+    auto& series = element.series();
+    bg_color_.consume(series.bg_color);
+    border_.consume(series.border);
+    tight_.consume(series.tight);
+    series_.direction.consume(series.direction);
+    series_.alignment.consume(series.alignment);
+    series_.length.consume(series.length);
+    series_.width.consume(series.width);
+    break;
+  }
+  case Type::TextBox: {
+    auto& text_box = element.text_box();
+    text_size_.consume(text_box.text_size);
+    text_color_.consume(text_box.text_color);
+    break;
+  }
+  case Type::TextInput: {
+    break;
+  }
+  }
 }
 
 } // namespace datagui

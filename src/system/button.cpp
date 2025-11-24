@@ -15,17 +15,8 @@ void ButtonSystem::set_input_state(ElementPtr element) {
       button.text,
       theme->text_font,
       theme->text_size,
-      button.width);
-  state.fixed_size.y += text_size.y;
-
-  if (auto width = std::get_if<LengthFixed>(&button.width)) {
-    state.fixed_size.x += width->value;
-  } else {
-    state.fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&button.width)) {
-      state.dynamic_size.x = width->weight;
-    }
-  }
+      LengthWrap());
+  state.fixed_size += text_size;
 }
 
 void ButtonSystem::render(ConstElementPtr element, Renderer& renderer) {
@@ -59,13 +50,16 @@ void ButtonSystem::render(ConstElementPtr element, Renderer& renderer) {
       state.position +
       Vecf::Constant(theme->input_border_width + theme->text_padding);
 
+  Color text_color = button.text_color ? *button.text_color : theme->text_color;
+  int text_size = button.text_size != 0 ? button.text_size : theme->text_size;
+
   renderer.queue_text(
       text_position,
       button.text,
       theme->text_font,
-      theme->text_size,
-      theme->text_color,
-      button.width);
+      text_size,
+      text_color,
+      LengthWrap());
 }
 
 bool ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {

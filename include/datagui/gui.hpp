@@ -194,12 +194,8 @@ public:
     end();
   }
 
-  SeriesArgs& args_series() {
-    return args_series_;
-  }
-
-  FloatingArgs& args_floating() {
-    return args_floating_;
+  Args& args() {
+    return args_;
   }
 
 private:
@@ -254,8 +250,7 @@ private:
   };
   std::set<ElementPtr, Compare> floating_elements;
 
-  SeriesArgs args_series_;
-  FloatingArgs args_floating_;
+  Args args_;
 
   // For convenience
   System& system(ConstElementPtr element) {
