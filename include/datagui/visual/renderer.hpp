@@ -1,8 +1,8 @@
 #pragma once
 
+#include "datagui/visual/box_shader.hpp"
 #include "datagui/visual/font_manager.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/text_renderer.hpp"
+#include "datagui/visual/text_shader.hpp"
 #include <assert.h>
 #include <memory>
 #include <stack>
@@ -12,23 +12,22 @@ namespace datagui {
 class Renderer {
 public:
   void init(std::shared_ptr<FontManager> fm) {
-    geometry_renderer.init();
-    text_renderer.init(fm);
+    box_shader.init();
+    text_shader.init(fm);
   }
 
   void queue_box(
       const Box2& box,
       const Color& bg_color,
-      BoxDims border_width,
-      Color border_color,
-      float radius) {
+      float border_width = 0,
+      Color border_color = Color::Black()) {
     assert(!masks.empty());
-    geometry_renderer.queue_box(
+    box_shader.queue_box(
         box,
         bg_color,
         border_width,
         border_color,
-        radius,
+        z_index++,
         masks.top());
   }
 
@@ -38,15 +37,16 @@ public:
       Font font,
       int font_size,
       Color text_color,
-      Length width) {
+      Length width = LengthWrap()) {
     assert(!masks.empty());
-    text_renderer.queue_text(
+    text_shader.queue_text(
         origin,
         text,
         font,
         font_size,
         text_color,
         width,
+        z_index++,
         masks.top());
   }
 
@@ -56,11 +56,12 @@ public:
       masks.pop();
     }
     masks.push(Box2(Vec2(), viewport_size));
+    z_index = 0;
   }
 
   void render() {
-    geometry_renderer.render(viewport_size);
-    text_renderer.render(viewport_size);
+    box_shader.render(viewport_size, z_index);
+    text_shader.render(viewport_size, z_index);
   }
 
   void render_end() {
@@ -80,11 +81,11 @@ public:
   }
 
 private:
-  GeometryRenderer geometry_renderer;
-  TextRenderer text_renderer;
+  BoxShader box_shader;
+  TextShader text_shader;
   Vec2 viewport_size;
   std::stack<Box2> masks;
-  int depth;
+  int z_index;
 };
 
 } // namespace datagui

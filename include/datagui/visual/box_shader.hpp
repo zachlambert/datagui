@@ -7,19 +7,19 @@
 
 namespace datagui {
 
-class GeometryRenderer {
+class BoxShader {
 public:
   void init();
 
   void queue_box(
       const Box2& box,
       const Color& bg_color,
-      BoxDims border_width,
+      float border_width,
       Color border_color,
-      float radius,
+      int z_index,
       const Box2& mask);
 
-  void render(const Vec2& viewport_size);
+  void render(const Vec2& viewport_size, int end_z_index);
 
 private:
   struct {
@@ -28,6 +28,7 @@ private:
     // Uniforms
     unsigned int uniform_viewport_size;
     unsigned int uniform_max_depth;
+    unsigned int uniform_end_z_index;
     // Array/buffer objects
     unsigned int VAO, static_VBO, instance_VBO;
   } gl_data;
@@ -35,12 +36,11 @@ private:
   struct Element {
     Vec2 offset;
     Vec2 size;
-    float radius;
     Color bg_color;
     Color border_color;
     float border_width;
     Box2 mask;
-    float depth;
+    int z_index;
   };
   std::vector<Element> elements;
 };

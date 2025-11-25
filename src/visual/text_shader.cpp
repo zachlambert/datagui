@@ -1,4 +1,4 @@
-#include "datagui/visual/text_renderer.hpp"
+#include "datagui/visual/text_shader.hpp"
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <assert.h>
@@ -12,15 +12,17 @@ const static std::string vertex_shader = R"(
 // Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 uv;
+layout(location = 2) in int z_index;
 
 uniform vec2 viewport_size;
+uniform int end_z_index;
 out vec2 fs_uv;
 
 void main(){
   gl_Position = vec4(
     -1.f + 2 * vertex_pos.x / viewport_size.x,
     1.f - 2 * vertex_pos.y / viewport_size.y,
-    0,
+    float(end_z_index - z_index) / end_z_index,
     1
   );
   fs_uv = uv;
@@ -42,7 +44,7 @@ void main(){
 }
 )";
 
-void TextRenderer::init(std::shared_ptr<FontManager> fm) {
+void TextShader::init(std::shared_ptr<FontManager> fm) {
   this->fm = fm;
 
   // Configure shader program and buffers
@@ -77,17 +79,27 @@ void TextRenderer::init(std::shared_ptr<FontManager> fm) {
       (void*)offsetof(Vertex, uv));
   glEnableVertexAttribArray(1);
 
+  glVertexAttribPointer(
+      2,
+      1,
+      GL_INT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, z_index));
+  glEnableVertexAttribArray(1);
+
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 }
 
-void TextRenderer::queue_text(
+void TextShader::queue_text(
     const Vec2& origin,
     const std::string& text,
     Font font,
     int font_size,
     Color text_color,
     Length width,
+    int z_index,
     const Box2& mask) {
 
   const auto& fs = fm->font_structure(font, font_size);
@@ -158,19 +170,21 @@ void TextRenderer::queue_text(
       uv = new_uv;
     }
 
-    vertices.push_back(Vertex{box.lower_left(), uv.upper_left()});
-    vertices.push_back(Vertex{box.lower_right(), uv.upper_right()});
-    vertices.push_back(Vertex{box.upper_left(), uv.lower_left()});
-    vertices.push_back(Vertex{box.lower_right(), uv.upper_right()});
-    vertices.push_back(Vertex{box.upper_right(), uv.lower_right()});
-    vertices.push_back(Vertex{box.upper_left(), uv.lower_left()});
+    vertices.push_back(Vertex{box.lower_left(), uv.upper_left(), z_index});
+    vertices.push_back(Vertex{box.lower_right(), uv.upper_right(), z_index});
+    vertices.push_back(Vertex{box.upper_left(), uv.lower_left(), z_index});
+    vertices.push_back(Vertex{box.lower_right(), uv.upper_right(), z_index});
+    vertices.push_back(Vertex{box.upper_right(), uv.lower_right(), z_index});
+    vertices.push_back(Vertex{box.upper_left(), uv.lower_left(), z_index});
   }
 }
 
-void TextRenderer::render(const Vec2& viewport_size) {
+void TextShader::render(const Vec2& viewport_size, int end_z_index) {
   glUseProgram(gl_data.program_id);
   glBindVertexArray(gl_data.VAO);
   glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
+  glUniform1i(gl_data.uniform_end_z_index, end_z_index);
+
   for (const auto& command : commands) {
     glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
     glBufferData(

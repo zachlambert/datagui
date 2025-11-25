@@ -1,6 +1,6 @@
+#include <datagui/visual/box_shader.hpp>
 #include <datagui/visual/font_manager.hpp>
-#include <datagui/visual/geometry_renderer.hpp>
-#include <datagui/visual/text_renderer.hpp>
+#include <datagui/visual/text_shader.hpp>
 #include <datagui/visual/window.hpp>
 #include <iostream>
 
@@ -9,8 +9,8 @@ int main() {
 
   Window window;
   auto font_manager = std::make_shared<FontManager>();
-  GeometryRenderer geometry;
-  TextRenderer text;
+  BoxShader geometry;
+  TextShader text;
   geometry.init();
   text.init(font_manager);
 
@@ -30,6 +30,7 @@ int main() {
         20,
         Color::Blue(),
         LengthWrap(),
+        0,
         mask);
     text.queue_text(
         Vec2(400, 150),
@@ -38,6 +39,7 @@ int main() {
         40,
         Color::Blue(),
         LengthWrap(),
+        0,
         mask);
     text.queue_text(
         Vec2(400, 220),
@@ -46,10 +48,11 @@ int main() {
         60,
         Color::Blue(),
         LengthWrap(),
+        0,
         mask);
 
-    geometry.render(window.size());
-    text.render(window.size());
+    geometry.render(window.size(), 1);
+    text.render(window.size(), 1);
     window.render_end();
 
     window.poll_events();

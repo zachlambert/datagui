@@ -9,7 +9,7 @@
 
 namespace datagui {
 
-class TextRenderer {
+class TextShader {
 public:
   void init(std::shared_ptr<FontManager> fm);
 
@@ -20,14 +20,16 @@ public:
       int font_size,
       Color text_color,
       Length width,
+      int z_index,
       const Box2& mask);
 
-  void render(const Vec2& viewport_size);
+  void render(const Vec2& viewport_size, int end_z_index);
 
 private:
   struct Vertex {
     Vec2 pos;
     Vec2 uv;
+    int z_index;
   };
 
   struct Command {
@@ -48,6 +50,7 @@ private:
     // Uniforms
     unsigned int uniform_viewport_size;
     unsigned int uniform_text_color;
+    unsigned int uniform_end_z_index;
     // Array/buffer objects
     unsigned int VAO, VBO;
   } gl_data;
