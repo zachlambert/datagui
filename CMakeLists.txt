@@ -21,8 +21,9 @@ add_library(datagui SHARED
   src/log.cpp
   src/theme.cpp
 
-  src/element/tree.cpp
   src/element/args.cpp
+  src/element/key_list.cpp
+  src/element/tree.cpp
 
   src/visual/font_manager.cpp
   src/visual/geometry_renderer.cpp

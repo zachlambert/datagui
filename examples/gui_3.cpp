@@ -15,7 +15,7 @@ int main() {
       auto window_1_open = gui.variable<bool>(false);
       gui.button("Open window 1", [=]() { window_1_open.set(true); });
 
-      gui.args_floating().bg_color(datagui::Color::Hsl(180, 0.7, 0.7));
+      gui.args().bg_color(datagui::Color::Hsl(180, 0.7, 0.7));
       if (gui.floating(window_1_open, "Floating 1", 400, 100)) {
         if (gui.series()) {
           gui.text_input("Input", {});
@@ -33,7 +33,7 @@ int main() {
       auto window_2_open = gui.variable<bool>(false);
       gui.button("Open window 2", [=]() { window_2_open.set(true); });
 
-      gui.args_floating().bg_color(datagui::Color::Hsl(0, 0.7, 0.7));
+      gui.args().bg_color(datagui::Color::Hsl(0, 0.7, 0.7));
       if (gui.floating(window_2_open, "Floating 2", 300, 150)) {
         gui.end();
       }

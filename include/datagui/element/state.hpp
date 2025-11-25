@@ -25,6 +25,8 @@ struct State {
   Boxf float_box;
   int float_priority = 0;
 
+  Boxf child_mask;
+
   // Event handling
   bool in_focus_tree = false;
   bool focused = false;

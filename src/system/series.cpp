@@ -10,8 +10,11 @@ void SeriesSystem::set_input_state(ElementPtr element) {
   state.dynamic_size = Vecf::Zero();
   state.floating = false;
 
-  float outer_padding = series.no_padding ? 0.f : theme->layout_outer_padding;
-  float inner_padding = series.no_padding ? 0.f : theme->layout_inner_padding;
+  float outer_padding = series.tight ? 0.f : theme->layout_outer_padding;
+  float inner_padding = series.tight ? 0.f : theme->layout_inner_padding;
+  if (series.border) {
+    outer_padding += theme->layout_border_width;
+  }
 
   // Primary direction
 
@@ -97,14 +100,24 @@ void SeriesSystem::set_input_state(ElementPtr element) {
   }
 
   state.fixed_size += Vecf::Constant(2 * outer_padding);
+  series.content_length += 2 * outer_padding;
 }
 
 void SeriesSystem::set_dependent_state(ElementPtr element) {
-  const auto& state = element.state();
+  auto& state = element.state();
   auto& series = element.series();
 
-  float outer_padding = series.no_padding ? 0.f : theme->layout_outer_padding;
-  float inner_padding = series.no_padding ? 0.f : theme->layout_inner_padding;
+  state.child_mask = state.box();
+  if (series.border) {
+    state.child_mask.lower += Vecf::Constant(theme->layout_border_width);
+    state.child_mask.upper -= Vecf::Constant(theme->layout_border_width);
+  }
+
+  float outer_padding = series.tight ? 0.f : theme->layout_outer_padding;
+  float inner_padding = series.tight ? 0.f : theme->layout_inner_padding;
+  if (series.border) {
+    outer_padding += theme->layout_border_width;
+  }
 
   Vecf available = maximum(state.size - state.fixed_size, Vecf::Zero());
   float offset = outer_padding - series.scroll_pos;
@@ -195,40 +208,52 @@ void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& series = element.series();
 
-  if (series.bg_color) {
-    renderer.queue_box(state.box(), *series.bg_color, 0, Color::Black(), 0);
-  } else {
-    renderer.queue_box(state.box(), Color::Clear(), 0, Color::Black(), 0);
+  if (series.bg_color || series.border) {
+    Color bg_color = series.bg_color ? *series.bg_color : Color::Clear();
+    int border_width =
+        series.border ? theme->layout_border_width : theme->layout_border_width;
+    renderer.queue_box(
+        state.box(),
+        bg_color,
+        border_width,
+        theme->layout_border_color,
+        0);
   }
 
   if (series.overrun > 0) {
+    Vecf origin = state.position;
+    Vecf size = state.size;
+    if (series.border) {
+      origin += Vecf::Constant(theme->layout_border_width);
+      size -= 2.f * Vecf::Constant(theme->layout_border_width);
+    }
     Boxf bg;
     Boxf fg;
     if (series.direction == Direction::Vertical) {
-      bg.lower.x = state.position.x + state.size.x - theme->scroll_bar_width;
-      bg.upper.x = state.position.x + state.size.x;
-      bg.lower.y = state.position.y;
-      bg.upper.y = state.position.y + state.size.y;
+      bg.lower.x = origin.x + size.x - theme->scroll_bar_width;
+      bg.upper.x = origin.x + size.x;
+      bg.lower.y = origin.y;
+      bg.upper.y = origin.y + size.y;
 
-      float ratio = state.size.y / (series.overrun + state.size.y);
-      float location = series.scroll_pos / (series.overrun + state.size.y);
+      float ratio = size.y / (series.overrun + size.y);
+      float location = series.scroll_pos / (series.overrun + size.y);
 
       fg = bg;
-      fg.lower.y = state.position.y + location * state.size.y;
-      fg.upper.y = state.position.y + (location + ratio) * state.size.y;
+      fg.lower.y = origin.y + location * size.y;
+      fg.upper.y = origin.y + (location + ratio) * size.y;
 
     } else {
-      bg.lower.x = state.position.x;
-      bg.upper.x = state.position.x + state.size.x;
-      bg.lower.y = state.position.y + state.size.y - theme->scroll_bar_width;
-      bg.upper.y = state.position.y + state.size.y;
+      bg.lower.x = origin.x;
+      bg.upper.x = origin.x + size.x;
+      bg.lower.y = origin.y + size.y - theme->scroll_bar_width;
+      bg.upper.y = origin.y + size.y;
 
-      float ratio = state.size.x / (series.overrun + state.size.x);
-      float location = series.scroll_pos / (series.overrun + state.size.x);
+      float ratio = size.x / (series.overrun + size.x);
+      float location = series.scroll_pos / (series.overrun + size.x);
 
       fg = bg;
-      fg.lower.x = state.position.x + location * state.size.x;
-      fg.upper.x = state.position.x + (location + ratio) * state.size.x;
+      fg.lower.x = origin.x + location * size.x;
+      fg.upper.x = origin.x + (location + ratio) * size.x;
     }
     renderer.queue_box(bg, theme->scroll_bar_bg, 0, Color::Black(), 0);
     renderer.queue_box(fg, theme->scroll_bar_fg, 0, Color::Black(), 0);

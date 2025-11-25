@@ -53,6 +53,13 @@ void Gui::check_begin() {
   }
 }
 
+void Gui::move_down() {
+  current.clear_dependencies();
+  stack.emplace(current, var_current);
+  current = current.child();
+  var_current = VarPtr();
+}
+
 void Gui::end() {
   current.expect_end();
   assert(!stack.empty());
@@ -74,6 +81,7 @@ void Gui::button(
     const std::function<void()>& callback) {
   current.expect(Type::Button, read_key());
   auto& button = current.button();
+  args_.apply(current);
   current = current.next();
 
   button.text = text;
@@ -85,6 +93,7 @@ void Gui::checkbox(
     const std::function<void(bool)>& callback) {
   bool is_new = current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
+  args_.apply(current);
   current = current.next();
 
   checkbox.callback = callback;
@@ -108,6 +117,7 @@ void Gui::dropdown(
     const std::function<void(int)>& callback) {
   bool is_new = current.expect(Type::Dropdown, read_key());
   auto& dropdown = current.dropdown();
+  args_.apply(current);
   current = current.next();
 
   if (is_new || overwrite) {
@@ -122,6 +132,7 @@ void Gui::dropdown(
     const Var<int>& var) {
   current.expect(Type::Dropdown, read_key());
   auto& dropdown = current.dropdown();
+  args_.apply(current);
   current = current.next();
 
   dropdown.choices = choices;
@@ -136,10 +147,8 @@ bool Gui::floating(
     float height) {
   check_begin();
   current.expect(Type::Floating, read_key());
+  args_.apply(current);
   auto& floating = current.floating();
-
-  args_floating_.apply(floating);
-  args_floating_.reset();
 
   floating.title = title;
   floating.width = width;
@@ -160,24 +169,19 @@ bool Gui::floating(
     return false;
   }
 
-  current.clear_dependencies();
-  stack.emplace(current, var_current);
-  current = current.child();
-  var_current = VarPtr();
+  move_down();
   return true;
 }
 
 bool Gui::labelled(const std::string& label) {
   check_begin();
   current.expect(Type::Labelled, read_key());
+  args_.apply(current);
   auto& labelled = current.labelled();
   labelled.label = label;
 
   if (current.dirty()) {
-    current.clear_dependencies();
-    stack.emplace(current, var_current);
-    current = current.child();
-    var_current = VarPtr();
+    move_down();
     return true;
   }
   return false;
@@ -186,14 +190,12 @@ bool Gui::labelled(const std::string& label) {
 bool Gui::section(const std::string& label) {
   check_begin();
   current.expect(Type::Section, read_key());
+  args_.apply(current);
   auto& section = current.section();
   section.label = label;
 
   if (current.dirty()) {
-    current.clear_dependencies();
-    stack.emplace(current, var_current);
-    current = current.child();
-    var_current = VarPtr();
+    move_down();
     return true;
   }
   current = current.next();
@@ -203,14 +205,10 @@ bool Gui::section(const std::string& label) {
 bool Gui::series() {
   check_begin();
   current.expect(Type::Series, read_key());
-  args_series_.apply(current.series());
-  args_series_.reset();
+  args_.apply(current);
 
   if (current.dirty()) {
-    current.clear_dependencies();
-    stack.emplace(current, var_current);
-    current = current.child();
-    var_current = VarPtr();
+    move_down();
     return true;
   }
   current = current.next();
@@ -222,6 +220,7 @@ void Gui::text_input(
     const std::function<void(const std::string&)>& callback) {
   bool is_new = current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
+  args_.apply(current);
   current = current.next();
 
   if (is_new || overwrite) {
@@ -242,6 +241,7 @@ void Gui::text_input(const Var<std::string>& var) {
 void Gui::text_box(const std::string& text) {
   current.expect(Type::TextBox, read_key());
   auto& text_box = current.text_box();
+  args_.apply(current);
   current = current.next();
 
   text_box.text = text;
@@ -276,9 +276,7 @@ void Gui::render() {
       state.first_visit = false;
 
       render(element);
-      renderer.push_mask(
-          element.state().floating ? element.state().float_box
-                                   : element.state().box());
+      renderer.push_mask(element.state().child_mask);
 
       for (auto child = element.child(); child; child = child.next()) {
         stack.emplace(child);
@@ -354,11 +352,7 @@ void Gui::debug_render() {
           0);
     }
 
-    if (element.state().floating) {
-      renderer.push_mask(element.state().float_box);
-    } else {
-      renderer.push_mask(element.state().box());
-    }
+    renderer.push_mask(element.state().child_mask);
 
     for (auto child = element.child(); child; child = child.next()) {
       layer_stack.push(child);

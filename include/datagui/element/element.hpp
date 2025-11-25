@@ -28,7 +28,8 @@ struct Button {
   std::function<void()> callback;
 
   // Args
-  Length width = LengthWrap();
+  std::optional<Color> text_color;
+  int text_size = 0;
 
   // State
   bool down = false;
@@ -63,7 +64,8 @@ struct Floating {
   float height;
   std::function<void()> closed_callback;
 
-  // Optional
+  // Args
+  std::optional<Color> header_color;
   std::optional<Color> bg_color;
 
   // Dependent
@@ -86,6 +88,15 @@ struct Section {
   // Definition
   std::string label;
 
+  // Args
+  std::optional<Color> header_color;
+  std::optional<Color> bg_color;
+  bool border = false;
+  bool tight = false;
+
+  // Dependent
+  Vecf header_size;
+
   // State
   bool open = false;
 };
@@ -96,8 +107,9 @@ struct Series {
   Alignment alignment = Alignment::Center;
   Length length = LengthWrap();
   Length width = LengthDynamic(1);
-  bool no_padding = false;
   std::optional<Color> bg_color;
+  bool border = false;
+  bool tight = false;
 
   // Dependent
   float content_length = 0;
@@ -110,6 +122,10 @@ struct Series {
 struct TextBox {
   // Definition
   std::string text;
+
+  // Args
+  std::optional<Color> text_color;
+  int text_size = 0;
 };
 
 struct TextInput {

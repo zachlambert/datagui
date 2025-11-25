@@ -29,11 +29,12 @@ void LabelledSystem::set_input_state(ElementPtr element) {
 }
 
 void LabelledSystem::set_dependent_state(ElementPtr element) {
-  const auto& state = element.state();
+  auto& state = element.state();
   const auto& labelled = element.labelled();
 
   auto child = element.child();
   if (!child) {
+    state.child_mask = state.box();
     return;
   }
   for (auto other = child.next(); other; other = other.next()) {
@@ -65,6 +66,8 @@ void LabelledSystem::set_dependent_state(ElementPtr element) {
   } else {
     child.state().size.y = child.state().fixed_size.y;
   }
+
+  state.child_mask = child.state().box();
 }
 
 void LabelledSystem::render(ConstElementPtr element, Renderer& renderer) {

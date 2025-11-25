@@ -33,7 +33,7 @@ int main() {
         gui.text_box("Hello " + *name);
       }
 
-      gui.args_series().length_fixed(100);
+      gui.args().length_fixed(100).border();
       if (gui.series()) {
         for (std::size_t i = 0; i < 10; i++) {
           gui.text_input("Item " + std::to_string(i), {});
@@ -63,6 +63,7 @@ int main() {
         gui.end();
       }
 
+      gui.args().tight();
       if (gui.section("Open me")) {
         if (gui.series()) {
           gui.text_box("Hello :)");

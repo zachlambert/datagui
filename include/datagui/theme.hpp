@@ -17,6 +17,8 @@ struct Theme {
   Color layout_color_bg = Color::White();
   float layout_outer_padding = 0;
   float layout_inner_padding = 0;
+  float layout_border_width = 0;
+  Color layout_border_color = Color::Black();
 
   float scroll_bar_width = 0;
   Color scroll_bar_bg = Color::Black();
@@ -30,7 +32,7 @@ struct Theme {
   float input_border_width = 0;
   float input_radius = 0;
 
-  float popup_border_width = 0;
+  Color header_color = Color::Black();
 };
 
 Theme theme_default();
