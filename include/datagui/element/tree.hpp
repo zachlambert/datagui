@@ -147,10 +147,10 @@ public:
     int version() const {
       return tree->variables[variable].version;
     }
-    void reset(const T& value) const {
+    T& mut_internal() const {
       assert(tree && variable != -1);
       static_assert(!IsConst);
-      *tree->variables[variable].data.cast<T>() = value;
+      return *tree->variables[variable].data.cast<T>();
     }
 
     Tree* tree;

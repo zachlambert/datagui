@@ -147,7 +147,7 @@ void GuiWriter::list_next() {
   }
 
   assert(state.index == state.keys->size());
-  std::size_t new_key = state.keys.mut().append();
+  std::size_t new_key = state.keys.mut_internal().append();
 
   gui.key((*state.keys)[state.index]);
   gui.args().horizontal();

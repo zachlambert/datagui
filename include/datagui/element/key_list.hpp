@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdio.h>
 #include <vector>
 
 namespace datagui {
@@ -40,7 +39,7 @@ public:
 
 private:
   std::vector<std::size_t> keys;
-  std::size_t next_key = 0;
+  static std::size_t next_key;
 };
 
 } // namespace datagui

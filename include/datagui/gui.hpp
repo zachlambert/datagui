@@ -125,7 +125,7 @@ public:
       Var<T> result = var_current.as<T>();
       var_current = var_current.next();
       if (overwrite) {
-        result.reset(initial_value);
+        result.mut_internal() = initial_value;
       }
       return result;
     }
