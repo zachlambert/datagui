@@ -30,7 +30,7 @@ add_library(datagui SHARED
 
   src/visual/font_manager.cpp
   src/visual/geometry_renderer.cpp
-  src/visual/shader.cpp
+  src/visual/shader_utils.cpp
   src/visual/text_renderer.cpp
   src/visual/window.cpp
 

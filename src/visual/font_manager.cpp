@@ -1,6 +1,6 @@
 #include "datagui/visual/font_manager.hpp"
 
-#include "datagui/visual/shader.hpp"
+#include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <algorithm>
 #include <filesystem>

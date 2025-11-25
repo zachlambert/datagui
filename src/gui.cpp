@@ -155,6 +155,7 @@ bool Gui::floating(
   floating.height = height;
   floating.closed_callback = [open_var]() { open_var.set(false); };
 
+  depend_variable(open_var);
   if (*open_var != floating.open) {
     floating.open = *open_var;
   }

@@ -1,5 +1,5 @@
 #include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/shader.hpp"
+#include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <array>
 #include <assert.h>
