@@ -63,10 +63,8 @@ void FloatingSystem::render(ConstElementPtr element, Renderer& renderer) {
   const Color& bg_color =
       floating.bg_color ? *floating.bg_color : theme->layout_color_bg;
 
-  renderer.queue_box(state.float_box, bg_color, 0, Color::Black(), 0);
-
-  renderer
-      .queue_box(floating.title_bar_box, header_color, 0, Color::Black(), 0);
+  renderer.queue_box(state.float_box, bg_color);
+  renderer.queue_box(floating.title_bar_box, header_color);
 
   renderer.queue_text(
       state.float_box.lower +
@@ -77,12 +75,7 @@ void FloatingSystem::render(ConstElementPtr element, Renderer& renderer) {
       theme->text_color,
       LengthFixed(floating.title_bar_text_width));
 
-  renderer.queue_box(
-      floating.close_button_box,
-      theme->input_color_bg,
-      0,
-      Color::Black(),
-      0);
+  renderer.queue_box(floating.close_button_box, theme->input_color_bg);
 
   renderer.queue_text(
       floating.close_button_box.lower + Vec2::uniform(theme->text_padding),

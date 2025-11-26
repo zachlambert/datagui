@@ -289,16 +289,14 @@ void Gui::render() {
   renderer.render_begin(window.size());
 
   render_tree(tree.root());
-  renderer.render();
 
   for (auto element : floating_elements) {
+    renderer.new_layer();
     render_tree(element);
-    renderer.render();
   }
 #ifdef DATAGUI_DEBUG
   if (debug_mode_) {
     debug_render();
-    renderer.render();
   }
 #endif
 
@@ -333,24 +331,23 @@ void Gui::debug_render() {
     }
     state.first_visit = false;
 
+    Color debug_color = element.state().focused         ? Color::Blue()
+                        : element.state().in_focus_tree ? Color::Red()
+                                                        : Color::Green();
     renderer.queue_box(
         Box2(
             element.state().position,
             element.state().position + element.state().size),
         Color::Clear(),
         2,
-        element.state().focused         ? Color::Blue()
-        : element.state().in_focus_tree ? Color::Red()
-                                        : Color::Green(),
-        0);
+        debug_color);
 
     if (element.state().floating) {
       renderer.queue_box(
           element.state().float_box,
           Color::Clear(),
           2,
-          element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1),
-          0);
+          element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1));
     }
 
     renderer.push_mask(element.state().child_mask);
@@ -387,15 +384,13 @@ void Gui::debug_render() {
             window.size() - Vec2::uniform(5)),
         Color::White(),
         2,
-        Color::Black(),
-        0);
+        Color::Black());
     renderer.queue_text(
         window.size() - text_size - Vec2::uniform(10),
         debug_text,
         Font::DejaVuSans,
         24,
-        Color::Black(),
-        LengthWrap());
+        Color::Black());
   }
 }
 #endif

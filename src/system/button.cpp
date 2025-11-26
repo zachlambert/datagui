@@ -43,8 +43,7 @@ void ButtonSystem::render(ConstElementPtr element, Renderer& renderer) {
       state.box(),
       bg_color,
       theme->input_border_width,
-      border_color,
-      theme->input_radius);
+      border_color);
 
   Vec2 text_position =
       state.position +

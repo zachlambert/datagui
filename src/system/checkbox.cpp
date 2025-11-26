@@ -19,8 +19,7 @@ void CheckboxSystem::render(ConstElementPtr element, Renderer& renderer) {
       state.box(),
       theme->input_color_bg,
       theme->input_border_width,
-      theme->input_color_border,
-      0);
+      theme->input_color_border);
 
   if (!checkbox.checked) {
     return;
@@ -35,8 +34,7 @@ void CheckboxSystem::render(ConstElementPtr element, Renderer& renderer) {
           Vec2::uniform(theme->input_border_width * 2.f),
       state.box().center());
 
-  renderer
-      .queue_box(icon_box, theme->input_color_bg_active, 0, Color::Black(), 0);
+  renderer.queue_box(icon_box, theme->input_color_bg_active);
 }
 
 bool CheckboxSystem::mouse_event(ElementPtr element, const MouseEvent& event) {

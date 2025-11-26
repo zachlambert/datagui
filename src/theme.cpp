@@ -29,7 +29,6 @@ Theme theme_default() {
   theme.input_color_border = Color::Gray(0.2);
   theme.input_color_border_focus = Color::Gray(0.3);
   theme.input_border_width = 2;
-  theme.input_radius = 0;
 
   theme.header_color = Color::Gray(0.6);
 

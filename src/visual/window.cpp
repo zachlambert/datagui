@@ -235,11 +235,6 @@ void Window::open() {
     throw std::runtime_error("Failed to initialise glew");
   }
 
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_BLEND);
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_GEQUAL);
-
   glfwSetMouseButtonCallback(window, glfw_mouse_button_callback);
   glfwSetScrollCallback(window, glfw_scroll_callback);
   glfwSetKeyCallback(window, glfw_key_callback);
@@ -258,10 +253,6 @@ void Window::close() {
 }
 
 void Window::render_begin() {
-  glClearColor(1.f, 1.f, 1.f, 1.f);
-  glClearDepth(0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   int display_w, display_h;
   glfwGetFramebufferSize(window, &display_w, &display_h);
   glViewport(0, 0, display_w, display_h);

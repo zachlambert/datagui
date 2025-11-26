@@ -1,4 +1,4 @@
-#include "datagui/visual/box_shader.hpp"
+#include "datagui/visual/shape_shader.hpp"
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <array>
@@ -14,15 +14,13 @@ const static std::string rect_vs = R"(
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 offset;
 layout(location = 2) in vec2 size;
-layout(location = 4) in vec4 bg_color;
-layout(location = 5) in vec4 border_color;
-layout(location = 6) in float border_width;
-layout(location = 7) in vec2 mask_lower;
-layout(location = 8) in vec2 mask_upper;
-layout(location = 9) in int z_index;
+layout(location = 3) in vec4 bg_color;
+layout(location = 4) in vec4 border_color;
+layout(location = 5) in float border_width;
+layout(location = 6) in vec2 mask_lower;
+layout(location = 7) in vec2 mask_upper;
 
 uniform vec2 viewport_size;
-uniform int end_z_index;
 
 out vec2 fs_offset;
 out vec2 fs_half_width;
@@ -37,7 +35,7 @@ void main(){
   gl_Position = vec4(
     -1 + 2*fs_pos.x/viewport_size.x,
     1 - 2*fs_pos.y/viewport_size.y,
-    float(end_z_index - z_index) / end_z_index,
+    0,
     1);
 
   fs_offset = fs_pos - (offset + size/2);
@@ -72,12 +70,15 @@ void main(){
 
   vec2 mask_d = abs(fs_mask_offset) - fs_mask_half_width;
   float mask_s = length(max(mask_d, 0.0)) + min(max(mask_d.x, mask_d.y), 0.0);
+  if (mask_s > 0) {
+    discard;
+  }
 
-  float in_mask = float(mask_s < 0);
+  // float in_mask = float(mask_s < 0);
   float in_border = float(s < 0 && s > -fs_border_width);
   float in_inside = float(s <= -fs_border_width);
 
-  color = in_mask * (in_border * fs_border_color + in_inside * fs_bg_color);
+  color = in_border * fs_border_color + in_inside * fs_bg_color;
 }
 )";
 
@@ -89,24 +90,21 @@ static const std::array<Vec2, 6> quad_vertices = {
     Vec2(1.f, 0.f),
     Vec2(1.f, 1.f)};
 
-void BoxShader::init() {
-  gl_data.program_id = create_program(rect_vs, rect_fs);
+void ShapeShader::init() {
+  program_id = create_program(rect_vs, rect_fs);
 
-  gl_data.uniform_viewport_size =
-      glGetUniformLocation(gl_data.program_id, "viewport_size");
-  gl_data.uniform_end_z_index =
-      glGetUniformLocation(gl_data.program_id, "end_z_index");
+  uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
 
   // Generate ids
-  glGenVertexArrays(1, &gl_data.VAO);
-  glGenBuffers(1, &gl_data.static_VBO);
-  glGenBuffers(1, &gl_data.instance_VBO);
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &static_VBO);
+  glGenBuffers(1, &instance_VBO);
 
   // Bind vertex array
-  glBindVertexArray(gl_data.VAO);
+  glBindVertexArray(VAO);
 
   // Bind and configure buffer for vertex attributes
-  glBindBuffer(GL_ARRAY_BUFFER, gl_data.static_VBO);
+  glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
       quad_vertices.size() * sizeof(Vec2),
@@ -122,7 +120,7 @@ void BoxShader::init() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   // Bind and configure buffer for indices
-  glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
+  glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
 
   glVertexAttribPointer(
       index,
@@ -145,13 +143,6 @@ void BoxShader::init() {
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
-
-  glVertexAttribPointer(
-      index,
-      1,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
 
   glVertexAttribPointer(
       index,
@@ -208,28 +199,15 @@ void BoxShader::init() {
   glEnableVertexAttribArray(index);
   index++;
 
-  glVertexAttribPointer(
-      index,
-      1,
-      GL_INT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)offsetof(Element, z_index));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
-
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void BoxShader::queue_box(
+void ShapeShader::Command::queue_box(
     const Box2& box,
     const Color& bg_color,
     float border_width,
     Color border_color,
-    int z_index,
     const Box2& mask) {
-
   Element element;
   element.offset = box.lower;
   element.size = box.size();
@@ -237,25 +215,25 @@ void BoxShader::queue_box(
   element.border_color = border_color;
   element.border_width = border_width;
   element.mask = mask;
-  element.z_index = z_index;
   elements.push_back(element);
 }
 
-void BoxShader::render(const Vec2& viewport_size, int end_z_index) {
-  glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
+void ShapeShader::draw(const Command& command, const Vec2& viewport_size) {
+  glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
-      elements.size() * sizeof(Element),
-      elements.data(),
+      command.elements.size() * sizeof(Element),
+      command.elements.data(),
       GL_STATIC_DRAW);
 
-  glUseProgram(gl_data.program_id);
-  glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
-  glUniform1i(gl_data.uniform_end_z_index, end_z_index);
-  glBindVertexArray(gl_data.VAO);
-  glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertices.size(), elements.size());
-
-  elements.clear();
+  glUseProgram(program_id);
+  glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
+  glBindVertexArray(VAO);
+  glDrawArraysInstanced(
+      GL_TRIANGLES,
+      0,
+      quad_vertices.size(),
+      command.elements.size());
 }
 
 } // namespace datagui

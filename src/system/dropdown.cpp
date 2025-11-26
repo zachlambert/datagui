@@ -70,8 +70,7 @@ void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
         state.box(),
         theme->input_color_bg,
         theme->input_border_width,
-        theme->input_color_border,
-        0);
+        theme->input_color_border);
 
     std::string text;
     if (dropdown.choices.empty() || dropdown.choice == -1) {
@@ -112,8 +111,7 @@ void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
         Box2(position, position + size),
         bg_color,
         theme->input_border_width,
-        theme->input_color_border,
-        0);
+        theme->input_color_border);
 
     renderer.queue_text(
         position +

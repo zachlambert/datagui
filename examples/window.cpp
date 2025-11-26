@@ -1,6 +1,4 @@
-#include <datagui/visual/box_shader.hpp>
-#include <datagui/visual/font_manager.hpp>
-#include <datagui/visual/text_shader.hpp>
+#include <datagui/visual/renderer.hpp>
 #include <datagui/visual/window.hpp>
 #include <iostream>
 
@@ -9,10 +7,8 @@ int main() {
 
   Window window;
   auto font_manager = std::make_shared<FontManager>();
-  BoxShader geometry;
-  TextShader text;
-  geometry.init();
-  text.init(font_manager);
+  Renderer renderer;
+  renderer.init(font_manager);
 
   Box2 box;
   box.lower = Vec2(50, 50);
@@ -20,39 +16,38 @@ int main() {
 
   while (window.running()) {
     window.render_begin();
-    Box2 mask(Vec2(), window.size());
+    renderer.render_begin(window.size());
 
-    geometry.queue_box(box, Color::Red(), 5, Color::Black(), 0, mask);
-    text.queue_text(
-        Vec2(400, 100),
+    renderer.queue_text(
+        Vec2(200, 220),
+        "Hello",
+        Font::DejaVuSerif,
+        60,
+        Color::Blue());
+    renderer.queue_box(
+        Box2(Vec2(50, 50), Vec2(300, 300)),
+        Color::Red(),
+        5,
+        Color::Black());
+    renderer.queue_text(
+        Vec2(200, 100),
         "Hello",
         Font::DejaVuSans,
         20,
-        Color::Blue(),
-        LengthWrap(),
-        0,
-        mask);
-    text.queue_text(
-        Vec2(400, 150),
+        Color::Blue());
+    renderer.queue_text(
+        Vec2(200, 150),
         "Hello",
         Font::DejaVuSansMono,
         40,
         Color::Blue(),
-        LengthWrap(),
-        0,
-        mask);
-    text.queue_text(
-        Vec2(400, 220),
-        "Hello",
-        Font::DejaVuSerif,
-        60,
-        Color::Blue(),
-        LengthWrap(),
-        0,
-        mask);
+        LengthWrap());
 
-    geometry.render(window.size(), 1);
-    text.render(window.size(), 1);
+    renderer.queue_box(Box2(Vec2(50, 350), Vec2(150, 450)), Color::Green(0.8));
+    renderer.queue_box(Box2(Vec2(100, 400), Vec2(200, 500)), Color::Green(0.5));
+    renderer.queue_box(Box2(Vec2(150, 450), Vec2(250, 550)), Color::Green(0.2));
+
+    renderer.render_end();
     window.render_end();
 
     window.poll_events();

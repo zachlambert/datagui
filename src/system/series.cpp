@@ -216,8 +216,7 @@ void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
         state.box(),
         bg_color,
         border_width,
-        theme->layout_border_color,
-        0);
+        theme->layout_border_color);
   }
 
   if (series.overrun > 0) {
@@ -255,8 +254,8 @@ void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
       fg.lower.x = origin.x + location * size.x;
       fg.upper.x = origin.x + (location + ratio) * size.x;
     }
-    renderer.queue_box(bg, theme->scroll_bar_bg, 0, Color::Black(), 0);
-    renderer.queue_box(fg, theme->scroll_bar_fg, 0, Color::Black(), 0);
+    renderer.queue_box(bg, theme->scroll_bar_bg);
+    renderer.queue_box(fg, theme->scroll_bar_fg);
   }
 }
 

@@ -10,50 +10,55 @@
 namespace datagui {
 
 class TextShader {
-public:
-  void init(std::shared_ptr<FontManager> fm);
-
-  void queue_text(
-      const Vec2& origin,
-      const std::string& text,
-      Font font,
-      int font_size,
-      Color text_color,
-      Length width,
-      int z_index,
-      const Box2& mask);
-
-  void render(const Vec2& viewport_size, int end_z_index);
-
-private:
   struct Vertex {
     Vec2 pos;
     Vec2 uv;
-    int z_index;
   };
 
-  struct Command {
+  struct CharList {
     const unsigned int font_texture;
     const Color font_color;
     std::vector<Vertex> vertices;
 
-    Command(unsigned int font_texture, const Color& font_color) :
+    CharList(unsigned int font_texture, const Color& font_color) :
         font_texture(font_texture), font_color(font_color) {}
   };
 
-  std::shared_ptr<FontManager> fm;
-  std::vector<Command> commands;
+public:
+  class Command {
+  public:
+    void queue_text(
+        const std::shared_ptr<FontManager>& fm,
+        const Vec2& origin,
+        const std::string& text,
+        Font font,
+        int font_size,
+        Color text_color,
+        Length width,
+        const Box2& mask);
 
-  struct {
-    // Shader
-    unsigned int program_id;
-    // Uniforms
-    unsigned int uniform_viewport_size;
-    unsigned int uniform_text_color;
-    unsigned int uniform_end_z_index;
-    // Array/buffer objects
-    unsigned int VAO, VBO;
-  } gl_data;
+    void clear() {
+      char_lists.clear();
+    }
+
+  private:
+    std::vector<CharList> char_lists;
+    friend class TextShader;
+  };
+
+  void init();
+  void draw(const Command& command, const Vec2& viewport_size);
+
+private:
+  // Shader
+  unsigned int program_id;
+
+  // Uniforms
+  unsigned int uniform_viewport_size;
+  unsigned int uniform_text_color;
+
+  // Array/buffer objects
+  unsigned int VAO, VBO;
 };
 
 } // namespace datagui

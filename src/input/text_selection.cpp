@@ -282,10 +282,7 @@ void render_selection(
         Box2(
             origin + offset - Vec2(float(cursor_width) / 2, 0),
             origin + offset + Vec2(cursor_width, font.line_height)),
-        cursor_color,
-        0,
-        Color::Black(),
-        0);
+        cursor_color);
     return;
   }
 
@@ -312,10 +309,7 @@ void render_selection(
       to_offset.y += font.line_height;
       renderer.queue_box(
           Box2(origin + from_offset, origin + to_offset),
-          highlight_color,
-          0,
-          Color::Black(),
-          0);
+          highlight_color);
 
       from = i;
       offset.x = 0;
@@ -328,10 +322,7 @@ void render_selection(
   Vec2 to_offset = offset + Vec2(0, font.line_height);
   renderer.queue_box(
       Box2(origin + from_offset, origin + to_offset),
-      highlight_color,
-      0,
-      Color::Black(),
-      0);
+      highlight_color);
 }
 
 } // namespace datagui
