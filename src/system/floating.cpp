@@ -96,8 +96,8 @@ bool FloatingSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   if (!floating.close_button_box.contains(event.position)) {
     return false;
   }
-  floating.open = false;
-  return true;
+  floating.closed_callback();
+  return false;
 }
 
 } // namespace datagui
