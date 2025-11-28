@@ -8,11 +8,11 @@ namespace datagui {
 
 class ShapeShader {
   struct Element {
-    Vec2 offset;
+    Vec2 origin;
     Vec2 size;
-    Color bg_color;
-    Color border_color;
-    float border_width;
+    float radius;
+    Vec2 scale;
+    Color color;
     Box2 mask;
   };
 
@@ -21,7 +21,45 @@ public:
   public:
     void queue_box(
         const Box2& box,
-        const Color& bg_color,
+        const Color& color,
+        float radius,
+        float border_width,
+        Color border_color,
+        const Box2& mask);
+
+    void queue_rect(
+        const Vec2& position,
+        float angle,
+        const Vec2& size,
+        const Color& color,
+        float radius,
+        float border_width,
+        Color border_color,
+        const Box2& mask);
+
+    void queue_capsule(
+        const Vec2& start,
+        const Vec2& end,
+        float radius,
+        const Color& color,
+        float border_width,
+        Color border_color,
+        const Box2& mask);
+
+    void queue_circle(
+        const Vec2& center,
+        float radius,
+        const Color& color,
+        float border_width,
+        Color border_color,
+        const Box2& mask);
+
+    void queue_ellipse(
+        const Vec2& position,
+        float angle,
+        float width,
+        float height,
+        const Color& color,
         float border_width,
         Color border_color,
         const Box2& mask);
