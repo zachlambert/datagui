@@ -17,7 +17,7 @@ public:
   }
 
   void queue_box(
-      const Boxf& box,
+      const Box2& box,
       const Color& bg_color,
       BoxDims border_width,
       Color border_color,
@@ -33,7 +33,7 @@ public:
   }
 
   void queue_text(
-      const Vecf& origin,
+      const Vec2& origin,
       const std::string& text,
       Font font,
       int font_size,
@@ -50,12 +50,12 @@ public:
         masks.top());
   }
 
-  void render_begin(const Vecf& viewport_size) {
+  void render_begin(const Vec2& viewport_size) {
     this->viewport_size = viewport_size;
     if (masks.size() == 1) {
       masks.pop();
     }
-    masks.push(Boxf(Vecf::Zero(), viewport_size));
+    masks.push(Box2(Vec2(), viewport_size));
   }
 
   void render() {
@@ -68,7 +68,7 @@ public:
     masks.pop();
   }
 
-  void push_mask(const Boxf& mask) {
+  void push_mask(const Box2& mask) {
     if (masks.empty()) {
       masks.push(mask);
     } else {
@@ -82,8 +82,8 @@ public:
 private:
   GeometryRenderer geometry_renderer;
   TextRenderer text_renderer;
-  Vecf viewport_size;
-  std::stack<Boxf> masks;
+  Vec2 viewport_size;
+  std::stack<Box2> masks;
   int depth;
 };
 

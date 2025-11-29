@@ -69,9 +69,9 @@ struct Floating {
   std::optional<Color> bg_color;
 
   // Dependent
-  Boxf title_bar_box;
+  Box2 title_bar_box;
   float title_bar_text_width;
-  Boxf close_button_box;
+  Box2 close_button_box;
 
   // State
   bool open = false;
@@ -95,7 +95,7 @@ struct Section {
   bool tight = false;
 
   // Dependent
-  Vecf header_size;
+  Vec2 header_size;
 
   // State
   bool open = false;

@@ -7,11 +7,11 @@ void ButtonSystem::set_input_state(ElementPtr element) {
   const auto& button = element.button();
 
   state.fixed_size =
-      2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
-  state.dynamic_size = Vecf::Zero();
+      2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
+  state.dynamic_size = Vec2();
   state.floating = false;
 
-  Vecf text_size = fm->text_size(
+  Vec2 text_size = fm->text_size(
       button.text,
       theme->text_font,
       theme->text_size,
@@ -46,9 +46,9 @@ void ButtonSystem::render(ConstElementPtr element, Renderer& renderer) {
       border_color,
       theme->input_radius);
 
-  Vecf text_position =
+  Vec2 text_position =
       state.position +
-      Vecf::Constant(theme->input_border_width + theme->text_padding);
+      Vec2::uniform(theme->input_border_width + theme->text_padding);
 
   Color text_color = button.text_color ? *button.text_color : theme->text_color;
   int text_size = button.text_size != 0 ? button.text_size : theme->text_size;

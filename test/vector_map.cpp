@@ -1,6 +1,5 @@
 #include "datagui/element/vector_map.hpp"
 #include <gtest/gtest.h>
-#include <random>
 
 TEST(VectorMap, EmplaceAndPop) {
   using namespace datagui;

@@ -13,7 +13,7 @@ TEST(Tree, CreateElements) {
   ASSERT_EQ(node.type(), Type::Series);
   {
     auto& state = node.state();
-    state.position = Vecf(1, 2);
+    state.position = Vec2(1, 2);
     auto& series = node.series();
     series.bg_color = Color::Red();
   }
@@ -25,7 +25,7 @@ TEST(Tree, CreateElements) {
   ASSERT_EQ(node.type(), Type::Button);
   {
     auto& state = node.state();
-    state.position = Vecf(1, 2);
+    state.position = Vec2(1, 2);
     auto& button = node.button();
     button.down = true;
   }
@@ -37,7 +37,7 @@ TEST(Tree, CreateElements) {
   ASSERT_EQ(node.type(), Type::TextInput);
   {
     auto& state = node.state();
-    state.position = Vecf(1, 2);
+    state.position = Vec2(1, 2);
     auto& text_input = node.text_input();
     text_input.text = "hello";
   }

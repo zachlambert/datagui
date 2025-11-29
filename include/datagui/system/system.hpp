@@ -20,7 +20,7 @@ public:
     return false;
   }
   // Returns true if event needs external handling
-  virtual bool mouse_hover(ElementPtr element, const Vecf& mouse_pos) {
+  virtual bool mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
     return false;
   }
   // If an element captures the scroll event, process it and return true

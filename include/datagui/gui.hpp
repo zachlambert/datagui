@@ -211,9 +211,9 @@ private:
   void calculate_sizes();
 
   void event_handling();
-  ElementPtr get_leaf_node(const Vecf& position);
+  ElementPtr get_leaf_node(const Vec2& position);
   void event_handling_left_click(const MouseEvent& event);
-  void event_handling_hover(const Vecf& mouse_pos);
+  void event_handling_hover(const Vec2& mouse_pos);
   void event_handling_scroll(const ScrollEvent& event);
 
   void set_tree_focus(ElementPtr element, bool focused);
@@ -272,7 +272,7 @@ private:
   bool mouse_event(ElementPtr element, const MouseEvent& event) {
     return system(element).mouse_event(element, event);
   }
-  bool mouse_hover(ElementPtr element, const Vecf& mouse_pos) {
+  bool mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
     return system(element).mouse_hover(element, mouse_pos);
   }
   bool scroll_event(ElementPtr element, const ScrollEvent& event) {

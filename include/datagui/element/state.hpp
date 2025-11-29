@@ -6,26 +6,26 @@
 namespace datagui {
 
 struct State {
-  Vecf fixed_size;
-  Vecf dynamic_size;
+  Vec2 fixed_size;
+  Vec2 dynamic_size;
   bool hidden = false;
   bool zero_size() const {
-    return fixed_size == Vecf::Zero() && dynamic_size == Vecf::Zero();
+    return fixed_size == Vec2() && dynamic_size == Vec2();
   }
 
   // Layout output
-  Vecf position;
-  Vecf size;
-  Boxf box() const {
-    return Boxf(position, position + size);
+  Vec2 position;
+  Vec2 size;
+  Box2 box() const {
+    return Box2(position, position + size);
   }
 
   bool floating = false;
-  FloatingType floating_type = FloatingTypeRelative(Vecf::Zero(), Vecf::Zero());
-  Boxf float_box;
+  FloatingType floating_type = FloatingTypeRelative(Vec2(), Vec2());
+  Box2 float_box;
   int float_priority = 0;
 
-  Boxf child_mask;
+  Box2 child_mask;
 
   // Event handling
   bool in_focus_tree = false;

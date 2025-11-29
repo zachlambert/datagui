@@ -12,11 +12,11 @@ enum class MouseAction { Press, Release, Hold };
 struct MouseEvent {
   MouseButton button;
   MouseAction action;
-  Vecf position;
+  Vec2 position;
 };
 
 struct ScrollEvent {
-  Vecf position;
+  Vec2 position;
   float amount;
 };
 

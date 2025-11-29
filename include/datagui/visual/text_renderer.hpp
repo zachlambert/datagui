@@ -14,20 +14,20 @@ public:
   void init(std::shared_ptr<FontManager> fm);
 
   void queue_text(
-      const Vecf& origin,
+      const Vec2& origin,
       const std::string& text,
       Font font,
       int font_size,
       Color text_color,
       Length width,
-      const Boxf& mask);
+      const Box2& mask);
 
-  void render(const Vecf& viewport_size);
+  void render(const Vec2& viewport_size);
 
 private:
   struct Vertex {
-    Vecf pos;
-    Vecf uv;
+    Vec2 pos;
+    Vec2 uv;
   };
 
   struct Command {

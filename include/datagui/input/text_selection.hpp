@@ -33,9 +33,9 @@ std::size_t find_cursor(
     const FontStructure& font,
     const std::string& text,
     Length text_width,
-    const Vecf& point);
+    const Vec2& point);
 
-Vecf cursor_offset(
+Vec2 cursor_offset(
     const FontStructure& font,
     const std::string& text,
     Length text_width,
@@ -55,7 +55,7 @@ void selection_text_event(
 
 void render_selection(
     const std::string& text,
-    const Vecf& origin,
+    const Vec2& origin,
     const TextSelection& selection,
     const FontStructure& font,
     Color cursor_color,

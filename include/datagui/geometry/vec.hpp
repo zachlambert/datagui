@@ -76,7 +76,6 @@ inline Vec2 operator+(Vec2 lhs, const Vec2& rhs) {
   return lhs;
 }
 
-template <typename T>
 inline Vec2 operator-(Vec2 lhs, const Vec2& rhs) {
   lhs -= rhs;
   return lhs;
@@ -198,7 +197,6 @@ inline Vec3 operator+(Vec3 lhs, const Vec3& rhs) {
   return lhs;
 }
 
-template <typename T>
 inline Vec3 operator-(Vec3 lhs, const Vec3& rhs) {
   lhs -= rhs;
   return lhs;

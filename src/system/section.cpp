@@ -11,9 +11,9 @@ void SectionSystem::set_input_state(ElementPtr element) {
                             theme->text_font,
                             theme->text_size,
                             LengthWrap()) +
-                        Vecf::Constant(2 * theme->text_padding);
+                        Vec2::uniform(2 * theme->text_padding);
   if (section.border) {
-    section.header_size += Vecf::Constant(2 * theme->layout_border_width);
+    section.header_size += Vec2::uniform(2 * theme->layout_border_width);
   }
   state.fixed_size = section.header_size;
 
@@ -26,9 +26,9 @@ void SectionSystem::set_input_state(ElementPtr element) {
     return;
   }
 
-  Vecf content_size = child.state().fixed_size;
+  Vec2 content_size = child.state().fixed_size;
   if (!section.tight) {
-    content_size += 2.f * Vecf::Constant(theme->layout_outer_padding);
+    content_size += 2.f * Vec2::uniform(theme->layout_outer_padding);
   }
 
   state.fixed_size.x = std::max(state.fixed_size.x, content_size.x);
@@ -56,15 +56,15 @@ void SectionSystem::set_dependent_state(ElementPtr element) {
   }
   child.state().hidden = false;
 
-  child.state().position = state.position + Vecf(0, section.header_size.y);
+  child.state().position = state.position + Vec2(0, section.header_size.y);
   if (!section.tight) {
-    child.state().position += Vecf::Constant(theme->layout_outer_padding);
+    child.state().position += Vec2::uniform(theme->layout_outer_padding);
   }
 
-  Vecf available_size = state.size;
+  Vec2 available_size = state.size;
   available_size.y -= section.header_size.y;
   if (!section.tight) {
-    available_size -= Vecf::Constant(2 * theme->layout_outer_padding);
+    available_size -= Vec2::uniform(2 * theme->layout_outer_padding);
   }
 
   if (child.state().dynamic_size.x > 0) {
@@ -99,16 +99,16 @@ void SectionSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 
   renderer.queue_box(
-      Boxf(
+      Box2(
           state.position,
-          state.position + Vecf(state.size.x, section.header_size.y)),
+          state.position + Vec2(state.size.x, section.header_size.y)),
       header_color,
       border_width,
       theme->layout_border_color,
       0);
 
-  Vecf text_origin =
-      state.position + Vecf::Constant(theme->text_padding + border_width);
+  Vec2 text_origin =
+      state.position + Vec2::uniform(theme->text_padding + border_width);
   renderer.queue_text(
       text_origin,
       section.label,
@@ -122,9 +122,9 @@ bool SectionSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   auto& section = element.section();
 
-  Boxf header_box(
+  Box2 header_box(
       state.position,
-      state.position + Vecf(state.size.x, section.header_size.y));
+      state.position + Vec2(state.size.x, section.header_size.y));
 
   if (!header_box.contains(event.position)) {
     return false;

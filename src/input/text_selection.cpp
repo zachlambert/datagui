@@ -7,10 +7,10 @@ std::size_t find_cursor(
     const FontStructure& font,
     const std::string& text,
     Length text_width,
-    const Vecf& point) {
+    const Vec2& point) {
 
   auto fixed_width = std::get_if<LengthFixed>(&text_width);
-  Vecf pos = Vecf::Zero();
+  Vec2 pos;
   pos.y += font.line_height;
 
   std::size_t column = 0;
@@ -49,13 +49,13 @@ std::size_t find_cursor(
   return column;
 }
 
-Vecf cursor_offset(
+Vec2 cursor_offset(
     const FontStructure& font,
     const std::string& text,
     Length text_width,
     std::size_t cursor) {
   auto fixed_width = std::get_if<LengthFixed>(&text_width);
-  Vecf offset = Vecf::Zero();
+  Vec2 offset;
 
   for (std::size_t i = 0; i < cursor; i++) {
     if (!font.char_valid(text[i])) {
@@ -265,7 +265,7 @@ void selection_key_event(
 
 void render_selection(
     const std::string& text,
-    const Vecf& origin,
+    const Vec2& origin,
     const TextSelection& selection,
     const FontStructure& font,
     Color cursor_color,
@@ -277,11 +277,11 @@ void render_selection(
   // Render cursor only
 
   if (selection.span() == 0) {
-    Vecf offset = cursor_offset(font, text, width, selection.begin);
+    Vec2 offset = cursor_offset(font, text, width, selection.begin);
     renderer.queue_box(
-        Boxf(
-            origin + offset - Vecf(float(cursor_width) / 2, 0),
-            origin + offset + Vecf(cursor_width, font.line_height)),
+        Box2(
+            origin + offset - Vec2(float(cursor_width) / 2, 0),
+            origin + offset + Vec2(cursor_width, font.line_height)),
         cursor_color,
         0,
         Color::Black(),
@@ -295,8 +295,8 @@ void render_selection(
 
   std::size_t from = selection.from();
   std::size_t to = selection.to();
-  Vecf offset = cursor_offset(font, text, width, from);
-  Vecf from_offset = offset;
+  Vec2 offset = cursor_offset(font, text, width, from);
+  Vec2 from_offset = offset;
 
   for (std::size_t i = from; i < to; i++) {
     if (!font.char_valid(text[i])) {
@@ -305,13 +305,13 @@ void render_selection(
     const auto& c = font.get(text[i]);
 
     if (fixed_width && offset.x + c.advance > fixed_width->value) {
-      Vecf to_offset = offset;
+      Vec2 to_offset = offset;
       if (from == text.size()) {
         to_offset.x += c.advance;
       }
       to_offset.y += font.line_height;
       renderer.queue_box(
-          Boxf(origin + from_offset, origin + to_offset),
+          Box2(origin + from_offset, origin + to_offset),
           highlight_color,
           0,
           Color::Black(),
@@ -325,9 +325,9 @@ void render_selection(
     offset.x += c.advance;
   }
 
-  Vecf to_offset = offset + Vecf(0, font.line_height);
+  Vec2 to_offset = offset + Vec2(0, font.line_height);
   renderer.queue_box(
-      Boxf(origin + from_offset, origin + to_offset),
+      Box2(origin + from_offset, origin + to_offset),
       highlight_color,
       0,
       Color::Black(),

@@ -40,14 +40,14 @@ public:
   BoxDims(float left, float top, float right, float bottom) :
       left(left), top(top), right(right), bottom(bottom) {}
 
-  Vecf size() const {
-    return Vecf(left + right, top + bottom);
+  Vec2 size() const {
+    return Vec2(left + right, top + bottom);
   }
-  Vecf offset() const {
-    return Vecf(left, top);
+  Vec2 offset() const {
+    return Vec2(left, top);
   }
-  Vecf offset_opposite() const {
-    return Vecf(right, bottom);
+  Vec2 offset_opposite() const {
+    return Vec2(right, bottom);
   }
 
   BoxDims& operator+=(const BoxDims& rhs) {
@@ -101,14 +101,14 @@ inline BoxDims operator/(BoxDims lhs, float rhs) {
 }
 
 struct FloatingTypeAbsolute {
-  Vecf size;
-  FloatingTypeAbsolute(const Vecf& size) : size(size) {}
+  Vec2 size;
+  FloatingTypeAbsolute(const Vec2& size) : size(size) {}
 };
 
 struct FloatingTypeRelative {
-  Vecf offset;
-  Vecf size;
-  FloatingTypeRelative(const Vecf& offset, const Vecf& size) :
+  Vec2 offset;
+  Vec2 size;
+  FloatingTypeRelative(const Vec2& offset, const Vec2& size) :
       offset(offset), size(size) {}
 };
 

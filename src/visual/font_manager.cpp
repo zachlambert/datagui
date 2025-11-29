@@ -133,8 +133,8 @@ FontStructure load_font(Font font, int font_size) {
 
     auto& character = structure.get(i);
     character.size =
-        Vecf(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows);
-    character.offset = Vecf(
+        Vec2(ft_face->glyph->bitmap.width, ft_face->glyph->bitmap.rows);
+    character.offset = Vec2(
         ft_face->glyph->bitmap_left,
         float(ft_face->glyph->bitmap_top) - ft_face->glyph->bitmap.rows);
     character.advance = float(ft_face->glyph->advance.x) / 64;
@@ -149,8 +149,8 @@ FontStructure load_font(Font font, int font_size) {
   // Load shader program and buffers
 
   struct Vertex {
-    Vecf pos;
-    Vecf uv;
+    Vec2 pos;
+    Vec2 uv;
   };
 
   int shader_program = create_program(vertex_shader, fragment_shader);
@@ -242,30 +242,30 @@ FontStructure load_font(Font font, int font_size) {
     float y_lower = char_y + structure.descender + character.offset.y;
     float y_upper = y_lower + ft_face->glyph->bitmap.rows;
 
-    Vecf bottom_left(
+    Vec2 bottom_left(
         -1.f + 2 * x_lower / texture_width,
         -1.f + 2 * y_lower / texture_height);
-    Vecf top_right(
+    Vec2 top_right(
         -1.f + 2 * x_upper / texture_width,
         -1.f + 2 * y_upper / texture_height);
-    Vecf bottom_right(top_right.x, bottom_left.y);
-    Vecf top_left(bottom_left.x, top_right.y);
+    Vec2 bottom_right(top_right.x, bottom_left.y);
+    Vec2 top_left(bottom_left.x, top_right.y);
 
-    character.uv = Boxf(
-        Vecf(x_lower / texture_width, y_lower / texture_height),
-        Vecf(x_upper / texture_width, y_upper / texture_height));
+    character.uv = Box2(
+        Vec2(x_lower / texture_width, y_lower / texture_height),
+        Vec2(x_upper / texture_width, y_upper / texture_height));
 
     char_x += character.advance;
 
     // Load the vertices
 
     std::vector<Vertex> vertices = {
-        Vertex{bottom_left, Vecf(0, 1)},
-        Vertex{bottom_right, Vecf(1, 1)},
-        Vertex{top_left, Vecf(0, 0)},
-        Vertex{bottom_right, Vecf(1, 1)},
-        Vertex{top_right, Vecf(1, 0)},
-        Vertex{top_left, Vecf(0, 0)}};
+        Vertex{bottom_left, Vec2(0, 1)},
+        Vertex{bottom_right, Vec2(1, 1)},
+        Vertex{top_left, Vec2(0, 0)},
+        Vertex{bottom_right, Vec2(1, 1)},
+        Vertex{top_right, Vec2(1, 0)},
+        Vertex{top_left, Vec2(0, 0)}};
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(
@@ -328,7 +328,7 @@ const FontStructure& FontManager::font_structure(Font font, int font_size) {
   return new_font.first->second;
 };
 
-Vecf FontManager::text_size(
+Vec2 FontManager::text_size(
     const std::string& text,
     Font font,
     int font_size,
@@ -337,7 +337,7 @@ Vecf FontManager::text_size(
 
   auto fixed_width = std::get_if<LengthFixed>(&width);
 
-  Vecf pos = Vecf::Zero();
+  Vec2 pos;
   pos.y += fs.line_height;
 
   float line_break_max_x = 0;
@@ -361,9 +361,9 @@ Vecf FontManager::text_size(
   }
 
   if (fixed_width) {
-    return Vecf(fixed_width->value, pos.y);
+    return Vec2(fixed_width->value, pos.y);
   } else {
-    return Vecf(std::max(line_break_max_x, pos.x), pos.y);
+    return Vec2(std::max(line_break_max_x, pos.x), pos.y);
   }
 }
 

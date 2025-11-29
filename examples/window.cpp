@@ -14,17 +14,17 @@ int main() {
   geometry.init();
   text.init(font_manager);
 
-  Boxf box;
-  box.lower = Vecf(50, 50);
-  box.upper = Vecf(300, 300);
+  Box2 box;
+  box.lower = Vec2(50, 50);
+  box.upper = Vec2(300, 300);
 
   while (window.running()) {
     window.render_begin();
-    Boxf mask(Vecf::Zero(), window.size());
+    Box2 mask(Vec2(), window.size());
 
     geometry.queue_box(box, Color::Red(), 5, Color::Black(), 0, mask);
     text.queue_text(
-        Vecf(400, 100),
+        Vec2(400, 100),
         "Hello",
         Font::DejaVuSans,
         20,
@@ -32,7 +32,7 @@ int main() {
         LengthWrap(),
         mask);
     text.queue_text(
-        Vecf(400, 150),
+        Vec2(400, 150),
         "Hello",
         Font::DejaVuSansMono,
         40,
@@ -40,7 +40,7 @@ int main() {
         LengthWrap(),
         mask);
     text.queue_text(
-        Vecf(400, 220),
+        Vec2(400, 220),
         "Hello",
         Font::DejaVuSerif,
         60,

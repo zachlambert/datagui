@@ -20,9 +20,9 @@ namespace datagui {
 
 struct FontStructure {
   struct Character {
-    Boxf uv;
-    Vecf size;
-    Vecf offset;
+    Box2 uv;
+    Vec2 size;
+    Vec2 offset;
     float advance;
   };
   float line_height;
@@ -81,7 +81,7 @@ private:
 class FontManager {
 public:
   const FontStructure& font_structure(Font font, int font_size);
-  Vecf text_size(
+  Vec2 text_size(
       const std::string& text,
       Font font,
       int font_size,
