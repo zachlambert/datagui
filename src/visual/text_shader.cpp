@@ -20,13 +20,12 @@ out vec2 fs_uv;
 
 void main(){
   gl_Position = vec4(
-    2 * (vertex_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
-    y_dir * 2 * (vertex_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
+    (vertex_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
+    y_dir * (vertex_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
     0,
     1
   );
-  fs_uv.x = uv.x
-  fs_uv.y = v_center + y_dir * (uv.y - v_center);
+  fs_uv = vec2(uv.x, v_center + y_dir * (uv.y - v_center));
 }
 )";
 
@@ -49,7 +48,7 @@ void TextShader::init() {
   // Configure shader program and buffers
 
   program_id = create_program(vertex_shader, fragment_shader);
-  uniform_y_dir = glGetUniformLocation(program_id, "uniform_y_dir");
+  uniform_y_dir = glGetUniformLocation(program_id, "y_dir");
   uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
   uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
@@ -174,12 +173,12 @@ void TextShader::Command::queue_text(
     }
 
     float v_center = (uv.lower.y + uv.upper.y) / 2;
-    vertices.push_back(Vertex{box.lower_left(), uv.upper_left(), v_center});
-    vertices.push_back(Vertex{box.lower_right(), uv.upper_right(), v_center});
-    vertices.push_back(Vertex{box.upper_left(), uv.lower_left(), v_center});
-    vertices.push_back(Vertex{box.lower_right(), uv.upper_right(), v_center});
-    vertices.push_back(Vertex{box.upper_right(), uv.lower_right(), v_center});
-    vertices.push_back(Vertex{box.upper_left(), uv.lower_left(), v_center});
+    vertices.push_back(Vertex{box.lower_left(), uv.lower_left(), v_center});
+    vertices.push_back(Vertex{box.lower_right(), uv.lower_right(), v_center});
+    vertices.push_back(Vertex{box.upper_left(), uv.upper_left(), v_center});
+    vertices.push_back(Vertex{box.lower_right(), uv.lower_right(), v_center});
+    vertices.push_back(Vertex{box.upper_right(), uv.upper_right(), v_center});
+    vertices.push_back(Vertex{box.upper_left(), uv.upper_left(), v_center});
   }
 }
 

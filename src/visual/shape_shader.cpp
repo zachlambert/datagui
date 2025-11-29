@@ -13,24 +13,27 @@ const static std::string rect_vs = R"(
 // Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 position;
-layout(location = 2) in mat2 rotation;
-layout(location = 3) in vec2 size;
-layout(location = 4) in vec2 radius;
-layout(location = 5) in vec4 color;
-layout(location = 6) in vec2 mask_lower;
-layout(location = 7) in vec2 mask_upper;
+layout(location = 2) in vec2 rotation_row1;
+layout(location = 3) in vec2 rotation_row2;
+layout(location = 4) in vec2 size;
+layout(location = 5) in vec2 radius;
+layout(location = 6) in vec4 color;
+layout(location = 7) in vec2 mask_lower;
+layout(location = 8) in vec2 mask_upper;
 
-uniform float y_dir
+uniform float y_dir;
 uniform vec2 viewport_size;
 
 out vec2 fs_offset;
-out vec2 fs_half_width;
+out vec2 fs_size;
+out vec2 fs_radius;
 out vec2 fs_mask_offset;
-out vec2 fs_mask_half_width;
+out vec2 fs_mask_size;
 out vec4 fs_color;
 
 void main(){
-  fs_offset = vec2(vertex_pos.x * size.x, vertex_pos.y * size.y)
+  fs_offset = vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
+  mat2 rotation = transpose(mat2(rotation_row1, rotation_row2));
   vec2 fs_pos = position + rotation * fs_offset;
   gl_Position = vec4(
     (fs_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
@@ -38,10 +41,11 @@ void main(){
     0,
     1);
 
-  fs_offset = fs_pos - (offset + size/2);
-  fs_half_width = size / 2;
+  fs_size = size / 2;
+  fs_radius = radius;
+
   fs_mask_offset = fs_pos - (mask_lower + mask_upper) / 2;
-  fs_mask_half_width = (mask_upper - mask_lower) / 2;
+  fs_mask_size = (mask_upper - mask_lower) / 2;
 
   fs_color = color;
 }
@@ -51,29 +55,34 @@ const static std::string rect_fs = R"(
 #version 330 core
 
 in vec2 fs_offset;
-in vec2 fs_half_width;
+in vec2 fs_size;
+in vec2 fs_radius;
 in vec2 fs_mask_offset;
-in vec2 fs_mask_half_width;
-in vec4 fs_bg_color;
-in vec4 fs_border_color;
-in float fs_border_width;
+in vec2 fs_mask_size;
+in vec4 fs_color;
 
 uniform vec2 viewport_size;
 
 out vec4 color;
 
 void main(){
-  vec2 d = abs(fs_offset) - fs_half_width;
-  float s = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+  vec2 u = abs(fs_offset) - (fs_size - fs_radius);
+  // (x/a)**2 + (y/b)**2 <= 1
+  // x**2 * b**2 + y**2 * a**2 <= a**2 * b**2
+  // Allow it to be negative =>
+  // max(x, 0)**2 + ...
 
-  vec2 mask_d = abs(fs_mask_offset) - fs_mask_half_width;
+  float lhs_x = u.x*u.x * fs_radius.y*fs_radius.y;
+  float lhs_y = u.y*u.y * fs_radius.x*fs_radius.x;
+  float rhs = fs_radius.x*fs_radius.x * fs_radius.y*fs_radius.y;
+
+  float in_shape = float((lhs_x + lhs_y) <= rhs);
+
+  vec2 mask_d = abs(fs_mask_offset) - fs_mask_size;
   float mask_s = length(max(mask_d, 0.0)) + min(max(mask_d.x, mask_d.y), 0.0);
-
   float in_mask = float(mask_s < 0);
-  float in_border = float(s < 0 && s > -fs_border_width);
-  float in_inside = float(s <= -fs_border_width);
 
-  color = in_mask * (in_border * fs_border_color + in_inside * fs_bg_color);
+  color = in_mask * in_shape * fs_color;
 }
 )";
 
@@ -129,13 +138,26 @@ void ShapeShader::init() {
   glEnableVertexAttribArray(index);
   index++;
 
+  // Row 1
   glVertexAttribPointer(
       index,
-      4,
+      2,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
       (void*)offsetof(Element, rotation));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  // Row 2
+  glVertexAttribPointer(
+      index,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)(offsetof(Element, rotation) + 2 * sizeof(float)));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
