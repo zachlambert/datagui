@@ -13,6 +13,7 @@ class TextShader {
   struct Vertex {
     Vec2 pos;
     Vec2 uv;
+    float v_center;
   };
 
   struct CharList {
@@ -47,13 +48,14 @@ public:
   };
 
   void init();
-  void draw(const Command& command, const Vec2& viewport_size);
+  void draw(const Command& command, float y_dir, const Vec2& viewport_size);
 
 private:
   // Shader
   unsigned int program_id;
 
   // Uniforms
+  unsigned int uniform_y_dir;
   unsigned int uniform_viewport_size;
   unsigned int uniform_text_color;
 

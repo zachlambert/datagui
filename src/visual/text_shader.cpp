@@ -12,18 +12,21 @@ const static std::string vertex_shader = R"(
 // Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 uv;
+layout(location = 2) in float v_center;
 
+uniform float y_dir;
 uniform vec2 viewport_size;
 out vec2 fs_uv;
 
 void main(){
   gl_Position = vec4(
-    -1.f + 2 * vertex_pos.x / viewport_size.x,
-    1.f - 2 * vertex_pos.y / viewport_size.y,
+    2 * (vertex_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
+    y_dir * 2 * (vertex_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
     0,
     1
   );
-  fs_uv = uv;
+  fs_uv.x = uv.x
+  fs_uv.y = v_center + y_dir * (uv.y - v_center);
 }
 )";
 
@@ -46,6 +49,7 @@ void TextShader::init() {
   // Configure shader program and buffers
 
   program_id = create_program(vertex_shader, fragment_shader);
+  uniform_y_dir = glGetUniformLocation(program_id, "uniform_y_dir");
   uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
   uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
@@ -55,23 +59,37 @@ void TextShader::init() {
   glBindVertexArray(VAO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
+  GLuint index = 0;
+
   glVertexAttribPointer(
-      0,
+      index,
       2,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Vertex),
       (void*)offsetof(Vertex, pos));
-  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(index);
+  index++;
 
   glVertexAttribPointer(
-      1,
+      index,
       2,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Vertex),
       (void*)offsetof(Vertex, uv));
-  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      1,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, v_center));
+  glEnableVertexAttribArray(index);
+  index++;
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
@@ -155,18 +173,23 @@ void TextShader::Command::queue_text(
       uv = new_uv;
     }
 
-    vertices.push_back(Vertex{box.lower_left(), uv.upper_left()});
-    vertices.push_back(Vertex{box.lower_right(), uv.upper_right()});
-    vertices.push_back(Vertex{box.upper_left(), uv.lower_left()});
-    vertices.push_back(Vertex{box.lower_right(), uv.upper_right()});
-    vertices.push_back(Vertex{box.upper_right(), uv.lower_right()});
-    vertices.push_back(Vertex{box.upper_left(), uv.lower_left()});
+    float v_center = (uv.lower.y + uv.upper.y) / 2;
+    vertices.push_back(Vertex{box.lower_left(), uv.upper_left(), v_center});
+    vertices.push_back(Vertex{box.lower_right(), uv.upper_right(), v_center});
+    vertices.push_back(Vertex{box.upper_left(), uv.lower_left(), v_center});
+    vertices.push_back(Vertex{box.lower_right(), uv.upper_right(), v_center});
+    vertices.push_back(Vertex{box.upper_right(), uv.lower_right(), v_center});
+    vertices.push_back(Vertex{box.upper_left(), uv.lower_left(), v_center});
   }
 }
 
-void TextShader::draw(const Command& command, const Vec2& viewport_size) {
+void TextShader::draw(
+    const Command& command,
+    float y_dir,
+    const Vec2& viewport_size) {
   glUseProgram(program_id);
   glBindVertexArray(VAO);
+  glUniform1f(uniform_y_dir, y_dir);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
 
   for (const auto& char_list : command.char_lists) {

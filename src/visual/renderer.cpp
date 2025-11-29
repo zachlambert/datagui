@@ -22,6 +22,7 @@ void Renderer::queue_box(
   layers.back().shape_command.queue_box(
       box,
       bg_color,
+      0,
       border_width,
       border_color,
       masks.top());
@@ -68,8 +69,8 @@ void Renderer::render_end() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   for (const auto& layer : layers) {
-    shape_shader.draw(layer.shape_command, viewport_size);
-    text_shader.draw(layer.text_command, viewport_size);
+    shape_shader.draw(layer.shape_command, -1, viewport_size);
+    text_shader.draw(layer.text_command, -1, viewport_size);
   }
   layers.clear();
 }

@@ -124,7 +124,7 @@ void ShapeShader::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)offsetof(Element, origin));
+      (void*)offsetof(Element, position));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -135,7 +135,7 @@ void ShapeShader::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)offsetof(Element, rot));
+      (void*)offsetof(Element, rotation));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
