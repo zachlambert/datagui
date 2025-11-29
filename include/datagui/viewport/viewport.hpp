@@ -1,6 +1,9 @@
 #pragma once
 
+#include "datagui/geometry/box.hpp"
+#include "datagui/visual/font_manager.hpp"
 #include <cstddef>
+#include <memory>
 
 namespace datagui {
 
@@ -14,16 +17,34 @@ public:
   Viewport& operator=(const Viewport&) = delete;
   Viewport& operator=(Viewport&&) = delete;
 
-  void init(std::size_t width, std::size_t height);
-  void update();
+protected:
+  Vec2 framebuffer_size() const {
+    return Vec2(width, height);
+  }
 
 private:
-  virtual void render() = 0;
+  void init(
+      std::size_t width,
+      std::size_t height,
+      const std::shared_ptr<FontManager>& fm);
+  void update();
+  void render(const Box2& bounds);
+
+  virtual void impl_init(const std::shared_ptr<FontManager>& fm) = 0;
+  virtual void impl_render() = 0;
 
   std::size_t width;
   std::size_t height;
   unsigned int texture;
   unsigned int framebuffer;
+
+  struct Vertex {
+    Vec2 pos;
+    Vec2 uv;
+  };
+  unsigned int program_id;
+  unsigned int VAO;
+  unsigned int VBO;
 
   friend class Gui;
 };
