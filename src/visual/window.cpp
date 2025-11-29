@@ -62,7 +62,7 @@ void glfw_mouse_button_callback(
 
   double mx, my;
   glfwGetCursorPos(glfw_window, &mx, &my);
-  event.position = Vecf(mx, my);
+  event.position = Vec2(mx, my);
 
   window->mouse_events_.push_back(event);
 }
@@ -172,7 +172,7 @@ void glfw_char_callback(GLFWwindow* glfw_window, unsigned int codepoint) {
 }
 
 Window::Window(const Config& config) :
-    config(config), window(nullptr), size_(Vecf::Zero()) {
+    config(config), window(nullptr), size_() {
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     mouse_button_down_[i] = false;
   }
@@ -265,7 +265,7 @@ void Window::render_begin() {
   int display_w, display_h;
   glfwGetFramebufferSize(window, &display_w, &display_h);
   glViewport(0, 0, display_w, display_h);
-  size_ = Vecf(display_w, display_h);
+  size_ = Vec2(display_w, display_h);
 }
 
 void Window::render_end() {
@@ -281,7 +281,7 @@ void Window::poll_events() {
 
   double mx, my;
   glfwGetCursorPos(window, &mx, &my);
-  mouse_pos_ = Vecf(mx, my);
+  mouse_pos_ = Vec2(mx, my);
 
   for (auto& event : scroll_events_) {
     event.position = mouse_pos_;

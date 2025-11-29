@@ -6,8 +6,8 @@ void SeriesSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& series = element.series();
 
-  state.fixed_size = Vecf::Zero();
-  state.dynamic_size = Vecf::Zero();
+  state.fixed_size = Vec2();
+  state.dynamic_size = Vec2();
   state.floating = false;
 
   float outer_padding = series.tight ? 0.f : theme->layout_outer_padding;
@@ -99,7 +99,7 @@ void SeriesSystem::set_input_state(ElementPtr element) {
     }
   }
 
-  state.fixed_size += Vecf::Constant(2 * outer_padding);
+  state.fixed_size += Vec2::uniform(2 * outer_padding);
   series.content_length += 2 * outer_padding;
 }
 
@@ -109,8 +109,8 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
 
   state.child_mask = state.box();
   if (series.border) {
-    state.child_mask.lower += Vecf::Constant(theme->layout_border_width);
-    state.child_mask.upper -= Vecf::Constant(theme->layout_border_width);
+    state.child_mask.lower += Vec2::uniform(theme->layout_border_width);
+    state.child_mask.upper -= Vec2::uniform(theme->layout_border_width);
   }
 
   float outer_padding = series.tight ? 0.f : theme->layout_outer_padding;
@@ -119,7 +119,7 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
     outer_padding += theme->layout_border_width;
   }
 
-  Vecf available = maximum(state.size - state.fixed_size, Vecf::Zero());
+  Vec2 available = maximum(state.size - state.fixed_size, Vec2());
   float offset = outer_padding - series.scroll_pos;
 
   if (series.direction == Direction::Horizontal) {
@@ -130,7 +130,7 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
   // re-calculate
-  Vecf children_dynamic_size = Vecf::Zero();
+  Vec2 children_dynamic_size = Vec2();
   for (auto child = element.child(); child; child = child.next()) {
     children_dynamic_size += child.state().dynamic_size;
   }
@@ -221,14 +221,14 @@ void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 
   if (series.overrun > 0) {
-    Vecf origin = state.position;
-    Vecf size = state.size;
+    Vec2 origin = state.position;
+    Vec2 size = state.size;
     if (series.border) {
-      origin += Vecf::Constant(theme->layout_border_width);
-      size -= 2.f * Vecf::Constant(theme->layout_border_width);
+      origin += Vec2::uniform(theme->layout_border_width);
+      size -= 2.f * Vec2::uniform(theme->layout_border_width);
     }
-    Boxf bg;
-    Boxf fg;
+    Box2 bg;
+    Box2 fg;
     if (series.direction == Direction::Vertical) {
       bg.lower.x = origin.x + size.x - theme->scroll_bar_width;
       bg.upper.x = origin.x + size.x;

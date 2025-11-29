@@ -1,4 +1,3 @@
-#include "datagui/input/event.hpp"
 #include <datagui/gui.hpp>
 #include <iostream>
 

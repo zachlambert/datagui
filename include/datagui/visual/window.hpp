@@ -33,7 +33,7 @@ public:
   void render_begin();
   void render_end();
 
-  const Vecf& size() const {
+  const Vec2& size() const {
     return size_;
   }
 
@@ -51,7 +51,7 @@ public:
   const std::vector<TextEvent>& text_events() const {
     return text_events_;
   }
-  const Vecf& mouse_pos() const {
+  const Vec2& mouse_pos() const {
     return mouse_pos_;
   }
 
@@ -61,14 +61,14 @@ private:
 
   const Config config;
   GLFWwindow* window;
-  Vecf size_;
+  Vec2 size_;
 
   std::vector<MouseEvent> mouse_events_;
   std::vector<ScrollEvent> scroll_events_;
   std::vector<KeyEvent> key_events_;
   std::vector<TextEvent> text_events_;
   std::array<bool, MouseButtonSize> mouse_button_down_;
-  Vecf mouse_pos_;
+  Vec2 mouse_pos_;
 
   friend void glfw_mouse_button_callback(GLFWwindow*, int, int, int);
   friend void glfw_scroll_callback(GLFWwindow*, double, double);

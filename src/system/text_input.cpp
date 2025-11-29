@@ -8,11 +8,11 @@ void TextInputSystem::set_input_state(ElementPtr element) {
 
   const std::string& text = state.focused ? active_text : text_input.text;
   state.fixed_size =
-      2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
-  state.dynamic_size = Vecf::Zero();
+      2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
+  state.dynamic_size = Vec2();
   state.floating = 0;
 
-  Vecf text_size =
+  Vec2 text_size =
       fm->text_size(text, theme->text_font, theme->text_size, text_input.width);
   state.fixed_size.y += text_size.y;
 
@@ -46,9 +46,9 @@ void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
       border_color,
       0);
 
-  Vecf text_position =
+  Vec2 text_position =
       state.position +
-      Vecf::Constant(theme->input_border_width + theme->text_padding);
+      Vec2::uniform(theme->input_border_width + theme->text_padding);
 
   if (state.focused) {
     render_selection(
@@ -63,11 +63,11 @@ void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
         renderer);
   }
 
-  Boxf mask;
+  Box2 mask;
   mask.lower = state.position +
-               Vecf::Constant(theme->input_border_width + theme->text_padding);
+               Vec2::uniform(theme->input_border_width + theme->text_padding);
   mask.upper = state.position + state.size -
-               Vecf::Constant(theme->input_border_width + theme->text_padding);
+               Vec2::uniform(theme->input_border_width + theme->text_padding);
 
   renderer.push_mask(mask);
   renderer.queue_text(
@@ -84,9 +84,9 @@ bool TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   const auto& text_input = element.text_input();
 
-  Vecf text_origin =
+  Vec2 text_origin =
       state.position +
-      Vecf::Constant(theme->input_border_width + theme->text_padding);
+      Vec2::uniform(theme->input_border_width + theme->text_padding);
 
   const auto& font = fm->font_structure(theme->text_font, theme->text_size);
 

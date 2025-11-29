@@ -12,14 +12,14 @@ public:
   void init();
 
   void queue_box(
-      const Boxf& box,
+      const Box2& box,
       const Color& bg_color,
       BoxDims border_width,
       Color border_color,
       float radius,
-      const Boxf& mask);
+      const Box2& mask);
 
-  void render(const Vecf& viewport_size);
+  void render(const Vec2& viewport_size);
 
 private:
   struct {
@@ -33,13 +33,13 @@ private:
   } gl_data;
 
   struct Element {
-    Vecf offset;
-    Vecf size;
+    Vec2 offset;
+    Vec2 size;
     float radius;
     Color bg_color;
     Color border_color;
     float border_width;
-    Boxf mask;
+    Box2 mask;
     float depth;
   };
   std::vector<Element> elements;

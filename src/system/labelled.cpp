@@ -6,14 +6,14 @@ void LabelledSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   const auto& labelled = element.labelled();
 
-  Vecf label_size = fm->text_size(
+  Vec2 label_size = fm->text_size(
                         labelled.label,
                         theme->text_font,
                         theme->text_size,
                         LengthWrap()) +
-                    Vecf::Constant(2 * theme->text_padding);
+                    Vec2::uniform(2 * theme->text_padding);
   state.fixed_size = label_size;
-  state.dynamic_size = Vecf::Zero();
+  state.dynamic_size = Vec2();
   state.floating = false;
 
   auto child = element.child();
@@ -41,20 +41,20 @@ void LabelledSystem::set_dependent_state(ElementPtr element) {
     other.state().hidden = true;
   }
 
-  Vecf label_size = fm->text_size(
+  Vec2 label_size = fm->text_size(
                         labelled.label,
                         theme->text_font,
                         theme->text_size,
                         LengthWrap()) +
-                    Vecf::Constant(2 * theme->text_padding);
+                    Vec2::uniform(2 * theme->text_padding);
 
   child.state().position.x =
       state.position.x + label_size.x + theme->layout_outer_padding;
   child.state().position.y = state.position.y + theme->layout_outer_padding;
 
-  Vecf available_size = state.size;
+  Vec2 available_size = state.size;
   available_size.x -= label_size.x;
-  available_size -= Vecf::Constant(2 * theme->layout_outer_padding);
+  available_size -= Vec2::uniform(2 * theme->layout_outer_padding);
 
   if (child.state().dynamic_size.x > 0) {
     child.state().size.x = available_size.x;
@@ -74,25 +74,25 @@ void LabelledSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& labelled = element.labelled();
 
-  Vecf label_size = fm->text_size(
+  Vec2 label_size = fm->text_size(
                         labelled.label,
                         theme->text_font,
                         theme->text_size,
                         LengthWrap()) +
-                    Vecf::Constant(2 * theme->text_padding);
+                    Vec2::uniform(2 * theme->text_padding);
 
-  Vecf label_position(
+  Vec2 label_position(
       state.position.x,
       state.position.y + state.size.y / 2 - label_size.y / 2);
 
   renderer.queue_box(
-      Boxf(label_position, label_position + label_size),
+      Box2(label_position, label_position + label_size),
       theme->input_color_bg_active,
       0,
       Color::Black(),
       0);
   renderer.queue_text(
-      label_position + Vecf::Constant(theme->text_padding),
+      label_position + Vec2::uniform(theme->text_padding),
       labelled.label,
       theme->text_font,
       theme->text_size,

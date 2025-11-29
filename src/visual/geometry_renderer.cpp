@@ -83,13 +83,13 @@ void main(){
 }
 )";
 
-static const std::array<Vecf, 6> quad_vertices = {
-    Vecf(0.f, 1.f),
-    Vecf(1.f, 0.f),
-    Vecf(0.f, 0.f),
-    Vecf(0.f, 1.f),
-    Vecf(1.f, 0.f),
-    Vecf(1.f, 1.f)};
+static const std::array<Vec2, 6> quad_vertices = {
+    Vec2(0.f, 1.f),
+    Vec2(1.f, 0.f),
+    Vec2(0.f, 0.f),
+    Vec2(0.f, 1.f),
+    Vec2(1.f, 0.f),
+    Vec2(1.f, 1.f)};
 
 void GeometryRenderer::init() {
   gl_data.program_id = create_program(rect_vs, rect_fs);
@@ -109,13 +109,13 @@ void GeometryRenderer::init() {
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.static_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
-      quad_vertices.size() * sizeof(Vecf),
+      quad_vertices.size() * sizeof(Vec2),
       quad_vertices.data(),
       GL_STATIC_DRAW);
 
   GLuint index = 0;
 
-  glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, sizeof(Vecf), (void*)0);
+  glVertexAttribPointer(index, 2, GL_FLOAT, GL_FALSE, sizeof(Vec2), (void*)0);
   glEnableVertexAttribArray(index);
   index++;
 
@@ -196,7 +196,7 @@ void GeometryRenderer::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)(offsetof(Element, mask) + offsetof(Boxf, lower)));
+      (void*)(offsetof(Element, mask) + offsetof(Box2, lower)));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -207,7 +207,7 @@ void GeometryRenderer::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)(offsetof(Element, mask) + offsetof(Boxf, upper)));
+      (void*)(offsetof(Element, mask) + offsetof(Box2, upper)));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -216,12 +216,12 @@ void GeometryRenderer::init() {
 }
 
 void GeometryRenderer::queue_box(
-    const Boxf& box,
+    const Box2& box,
     const Color& bg_color,
     BoxDims border_width,
     Color border_color,
     float radius,
-    const Boxf& mask) {
+    const Box2& mask) {
 
   Element element;
   element.offset = box.lower;
@@ -234,7 +234,7 @@ void GeometryRenderer::queue_box(
   elements.push_back(element);
 }
 
-void GeometryRenderer::render(const Vecf& viewport_size) {
+void GeometryRenderer::render(const Vec2& viewport_size) {
   glBindBuffer(GL_ARRAY_BUFFER, gl_data.instance_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,

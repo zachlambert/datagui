@@ -6,20 +6,20 @@ void FloatingSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   const auto& floating = element.floating();
 
-  state.fixed_size = Vecf::Zero();
-  state.dynamic_size = Vecf::Zero();
+  state.fixed_size = Vec2();
+  state.dynamic_size = Vec2();
   state.floating = true;
   state.floating_type =
-      FloatingTypeAbsolute(Vecf(floating.width, floating.height));
+      FloatingTypeAbsolute(Vec2(floating.width, floating.height));
 }
 
 void FloatingSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& floating = element.floating();
 
-  Vecf close_button_size =
+  Vec2 close_button_size =
       fm->text_size("close", theme->text_font, theme->text_size, LengthWrap()) +
-      2.f * Vecf::Constant(theme->text_padding);
+      2.f * Vec2::uniform(theme->text_padding);
 
   floating.title_bar_text_width = std::max(
       state.float_box.size().x - close_button_size.x -
@@ -49,7 +49,7 @@ void FloatingSystem::set_dependent_state(ElementPtr element) {
     other.state().hidden = true;
   }
 
-  child.state().position = floating.title_bar_box.top_left();
+  child.state().position = floating.title_bar_box.upper_left();
   child.state().size = state.float_box.upper - child.state().position;
   state.child_mask = child.state().box();
 }
@@ -70,7 +70,7 @@ void FloatingSystem::render(ConstElementPtr element, Renderer& renderer) {
 
   renderer.queue_text(
       state.float_box.lower +
-          Vecf::Constant(theme->input_border_width + theme->text_padding),
+          Vec2::uniform(theme->input_border_width + theme->text_padding),
       floating.title,
       theme->text_font,
       theme->text_size,
@@ -85,7 +85,7 @@ void FloatingSystem::render(ConstElementPtr element, Renderer& renderer) {
       0);
 
   renderer.queue_text(
-      floating.close_button_box.lower + Vecf::Constant(theme->text_padding),
+      floating.close_button_box.lower + Vec2::uniform(theme->text_padding),
       "close",
       theme->text_font,
       theme->text_size,

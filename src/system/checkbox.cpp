@@ -6,8 +6,8 @@ void CheckboxSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
 
   float size = fm->text_height(theme->text_font, theme->text_size);
-  state.fixed_size = Vecf::Constant(size);
-  state.dynamic_size = Vecf::Zero();
+  state.fixed_size = Vec2::uniform(size);
+  state.dynamic_size = Vec2();
   state.floating = false;
 }
 
@@ -26,13 +26,13 @@ void CheckboxSystem::render(ConstElementPtr element, Renderer& renderer) {
     return;
   }
 
-  Boxf icon_box;
+  Box2 icon_box;
   icon_box.lower = minimum(
-      state.position + Vecf::Constant(theme->input_border_width * 2.f),
+      state.position + Vec2::uniform(theme->input_border_width * 2.f),
       state.box().center());
   icon_box.upper = maximum(
       state.position + state.size -
-          Vecf::Constant(theme->input_border_width * 2.f),
+          Vec2::uniform(theme->input_border_width * 2.f),
       state.box().center());
 
   renderer

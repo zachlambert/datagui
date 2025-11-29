@@ -333,7 +333,7 @@ void Gui::debug_render() {
     state.first_visit = false;
 
     renderer.queue_box(
-        Boxf(
+        Box2(
             element.state().position,
             element.state().position + element.state().size),
         Color::Clear(),
@@ -381,15 +381,15 @@ void Gui::debug_render() {
         fm->text_size(debug_text, Font::DejaVuSans, 24, LengthWrap());
 
     renderer.queue_box(
-        Boxf(
-            window.size() - text_size - Vecf::Constant(15),
-            window.size() - Vecf::Constant(5)),
+        Box2(
+            window.size() - text_size - Vec2::uniform(15),
+            window.size() - Vec2::uniform(5)),
         Color::White(),
         2,
         Color::Black(),
         0);
     renderer.queue_text(
-        window.size() - text_size - Vecf::Constant(10),
+        window.size() - text_size - Vec2::uniform(10),
         debug_text,
         Font::DejaVuSans,
         24,
@@ -443,7 +443,7 @@ void Gui::calculate_sizes() {
     {
       auto root = tree.root();
       assert(root);
-      root.state().position = Vecf::Zero();
+      root.state().position = Vec2();
       root.state().size = window.size();
       stack.push(root);
     }
@@ -550,7 +550,7 @@ void Gui::event_handling() {
   }
 }
 
-ElementPtr Gui::get_leaf_node(const Vecf& position) {
+ElementPtr Gui::get_leaf_node(const Vec2& position) {
   auto get_tree_leaf = [this, &position](ElementPtr root) -> ElementPtr {
     ElementPtr leaf = ElementPtr();
 
@@ -623,7 +623,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   }
 }
 
-void Gui::event_handling_hover(const Vecf& mouse_pos) {
+void Gui::event_handling_hover(const Vec2& mouse_pos) {
   if (element_hover) {
     element_hover.state().hovered = false;
   }

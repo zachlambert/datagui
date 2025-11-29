@@ -82,13 +82,13 @@ void TextRenderer::init(std::shared_ptr<FontManager> fm) {
 }
 
 void TextRenderer::queue_text(
-    const Vecf& origin,
+    const Vec2& origin,
     const std::string& text,
     Font font,
     int font_size,
     Color text_color,
     Length width,
-    const Boxf& mask) {
+    const Box2& mask) {
 
   const auto& fs = fm->font_structure(font, font_size);
 
@@ -107,7 +107,7 @@ void TextRenderer::queue_text(
   auto& vertices = commands[command_i].vertices;
 
   auto fixed_width = std::get_if<LengthFixed>(&width);
-  Vecf offset = Vecf::Zero();
+  Vec2 offset;
   offset.y += fs.line_height;
 
   for (char c_char : text) {
@@ -126,13 +126,13 @@ void TextRenderer::queue_text(
       offset.y += fs.line_height;
     }
 
-    Vecf pos = origin + offset;
+    Vec2 pos = origin + offset;
     pos.x += c.offset.x;
     pos.y += (-fs.descender - (c.offset.y + c.size.y));
     offset.x += c.advance;
 
-    Boxf box(pos, pos + c.size);
-    Boxf uv = c.uv;
+    Box2 box(pos, pos + c.size);
+    Box2 uv = c.uv;
 
     if (!intersects(mask, box)) {
       // Not visible
@@ -140,8 +140,8 @@ void TextRenderer::queue_text(
     }
     if (!contains(mask, box)) {
       // Partially obscured -> alter box and uv
-      Boxf new_box = intersection(mask, box);
-      Boxf new_uv;
+      Box2 new_box = intersection(mask, box);
+      Box2 new_uv;
       new_uv.lower.x = uv.lower.x + uv.size().x *
                                         (new_box.lower.x - box.lower.x) /
                                         box.size().x;
@@ -158,16 +158,16 @@ void TextRenderer::queue_text(
       uv = new_uv;
     }
 
-    vertices.push_back(Vertex{box.bottom_left(), uv.top_left()});
-    vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
-    vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
-    vertices.push_back(Vertex{box.bottom_right(), uv.top_right()});
-    vertices.push_back(Vertex{box.top_right(), uv.bottom_right()});
-    vertices.push_back(Vertex{box.top_left(), uv.bottom_left()});
+    vertices.push_back(Vertex{box.lower_left(), uv.upper_left()});
+    vertices.push_back(Vertex{box.lower_right(), uv.upper_right()});
+    vertices.push_back(Vertex{box.upper_left(), uv.lower_left()});
+    vertices.push_back(Vertex{box.lower_right(), uv.upper_right()});
+    vertices.push_back(Vertex{box.upper_right(), uv.lower_right()});
+    vertices.push_back(Vertex{box.upper_left(), uv.lower_left()});
   }
 }
 
-void TextRenderer::render(const Vecf& viewport_size) {
+void TextRenderer::render(const Vec2& viewport_size) {
   glUseProgram(gl_data.program_id);
   glBindVertexArray(gl_data.VAO);
   glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);

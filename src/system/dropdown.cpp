@@ -6,18 +6,18 @@ void DropdownSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   const auto& dropdown = element.dropdown();
 
-  const Vecf none_size =
+  const Vec2 none_size =
       fm->text_size("<none>", theme->text_font, theme->text_size, LengthWrap());
 
   float max_item_width = none_size.x;
   for (const auto& choice : dropdown.choices) {
-    Vecf choice_size =
+    Vec2 choice_size =
         fm->text_size(choice, theme->text_font, theme->text_size, LengthWrap());
     max_item_width = std::max(max_item_width, choice_size.x);
   }
 
-  state.fixed_size = Vecf::Zero();
-  state.dynamic_size = Vecf::Zero();
+  state.fixed_size = Vec2();
+  state.dynamic_size = Vec2();
 
   if (auto width = std::get_if<LengthFixed>(&dropdown.width)) {
     state.fixed_size.x = std::min(max_item_width, width->value);
@@ -27,19 +27,19 @@ void DropdownSystem::set_input_state(ElementPtr element) {
     state.dynamic_size.x = width->weight;
   }
   state.fixed_size +=
-      2.f * Vecf::Constant(theme->input_border_width + theme->text_padding);
+      2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
   state.fixed_size.y += fm->text_height(theme->text_font, theme->text_size);
 
   if (!dropdown.choices.empty()) {
     state.floating = dropdown.open;
 
-    Vecf dropdown_size;
+    Vec2 dropdown_size;
     dropdown_size.x = state.fixed_size.x;
     dropdown_size.y = dropdown.choices.size() *
                           fm->text_height(theme->text_font, theme->text_size) +
                       (dropdown.choices.size() + 1) *
                           (theme->input_border_width + theme->text_padding);
-    state.floating_type = FloatingTypeRelative(Vecf::Zero(), dropdown_size);
+    state.floating_type = FloatingTypeRelative(Vec2(), dropdown_size);
 
   } else {
     state.floating = false;
@@ -82,7 +82,7 @@ void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
 
     renderer.queue_text(
         state.position +
-            Vecf::Constant(theme->input_border_width + theme->text_padding),
+            Vec2::uniform(theme->input_border_width + theme->text_padding),
         text,
         theme->text_font,
         theme->text_size,
@@ -93,11 +93,11 @@ void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
     return;
   }
 
-  Vecf offset = Vecf::Zero();
+  Vec2 offset;
 
   for (int i = 0; i < dropdown.choices.size(); i++) {
-    Vecf position = state.position + offset;
-    Vecf size = Vecf(
+    Vec2 position = state.position + offset;
+    Vec2 size = Vec2(
         state.size.x,
         fm->text_height(theme->text_font, theme->text_size) +
             2.f * (theme->text_padding + theme->input_border_width));
@@ -109,7 +109,7 @@ void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
       bg_color = theme->input_color_bg;
     }
     renderer.queue_box(
-        Boxf(position, position + size),
+        Box2(position, position + size),
         bg_color,
         theme->input_border_width,
         theme->input_color_border,
@@ -117,7 +117,7 @@ void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
 
     renderer.queue_text(
         position +
-            Vecf::Constant(theme->input_border_width + theme->text_padding),
+            Vec2::uniform(theme->input_border_width + theme->text_padding),
         dropdown.choices[i],
         theme->text_font,
         theme->text_size,
@@ -147,17 +147,17 @@ bool DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     return false;
   }
 
-  Vecf offset = Vecf::Zero();
+  Vec2 offset;
   int clicked = -1;
 
   for (int i = 0; i < dropdown.choices.size(); i++) {
-    Vecf position = state.position + offset;
-    Vecf size = Vecf(
+    Vec2 position = state.position + offset;
+    Vec2 size = Vec2(
         state.size.x,
         fm->text_height(theme->text_font, theme->text_size) +
             2.f * (theme->text_padding + theme->input_border_width));
 
-    if (Boxf(position, position + size).contains(event.position)) {
+    if (Box2(position, position + size).contains(event.position)) {
       clicked = i;
       break;
     }
