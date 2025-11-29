@@ -28,11 +28,11 @@ struct Mat2 {
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 2 && j < 2);
-    return data[j * 2 + i];
+    return data[i * 2 + j];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 2 && j < 2);
-    return data[j * 2 + i];
+    return data[i * 2 + j];
   }
 
   static Mat2 identity() {
@@ -82,11 +82,11 @@ struct Mat3 {
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 3 && j < 3);
-    return data[j * 3 + i];
+    return data[i * 3 + j];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 3 && j < 3);
-    return data[j * 3 + i];
+    return data[i * 3 + j];
   }
 
   static Mat3 identity() {
@@ -140,11 +140,11 @@ struct Mat4 {
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 4 && j < 4);
-    return data[j * 4 + i];
+    return data[i * 4 + j];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 4 && j < 4);
-    return data[j * 4 + i];
+    return data[i * 4 + j];
   }
 
   static Mat4 identity() {

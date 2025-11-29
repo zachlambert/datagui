@@ -29,7 +29,7 @@ TEST(Vec, Add) {
     Vec3 b = {4, 5, 6};
     Vec3 result = a + b;
     EXPECT_EQ(result.x, 5);
-    EXPECT_EQ(result.y, 6);
+    EXPECT_EQ(result.y, 7);
     EXPECT_EQ(result.z, 9);
   }
 }
