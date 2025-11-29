@@ -46,6 +46,7 @@ add_library(datagui SHARED
   src/system/series.cpp
   src/system/text_box.cpp
   src/system/text_input.cpp
+  src/system/viewport.cpp
 
   src/viewport/canvas2.cpp
   src/viewport/viewport.cpp

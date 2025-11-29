@@ -246,8 +246,8 @@ inline Vec3 operator-(Vec3 op) {
 }
 
 #ifdef DATAGUI_DEBUG
-std::ostream& operator<<(std::ostream& os, Vec2& vec);
-std::ostream& operator<<(std::ostream& os, Vec3& vec);
+std::ostream& operator<<(std::ostream& os, const Vec2& vec);
+std::ostream& operator<<(std::ostream& os, const Vec3& vec);
 #endif
 
 } // namespace datagui

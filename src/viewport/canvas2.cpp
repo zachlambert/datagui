@@ -19,6 +19,10 @@ void Canvas2::box(
       Box2(Vec2(), framebuffer_size()));
 }
 
+void Canvas2::begin() {
+  layers.clear();
+}
+
 void Canvas2::impl_init(const std::shared_ptr<FontManager>& fm) {
   shape_shader.init();
   text_shader.init();
@@ -29,7 +33,6 @@ void Canvas2::impl_render() {
     shape_shader.draw(layer.shape_command, 1, framebuffer_size());
     text_shader.draw(layer.text_command, 1, framebuffer_size());
   }
-  layers.clear();
 }
 
 Canvas2::Layer& Canvas2::get_layer(int z_index) {

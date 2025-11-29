@@ -2,6 +2,7 @@
 #include "datagui/visual/shader_utils.hpp"
 
 #include <GL/glew.h>
+#include <vector>
 
 namespace datagui {
 
@@ -11,6 +12,7 @@ const static std::string vertex_shader = R"(
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 uv;
 
+uniform vec2 viewport_size;
 out vec2 fs_uv;
 
 void main(){
@@ -28,7 +30,7 @@ uniform sampler2D tex;
 out vec4 color;
 
 void main(){
-  color = vec4(1, 1, 1, texture(tex, fs_uv).x);
+  color = texture(tex, fs_uv);
 }
 )";
 
@@ -57,6 +59,22 @@ Viewport::~Viewport() {
   if (VBO > 0) {
     glDeleteBuffers(1, &VBO);
   }
+}
+
+Viewport::Viewport(Viewport&& other) {
+  width = other.width;
+  height = other.width;
+  texture = other.texture;
+  framebuffer = other.framebuffer;
+  program_id = other.program_id;
+  VAO = other.VAO;
+  VBO = other.VBO;
+
+  other.texture = 0;
+  other.framebuffer = 0;
+  other.program_id = 0;
+  other.VAO = 0;
+  other.VBO = 0;
 }
 
 void Viewport::init(
@@ -89,14 +107,18 @@ void Viewport::init(
   glGenFramebuffers(1, &framebuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // Create a shader program for drawing the framebuffer texture
 
   program_id = create_program(vertex_shader, fragment_shader);
+  uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
+
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
 
   glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
   glVertexAttribPointer(
       0,
@@ -116,6 +138,7 @@ void Viewport::init(
       (void*)offsetof(Vertex, uv));
   glEnableVertexAttribArray(1);
 
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
   // Initialise child class
@@ -123,15 +146,17 @@ void Viewport::init(
   impl_init(fm);
 }
 
-void Viewport::update() {
-  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-  impl_render();
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
 void Viewport::render(const Box2& bounds) {
-  glUseProgram(program_id);
-  glBindVertexArray(VAO);
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClearDepth(0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  impl_render();
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   std::vector<Vertex> vertices = {
       Vertex{bounds.lower_left(), Vec2(0, 1)},
@@ -149,10 +174,13 @@ void Viewport::render(const Box2& bounds) {
       GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+  glUseProgram(program_id);
+  glBindVertexArray(VAO);
   glBindTexture(GL_TEXTURE_2D, texture);
-  glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-  glBindTexture(GL_TEXTURE_2D, 0);
 
+  glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
+  glBindTexture(GL_TEXTURE_2D, 0);
   glBindVertexArray(0);
   glUseProgram(0);
 }

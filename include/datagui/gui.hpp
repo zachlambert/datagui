@@ -200,6 +200,33 @@ public:
     return args_;
   }
 
+  template <typename T>
+  requires std::is_base_of_v<Viewport, T>
+  T* viewport(float width, float height) {
+    check_begin();
+    current.expect(Type::ViewportPtr, read_key());
+    auto& viewport_ptr = current.viewport();
+    if (!viewport_ptr.viewport) {
+      auto viewport = std::make_unique<T>();
+      // Note: Width and height may change after initialisation, but
+      // the framebuffer used internally remains at this initial size
+      viewport->init(width, height, fm);
+      viewport_ptr.viewport = std::move(viewport);
+    }
+    viewport_ptr.width = width;
+    viewport_ptr.height = height;
+
+    if (!current.dirty()) {
+      current = current.next();
+      return nullptr;
+    }
+    move_down();
+    viewport_ptr.viewport->begin();
+    T* ptr = dynamic_cast<T*>(viewport_ptr.viewport.get());
+    assert(ptr);
+    return ptr;
+  }
+
 private:
   void check_begin();
   void move_down();

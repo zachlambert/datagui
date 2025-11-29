@@ -251,6 +251,7 @@ public:
     PROPS_METHOD(Series, series)
     PROPS_METHOD(TextBox, text_box)
     PROPS_METHOD(TextInput, text_input)
+    PROPS_METHOD(ViewportPtr, viewport)
 
 #undef PROPS_METHOD
 
@@ -472,6 +473,7 @@ private:
   VectorMap<Series> series;
   VectorMap<TextBox> text_box;
   VectorMap<TextInput> text_input;
+  VectorMap<ViewportPtr> viewport;
 };
 
 using ElementPtr = Tree::ElementPtr;

@@ -26,6 +26,7 @@ public:
       int z_index = 0);
 
 private:
+  void begin() override;
   void impl_init(const std::shared_ptr<FontManager>& fm) override;
   void impl_render() override;
 

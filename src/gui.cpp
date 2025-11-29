@@ -11,6 +11,7 @@
 #include "datagui/system/series.hpp"
 #include "datagui/system/text_box.hpp"
 #include "datagui/system/text_input.hpp"
+#include "datagui/system/viewport.hpp"
 
 namespace datagui {
 
@@ -39,6 +40,7 @@ Gui::Gui(const Window::Config& config) : window(config) {
       std::make_unique<TextBoxSystem>(fm, theme);
   systems[(std::size_t)Type::TextInput] =
       std::make_unique<TextInputSystem>(fm, theme);
+  systems[(std::size_t)Type::ViewportPtr] = std::make_unique<ViewportSystem>();
 }
 
 bool Gui::running() const {
