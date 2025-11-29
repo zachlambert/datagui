@@ -8,10 +8,10 @@ namespace datagui {
 
 class ShapeShader {
   struct Element {
-    Vec2 origin;
+    Vec2 position; // Centre
+    Rot2 rotation;
     Vec2 size;
-    float radius;
-    Vec2 scale;
+    Vec2 radius;
     Color color;
     Box2 mask;
   };
@@ -47,7 +47,7 @@ public:
         const Box2& mask);
 
     void queue_circle(
-        const Vec2& center,
+        const Vec2& position,
         float radius,
         const Color& color,
         float border_width,
@@ -57,8 +57,8 @@ public:
     void queue_ellipse(
         const Vec2& position,
         float angle,
-        float width,
-        float height,
+        float x_radius,
+        float y_radius,
         const Color& color,
         float border_width,
         Color border_color,
@@ -74,13 +74,14 @@ public:
   };
 
   void init();
-  void draw(const Command& command, const Vec2& viewport_size);
+  void draw(const Command& command, float y_dir, const Vec2& viewport_size);
 
 private:
   // Shader
   unsigned int program_id;
 
   // Uniforms
+  unsigned int uniform_y_dir;
   unsigned int uniform_viewport_size;
 
   // Array/buffer objects
