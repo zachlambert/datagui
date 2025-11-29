@@ -71,6 +71,8 @@ public:
     return mat_;
   }
 
+  static Rot2 line_rot(const Vec2& start, const Vec2& end);
+
 private:
   Mat2 mat_;
 };
@@ -87,6 +89,8 @@ public:
   const Mat3& mat() const {
     return mat_;
   }
+
+  static Rot3 line_rot(const Vec3& start, const Vec3& end);
 
 private:
   Mat3 mat_;

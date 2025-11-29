@@ -41,4 +41,33 @@ Rot3::Rot3(const Quat& quat) {
   }
 }
 
+Rot2 Rot2::line_rot(const Vec2& start, const Vec2& end) {
+  float angle = std::atan2(end.y - start.y, end.x - start.x);
+  return Rot2(angle);
+}
+
+Rot3 Rot3::line_rot(const Vec3& start, const Vec3& end) {
+  Vec3 disp = end - start;
+  float length = disp.length();
+  if (length < 1e-6) {
+    return Rot3();
+  }
+  Vec3 u1 = disp / length;
+
+  std::size_t min_axis = 0;
+  for (std::size_t i = 1; i < 3; i++) {
+    if (u1(i) < std::fabs(u1(min_axis))) {
+      min_axis = i;
+    }
+  }
+  Vec3 cross_with;
+  cross_with(min_axis) = 1.f;
+
+  Vec3 u2 = u1.cross(cross_with);
+  u2 /= u2.length();
+  Vec3 u3 = u1.cross(u2);
+
+  return Mat3(u1, u2, u3);
+}
+
 } // namespace datagui
