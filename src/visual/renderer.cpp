@@ -61,13 +61,6 @@ void Renderer::render_end() {
   assert(masks.size() == 1);
   masks.pop();
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  glClearColor(1.f, 1.f, 1.f, 1.f);
-  glClearDepth(0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   for (const auto& layer : layers) {
     shape_shader.draw(layer.shape_command, -1, viewport_size);
     text_shader.draw(layer.text_command, -1, viewport_size);

@@ -72,6 +72,7 @@ void main(){
   // Allow it to be negative =>
   // max(x, 0)**2 + ...
 
+  u = max(u, 0.0);
   float lhs_x = u.x*u.x * fs_radius.y*fs_radius.y;
   float lhs_y = u.y*u.y * fs_radius.x*fs_radius.x;
   float rhs = fs_radius.x*fs_radius.x * fs_radius.y*fs_radius.y;
@@ -229,13 +230,13 @@ void ShapeShader::Command::queue_box(
     const Box2& mask) {
 
   if (border_width > 0) {
-    queue_box(box, color, radius, 0, Color::Black(), mask);
+    queue_box(box, border_color, radius, 0, Color::Black(), mask);
   }
   Element element;
   element.position = box.center();
   element.rotation = Rot2();
   element.size = box.size() - Vec2::uniform(border_width * 2);
-  element.radius = Vec2::uniform(radius);
+  element.radius = Vec2::uniform(radius - border_width);
   element.color = color;
   element.mask = mask;
   elements.push_back(element);
@@ -265,7 +266,7 @@ void ShapeShader::Command::queue_rect(
   element.position = position;
   element.rotation = Rot2(angle);
   element.size = size - Vec2::uniform(border_width);
-  element.radius = Vec2::uniform(radius);
+  element.radius = Vec2::uniform(radius - border_width);
   element.color = color;
   element.mask = mask;
   elements.push_back(element);
@@ -288,7 +289,7 @@ void ShapeShader::Command::queue_capsule(
   element.size = Vec2(
       (start - end).length() + 2 * radius - 2 * border_width,
       2 * radius - 2 * border_width);
-  element.radius = Vec2::uniform(radius);
+  element.radius = Vec2::uniform(radius - border_width);
   element.color = color;
   element.mask = mask;
   elements.push_back(element);
@@ -307,8 +308,8 @@ void ShapeShader::Command::queue_circle(
   Element element;
   element.position = position;
   element.rotation = Rot2();
-  element.size = Vec2::uniform(radius);
-  element.radius = Vec2::uniform(radius);
+  element.size = Vec2::uniform(2 * (radius - border_width));
+  element.radius = Vec2::uniform(radius - border_width);
   element.color = color;
   element.mask = mask;
   elements.push_back(element);
@@ -339,7 +340,7 @@ void ShapeShader::Command::queue_ellipse(
   element.rotation = Rot2(angle);
   element.size =
       Vec2(2 * x_radius, 2 * y_radius) - Vec2::uniform(2 * border_width);
-  element.radius = Vec2(x_radius, y_radius);
+  element.radius = Vec2(x_radius - border_width, y_radius - border_width);
   element.color = color;
   element.mask = mask;
   elements.push_back(element);
