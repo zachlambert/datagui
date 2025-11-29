@@ -133,7 +133,7 @@ int main() {
           -M_PI / 4,
           100,
           50,
-          Color::Clear(),
+          Color::Hsl(30, 1, 0.5, 0.5),
           10,
           Color::Hsl(30, 1, 0.5),
           mask);

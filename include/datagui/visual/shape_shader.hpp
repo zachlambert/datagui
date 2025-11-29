@@ -11,8 +11,11 @@ class ShapeShader {
     Vec2 position; // Centre
     Rot2 rotation;
     Vec2 size;
-    Vec2 radius;
+    float radius;
+    Vec2 radius_scale;
     Color color;
+    float border_width;
+    Color border_color;
     Box2 mask;
   };
 

@@ -30,7 +30,7 @@ struct Vec2 {
     return data[i];
   }
 
-  static Vec2 one() {
+  static Vec2 ones() {
     return Vec2(1, 1);
   }
 
@@ -154,7 +154,7 @@ struct Vec3 {
     return data[i];
   }
 
-  static Vec3 one() {
+  static Vec3 ones() {
     return Vec3(1, 1, 1);
   }
 

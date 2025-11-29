@@ -16,20 +16,26 @@ layout(location = 1) in vec2 position;
 layout(location = 2) in vec2 rotation_row1;
 layout(location = 3) in vec2 rotation_row2;
 layout(location = 4) in vec2 size;
-layout(location = 5) in vec2 radius;
-layout(location = 6) in vec4 color;
-layout(location = 7) in vec2 mask_lower;
-layout(location = 8) in vec2 mask_upper;
+layout(location = 5) in float radius;
+layout(location = 6) in vec2 radius_scale;
+layout(location = 7) in vec4 color;
+layout(location = 8) in float border_width;
+layout(location = 9) in vec4 border_color;
+layout(location = 10) in vec2 mask_lower;
+layout(location = 11) in vec2 mask_upper;
 
 uniform float y_dir;
 uniform vec2 viewport_size;
 
 out vec2 fs_offset;
 out vec2 fs_size;
-out vec2 fs_radius;
+out float fs_radius;
+out vec2 fs_radius_scale;
 out vec2 fs_mask_offset;
 out vec2 fs_mask_size;
 out vec4 fs_color;
+out float fs_border_width;
+out vec4 fs_border_color;
 
 void main(){
   fs_offset = vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
@@ -43,6 +49,9 @@ void main(){
 
   fs_size = size / 2;
   fs_radius = radius;
+  fs_radius_scale = radius_scale;
+  fs_border_width = border_width;
+  fs_border_color = border_color;
 
   fs_mask_offset = fs_pos - (mask_lower + mask_upper) / 2;
   fs_mask_size = (mask_upper - mask_lower) / 2;
@@ -56,34 +65,34 @@ const static std::string rect_fs = R"(
 
 in vec2 fs_offset;
 in vec2 fs_size;
-in vec2 fs_radius;
+in float fs_radius;
+in vec2 fs_radius_scale;
 in vec2 fs_mask_offset;
 in vec2 fs_mask_size;
 in vec4 fs_color;
+in float fs_border_width;
+in vec4 fs_border_color;
 
 uniform vec2 viewport_size;
 
 out vec4 color;
 
 void main(){
-  vec2 u = abs(fs_offset) - (fs_size - fs_radius);
-  // (x/a)**2 + (y/b)**2 <= 1
-  // x**2 * b**2 + y**2 * a**2 <= a**2 * b**2
-  // Allow it to be negative =>
-  // max(x, 0)**2 + ...
+  vec2 d_outer = (abs(fs_offset) - fs_size) / fs_radius_scale + fs_radius;
+  vec2 d_inner = (abs(fs_offset) - max(fs_size-fs_border_width, 0)) /
+    fs_radius_scale + max(fs_radius - fs_border_width, 0);
 
-  u = max(u, 0.0);
-  float lhs_x = u.x*u.x * fs_radius.y*fs_radius.y;
-  float lhs_y = u.y*u.y * fs_radius.x*fs_radius.x;
-  float rhs = fs_radius.x*fs_radius.x * fs_radius.y*fs_radius.y;
+  float s_outer = length(max(d_outer, 0)) + min(max(d_outer.x, d_outer.y), 0);
+  float s_inner = length(max(d_inner, 0)) + min(max(d_inner.x, d_inner.y), 0);
 
-  float in_shape = float((lhs_x + lhs_y) <= rhs);
+  float in_outer = float(s_outer <= fs_radius);
+  float in_inner = float(s_inner <= max(fs_radius - fs_border_width, 0));
 
   vec2 mask_d = abs(fs_mask_offset) - fs_mask_size;
   float mask_s = length(max(mask_d, 0.0)) + min(max(mask_d.x, mask_d.y), 0.0);
   float in_mask = float(mask_s < 0);
 
-  color = in_mask * in_shape * fs_color;
+  color = in_mask * (in_inner * fs_color + in_outer * (1-in_inner) * fs_border_color);
 }
 )";
 
@@ -176,11 +185,22 @@ void ShapeShader::init() {
 
   glVertexAttribPointer(
       index,
-      2,
+      1,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
       (void*)offsetof(Element, radius));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, radius_scale));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -192,6 +212,28 @@ void ShapeShader::init() {
       GL_FALSE,
       sizeof(Element),
       (void*)offsetof(Element, color));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      1,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, border_width));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      4,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, border_color));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -229,15 +271,15 @@ void ShapeShader::Command::queue_box(
     Color border_color,
     const Box2& mask) {
 
-  if (border_width > 0) {
-    queue_box(box, border_color, radius, 0, Color::Black(), mask);
-  }
   Element element;
   element.position = box.center();
   element.rotation = Rot2();
-  element.size = box.size() - Vec2::uniform(border_width * 2);
-  element.radius = Vec2::uniform(radius - border_width);
+  element.size = box.size();
+  element.radius = radius;
+  element.radius_scale = Vec2::ones();
   element.color = color;
+  element.border_width = border_width;
+  element.border_color = border_color;
   element.mask = mask;
   elements.push_back(element);
 }
@@ -251,23 +293,15 @@ void ShapeShader::Command::queue_rect(
     float border_width,
     Color border_color,
     const Box2& mask) {
-  if (border_width > 0) {
-    queue_rect(
-        position,
-        angle,
-        size,
-        border_color,
-        radius,
-        0,
-        Color::Black(),
-        mask);
-  }
   Element element;
   element.position = position;
   element.rotation = Rot2(angle);
-  element.size = size - Vec2::uniform(border_width);
-  element.radius = Vec2::uniform(radius - border_width);
+  element.size = size;
+  element.radius = radius;
+  element.radius_scale = Vec2::ones();
   element.color = color;
+  element.border_width = border_width;
+  element.border_color = border_color;
   element.mask = mask;
   elements.push_back(element);
 }
@@ -280,17 +314,15 @@ void ShapeShader::Command::queue_capsule(
     float border_width,
     Color border_color,
     const Box2& mask) {
-  if (border_width > 0) {
-    queue_capsule(start, end, radius, border_color, 0, Color::Black(), mask);
-  }
   Element element;
   element.position = (start + end) / 2;
   element.rotation = Rot2::line_rot(start, end);
-  element.size = Vec2(
-      (start - end).length() + 2 * radius - 2 * border_width,
-      2 * radius - 2 * border_width);
-  element.radius = Vec2::uniform(radius - border_width);
+  element.size = Vec2((start - end).length() + 2 * radius, 2 * radius);
+  element.radius = radius;
+  element.radius_scale = Vec2::ones();
   element.color = color;
+  element.border_width = border_width;
+  element.border_color = border_color;
   element.mask = mask;
   elements.push_back(element);
 }
@@ -302,15 +334,15 @@ void ShapeShader::Command::queue_circle(
     float border_width,
     Color border_color,
     const Box2& mask) {
-  if (border_width > 0) {
-    queue_circle(position, radius, border_color, 0, Color::Black(), mask);
-  }
   Element element;
   element.position = position;
   element.rotation = Rot2();
-  element.size = Vec2::uniform(2 * (radius - border_width));
-  element.radius = Vec2::uniform(radius - border_width);
+  element.size = Vec2::uniform(2 * radius);
+  element.radius = radius;
+  element.radius_scale = Vec2::ones();
   element.color = color;
+  element.border_width = border_width;
+  element.border_color = border_color;
   element.mask = mask;
   elements.push_back(element);
 }
@@ -324,24 +356,15 @@ void ShapeShader::Command::queue_ellipse(
     float border_width,
     Color border_color,
     const Box2& mask) {
-  if (border_width > 0) {
-    queue_ellipse(
-        position,
-        angle,
-        x_radius,
-        y_radius,
-        border_color,
-        0,
-        Color::Black(),
-        mask);
-  }
   Element element;
   element.position = position;
   element.rotation = Rot2(angle);
-  element.size =
-      Vec2(2 * x_radius, 2 * y_radius) - Vec2::uniform(2 * border_width);
-  element.radius = Vec2(x_radius - border_width, y_radius - border_width);
+  element.size = Vec2(2 * x_radius, 2 * y_radius);
+  element.radius = std::min(x_radius, y_radius);
+  element.radius_scale = Vec2(x_radius, y_radius) / element.radius;
   element.color = color;
+  element.border_width = border_width;
+  element.border_color = border_color;
   element.mask = mask;
   elements.push_back(element);
 }
