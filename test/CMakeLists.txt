@@ -21,3 +21,7 @@ endfunction()
 create_test(tree)
 create_test(unique_any)
 create_test(vector_map)
+
+create_test(vec)
+create_test(mat)
+create_test(rot)
