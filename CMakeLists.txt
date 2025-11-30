@@ -29,9 +29,11 @@ add_library(datagui SHARED
   src/geometry/vec.cpp
 
   src/visual/font_manager.cpp
-  src/visual/geometry_renderer.cpp
-  src/visual/shader.cpp
-  src/visual/text_renderer.cpp
+  src/visual/image_shader.cpp
+  src/visual/renderer.cpp
+  src/visual/shader_utils.cpp
+  src/visual/shape_shader.cpp
+  src/visual/text_shader.cpp
   src/visual/window.cpp
 
   src/input/text_selection.cpp
@@ -45,6 +47,10 @@ add_library(datagui SHARED
   src/system/series.cpp
   src/system/text_box.cpp
   src/system/text_input.cpp
+  src/system/viewport.cpp
+
+  src/viewport/canvas2.cpp
+  src/viewport/viewport.cpp
 
   src/gui.cpp
 

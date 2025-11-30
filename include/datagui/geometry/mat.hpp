@@ -25,6 +25,12 @@ struct Mat2 {
       i++;
     }
   }
+  Mat2(const Vec2& u1, const Vec2& u2) {
+    for (std::size_t k = 0; k < 2; k++) {
+      (*this)(k, 0) = u1(k);
+      (*this)(k, 1) = u2(k);
+    }
+  }
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 2 && j < 2);
@@ -77,6 +83,13 @@ struct Mat3 {
     for (float value : list) {
       data[i] = value;
       i++;
+    }
+  }
+  Mat3(const Vec3& u1, const Vec3& u2, const Vec3& u3) {
+    for (std::size_t k = 0; k < 3; k++) {
+      (*this)(k, 0) = u1(k);
+      (*this)(k, 1) = u2(k);
+      (*this)(k, 2) = u3(k);
     }
   }
 

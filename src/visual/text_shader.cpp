@@ -1,5 +1,5 @@
-#include "datagui/visual/text_renderer.hpp"
-#include "datagui/visual/shader.hpp"
+#include "datagui/visual/text_shader.hpp"
+#include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <assert.h>
 #include <string>
@@ -12,18 +12,20 @@ const static std::string vertex_shader = R"(
 // Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 uv;
+layout(location = 2) in float v_center;
 
+uniform float y_dir;
 uniform vec2 viewport_size;
 out vec2 fs_uv;
 
 void main(){
   gl_Position = vec4(
-    -1.f + 2 * vertex_pos.x / viewport_size.x,
-    1.f - 2 * vertex_pos.y / viewport_size.y,
+    (vertex_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
+    y_dir * (vertex_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
     0,
     1
   );
-  fs_uv = uv;
+  fs_uv = vec2(uv.x, v_center + y_dir * (uv.y - v_center));
 }
 )";
 
@@ -42,46 +44,58 @@ void main(){
 }
 )";
 
-void TextRenderer::init(std::shared_ptr<FontManager> fm) {
-  this->fm = fm;
-
+void TextShader::init() {
   // Configure shader program and buffers
 
-  gl_data.program_id = create_program(vertex_shader, fragment_shader);
-  gl_data.uniform_viewport_size =
-      glGetUniformLocation(gl_data.program_id, "viewport_size");
-  gl_data.uniform_text_color =
-      glGetUniformLocation(gl_data.program_id, "text_color");
+  program_id = create_program(vertex_shader, fragment_shader);
+  uniform_y_dir = glGetUniformLocation(program_id, "y_dir");
+  uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
+  uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
-  glGenVertexArrays(1, &gl_data.VAO);
-  glGenBuffers(1, &gl_data.VBO);
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
 
-  glBindVertexArray(gl_data.VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+  GLuint index = 0;
 
   glVertexAttribPointer(
-      0,
+      index,
       2,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Vertex),
       (void*)offsetof(Vertex, pos));
-  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(index);
+  index++;
 
   glVertexAttribPointer(
-      1,
+      index,
       2,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Vertex),
       (void*)offsetof(Vertex, uv));
-  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      1,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Vertex),
+      (void*)offsetof(Vertex, v_center));
+  glEnableVertexAttribArray(index);
+  index++;
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 }
 
-void TextRenderer::queue_text(
+void TextShader::Command::queue_text(
+    const std::shared_ptr<FontManager>& fm,
     const Vec2& origin,
     const std::string& text,
     Font font,
@@ -92,19 +106,19 @@ void TextRenderer::queue_text(
 
   const auto& fs = fm->font_structure(font, font_size);
 
-  std::size_t command_i = 0;
-  while (command_i < commands.size()) {
-    const auto& command = commands[command_i];
-    if (command.font_texture == fs.font_texture &&
-        command.font_color.equals(text_color)) {
+  std::size_t char_list_i = 0;
+  while (char_list_i < char_lists.size()) {
+    const auto& char_list = char_lists[char_list_i];
+    if (char_list.font_texture == fs.font_texture &&
+        char_list.font_color.equals(text_color)) {
       break;
     }
-    command_i++;
+    char_list_i++;
   }
-  if (command_i == commands.size()) {
-    commands.emplace_back(fs.font_texture, text_color);
+  if (char_list_i == char_lists.size()) {
+    char_lists.emplace_back(fs.font_texture, text_color);
   }
-  auto& vertices = commands[command_i].vertices;
+  auto& vertices = char_lists[char_list_i].vertices;
 
   auto fixed_width = std::get_if<LengthFixed>(&width);
   Vec2 offset;
@@ -158,44 +172,56 @@ void TextRenderer::queue_text(
       uv = new_uv;
     }
 
-    vertices.push_back(Vertex{box.lower_left(), uv.upper_left()});
-    vertices.push_back(Vertex{box.lower_right(), uv.upper_right()});
-    vertices.push_back(Vertex{box.upper_left(), uv.lower_left()});
-    vertices.push_back(Vertex{box.lower_right(), uv.upper_right()});
-    vertices.push_back(Vertex{box.upper_right(), uv.lower_right()});
-    vertices.push_back(Vertex{box.upper_left(), uv.lower_left()});
+    float v_center = (uv.lower.y + uv.upper.y) / 2;
+    vertices.push_back(Vertex{box.lower_left(), uv.lower_left(), v_center});
+    vertices.push_back(Vertex{box.lower_right(), uv.lower_right(), v_center});
+    vertices.push_back(Vertex{box.upper_left(), uv.upper_left(), v_center});
+    vertices.push_back(Vertex{box.lower_right(), uv.lower_right(), v_center});
+    vertices.push_back(Vertex{box.upper_right(), uv.upper_right(), v_center});
+    vertices.push_back(Vertex{box.upper_left(), uv.upper_left(), v_center});
   }
 }
 
-void TextRenderer::render(const Vec2& viewport_size) {
-  glUseProgram(gl_data.program_id);
-  glBindVertexArray(gl_data.VAO);
-  glUniform2f(gl_data.uniform_viewport_size, viewport_size.x, viewport_size.y);
-  for (const auto& command : commands) {
-    glBindBuffer(GL_ARRAY_BUFFER, gl_data.VBO);
+void TextShader::draw(
+    const Command& command,
+    float y_dir,
+    const Vec2& viewport_size) {
+  if (command.char_lists.empty()) {
+    return;
+  }
+
+  glUseProgram(program_id);
+  glBindVertexArray(VAO);
+  glUniform1f(uniform_y_dir, y_dir);
+  glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
+
+  for (const auto& char_list : command.char_lists) {
+    if (char_list.vertices.empty()) {
+      continue;
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(
         GL_ARRAY_BUFFER,
-        command.vertices.size() * sizeof(Vertex),
-        command.vertices.data(),
+        char_list.vertices.size() * sizeof(Vertex),
+        char_list.vertices.data(),
         GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glUniform4f(
-        gl_data.uniform_text_color,
-        command.font_color.r,
-        command.font_color.g,
-        command.font_color.b,
-        command.font_color.a);
+        uniform_text_color,
+        char_list.font_color.r,
+        char_list.font_color.g,
+        char_list.font_color.b,
+        char_list.font_color.a);
 
-    glBindTexture(GL_TEXTURE_2D, command.font_texture);
-    glDrawArrays(GL_TRIANGLES, 0, command.vertices.size());
+    glBindTexture(GL_TEXTURE_2D, char_list.font_texture);
+    glDrawArrays(GL_TRIANGLES, 0, char_list.vertices.size());
     glBindTexture(GL_TEXTURE_2D, 0);
   }
 
   glBindVertexArray(0);
   glUseProgram(0);
-
-  commands.clear();
 }
 
 } // namespace datagui

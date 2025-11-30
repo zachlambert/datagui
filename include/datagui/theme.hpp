@@ -30,7 +30,6 @@ struct Theme {
   Color input_color_border = Color::Black();
   Color input_color_border_focus = Color::Black();
   float input_border_width = 0;
-  float input_radius = 0;
 
   Color header_color = Color::Black();
 };

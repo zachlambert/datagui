@@ -1,6 +1,6 @@
 #include "datagui/visual/font_manager.hpp"
 
-#include "datagui/visual/shader.hpp"
+#include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <algorithm>
 #include <filesystem>
@@ -215,6 +215,9 @@ FontStructure load_font(Font font, int font_size) {
   // 2nd pass iterate through characters
   // -> Render to the font texture
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   glUseProgram(shader_program);
   glViewport(0, 0, texture_width, texture_height);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
@@ -302,6 +305,8 @@ FontStructure load_font(Font font, int font_size) {
   }
 
   // Cleanup
+
+  glDisable(GL_BLEND);
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glDeleteFramebuffers(1, &framebuffer);

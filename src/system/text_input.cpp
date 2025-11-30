@@ -43,8 +43,7 @@ void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
       state.box(),
       theme->input_color_bg,
       theme->input_border_width,
-      border_color,
-      0);
+      border_color);
 
   Vec2 text_position =
       state.position +

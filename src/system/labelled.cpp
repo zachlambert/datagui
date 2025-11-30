@@ -87,10 +87,7 @@ void LabelledSystem::render(ConstElementPtr element, Renderer& renderer) {
 
   renderer.queue_box(
       Box2(label_position, label_position + label_size),
-      theme->input_color_bg_active,
-      0,
-      Color::Black(),
-      0);
+      theme->input_color_bg_active);
   renderer.queue_text(
       label_position + Vec2::uniform(theme->text_padding),
       labelled.label,

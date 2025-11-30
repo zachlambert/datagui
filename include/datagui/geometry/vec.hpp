@@ -30,7 +30,7 @@ struct Vec2 {
     return data[i];
   }
 
-  static Vec2 one() {
+  static Vec2 ones() {
     return Vec2(1, 1);
   }
 
@@ -68,6 +68,13 @@ struct Vec2 {
 
   Vec2 abs() const {
     return Vec2(std::abs(x), std::abs(y));
+  }
+
+  float dot(const Vec2& other) {
+    return x * other.x + y * other.y;
+  }
+  float cross(const Vec2& other) {
+    return x * other.y - y * other.x;
   }
 };
 
@@ -147,7 +154,7 @@ struct Vec3 {
     return data[i];
   }
 
-  static Vec3 one() {
+  static Vec3 ones() {
     return Vec3(1, 1, 1);
   }
 
@@ -190,6 +197,17 @@ struct Vec3 {
   Vec3 abs() const {
     return Vec3(std::abs(x), std::abs(y), std::abs(z));
   }
+
+  float dot(const Vec3& other) {
+    return x * other.x + y * other.y + z * other.z;
+  }
+  Vec3 cross(const Vec3& other) {
+    Vec3 result;
+    result.x = y * other.z - z * other.y;
+    result.y = z * other.x - x * other.z;
+    result.z = x * other.y - y * other.x;
+    return result;
+  }
 };
 
 inline Vec3 operator+(Vec3 lhs, const Vec3& rhs) {
@@ -228,8 +246,8 @@ inline Vec3 operator-(Vec3 op) {
 }
 
 #ifdef DATAGUI_DEBUG
-std::ostream& operator<<(std::ostream& os, Vec2& vec);
-std::ostream& operator<<(std::ostream& os, Vec3& vec);
+std::ostream& operator<<(std::ostream& os, const Vec2& vec);
+std::ostream& operator<<(std::ostream& os, const Vec3& vec);
 #endif
 
 } // namespace datagui

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "datagui/visual/font_manager.hpp"
-#include "datagui/visual/geometry_renderer.hpp"
-#include "datagui/visual/text_renderer.hpp"
+#include "datagui/visual/image_shader.hpp"
+#include "datagui/visual/shape_shader.hpp"
+#include "datagui/visual/text_shader.hpp"
 #include <assert.h>
 #include <memory>
 #include <stack>
@@ -11,26 +12,13 @@ namespace datagui {
 
 class Renderer {
 public:
-  void init(std::shared_ptr<FontManager> fm) {
-    geometry_renderer.init();
-    text_renderer.init(fm);
-  }
+  void init(std::shared_ptr<FontManager> fm);
 
   void queue_box(
       const Box2& box,
       const Color& bg_color,
-      BoxDims border_width,
-      Color border_color,
-      float radius) {
-    assert(!masks.empty());
-    geometry_renderer.queue_box(
-        box,
-        bg_color,
-        border_width,
-        border_color,
-        radius,
-        masks.top());
-  }
+      float border_width = 0,
+      Color border_color = Color::Black());
 
   void queue_text(
       const Vec2& origin,
@@ -38,53 +26,36 @@ public:
       Font font,
       int font_size,
       Color text_color,
-      Length width) {
-    assert(!masks.empty());
-    text_renderer.queue_text(
-        origin,
-        text,
-        font,
-        font_size,
-        text_color,
-        width,
-        masks.top());
-  }
+      Length width = LengthWrap());
 
-  void render_begin(const Vec2& viewport_size) {
-    this->viewport_size = viewport_size;
-    if (masks.size() == 1) {
-      masks.pop();
-    }
-    masks.push(Box2(Vec2(), viewport_size));
-  }
+  void queue_image(const Box2& box, unsigned int texture);
 
-  void render() {
-    geometry_renderer.render(viewport_size);
-    text_renderer.render(viewport_size);
-  }
+  void render_begin(const Vec2& viewport_size);
+  void render_end();
 
-  void render_end() {
-    assert(masks.size() == 1);
-    masks.pop();
-  }
-
-  void push_mask(const Box2& mask) {
-    if (masks.empty()) {
-      masks.push(mask);
-    } else {
-      masks.push(intersection(masks.top(), mask));
-    }
-  }
-  void pop_mask() {
-    masks.pop();
-  }
+  void new_layer();
+  void push_mask(const Box2& mask);
+  void pop_mask();
 
 private:
-  GeometryRenderer geometry_renderer;
-  TextRenderer text_renderer;
+  struct ImageCommand {
+    Box2 box;
+    unsigned int texture;
+  };
+  struct Layer {
+    ShapeShader::Command shape_command;
+    TextShader::Command text_command;
+    std::vector<ImageCommand> image_commands;
+  };
+  std::vector<Layer> layers;
+
+  ShapeShader shape_shader;
+  TextShader text_shader;
+  ImageShader image_shader;
+
+  std::shared_ptr<FontManager> fm;
   Vec2 viewport_size;
   std::stack<Box2> masks;
-  int depth;
 };
 
 } // namespace datagui

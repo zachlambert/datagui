@@ -3,6 +3,7 @@
 #include "datagui/color.hpp"
 #include "datagui/geometry.hpp"
 #include "datagui/layout.hpp"
+#include "datagui/viewport/viewport.hpp"
 #include <functional>
 #include <optional>
 #include <vector>
@@ -19,8 +20,9 @@ enum class Type {
   Series,
   TextBox,
   TextInput,
+  ViewportPtr,
 };
-static constexpr std::size_t TypeCount = 9;
+static constexpr std::size_t TypeCount = 10;
 
 struct Button {
   // Definition
@@ -138,6 +140,12 @@ struct TextInput {
   // State
   std::string text;
   int var_version = 0;
+};
+
+struct ViewportPtr {
+  float width;
+  float height;
+  std::unique_ptr<Viewport> viewport;
 };
 
 } // namespace datagui

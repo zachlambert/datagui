@@ -11,6 +11,7 @@
 #include "datagui/system/series.hpp"
 #include "datagui/system/text_box.hpp"
 #include "datagui/system/text_input.hpp"
+#include "datagui/system/viewport.hpp"
 
 namespace datagui {
 
@@ -39,6 +40,7 @@ Gui::Gui(const Window::Config& config) : window(config) {
       std::make_unique<TextBoxSystem>(fm, theme);
   systems[(std::size_t)Type::TextInput] =
       std::make_unique<TextInputSystem>(fm, theme);
+  systems[(std::size_t)Type::ViewportPtr] = std::make_unique<ViewportSystem>();
 }
 
 bool Gui::running() const {
@@ -65,6 +67,9 @@ void Gui::end() {
   assert(!stack.empty());
   std::tie(current, var_current) = stack.top();
   stack.pop();
+  if (current.type() == Type::ViewportPtr) {
+    current.viewport().viewport->end();
+  }
   current = current.next();
 }
 
@@ -155,6 +160,7 @@ bool Gui::floating(
   floating.height = height;
   floating.closed_callback = [open_var]() { open_var.set(false); };
 
+  depend_variable(open_var);
   if (*open_var != floating.open) {
     floating.open = *open_var;
   }
@@ -288,16 +294,15 @@ void Gui::render() {
   renderer.render_begin(window.size());
 
   render_tree(tree.root());
-  renderer.render();
 
   for (auto element : floating_elements) {
+    renderer.new_layer();
     render_tree(element);
-    renderer.render();
   }
 #ifdef DATAGUI_DEBUG
   if (debug_mode_) {
+    renderer.new_layer();
     debug_render();
-    renderer.render();
   }
 #endif
 
@@ -332,24 +337,23 @@ void Gui::debug_render() {
     }
     state.first_visit = false;
 
+    Color debug_color = element.state().focused         ? Color::Blue()
+                        : element.state().in_focus_tree ? Color::Red()
+                                                        : Color::Green();
     renderer.queue_box(
         Box2(
             element.state().position,
             element.state().position + element.state().size),
         Color::Clear(),
         2,
-        element.state().focused         ? Color::Blue()
-        : element.state().in_focus_tree ? Color::Red()
-                                        : Color::Green(),
-        0);
+        debug_color);
 
     if (element.state().floating) {
       renderer.queue_box(
           element.state().float_box,
           Color::Clear(),
           2,
-          element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1),
-          0);
+          element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1));
     }
 
     renderer.push_mask(element.state().child_mask);
@@ -386,15 +390,13 @@ void Gui::debug_render() {
             window.size() - Vec2::uniform(5)),
         Color::White(),
         2,
-        Color::Black(),
-        0);
+        Color::Black());
     renderer.queue_text(
         window.size() - text_size - Vec2::uniform(10),
         debug_text,
         Font::DejaVuSans,
         24,
-        Color::Black(),
-        LengthWrap());
+        Color::Black());
   }
 }
 #endif

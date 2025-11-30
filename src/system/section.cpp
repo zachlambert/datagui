@@ -95,7 +95,7 @@ void SectionSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 
   if (section.bg_color) {
-    renderer.queue_box(state.box(), *section.bg_color, 0, Color::Black(), 0);
+    renderer.queue_box(state.box(), *section.bg_color);
   }
 
   renderer.queue_box(
@@ -104,8 +104,7 @@ void SectionSystem::render(ConstElementPtr element, Renderer& renderer) {
           state.position + Vec2(state.size.x, section.header_size.y)),
       header_color,
       border_width,
-      theme->layout_border_color,
-      0);
+      theme->layout_border_color);
 
   Vec2 text_origin =
       state.position + Vec2::uniform(theme->text_padding + border_width);

@@ -137,6 +137,8 @@ int Tree::emplace_type(Type type) {
     return text_box.emplace();
   case Type::TextInput:
     return text_input.emplace();
+  case Type::ViewportPtr:
+    return viewport.emplace();
   default:
     assert(false);
     return -1;
@@ -171,6 +173,9 @@ void Tree::pop_type(Type type, std::size_t index) {
     break;
   case Type::TextInput:
     text_input.pop(index);
+    break;
+  case Type::ViewportPtr:
+    viewport.pop(index);
     break;
   default:
     assert(false);

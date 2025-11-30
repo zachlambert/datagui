@@ -200,6 +200,32 @@ public:
     return args_;
   }
 
+  template <typename T>
+  requires std::is_base_of_v<Viewport, T>
+  T* viewport(float width, float height) {
+    check_begin();
+    current.expect(Type::ViewportPtr, read_key());
+    auto& viewport = current.viewport();
+    if (!viewport.viewport) {
+      viewport.viewport = std::make_unique<T>();
+      viewport.viewport->init(width, height, fm);
+    }
+    // Renderered width/height can differ to the initial width/height
+    // above - this defines the size used for the framebuffer
+    viewport.width = width;
+    viewport.height = height;
+
+    if (!current.dirty()) {
+      current = current.next();
+      return nullptr;
+    }
+    move_down();
+    viewport.viewport->begin();
+    T* ptr = dynamic_cast<T*>(viewport.viewport.get());
+    assert(ptr);
+    return ptr;
+  }
+
 private:
   void check_begin();
   void move_down();

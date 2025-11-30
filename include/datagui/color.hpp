@@ -2,15 +2,21 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 
 namespace datagui {
 
 struct Color {
 public:
-  float r;
-  float g;
-  float b;
-  float a;
+  union {
+    struct {
+      float r;
+      float g;
+      float b;
+      float a;
+    };
+    float data[4];
+  };
 
   Color() {}
   Color(float r, float g, float b, float a = 1) : r(r), g(g), b(b), a(a) {}
@@ -43,8 +49,8 @@ public:
       float lightness,
       float alpha = 1) {
     // https://www.rapidtables.com/convert/color/hsl-to-rgb.html
-    float c = (1 - std::abs(2 * lightness - 1)) * saturation;
-    float x = c * (1 - std::abs(int(hue / 60) % 2 - 1));
+    float c = (1 - std::fabs(2 * lightness - 1)) * saturation;
+    float x = c * (1 - std::fabs(std::fmod(hue / 60, 2) - 1));
     float m = lightness - c / 2;
 
     std::array<float, 3> rgb;
