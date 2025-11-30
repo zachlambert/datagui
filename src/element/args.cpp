@@ -45,6 +45,11 @@ void Args::apply(ElementPtr element) {
     series_.width.consume(series.width);
     break;
   }
+  case Type::Slider: {
+    auto& slider = element.slider();
+    slider_.length.consume(slider.length);
+    break;
+  }
   case Type::TextBox: {
     auto& text_box = element.text_box();
     text_size_.consume(text_box.text_size);

@@ -46,6 +46,7 @@ add_library(datagui SHARED
   src/system/labelled.cpp
   src/system/section.cpp
   src/system/series.cpp
+  src/system/slider.cpp
   src/system/text_box.cpp
   src/system/text_input.cpp
   src/system/viewport.cpp

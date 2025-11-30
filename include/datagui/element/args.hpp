@@ -80,6 +80,13 @@ public:
     return *this;
   }
 
+  // Slider
+
+  Args& slider_length(float length) {
+    slider_.length = length;
+    return *this;
+  }
+
 private:
   void apply(ElementPtr element);
 
@@ -96,6 +103,10 @@ private:
     Arg<Length> length = Length(LengthWrap());
     Arg<Length> width = Length(LengthDynamic(1));
   } series_;
+
+  struct {
+    ArgOpt<float> length;
+  } slider_;
 
   friend class Gui;
 };

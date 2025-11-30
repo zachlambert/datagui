@@ -6,6 +6,7 @@ int main() {
 
   while (gui.running()) {
     if (gui.series()) {
+      gui.text_box("Number input");
       gui.number_input<int>(0, [](int value) {
         std::cout << "int: " << value << std::endl;
       });
@@ -17,6 +18,17 @@ int main() {
       });
       gui.number_input<std::size_t>(0, [](std::size_t value) {
         std::cout << "size_t: " << value << std::endl;
+      });
+
+      gui.text_box("Slider");
+      gui.slider<int>(0, 0, 10, [](int value) {
+        std::cout << "slider int: " << value << std::endl;
+      });
+      gui.slider<float>(0, 0, 1, [](float value) {
+        std::cout << "slider float: " << value << std::endl;
+      });
+      gui.slider<double>(0, 0, 1, [](double value) {
+        std::cout << "slider double: " << value << std::endl;
       });
       gui.end();
     }

@@ -19,11 +19,12 @@ enum class Type {
   Labelled,
   Section,
   Series,
+  Slider,
   TextBox,
   TextInput,
   ViewportPtr,
 };
-static constexpr std::size_t TypeCount = 10;
+static constexpr std::size_t TypeCount = 11;
 
 struct Button {
   // Definition
@@ -120,6 +121,19 @@ struct Series {
   // State
   float overrun = 0;
   float scroll_pos = 0;
+};
+
+struct Slider {
+  // Args
+  std::optional<float> length;
+  NumberType type;
+  double lower;
+  double upper;
+  std::function<void(double)> callback;
+
+  // State
+  double value;
+  bool held = false;
 };
 
 struct TextBox {

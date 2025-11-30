@@ -10,6 +10,7 @@
 #include "datagui/system/labelled.hpp"
 #include "datagui/system/section.hpp"
 #include "datagui/system/series.hpp"
+#include "datagui/system/slider.hpp"
 #include "datagui/system/text_box.hpp"
 #include "datagui/system/text_input.hpp"
 #include "datagui/system/viewport.hpp"
@@ -37,6 +38,8 @@ Gui::Gui(const Window::Config& config) : window(config) {
   systems[(std::size_t)Type::Section] =
       std::make_unique<SectionSystem>(fm, theme);
   systems[(std::size_t)Type::Series] = std::make_unique<SeriesSystem>(theme);
+  systems[(std::size_t)Type::Slider] =
+      std::make_unique<SliderSystem>(fm, theme);
   systems[(std::size_t)Type::TextBox] =
       std::make_unique<TextBoxSystem>(fm, theme);
   systems[(std::size_t)Type::TextInput] =
@@ -221,6 +224,59 @@ bool Gui::series() {
   current = current.next();
   return false;
 }
+
+template <typename T>
+void Gui::slider(
+    T initial_value,
+    T lower,
+    T upper,
+    const std::function<void(T)>& callback) {
+  bool is_new = current.expect(Type::Slider, read_key());
+  auto& slider = current.slider();
+  args_.apply(current);
+  current = current.next();
+
+  slider.type = number_type<T>();
+  slider.lower = lower;
+  slider.upper = upper;
+
+  if (is_new || overwrite) {
+    slider.value = initial_value;
+  }
+  if constexpr (std::is_same_v<T, double>) {
+    slider.callback = callback;
+  }
+  if constexpr (!std::is_same_v<T, double>) {
+    slider.callback = [callback](double value) { callback(value); };
+  }
+}
+
+template <typename T>
+void Gui::slider(T lower, T upper, const Var<T>& var) {
+  current.expect(Type::Slider, read_key());
+  auto& slider = current.slider();
+  args_.apply(current);
+  current = current.next();
+
+  slider.type = number_type<T>();
+  slider.lower = lower;
+  slider.upper = upper;
+
+  slider.callback = [var](double value) { var.set(value); };
+  slider.value = *var;
+}
+
+#define INSTANTIATE(T) \
+  template void Gui::slider<T>(T, T, T, const std::function<void(T)>&); \
+  template void Gui::slider<T>(T, T, const Var<T>&);
+INSTANTIATE(std::int32_t)
+INSTANTIATE(std::int64_t)
+INSTANTIATE(std::uint32_t)
+INSTANTIATE(std::uint64_t)
+INSTANTIATE(float)
+INSTANTIATE(double)
+INSTANTIATE(std::uint8_t)
+#undef INSTANTIATE
 
 void Gui::text_input(
     const std::string& initial_value,
