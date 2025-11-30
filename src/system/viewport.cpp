@@ -8,6 +8,7 @@ void ViewportSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size = Vec2(viewport.width, viewport.height);
   state.dynamic_size = Vec2();
+  state.floating = false;
 }
 
 void ViewportSystem::render(ConstElementPtr element, Renderer& renderer) {

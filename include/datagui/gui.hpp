@@ -207,10 +207,7 @@ public:
     current.expect(Type::ViewportPtr, read_key());
     auto& viewport = current.viewport();
     if (!viewport.viewport) {
-      // Note: Casting a unique pointer doesn't work through private
-      // inheritance, so cannot cast the result of make_unique<T>(),
-      // must use a C-style cast
-      viewport.viewport = std::unique_ptr<Viewport>((Viewport*)(new T()));
+      viewport.viewport = std::make_unique<T>();
       viewport.viewport->init(width, height, fm);
     }
     // Renderered width/height can differ to the initial width/height

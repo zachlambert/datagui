@@ -301,6 +301,7 @@ void Gui::render() {
   }
 #ifdef DATAGUI_DEBUG
   if (debug_mode_) {
+    renderer.new_layer();
     debug_render();
   }
 #endif

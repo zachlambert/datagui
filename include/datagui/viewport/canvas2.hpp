@@ -7,7 +7,7 @@
 
 namespace datagui {
 
-class Canvas2 : private Viewport {
+class Canvas2 : public Viewport {
 public:
   void box(
       const Box2& box,

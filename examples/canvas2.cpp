@@ -8,8 +8,16 @@ int main() {
   using datagui::Vec2;
 
   while (gui.running()) {
-    if (auto canvas = gui.viewport<datagui::Canvas2>(500, 500)) {
-      canvas->box(Box2(Vec2(0, 0), Vec2(500, 500)), Color::Red(0.5));
+    if (gui.series()) {
+      gui.text_box("Canvas");
+      if (auto canvas = gui.viewport<datagui::Canvas2>(300, 300)) {
+        canvas->box(
+            Box2(Vec2(100, 100), Vec2(200, 200)),
+            Color::Red(0.8),
+            20,
+            10);
+        gui.end();
+      }
       gui.end();
     }
     gui.poll();
