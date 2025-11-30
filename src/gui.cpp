@@ -1,4 +1,5 @@
 #include "datagui/gui.hpp"
+#include <charconv>
 #include <sstream>
 #include <stack>
 
@@ -238,11 +239,62 @@ void Gui::text_input(
 void Gui::text_input(const Var<std::string>& var) {
   current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
+  args_.apply(current);
   current = current.next();
 
   text_input.callback = [var](const std::string& value) { var.set(value); };
   text_input.text = *var;
 }
+
+template <typename T>
+void Gui::number_input(
+    const T& initial_value,
+    const std::function<void(T callback)>& callback) {
+  bool is_new = current.expect(Type::TextInput, read_key());
+  auto& text_input = current.text_input();
+  args_.apply(current);
+  text_input.number_type = number_type<T>();
+  current = current.next();
+
+  if (is_new || overwrite) {
+    text_input.text = std::to_string(initial_value);
+  }
+  text_input.callback = [callback](const std::string& value) {
+    T number;
+    if (text_to_number(value, number)) {
+      callback(number);
+    }
+  };
+}
+
+template <typename T>
+void Gui::number_input(const Var<T>& var) {
+  current.expect(Type::TextInput, read_key());
+  auto& text_input = current.text_input();
+  args_.apply(current);
+  text_input.number_type = number_type<T>();
+  current = current.next();
+
+  text_input.callback = [var](const std::string& value) {
+    T number;
+    if (text_to_number(value, number)) {
+      var.set(number);
+    }
+  };
+  text_input.text = std::to_string(*var);
+}
+
+#define INSTANTIATE(T) \
+  template void Gui::number_input<T>(const T&, const std::function<void(T)>&); \
+  template void Gui::number_input<T>(const Var<T>&);
+INSTANTIATE(std::int32_t)
+INSTANTIATE(std::int64_t)
+INSTANTIATE(std::uint32_t)
+INSTANTIATE(std::uint64_t)
+INSTANTIATE(float)
+INSTANTIATE(double)
+INSTANTIATE(std::uint8_t)
+#undef INSTANTIATE
 
 void Gui::text_box(const std::string& text) {
   current.expect(Type::TextBox, read_key());

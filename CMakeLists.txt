@@ -36,6 +36,7 @@ add_library(datagui SHARED
   src/visual/text_shader.cpp
   src/visual/window.cpp
 
+  src/input/number_input.cpp
   src/input/text_selection.cpp
 
   src/system/button.cpp

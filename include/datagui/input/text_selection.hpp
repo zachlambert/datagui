@@ -6,6 +6,32 @@
 
 namespace datagui {
 
+enum class EditType { Text, I32, I64, U32, U64, F32, F64, U8 };
+
+template <typename T>
+struct edit_type {};
+template <typename T>
+using edit_type_v = edit_type<T>::value;
+
+#define EDIT_TYPE(type, Type) \
+  template <> \
+  struct edit_type<type> { \
+    EditType value = EditType::Type; \
+  };
+EDIT_TYPE(std::int32_t, I32);
+EDIT_TYPE(std::int64_t, I64);
+EDIT_TYPE(std::uint32_t, U32);
+EDIT_TYPE(std::uint64_t, U64);
+EDIT_TYPE(float, F32);
+EDIT_TYPE(double, F64);
+EDIT_TYPE(std::uint8_t, U8);
+#undef EDIT_TYPE
+
+struct EditConstraint {
+  bool editable = true;
+  EditType type = EditType::Text;
+};
+
 struct TextSelection {
   std::size_t begin;
   std::size_t end;

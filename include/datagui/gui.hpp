@@ -99,11 +99,22 @@ public:
   void text_input(
       const std::string& initial_value,
       const std::function<void(const std::string& callback)>& callback);
-  void text_input(const Var<std::string>& value);
+  void text_input(const Var<std::string>& var);
   void text_input(std::string& value) {
     text_input(value, [&value](const std::string& new_value) {
       value = new_value;
     });
+  }
+
+  template <typename T>
+  void number_input(
+      const T& initial_value,
+      const std::function<void(T)>& callback);
+  template <typename T>
+  void number_input(const Var<T>& var);
+  template <typename T>
+  void number_input(T& value) {
+    number_input(value, [&value](T new_value) { value = new_value; });
   }
 
   void text_box(const std::string& text);

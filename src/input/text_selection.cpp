@@ -1,5 +1,6 @@
 #include "datagui/input/text_selection.hpp"
 #include <GLFW/glfw3.h> // For copy/paste
+#include <charconv>
 
 namespace datagui {
 

@@ -2,6 +2,7 @@
 
 #include "datagui/color.hpp"
 #include "datagui/geometry.hpp"
+#include "datagui/input/number_input.hpp"
 #include "datagui/layout.hpp"
 #include "datagui/viewport/viewport.hpp"
 #include <functional>
@@ -133,6 +134,8 @@ struct TextBox {
 struct TextInput {
   // Definition
   std::function<void(const std::string&)> callback;
+  bool editable = true;
+  std::optional<NumberType> number_type;
 
   // Args
   Length width = LengthDynamic(1);
