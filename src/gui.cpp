@@ -5,6 +5,7 @@
 
 #include "datagui/system/button.hpp"
 #include "datagui/system/checkbox.hpp"
+#include "datagui/system/color_picker.hpp"
 #include "datagui/system/dropdown.hpp"
 #include "datagui/system/floating.hpp"
 #include "datagui/system/labelled.hpp"
@@ -29,6 +30,8 @@ Gui::Gui(const Window::Config& config) : window(config) {
       std::make_unique<ButtonSystem>(fm, theme);
   systems[(std::size_t)Type::Checkbox] =
       std::make_unique<CheckboxSystem>(fm, theme);
+  systems[(std::size_t)Type::ColorPicker] =
+      std::make_unique<ColorPickerSystem>(fm, theme);
   systems[(std::size_t)Type::Dropdown] =
       std::make_unique<DropdownSystem>(fm, theme);
   systems[(std::size_t)Type::Floating] =
@@ -118,6 +121,29 @@ void Gui::checkbox(const Var<bool>& var) {
 
   checkbox.callback = [var](bool value) { var.set(value); };
   checkbox.checked = *var;
+}
+
+void Gui::color_picker(
+    const Color& initial_value,
+    const std::function<void(const Color&)>& callback) {
+  bool is_new = current.expect(Type::ColorPicker, read_key());
+  auto& color_picker = current.color_picker();
+  args_.apply(current);
+  current = current.next();
+
+  color_picker.callback = callback;
+  if (is_new || overwrite) {
+    color_picker.value = initial_value;
+  }
+}
+
+void Gui::color_picker(const Var<Color>& var) {
+  current.expect(Type::Checkbox, read_key());
+  auto& color_picker = current.color_picker();
+  current = current.next();
+
+  color_picker.callback = [var](const Color& value) { var.set(value); };
+  color_picker.value = *var;
 }
 
 void Gui::dropdown(

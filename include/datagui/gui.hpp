@@ -69,7 +69,17 @@ public:
   void checkbox(bool& value) {
     checkbox(value, [&value](bool new_value) { value = new_value; });
   }
-  void checkbox(const Var<bool>& value);
+  void checkbox(const Var<bool>& var);
+
+  void color_picker(
+      const Color& initial_value,
+      const std::function<void(const Color&)>& callback);
+  void color_picker(const Var<Color>& var);
+  void color_picker(Color& value) {
+    color_picker(value, [&value](const Color& new_value) {
+      value = new_value;
+    });
+  }
 
   void dropdown(
       const std::vector<std::string>& choices,

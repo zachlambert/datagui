@@ -123,6 +123,8 @@ int Tree::emplace_type(Type type) {
     return button.emplace();
   case Type::Checkbox:
     return checkbox.emplace();
+  case Type::ColorPicker:
+    return color_picker.emplace();
   case Type::Dropdown:
     return dropdown.emplace();
   case Type::Floating:
@@ -154,6 +156,9 @@ void Tree::pop_type(Type type, std::size_t index) {
     break;
   case Type::Checkbox:
     checkbox.pop(index);
+    break;
+  case Type::ColorPicker:
+    color_picker.pop(index);
     break;
   case Type::Dropdown:
     dropdown.pop(index);

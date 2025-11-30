@@ -77,6 +77,53 @@ public:
     return color;
   }
 
+  float hue() const {
+    std::size_t i_max = 1;
+    float c_min = r;
+    float c_max = r;
+    for (std::size_t i = 1; i < 3; i++) {
+      if (data[i] < c_min) {
+        c_min = data[i];
+      }
+      if (data[i] > c_max) {
+        c_max = data[i];
+        i_max = i;
+      }
+    }
+    float delta = c_max - c_min;
+
+    if (std::fabs(delta) < 1e-6) {
+      return 0;
+    }
+    if (i_max == 0) {
+      return 60 * std::fmod((g - b) / delta, 6);
+    }
+    if (i_max == 1) {
+      return 60 * ((b - r) / delta + 2);
+    }
+    if (i_max == 2) {
+      return 60 * ((r - g) / delta + 4);
+    }
+    return 0;
+  }
+
+  float saturation() const {
+    float c_min = std::min(r, std::min(g, b));
+    float c_max = std::max(r, std::max(g, b));
+    float delta = c_max - c_min;
+    if (std::fabs(delta) < 1e-6) {
+      return 0;
+    }
+    float L = (c_max + c_min) / 2;
+    return delta / (1 - std::fabs(2 * L - 1));
+  }
+
+  float value() const {
+    float c_min = std::min(r, std::min(g, b));
+    float c_max = std::max(r, std::max(g, b));
+    return (c_max + c_min) / 2;
+  }
+
   static Color Random() {
     Color color;
     color.r = float(rand()) / RAND_MAX;

@@ -244,6 +244,7 @@ public:
 
     PROPS_METHOD(Button, button)
     PROPS_METHOD(Checkbox, checkbox)
+    PROPS_METHOD(ColorPicker, color_picker)
     PROPS_METHOD(Dropdown, dropdown)
     PROPS_METHOD(Floating, floating)
     PROPS_METHOD(Labelled, labelled)
@@ -467,6 +468,7 @@ private:
 
   VectorMap<Button> button;
   VectorMap<Checkbox> checkbox;
+  VectorMap<ColorPicker> color_picker;
   VectorMap<Dropdown> dropdown;
   VectorMap<Floating> floating;
   VectorMap<Labelled> labelled;

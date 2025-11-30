@@ -14,6 +14,7 @@ namespace datagui {
 enum class Type {
   Button,
   Checkbox,
+  ColorPicker,
   Dropdown,
   Floating,
   Labelled,
@@ -24,7 +25,7 @@ enum class Type {
   TextInput,
   ViewportPtr,
 };
-static constexpr std::size_t TypeCount = 11;
+static constexpr std::size_t TypeCount = 12;
 
 struct Button {
   // Definition
@@ -46,6 +47,16 @@ struct Checkbox {
   // State
   bool checked = false;
   int var_version = 0;
+};
+
+struct ColorPicker {
+  // Args
+  std::function<void(Color)> callback;
+
+  // State
+  Color value;
+  bool open = false;
+  bool held = false;
 };
 
 struct Dropdown {
