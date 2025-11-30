@@ -37,6 +37,7 @@ int main() {
         std::cout << "Color: " << value.r << ", " << value.g << ", " << value.b
                   << std::endl;
       });
+      gui.text_box("Text below");
 
       gui.end();
     }

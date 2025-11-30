@@ -18,39 +18,46 @@ void ColorPickerSystem::set_input_state(ElementPtr element) {
 
   Vec2 float_size;
   float_size.x = 2 * theme->color_picker_hue_wheel_radius +
-                 3 * theme->color_picker_padding +
+                 4 * theme->color_picker_padding +
                  theme->color_picker_value_scale_width,
   float_size.y = 2 * theme->color_picker_hue_wheel_radius + //
                  2 * theme->color_picker_padding;
 
+  // TODO: Use param for border size
+
   state.floating = color_picker.open;
-  state.floating_type =
-      FloatingTypeRelative(Vec2(0, theme->color_picker_icon_size), float_size);
+  state.floating_type = FloatingTypeRelative(
+      Vec2(0, theme->color_picker_icon_size - 2),
+      float_size);
 }
 
 void ColorPickerSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   const auto& color_picker = element.color_picker();
-  // TODO:Need anything here?
+
+  // TODO: Store wheel and value boxes
 }
 
 void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& color_picker = element.color_picker();
 
-  renderer.queue_box(state.box(), color_picker.value);
+  renderer
+      .queue_box(state.box(), color_picker.value, 2, theme->input_color_border);
   if (!state.floating) {
     return;
   }
 
-  renderer.queue_box(state.float_box, Color::Gray(0.5));
+  Color bg_color = color_picker.value;
+  bg_color.a = 0.5;
+  renderer.queue_box(state.float_box, bg_color, 2, theme->layout_border_color);
 
   float value = color_picker.value.value();
   struct Pixel {
     std::uint8_t r, g, b, a;
   };
   {
-    const std::size_t n = 100;
+    const std::size_t n = 200;
     float half_width = float(n) / 2;
     std::vector<Pixel> pixels(n * n);
     for (std::size_t i = 0; i < n; i++) {
@@ -64,7 +71,7 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
           continue;
         }
         // Aliasing
-        pixel.a = 255 * std::min((1 - saturation) / 0.05f, 1.0f);
+        pixel.a = 255 * std::min((1 - saturation) / 0.02f, 1.0f);
         float angle = std::atan2(-y, -x);
         if (angle < 0) {
           angle += 2 * M_PI;
@@ -98,11 +105,12 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
       }
     }
     Vec2 pos = state.float_box.lower_right();
-    pos.x -= theme->color_picker_value_scale_width;
+    pos.x -=
+        theme->color_picker_value_scale_width + theme->color_picker_padding;
+    pos.y += theme->color_picker_padding;
     Vec2 size = Vec2(
         theme->color_picker_value_scale_width,
-        theme->color_picker_hue_wheel_radius * 2 +
-            2 * theme->color_picker_padding);
+        theme->color_picker_hue_wheel_radius * 2);
     renderer.queue_image(Box2(pos, pos + size), w, h, pixels.data());
   }
 }
@@ -161,17 +169,23 @@ bool ColorPickerSystem::mouse_event(
     color_picker.modified = true;
   }
 
-  Box2 value_scale_box = state.float_box;
-  value_scale_box.lower.x =
-      state.float_box.upper.x - theme->color_picker_padding;
+  Vec2 value_box_origin;
+  value_box_origin.x = state.float_box.upper.x - theme->color_picker_padding -
+                       theme->color_picker_value_scale_width;
+  value_box_origin.y = state.float_box.lower.y + theme->color_picker_padding;
+
+  Vec2 value_box_size = Vec2(
+      theme->color_picker_value_scale_width,
+      2 * theme->color_picker_hue_wheel_radius);
+
+  Box2 value_box(value_box_origin, value_box_origin + value_box_size);
 
   if (event.action == MouseAction::Press &&
-      value_scale_box.contains(event.position)) {
+      value_box.contains(event.position)) {
     color_picker.scale_held = true;
   }
   if (color_picker.scale_held) {
-    float value =
-        (value_scale_box.upper.y - event.position.y) / value_scale_box.size().y;
+    float value = (value_box.upper.y - event.position.y) / value_box_size.y;
     value = std::clamp(value, 0.f, 1.f);
 
     Color new_color = Color::Hsl(
