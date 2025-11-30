@@ -109,7 +109,7 @@ public:
   template <typename T>
   void number_input(
       const T& initial_value,
-      const std::function<void(T callback)>& callback);
+      const std::function<void(T)>& callback);
   template <typename T>
   void number_input(const Var<T>& var);
   template <typename T>

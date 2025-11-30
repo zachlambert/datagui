@@ -113,7 +113,11 @@ bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
     if (text_input.text != active_text) {
-      if (!is_text_valid(text_input.constraint.type, active_text)) {
+      if (text_input.number_type &&
+          !valid_text_to_number(*text_input.number_type, active_text)) {
+        active_text = text_input.text;
+        active_selection.reset(
+            std::min(active_selection.begin, active_text.size()));
         return false;
       }
       text_input.text = active_text;
@@ -128,7 +132,7 @@ bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
   selection_key_event(
       active_text,
       active_selection,
-      text_input.constraint,
+      text_input.editable,
       event);
   return false;
 }
@@ -138,7 +142,7 @@ bool TextInputSystem::text_event(ElementPtr element, const TextEvent& event) {
   selection_text_event(
       active_text,
       active_selection,
-      text_input.constraint,
+      text_input.editable,
       event);
   return false;
 }
@@ -153,7 +157,8 @@ void TextInputSystem::focus_enter(ElementPtr element) {
 bool TextInputSystem::focus_leave(ElementPtr element, bool success) {
   auto& text_input = element.text_input();
   if (success && text_input.text != active_text) {
-    if (!is_text_valid(text_input.constraint.type, active_text)) {
+    if (text_input.number_type &&
+        !valid_text_to_number(*text_input.number_type, active_text)) {
       return false;
     }
     text_input.text = active_text;

@@ -70,13 +70,13 @@ Vec2 cursor_offset(
 void selection_key_event(
     std::string& text,
     TextSelection& selection,
-    const EditConstraint& constraint,
+    bool editable,
     const KeyEvent& event);
 
 void selection_text_event(
     std::string& text,
     TextSelection& selection,
-    const EditConstraint& constraint,
+    bool editable,
     const TextEvent& event);
 
 void render_selection(
@@ -89,7 +89,5 @@ void render_selection(
     int cursor_width,
     Length width,
     Renderer& renderer);
-
-bool is_text_valid(EditType type, const std::string& text);
 
 } // namespace datagui

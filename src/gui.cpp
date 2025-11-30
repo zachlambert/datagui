@@ -239,6 +239,7 @@ void Gui::text_input(
 void Gui::text_input(const Var<std::string>& var) {
   current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
+  args_.apply(current);
   current = current.next();
 
   text_input.callback = [var](const std::string& value) { var.set(value); };
@@ -252,17 +253,15 @@ void Gui::number_input(
   bool is_new = current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   args_.apply(current);
-  text_input.constraint.type = EditType::I32;
+  text_input.number_type = number_type<T>();
   current = current.next();
 
   if (is_new || overwrite) {
-    text_input.text = initial_value;
+    text_input.text = std::to_string(initial_value);
   }
   text_input.callback = [callback](const std::string& value) {
     T number;
-    auto error =
-        std::from_chars(value.data(), value.data() + value.size(), number).ec;
-    if (error != std::errc{}) {
+    if (text_to_number(value, number)) {
       callback(number);
     }
   };
@@ -272,17 +271,17 @@ template <typename T>
 void Gui::number_input(const Var<T>& var) {
   current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
+  args_.apply(current);
+  text_input.number_type = number_type<T>();
   current = current.next();
 
   text_input.callback = [var](const std::string& value) {
     T number;
-    auto error =
-        std::from_chars(value.data(), value.data() + value.size(), number).ec;
-    if (error != std::errc{}) {
+    if (text_to_number(value, number)) {
       var.set(number);
     }
   };
-  text_input.text = *var;
+  text_input.text = std::to_string(*var);
 }
 
 #define INSTANTIATE(T) \
