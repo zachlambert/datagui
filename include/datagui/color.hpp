@@ -8,10 +8,15 @@ namespace datagui {
 
 struct Color {
 public:
-  float r;
-  float g;
-  float b;
-  float a;
+  union {
+    struct {
+      float r;
+      float g;
+      float b;
+      float a;
+    };
+    float data[4];
+  };
 
   Color() {}
   Color(float r, float g, float b, float a = 1) : r(r), g(g), b(b), a(a) {}
