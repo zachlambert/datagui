@@ -28,10 +28,11 @@ add_library(datagui SHARED
   src/geometry/rot.cpp
   src/geometry/vec.cpp
 
-  src/visual/shape_shader.cpp
   src/visual/font_manager.cpp
+  src/visual/image_shader.cpp
   src/visual/renderer.cpp
   src/visual/shader_utils.cpp
+  src/visual/shape_shader.cpp
   src/visual/text_shader.cpp
   src/visual/window.cpp
 
