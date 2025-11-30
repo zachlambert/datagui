@@ -19,6 +19,7 @@ enum class Type {
   Labelled,
   Section,
   Series,
+  Slider,
   TextBox,
   TextInput,
   ViewportPtr,
@@ -120,6 +121,18 @@ struct Series {
   // State
   float overrun = 0;
   float scroll_pos = 0;
+};
+
+struct Slider {
+  // Args
+  Length length = LengthDynamic();
+  NumberType type;
+  double lower;
+  double upper;
+
+  // State
+  double value;
+  float position;
 };
 
 struct TextBox {

@@ -249,6 +249,7 @@ public:
     PROPS_METHOD(Labelled, labelled)
     PROPS_METHOD(Section, section)
     PROPS_METHOD(Series, series)
+    PROPS_METHOD(Slider, slider)
     PROPS_METHOD(TextBox, text_box)
     PROPS_METHOD(TextInput, text_input)
     PROPS_METHOD(ViewportPtr, viewport)
@@ -471,6 +472,7 @@ private:
   VectorMap<Labelled> labelled;
   VectorMap<Section> section;
   VectorMap<Series> series;
+  VectorMap<Slider> slider;
   VectorMap<TextBox> text_box;
   VectorMap<TextInput> text_input;
   VectorMap<ViewportPtr> viewport;

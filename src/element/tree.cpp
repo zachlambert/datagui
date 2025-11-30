@@ -133,6 +133,8 @@ int Tree::emplace_type(Type type) {
     return section.emplace();
   case Type::Series:
     return series.emplace();
+  case Type::Slider:
+    return slider.emplace();
   case Type::TextBox:
     return text_box.emplace();
   case Type::TextInput:
@@ -167,6 +169,9 @@ void Tree::pop_type(Type type, std::size_t index) {
     break;
   case Type::Series:
     series.pop(index);
+    break;
+  case Type::Slider:
+    slider.pop(index);
     break;
   case Type::TextBox:
     text_box.pop(index);
