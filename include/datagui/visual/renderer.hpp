@@ -1,6 +1,7 @@
 #pragma once
 
 #include "datagui/visual/font_manager.hpp"
+#include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_shader.hpp"
 #include "datagui/visual/text_shader.hpp"
 #include <assert.h>
@@ -27,6 +28,8 @@ public:
       Color text_color,
       Length width = LengthWrap());
 
+  void queue_image(const Box2& box, unsigned int texture);
+
   void render_begin(const Vec2& viewport_size);
   void render_end();
 
@@ -35,15 +38,22 @@ public:
   void pop_mask();
 
 private:
+  struct ImageCommand {
+    Box2 box;
+    unsigned int texture;
+  };
   struct Layer {
     ShapeShader::Command shape_command;
     TextShader::Command text_command;
+    std::vector<ImageCommand> image_commands;
   };
   std::vector<Layer> layers;
 
-  std::shared_ptr<FontManager> fm;
   ShapeShader shape_shader;
   TextShader text_shader;
+  ImageShader image_shader;
+
+  std::shared_ptr<FontManager> fm;
   Vec2 viewport_size;
   std::stack<Box2> masks;
 };

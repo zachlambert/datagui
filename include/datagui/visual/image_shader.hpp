@@ -28,6 +28,7 @@ private:
 
 class ImageShader {
 public:
+  ImageShader();
   ~ImageShader();
   ImageShader(ImageShader&&);
 
@@ -36,8 +37,28 @@ public:
   ImageShader& operator=(ImageShader&&) = delete;
 
   void init();
-  void draw(int texture, const Box2& box);
-  void draw(int texture, const Vec2& position, double angle, const Vec2& size);
+  void draw(int texture, const Box2& box, const Vec2& viewport_size);
+  void draw(
+      int texture,
+      const Vec2& position,
+      double angle,
+      const Vec2& size,
+      const Vec2& viewport_size);
+
+  void draw(
+      std::size_t width,
+      std::size_t height,
+      void* pixels,
+      const Box2& box,
+      const Vec2& viewport_size);
+  void draw(
+      std::size_t width,
+      std::size_t height,
+      void* pixels,
+      const Vec2& position,
+      double angle,
+      const Vec2& size,
+      const Vec2& viewport_size);
 
 private:
   struct Vertex {

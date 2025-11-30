@@ -7,9 +7,10 @@
 namespace datagui {
 
 void Renderer::init(std::shared_ptr<FontManager> fm) {
-  this->fm = fm;
   shape_shader.init();
   text_shader.init();
+  image_shader.init();
+  this->fm = fm;
 }
 
 void Renderer::queue_box(
@@ -48,6 +49,13 @@ void Renderer::queue_text(
       masks.top());
 }
 
+void Renderer::queue_image(const Box2& box, unsigned int texture) {
+  Box2 flipped = box;
+  flipped.lower.y = viewport_size.y - box.lower.y;
+  flipped.upper.y = viewport_size.y - box.upper.y;
+  layers.back().image_commands.push_back({flipped, texture});
+}
+
 void Renderer::render_begin(const Vec2& viewport_size) {
   this->viewport_size = viewport_size;
   if (masks.size() == 1) {
@@ -64,6 +72,9 @@ void Renderer::render_end() {
   for (const auto& layer : layers) {
     shape_shader.draw(layer.shape_command, -1, viewport_size);
     text_shader.draw(layer.text_command, -1, viewport_size);
+    for (const auto& image : layer.image_commands) {
+      image_shader.draw(image.texture, image.box, viewport_size);
+    }
   }
   layers.clear();
 }

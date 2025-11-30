@@ -67,6 +67,9 @@ void Gui::end() {
   assert(!stack.empty());
   std::tie(current, var_current) = stack.top();
   stack.pop();
+  if (current.type() == Type::ViewportPtr) {
+    current.viewport().viewport->end();
+  }
   current = current.next();
 }
 

@@ -373,6 +373,10 @@ void ShapeShader::draw(
     const Command& command,
     float y_dir,
     const Vec2& viewport_size) {
+  if (command.elements.empty()) {
+    return;
+  }
+
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,

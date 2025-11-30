@@ -28,13 +28,15 @@ void OpenglRgbImage::write(
   glTexImage2D(
       GL_TEXTURE_2D,
       0,
-      GL_RGB,
+      GL_RGBA,
       width,
       height,
       0,
-      GL_RGB,
+      GL_RGBA,
       GL_UNSIGNED_BYTE,
       pixels);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -48,7 +50,12 @@ uniform vec2 viewport_size;
 out vec2 fs_uv;
 
 void main(){
-  gl_Position = vec4(pos.x, pos.y, 0, 1);
+  gl_Position = vec4(
+    (pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
+    (pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
+    0,
+    1
+  );
   fs_uv = uv;
 }
 )";
@@ -65,6 +72,9 @@ void main(){
   color = texture(tex, fs_uv);
 }
 )";
+
+ImageShader::ImageShader() :
+    program_id(0), uniform_viewport_size(0), VAO(0), VBO(0) {}
 
 ImageShader::~ImageShader() {
   if (program_id > 0) {
@@ -121,15 +131,19 @@ void ImageShader::init() {
   glBindVertexArray(0);
 }
 
-void ImageShader::draw(int texture, const Box2& box) {
-  draw(texture, box.lower, 0, box.size());
+void ImageShader::draw(
+    int texture,
+    const Box2& box,
+    const Vec2& viewport_size) {
+  draw(texture, box.lower, 0, box.size(), viewport_size);
 }
 
 void ImageShader::draw(
     int texture,
     const Vec2& position,
     double angle,
-    const Vec2& size) {
+    const Vec2& size,
+    const Vec2& viewport_size) {
 
   Mat2 R = Rot2(angle).mat();
   Vec2 lower_left = position;
@@ -154,6 +168,7 @@ void ImageShader::draw(
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUseProgram(program_id);
+  glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);
   glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -162,6 +177,32 @@ void ImageShader::draw(
   glBindTexture(GL_TEXTURE_2D, 0);
   glBindVertexArray(0);
   glUseProgram(0);
+}
+
+void ImageShader::draw(
+    std::size_t width,
+    std::size_t height,
+    void* pixels,
+    const Box2& box,
+    const Vec2& viewport_size) {
+
+  OpenglRgbImage image;
+  image.write(width, height, pixels);
+  draw(image.texture(), box, viewport_size);
+}
+
+void ImageShader::draw(
+    std::size_t width,
+    std::size_t height,
+    void* pixels,
+    const Vec2& position,
+    double angle,
+    const Vec2& size,
+    const Vec2& viewport_size) {
+
+  OpenglRgbImage image;
+  image.write(width, height, pixels);
+  draw(image.texture(), position, angle, size, viewport_size);
 }
 
 } // namespace datagui

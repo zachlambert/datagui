@@ -205,24 +205,26 @@ public:
   T* viewport(float width, float height) {
     check_begin();
     current.expect(Type::ViewportPtr, read_key());
-    auto& viewport_ptr = current.viewport();
-    if (!viewport_ptr.viewport) {
-      auto viewport = std::make_unique<T>();
-      // Note: Width and height may change after initialisation, but
-      // the framebuffer used internally remains at this initial size
-      viewport->init(width, height, fm);
-      viewport_ptr.viewport = std::move(viewport);
+    auto& viewport = current.viewport();
+    if (!viewport.viewport) {
+      // Note: Casting a unique pointer doesn't work through private
+      // inheritance, so cannot cast the result of make_unique<T>(),
+      // must use a C-style cast
+      viewport.viewport = std::unique_ptr<Viewport>((Viewport*)(new T()));
+      viewport.viewport->init(width, height, fm);
     }
-    viewport_ptr.width = width;
-    viewport_ptr.height = height;
+    // Renderered width/height can differ to the initial width/height
+    // above - this defines the size used for the framebuffer
+    viewport.width = width;
+    viewport.height = height;
 
     if (!current.dirty()) {
       current = current.next();
       return nullptr;
     }
     move_down();
-    viewport_ptr.viewport->begin();
-    T* ptr = dynamic_cast<T*>(viewport_ptr.viewport.get());
+    viewport.viewport->begin();
+    T* ptr = dynamic_cast<T*>(viewport.viewport.get());
     assert(ptr);
     return ptr;
   }

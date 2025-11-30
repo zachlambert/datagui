@@ -186,12 +186,20 @@ void TextShader::draw(
     const Command& command,
     float y_dir,
     const Vec2& viewport_size) {
+  if (command.char_lists.empty()) {
+    return;
+  }
+
   glUseProgram(program_id);
   glBindVertexArray(VAO);
   glUniform1f(uniform_y_dir, y_dir);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
 
   for (const auto& char_list : command.char_lists) {
+    if (char_list.vertices.empty()) {
+      continue;
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(
         GL_ARRAY_BUFFER,

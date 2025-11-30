@@ -7,7 +7,7 @@
 
 namespace datagui {
 
-class Canvas2 : public Viewport {
+class Canvas2 : private Viewport {
 public:
   void box(
       const Box2& box,
@@ -27,6 +27,9 @@ public:
 
 private:
   void begin() override;
+  void end() override;
+  bool mouse_event(const MouseEvent& event) override;
+
   void impl_init(const std::shared_ptr<FontManager>& fm) override;
   void impl_render() override;
 

@@ -1,3 +1,4 @@
+#include <datagui/visual/image_shader.hpp>
 #include <datagui/visual/shape_shader.hpp>
 #include <datagui/visual/text_shader.hpp>
 #include <datagui/visual/window.hpp>
@@ -9,10 +10,29 @@ int main() {
   Window window;
   ShapeShader shape_shader;
   TextShader text_shader;
+  ImageShader image_shader;
   auto font_manager = std::make_shared<FontManager>();
 
   shape_shader.init();
   text_shader.init();
+  image_shader.init();
+
+  struct Pixel {
+    std::uint8_t r, g, b, a;
+  };
+  std::vector<Pixel> pixels(100 * 100);
+  for (std::size_t i = 0; i < 100; i++) {
+    for (std::size_t j = 0; j < 100; j++) {
+      float y = (float(i) - 50) / 50;
+      float x = (float(j) - 50) / 50;
+      float s = std::exp(-std::hypot(x, y) / 1);
+      std::uint8_t s_int = s * 255;
+      pixels[i * 100 + j].r = s_int;
+      pixels[i * 100 + j].g = (float(i) / 100) * 255;
+      pixels[i * 100 + j].b = (float(j) / 100) * 255;
+      pixels[i * 100 + j].a = 255;
+    }
+  }
 
   while (window.running()) {
     window.render_begin();
@@ -147,6 +167,15 @@ int main() {
           mask);
       shape_shader.draw(command, -1, window.size());
     }
+
+    image_shader.draw(
+        100,
+        100,
+        pixels.data(),
+        Vec2(750, 200),
+        M_PI / 4,
+        Vec2::uniform(200),
+        window.size());
 
     window.render_end();
 

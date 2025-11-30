@@ -1,80 +1,27 @@
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/shader_utils.hpp"
-
 #include <GL/glew.h>
-#include <vector>
 
 namespace datagui {
 
-const static std::string vertex_shader = R"(
-#version 330 core
-
-layout(location = 0) in vec2 pos;
-layout(location = 1) in vec2 uv;
-
-uniform vec2 viewport_size;
-out vec2 fs_uv;
-
-void main(){
-  gl_Position = vec4(pos.x, pos.y, 0, 1);
-  fs_uv = uv;
-}
-)";
-
-const static std::string fragment_shader = R"(
-#version 330 core
-
-in vec2 fs_uv;
-
-uniform sampler2D tex;
-out vec4 color;
-
-void main(){
-  color = texture(tex, fs_uv);
-}
-)";
-
-Viewport::Viewport() :
-    width(0),
-    height(0),
-    texture(0),
-    framebuffer(0),
-    program_id(0),
-    VAO(0),
-    VBO(0) {}
+Viewport::Viewport() : width(0), height(0), texture_(0), framebuffer(0) {}
 
 Viewport::~Viewport() {
-  if (texture > 0) {
-    glDeleteTextures(1, &texture);
+  if (texture_ > 0) {
+    glDeleteTextures(1, &texture_);
   }
   if (framebuffer > 0) {
     glDeleteFramebuffers(1, &framebuffer);
-  }
-  if (program_id > 0) {
-    glDeleteProgram(program_id);
-  }
-  if (VAO > 0) {
-    glDeleteVertexArrays(1, &VAO);
-  }
-  if (VBO > 0) {
-    glDeleteBuffers(1, &VBO);
   }
 }
 
 Viewport::Viewport(Viewport&& other) {
   width = other.width;
   height = other.width;
-  texture = other.texture;
+  texture_ = other.texture_;
   framebuffer = other.framebuffer;
-  program_id = other.program_id;
-  VAO = other.VAO;
-  VBO = other.VBO;
 
-  other.texture = 0;
+  other.texture_ = 0;
   other.framebuffer = 0;
-  other.program_id = 0;
-  other.VAO = 0;
-  other.VBO = 0;
 }
 
 void Viewport::init(
@@ -86,8 +33,8 @@ void Viewport::init(
 
   // Create a texture to render to
 
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glGenTextures(1, &texture_);
+  glBindTexture(GL_TEXTURE_2D, texture_);
   glTexImage2D(
       GL_TEXTURE_2D,
       0,
@@ -106,47 +53,15 @@ void Viewport::init(
 
   glGenFramebuffers(1, &framebuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture, 0);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_, 0);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  // Create a shader program for drawing the framebuffer texture
-
-  program_id = create_program(vertex_shader, fragment_shader);
-  uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
-
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-  glVertexAttribPointer(
-      0,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)offsetof(Vertex, pos));
-  glEnableVertexAttribArray(0);
-
-  glVertexAttribPointer(
-      1,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)offsetof(Vertex, uv));
-  glEnableVertexAttribArray(1);
-
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
 
   // Initialise child class
 
   impl_init(fm);
 }
 
-void Viewport::render(const Box2& bounds) {
+void Viewport::render_content() {
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
   glEnable(GL_BLEND);
@@ -157,32 +72,6 @@ void Viewport::render(const Box2& bounds) {
   impl_render();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  std::vector<Vertex> vertices = {
-      Vertex{bounds.lower_left(), Vec2(0, 1)},
-      Vertex{bounds.lower_right(), Vec2(1, 1)},
-      Vertex{bounds.upper_left(), Vec2(0, 0)},
-      Vertex{bounds.lower_right(), Vec2(1, 1)},
-      Vertex{bounds.upper_right(), Vec2(1, 0)},
-      Vertex{bounds.upper_left(), Vec2(0, 0)}};
-
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(
-      GL_ARRAY_BUFFER,
-      vertices.size() * sizeof(Vertex),
-      vertices.data(),
-      GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  glUseProgram(program_id);
-  glBindVertexArray(VAO);
-  glBindTexture(GL_TEXTURE_2D, texture);
-
-  glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-
-  glBindTexture(GL_TEXTURE_2D, 0);
-  glBindVertexArray(0);
-  glUseProgram(0);
 }
 
 } // namespace datagui

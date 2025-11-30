@@ -9,6 +9,7 @@ public:
   ViewportSystem() {}
   void set_input_state(ElementPtr element) override;
   void render(ConstElementPtr element, Renderer& renderer) override;
+  bool mouse_event(ElementPtr element, const MouseEvent& event) override;
 };
 
 } // namespace datagui
