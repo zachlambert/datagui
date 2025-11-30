@@ -1,4 +1,5 @@
 #include "datagui/gui.hpp"
+#include <charconv>
 #include <sstream>
 #include <stack>
 
@@ -243,6 +244,58 @@ void Gui::text_input(const Var<std::string>& var) {
   text_input.callback = [var](const std::string& value) { var.set(value); };
   text_input.text = *var;
 }
+
+template <typename T>
+void Gui::number_input(
+    const T& initial_value,
+    const std::function<void(T callback)>& callback) {
+  bool is_new = current.expect(Type::TextInput, read_key());
+  auto& text_input = current.text_input();
+  args_.apply(current);
+  text_input.constraint.type = EditType::I32;
+  current = current.next();
+
+  if (is_new || overwrite) {
+    text_input.text = initial_value;
+  }
+  text_input.callback = [callback](const std::string& value) {
+    T number;
+    auto error =
+        std::from_chars(value.data(), value.data() + value.size(), number).ec;
+    if (error != std::errc{}) {
+      callback(number);
+    }
+  };
+}
+
+template <typename T>
+void Gui::number_input(const Var<T>& var) {
+  current.expect(Type::TextInput, read_key());
+  auto& text_input = current.text_input();
+  current = current.next();
+
+  text_input.callback = [var](const std::string& value) {
+    T number;
+    auto error =
+        std::from_chars(value.data(), value.data() + value.size(), number).ec;
+    if (error != std::errc{}) {
+      var.set(number);
+    }
+  };
+  text_input.text = *var;
+}
+
+#define INSTANTIATE(T) \
+  template void Gui::number_input<T>(const T&, const std::function<void(T)>&); \
+  template void Gui::number_input<T>(const Var<T>&);
+INSTANTIATE(std::int32_t)
+INSTANTIATE(std::int64_t)
+INSTANTIATE(std::uint32_t)
+INSTANTIATE(std::uint64_t)
+INSTANTIATE(float)
+INSTANTIATE(double)
+INSTANTIATE(std::uint8_t)
+#undef INSTANTIATE
 
 void Gui::text_box(const std::string& text) {
   current.expect(Type::TextBox, read_key());

@@ -54,6 +54,9 @@ void Args::apply(ElementPtr element) {
   case Type::TextInput: {
     break;
   }
+  case Type::ViewportPtr: {
+    break;
+  }
   }
 }
 

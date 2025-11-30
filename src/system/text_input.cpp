@@ -113,6 +113,9 @@ bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
     if (text_input.text != active_text) {
+      if (!is_text_valid(text_input.constraint.type, active_text)) {
+        return false;
+      }
       text_input.text = active_text;
       if (!text_input.callback) {
         return true;
@@ -122,12 +125,21 @@ bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
     return false;
   }
 
-  selection_key_event(active_text, active_selection, true, event);
+  selection_key_event(
+      active_text,
+      active_selection,
+      text_input.constraint,
+      event);
   return false;
 }
 
 bool TextInputSystem::text_event(ElementPtr element, const TextEvent& event) {
-  selection_text_event(active_text, active_selection, true, event);
+  const auto& text_input = element.text_input();
+  selection_text_event(
+      active_text,
+      active_selection,
+      text_input.constraint,
+      event);
   return false;
 }
 
@@ -141,6 +153,9 @@ void TextInputSystem::focus_enter(ElementPtr element) {
 bool TextInputSystem::focus_leave(ElementPtr element, bool success) {
   auto& text_input = element.text_input();
   if (success && text_input.text != active_text) {
+    if (!is_text_valid(text_input.constraint.type, active_text)) {
+      return false;
+    }
     text_input.text = active_text;
     if (!text_input.callback) {
       return true;

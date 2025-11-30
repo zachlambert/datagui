@@ -1,5 +1,6 @@
 #include "datagui/input/text_selection.hpp"
 #include <GLFW/glfw3.h> // For copy/paste
+#include <charconv>
 
 namespace datagui {
 
@@ -74,10 +75,10 @@ Vec2 cursor_offset(
 void selection_text_event(
     std::string& text,
     TextSelection& selection,
-    bool editable,
+    const EditConstraint& constraint,
     const TextEvent& event) {
 
-  if (!editable) {
+  if (!constraint.editable) {
     return;
   }
 
@@ -94,7 +95,7 @@ void selection_text_event(
 void selection_key_event(
     std::string& text,
     TextSelection& selection,
-    bool editable,
+    const EditConstraint& constraint,
     const KeyEvent& event) {
 
   switch (event.key) {
@@ -157,7 +158,7 @@ void selection_key_event(
     break;
   }
   case Key::Backspace: {
-    if (event.action == KeyAction::Release || !editable) {
+    if (event.action == KeyAction::Release || !constraint.editable) {
       break;
     }
     if (selection.span() > 0) {
@@ -186,7 +187,7 @@ void selection_key_event(
     break;
   }
   case Key::Delete: {
-    if (event.action == KeyAction::Release || !editable) {
+    if (event.action == KeyAction::Release || !constraint.editable) {
       break;
     }
     if (selection.span() > 0) {
@@ -226,7 +227,7 @@ void selection_key_event(
     if (event.action != KeyAction::Release) {
       break;
     }
-    if (!editable || !event.mod_ctrl || !event.glfw_window) {
+    if (!constraint.editable || !event.mod_ctrl || !event.glfw_window) {
       break;
     }
     const char* pasted_cstr =
@@ -323,6 +324,36 @@ void render_selection(
   renderer.queue_box(
       Box2(origin + from_offset, origin + to_offset),
       highlight_color);
+}
+
+template <typename T>
+static bool is_text_valid(const std::string& text) {
+  T value;
+  auto error =
+      std::from_chars(text.data(), text.data() + text.size(), value).ec;
+  return error == std::errc{};
+}
+
+bool is_text_valid(EditType type, const std::string& text) {
+  switch (type) {
+  case EditType::Text:
+    return true;
+  case EditType::I32:
+    return is_text_valid<std::int32_t>(text);
+  case EditType::I64:
+    return is_text_valid<std::int64_t>(text);
+  case EditType::U32:
+    return is_text_valid<std::uint32_t>(text);
+  case EditType::U64:
+    return is_text_valid<std::uint64_t>(text);
+  case EditType::F32:
+    return is_text_valid<float>(text);
+  case EditType::F64:
+    return is_text_valid<double>(text);
+  case EditType::U8:
+    return is_text_valid<std::uint8_t>(text);
+  }
+  return false;
 }
 
 } // namespace datagui
