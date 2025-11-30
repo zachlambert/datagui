@@ -31,6 +31,8 @@ struct Theme {
   Color input_color_border_focus = Color::Black();
   float input_border_width = 0;
 
+  float slider_default_length = 0;
+  float slider_height = 0;
   float slider_width = 0;
   Color slider_color = Color::Black();
   Color slider_color_active = Color::Black();

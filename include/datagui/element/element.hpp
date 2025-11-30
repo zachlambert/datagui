@@ -24,7 +24,7 @@ enum class Type {
   TextInput,
   ViewportPtr,
 };
-static constexpr std::size_t TypeCount = 10;
+static constexpr std::size_t TypeCount = 11;
 
 struct Button {
   // Definition
@@ -125,7 +125,7 @@ struct Series {
 
 struct Slider {
   // Args
-  float length;
+  std::optional<float> length;
   NumberType type;
   double lower;
   double upper;

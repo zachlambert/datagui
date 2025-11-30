@@ -96,6 +96,19 @@ public:
 
   bool series();
 
+  template <typename T>
+  void slider(
+      T initial_value,
+      T lower,
+      T upper,
+      const std::function<void(T)>& callback);
+  template <typename T>
+  void slider(T lower, T upper, const Var<T>& var);
+  template <typename T>
+  void slider(T& value, T lower, T upper) {
+    slider(value, lower, upper, [&value](T new_value) { value = new_value; });
+  }
+
   void text_input(
       const std::string& initial_value,
       const std::function<void(const std::string& callback)>& callback);

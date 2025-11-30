@@ -15,11 +15,11 @@ public:
   bool mouse_event(ElementPtr element, const MouseEvent& event) override;
 
 private:
-  Box2 get_slider_box(const State& state, const Slider& slider) const;
   std::string get_slider_text(const Slider& slider) const;
 
   std::shared_ptr<FontManager> fm;
   std::shared_ptr<Theme> theme;
+  double active_value;
 };
 
 } // namespace datagui
