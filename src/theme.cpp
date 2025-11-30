@@ -39,6 +39,8 @@ Theme theme_default() {
   theme.slider_border_width = 2;
   theme.slider_border_color = Color::Gray(0.2);
 
+  theme.color_picker_icon_size = 30;
+  theme.color_picker_padding = 10;
   theme.color_picker_hue_wheel_radius = 100;
   theme.color_picker_value_scale_width = 20;
 

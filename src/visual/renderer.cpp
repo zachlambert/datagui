@@ -69,7 +69,7 @@ void Renderer::queue_image(
   OpenglRgbImage image;
   image.write(width, height, pixels);
 
-  layers.back().image_commands.push_back({box, 0, std::move(image)});
+  layers.back().image_commands.push_back({flipped, 0, std::move(image)});
 }
 
 void Renderer::render_begin(const Vec2& viewport_size) {
