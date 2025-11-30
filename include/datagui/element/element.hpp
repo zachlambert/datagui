@@ -56,7 +56,9 @@ struct ColorPicker {
   // State
   Color value;
   bool open = false;
-  bool held = false;
+  bool modified = false;
+  bool wheel_held = false;
+  bool scale_held = false;
 };
 
 struct Dropdown {

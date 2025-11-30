@@ -113,11 +113,25 @@ bool ColorPickerSystem::mouse_event(
   const auto& state = element.state();
   auto& color_picker = element.color_picker();
 
-  if (!color_picker.open && event.action == MouseAction::Release) {
-    color_picker.open = true;
-    return false;
+  if (event.action == MouseAction::Release) {
+    color_picker.wheel_held = false;
+    color_picker.scale_held = false;
+    if (!color_picker.open) {
+      color_picker.open = true;
+      return false;
+    } else {
+      if (color_picker.modified) {
+        color_picker.modified = false;
+        if (color_picker.callback) {
+          color_picker.callback(color_picker.value);
+          return false;
+        }
+        return true;
+      }
+      return false;
+    }
   }
-  if (!color_picker.open || event.action != MouseAction::Hold) {
+  if (!color_picker.open) {
     return false;
   }
 
@@ -127,7 +141,12 @@ bool ColorPickerSystem::mouse_event(
           theme->color_picker_padding + theme->color_picker_hue_wheel_radius);
   Vec2 hue_wheel_offset = event.position - hue_wheel_origin;
 
-  if (hue_wheel_offset.length() < theme->color_picker_hue_wheel_radius) {
+  if (event.action == MouseAction::Press && !color_picker.wheel_held) {
+    if (hue_wheel_offset.length() < theme->color_picker_hue_wheel_radius) {
+      color_picker.wheel_held = true;
+    }
+  }
+  if (color_picker.wheel_held) {
     float angle = std::atan2(hue_wheel_offset.y, -hue_wheel_offset.x);
     if (angle < 0) {
       angle += 2 * M_PI;
@@ -135,31 +154,31 @@ bool ColorPickerSystem::mouse_event(
     float hue = 180 * angle / M_PI;
     float saturation =
         hue_wheel_offset.length() / theme->color_picker_hue_wheel_radius;
+    saturation = std::clamp(saturation, 0.f, 1.f);
 
     Color new_color = Color::Hsl(hue, saturation, color_picker.value.value());
     color_picker.value = new_color;
-    color_picker.callback(new_color);
-    return false;
+    color_picker.modified = true;
   }
 
   Box2 value_scale_box = state.float_box;
   value_scale_box.lower.x =
       state.float_box.upper.x - theme->color_picker_padding;
 
-  if (value_scale_box.contains(event.position)) {
+  if (event.action == MouseAction::Press &&
+      value_scale_box.contains(event.position)) {
+    color_picker.scale_held = true;
+  }
+  if (color_picker.scale_held) {
     float value =
         (value_scale_box.upper.y - event.position.y) / value_scale_box.size().y;
-    printf("%f\n", value);
     value = std::clamp(value, 0.f, 1.f);
-    printf("clamp %f\n", value);
 
     Color new_color = Color::Hsl(
         color_picker.value.hue(),
         color_picker.value.saturation(),
         value);
     color_picker.value = new_color;
-    color_picker.callback(new_color);
-    return false;
   }
 
   return false;
