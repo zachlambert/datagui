@@ -125,14 +125,15 @@ struct Series {
 
 struct Slider {
   // Args
-  Length length = LengthDynamic();
+  float length;
   NumberType type;
   double lower;
   double upper;
+  std::function<void(double)> callback;
 
   // State
   double value;
-  float position;
+  bool held = false;
 };
 
 struct TextBox {

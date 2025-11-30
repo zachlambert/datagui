@@ -30,6 +30,13 @@ Theme theme_default() {
   theme.input_color_border_focus = Color::Gray(0.3);
   theme.input_border_width = 2;
 
+  theme.slider_width = 6;
+  theme.slider_color = Color::Gray(0.7);
+  theme.slider_color_active = Color::Gray(0.5);
+  theme.slider_bg_color = Color::Gray(0.9);
+  theme.slider_border_width = 2;
+  theme.slider_border_color = Color::Gray(0.2);
+
   theme.header_color = Color::Gray(0.6);
 
   return theme;
