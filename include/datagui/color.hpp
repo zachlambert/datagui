@@ -78,7 +78,7 @@ public:
   }
 
   float hue() const {
-    std::size_t i_max = 1;
+    std::size_t i_max = 0;
     float c_min = r;
     float c_max = r;
     for (std::size_t i = 1; i < 3; i++) {

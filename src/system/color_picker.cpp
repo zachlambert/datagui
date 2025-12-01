@@ -71,12 +71,28 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
   {
     const std::size_t n = 200;
     float half_width = float(n) / 2;
+
+    float angle = M_PI + M_PI * color_picker.value.hue() / 180;
+    float saturation = color_picker.value.saturation();
+    std::uint8_t marker_value = (lightness < 0.5 ? 255 : 0);
+    float marker_x = std::cos(angle) * saturation;
+    float marker_y = std::sin(angle) * saturation;
+
     std::vector<Pixel> pixels(n * n);
     for (std::size_t i = 0; i < n; i++) {
       for (std::size_t j = 0; j < n; j++) {
         Pixel& pixel = pixels[i * n + j];
         float x = (float(j) - half_width) / half_width;
         float y = (float(i) - half_width) / half_width;
+
+        if (std::hypot(x - marker_x, y - marker_y) < 10.f / n) {
+          pixel.r = marker_value;
+          pixel.g = marker_value;
+          pixel.b = marker_value;
+          pixel.a = 255;
+          continue;
+        }
+
         float saturation = std::hypot(x, y);
         if (saturation > 1) {
           pixel.a = 0;
@@ -102,9 +118,17 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
     const std::size_t w = 100 * color_picker.lightness_box.size().x /
                           color_picker.lightness_box.size().y;
 
+    std::uint8_t marker_value = lightness > 0.5 ? 0 : 255;
+    std::size_t marker_lower = h * std::max(lightness - 0.02f, 0.f);
+    std::size_t marker_upper = h * std::min(lightness + 0.02f, 1.f);
+
     std::vector<Pixel> pixels(w * h);
     for (std::size_t i = 0; i < h; i++) {
-      std::uint8_t value = (float(i) / h) * 255;
+      std::uint8_t value = 255 * (float(i) / h);
+      if (i >= marker_lower && i < marker_upper) {
+        value = marker_value;
+      }
+
       for (std::size_t j = 0; j < w; j++) {
         Pixel& pixel = pixels[i * w + j];
         pixel.r = value;
@@ -178,7 +202,7 @@ bool ColorPickerSystem::mouse_event(
   }
   if (color_picker.scale_held) {
     float lightness = (color_picker.lightness_box.upper.y - event.position.y) /
-                      color_picker.lightness_box.lower.y;
+                      color_picker.lightness_box.size().y;
     lightness = std::clamp(lightness, 0.f, 1.f);
 
     Color new_color = Color::Hsl(
