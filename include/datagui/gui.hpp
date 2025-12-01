@@ -310,7 +310,7 @@ private:
 
   struct Compare {
     bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
-      return lhs.state().float_priority <= rhs.state().float_priority;
+      return lhs.state().float_priority >= rhs.state().float_priority;
     }
   };
   std::set<ElementPtr, Compare> floating_elements;

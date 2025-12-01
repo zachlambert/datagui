@@ -30,6 +30,7 @@ int main() {
         gui.end();
       }
 
+      gui.args().bg_color(Color::Hsl(220, 0.3, 0.8));
       if (gui.section("Properties")) {
         gui.args().tight();
         if (gui.series()) {
