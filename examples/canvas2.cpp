@@ -11,10 +11,10 @@ int main() {
     if (gui.series()) {
       gui.text_box("Canvas");
 
-      auto color = gui.variable<Color>(Color::Black());
-      auto border_size = gui.variable<float>(10);
+      auto color = gui.variable<Color>(Color::Red());
+      auto border_size = gui.variable<float>(5);
       auto width = gui.variable<float>(100);
-      auto radius = gui.variable<float>(0);
+      auto radius = gui.variable<float>(10);
 
       if (auto canvas = gui.viewport<datagui::Canvas2>(200, 200)) {
         gui.depend_variable(color);
@@ -30,24 +30,33 @@ int main() {
         gui.end();
       }
 
-      if (gui.labelled("Bg color")) {
-        gui.args().always();
-        gui.color_picker(color);
-        gui.end();
-      }
-      if (gui.labelled("Border size")) {
-        gui.args().always();
-        gui.slider<float>(0, 100, border_size);
-        gui.end();
-      }
-      if (gui.labelled("Width")) {
-        gui.args().always();
-        gui.slider<float>(0, 200, width);
-        gui.end();
-      }
-      if (gui.labelled("Radius")) {
-        gui.args().always();
-        gui.slider<float>(0, 100, radius);
+      if (gui.section("Properties")) {
+        gui.args().tight();
+        if (gui.series()) {
+          if (gui.labelled("Bg color")) {
+            gui.args().always();
+            gui.color_picker(color);
+            gui.end();
+          }
+          if (gui.labelled("Width")) {
+            gui.args().always();
+            gui.slider<float>(0, 200, width);
+            gui.end();
+          }
+          if (gui.labelled("Border size")) {
+            gui.depend_variable(width);
+            gui.args().always();
+            gui.slider<float>(0, *width / 2, border_size);
+            gui.end();
+          }
+          if (gui.labelled("Radius")) {
+            gui.depend_variable(width);
+            gui.args().always();
+            gui.slider<float>(0, *width / 2, radius);
+            gui.end();
+          }
+          gui.end();
+        }
         gui.end();
       }
 

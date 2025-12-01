@@ -278,6 +278,12 @@ void Gui::slider(
   if constexpr (!std::is_same_v<T, double>) {
     slider.callback = [callback](double value) { callback(value); };
   }
+
+  if (slider.value < lower || slider.value > upper) {
+    double new_value = std::clamp<double>(slider.value, lower, upper);
+    slider.value = new_value;
+    misc_events.push_back([callback, new_value]() { callback(new_value); });
+  }
 }
 
 template <typename T>
@@ -293,6 +299,11 @@ void Gui::slider(T lower, T upper, const Var<T>& var) {
 
   slider.callback = [var](double value) { var.set(value); };
   slider.value = *var;
+  if (slider.value < lower || slider.value > upper) {
+    double new_value = std::clamp<double>(slider.value, lower, upper);
+    slider.value = new_value;
+    misc_events.push_back([var, new_value]() { var.set(new_value); });
+  }
 }
 
 #define INSTANTIATE(T) \
@@ -687,6 +698,11 @@ void Gui::event_handling() {
       }
     }
   }
+
+  for (auto callback : misc_events) {
+    callback();
+  }
+  misc_events.clear();
 }
 
 ElementPtr Gui::get_leaf_node(const Vec2& position) {

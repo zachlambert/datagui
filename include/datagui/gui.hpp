@@ -298,6 +298,7 @@ private:
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;
+  std::vector<std::function<void()>> misc_events;
 
   std::size_t read_key() {
     std::size_t key = next_key;
