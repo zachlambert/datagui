@@ -40,6 +40,11 @@ struct Theme {
   float slider_border_width = 0;
   Color slider_border_color = Color::Black();
 
+  float color_picker_icon_size = 0;
+  float color_picker_padding = 0;
+  float color_picker_hue_wheel_radius = 0;
+  float color_picker_value_scale_width = 0;
+
   Color header_color = Color::Black();
 };
 

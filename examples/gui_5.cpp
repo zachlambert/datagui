@@ -3,6 +3,7 @@
 
 int main() {
   datagui::Gui gui;
+  using datagui::Color;
 
   while (gui.running()) {
     if (gui.series()) {
@@ -30,6 +31,14 @@ int main() {
       gui.slider<double>(0, 0, 1, [](double value) {
         std::cout << "slider double: " << value << std::endl;
       });
+
+      gui.text_box("Color picker");
+      gui.color_picker(Color::Red(), [](const Color& value) {
+        std::cout << "Color: " << value.r << ", " << value.g << ", " << value.b
+                  << std::endl;
+      });
+      gui.text_box("Text below");
+
       gui.end();
     }
     gui.poll();

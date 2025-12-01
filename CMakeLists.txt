@@ -41,6 +41,7 @@ add_library(datagui SHARED
 
   src/system/button.cpp
   src/system/checkbox.cpp
+  src/system/color_picker.cpp
   src/system/dropdown.cpp
   src/system/floating.cpp
   src/system/labelled.cpp

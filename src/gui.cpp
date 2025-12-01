@@ -5,6 +5,7 @@
 
 #include "datagui/system/button.hpp"
 #include "datagui/system/checkbox.hpp"
+#include "datagui/system/color_picker.hpp"
 #include "datagui/system/dropdown.hpp"
 #include "datagui/system/floating.hpp"
 #include "datagui/system/labelled.hpp"
@@ -29,6 +30,8 @@ Gui::Gui(const Window::Config& config) : window(config) {
       std::make_unique<ButtonSystem>(fm, theme);
   systems[(std::size_t)Type::Checkbox] =
       std::make_unique<CheckboxSystem>(fm, theme);
+  systems[(std::size_t)Type::ColorPicker] =
+      std::make_unique<ColorPickerSystem>(fm, theme);
   systems[(std::size_t)Type::Dropdown] =
       std::make_unique<DropdownSystem>(fm, theme);
   systems[(std::size_t)Type::Floating] =
@@ -114,10 +117,35 @@ void Gui::checkbox(
 void Gui::checkbox(const Var<bool>& var) {
   current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
+  args_.apply(current);
   current = current.next();
 
   checkbox.callback = [var](bool value) { var.set(value); };
   checkbox.checked = *var;
+}
+
+void Gui::color_picker(
+    const Color& initial_value,
+    const std::function<void(const Color&)>& callback) {
+  bool is_new = current.expect(Type::ColorPicker, read_key());
+  auto& color_picker = current.color_picker();
+  args_.apply(current);
+  current = current.next();
+
+  color_picker.callback = callback;
+  if (is_new || overwrite) {
+    color_picker.value = initial_value;
+  }
+}
+
+void Gui::color_picker(const Var<Color>& var) {
+  current.expect(Type::ColorPicker, read_key());
+  auto& color_picker = current.color_picker();
+  args_.apply(current);
+  current = current.next();
+
+  color_picker.callback = [var](const Color& value) { var.set(value); };
+  color_picker.value = *var;
 }
 
 void Gui::dropdown(
@@ -194,6 +222,7 @@ bool Gui::labelled(const std::string& label) {
     move_down();
     return true;
   }
+  current = current.next();
   return false;
 }
 
@@ -249,6 +278,12 @@ void Gui::slider(
   if constexpr (!std::is_same_v<T, double>) {
     slider.callback = [callback](double value) { callback(value); };
   }
+
+  if (slider.value < lower || slider.value > upper) {
+    double new_value = std::clamp<double>(slider.value, lower, upper);
+    slider.value = new_value;
+    misc_events.push_back([callback, new_value]() { callback(new_value); });
+  }
 }
 
 template <typename T>
@@ -264,6 +299,11 @@ void Gui::slider(T lower, T upper, const Var<T>& var) {
 
   slider.callback = [var](double value) { var.set(value); };
   slider.value = *var;
+  if (slider.value < lower || slider.value > upper) {
+    double new_value = std::clamp<double>(slider.value, lower, upper);
+    slider.value = new_value;
+    misc_events.push_back([var, new_value]() { var.set(new_value); });
+  }
 }
 
 #define INSTANTIATE(T) \
@@ -658,6 +698,11 @@ void Gui::event_handling() {
       }
     }
   }
+
+  for (auto callback : misc_events) {
+    callback();
+  }
+  misc_events.clear();
 }
 
 ElementPtr Gui::get_leaf_node(const Vec2& position) {

@@ -69,7 +69,17 @@ public:
   void checkbox(bool& value) {
     checkbox(value, [&value](bool new_value) { value = new_value; });
   }
-  void checkbox(const Var<bool>& value);
+  void checkbox(const Var<bool>& var);
+
+  void color_picker(
+      const Color& initial_value,
+      const std::function<void(const Color&)>& callback);
+  void color_picker(const Var<Color>& var);
+  void color_picker(Color& value) {
+    color_picker(value, [&value](const Color& new_value) {
+      value = new_value;
+    });
+  }
 
   void dropdown(
       const std::vector<std::string>& choices,
@@ -288,6 +298,7 @@ private:
   ElementPtr element_focus;
   ElementPtr element_hover;
   int next_float_priority = 0;
+  std::vector<std::function<void()>> misc_events;
 
   std::size_t read_key() {
     std::size_t key = next_key;
@@ -299,7 +310,7 @@ private:
 
   struct Compare {
     bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
-      return lhs.state().float_priority <= rhs.state().float_priority;
+      return lhs.state().float_priority >= rhs.state().float_priority;
     }
   };
   std::set<ElementPtr, Compare> floating_elements;

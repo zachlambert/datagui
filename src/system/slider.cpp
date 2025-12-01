@@ -97,7 +97,7 @@ bool SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   }
   if (slider.held && event.action == MouseAction::Release) {
     slider.held = false;
-    if (slider.value != active_value) {
+    if (!slider.always && slider.value != active_value) {
       slider.value = active_value;
       if (!slider.callback) {
         return true;
@@ -143,6 +143,12 @@ bool SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     active_value = (std::uint8_t)std::round(active_value);
     break;
   }
+
+  if (slider.always && slider.callback) {
+    slider.value = active_value;
+    slider.callback(active_value);
+  }
+
   return false;
 }
 
