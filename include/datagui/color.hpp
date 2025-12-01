@@ -118,7 +118,7 @@ public:
     return delta / (1 - std::fabs(2 * L - 1));
   }
 
-  float value() const {
+  float lightness() const {
     float c_min = std::min(r, std::min(g, b));
     float c_max = std::max(r, std::max(g, b));
     return (c_max + c_min) / 2;

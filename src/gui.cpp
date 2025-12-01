@@ -117,6 +117,7 @@ void Gui::checkbox(
 void Gui::checkbox(const Var<bool>& var) {
   current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
+  args_.apply(current);
   current = current.next();
 
   checkbox.callback = [var](bool value) { var.set(value); };
@@ -138,8 +139,9 @@ void Gui::color_picker(
 }
 
 void Gui::color_picker(const Var<Color>& var) {
-  current.expect(Type::Checkbox, read_key());
+  current.expect(Type::ColorPicker, read_key());
   auto& color_picker = current.color_picker();
+  args_.apply(current);
   current = current.next();
 
   color_picker.callback = [var](const Color& value) { var.set(value); };
@@ -220,6 +222,7 @@ bool Gui::labelled(const std::string& label) {
     move_down();
     return true;
   }
+  current = current.next();
   return false;
 }
 

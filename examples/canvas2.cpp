@@ -12,26 +12,45 @@ int main() {
       gui.text_box("Canvas");
 
       auto color = gui.variable<Color>(Color::Black());
-      if (gui.series()) {
-        for (std::size_t i = 0; i < 3; i++) {
-          gui.text_input("0", [i, color](const std::string& value) {
-            try {
-              float number = std::stof(value);
-              color.mut().data[i] = number;
-            } catch (const std::invalid_argument&) {
-              // Do nothing
-            }
-          });
-        }
+      auto border_size = gui.variable<float>(10);
+      auto width = gui.variable<float>(100);
+      auto radius = gui.variable<float>(0);
+
+      if (auto canvas = gui.viewport<datagui::Canvas2>(200, 200)) {
+        gui.depend_variable(color);
+        gui.depend_variable(border_size);
+        gui.depend_variable(width);
+        gui.depend_variable(radius);
+
+        Vec2 center = Vec2(100, 100);
+        Vec2 lower = center - Vec2::uniform(*width / 2);
+        Vec2 upper = center + Vec2::uniform(*width / 2);
+
+        canvas->box(Box2(lower, upper), *color, *radius, *border_size);
         gui.end();
       }
 
-      if (auto canvas = gui.viewport<datagui::Canvas2>(300, 300)) {
-        gui.depend_variable(color);
-        printf("%f, %f, %f\n", color->r, color->g, color->b);
-        canvas->box(Box2(Vec2(100, 100), Vec2(200, 200)), *color, 20, 10);
+      if (gui.labelled("Bg color")) {
+        gui.args().always();
+        gui.color_picker(color);
         gui.end();
       }
+      if (gui.labelled("Border size")) {
+        gui.args().always();
+        gui.slider<float>(0, 100, border_size);
+        gui.end();
+      }
+      if (gui.labelled("Width")) {
+        gui.args().always();
+        gui.slider<float>(0, 200, width);
+        gui.end();
+      }
+      if (gui.labelled("Radius")) {
+        gui.args().always();
+        gui.slider<float>(0, 100, radius);
+        gui.end();
+      }
+
       gui.end();
     }
     gui.poll();

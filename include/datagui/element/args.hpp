@@ -58,6 +58,10 @@ public:
     tight_ = true;
     return *this;
   }
+  Args& always() {
+    always_ = true;
+    return *this;
+  }
 
   // Series
 
@@ -96,6 +100,7 @@ private:
   ArgOpt<Color> header_color_;
   Arg<bool> border_ = false;
   Arg<bool> tight_ = false;
+  Arg<bool> always_ = false;
 
   struct {
     Arg<Direction> direction = Direction::Vertical;

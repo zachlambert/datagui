@@ -16,26 +16,38 @@ void ColorPickerSystem::set_input_state(ElementPtr element) {
   state.fixed_size = Vec2::uniform(theme->color_picker_icon_size);
   state.dynamic_size = Vec2();
 
-  Vec2 float_size;
-  float_size.x = 2 * theme->color_picker_hue_wheel_radius +
-                 4 * theme->color_picker_padding +
-                 theme->color_picker_value_scale_width,
-  float_size.y = 2 * theme->color_picker_hue_wheel_radius + //
-                 2 * theme->color_picker_padding;
+  Vec2 float_offset(
+      0,
+      theme->color_picker_icon_size - theme->input_border_width);
 
-  // TODO: Use param for border size
+  const float r = theme->color_picker_hue_wheel_radius;
+  const float p = theme->color_picker_padding;
+  const float w = theme->color_picker_value_scale_width;
+  Vec2 float_size(3 * p + 2 * r + w, 2 * p + 2 * r);
 
   state.floating = color_picker.open;
-  state.floating_type = FloatingTypeRelative(
-      Vec2(0, theme->color_picker_icon_size - 2),
-      float_size);
+  state.floating_type = FloatingTypeRelative(float_offset, float_size);
 }
 
 void ColorPickerSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& color_picker = element.color_picker();
+  auto& color_picker = element.color_picker();
 
-  // TODO: Store wheel and value boxes
+  const float r = theme->color_picker_hue_wheel_radius;
+  const float p = theme->color_picker_padding;
+  const float w = theme->color_picker_value_scale_width;
+
+  {
+    Vec2 origin = state.float_box.lower + Vec2::uniform(p);
+    Vec2 size = Vec2::uniform(2 * r);
+    color_picker.hue_wheel_box = Box2(origin, origin + size);
+  }
+
+  {
+    Vec2 origin = state.float_box.lower + Vec2(2 * p + 2 * r, p);
+    Vec2 size = Vec2(w, 2 * r);
+    color_picker.lightness_box = Box2(origin, origin + size);
+  }
 }
 
 void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
@@ -52,7 +64,7 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
   bg_color.a = 0.5;
   renderer.queue_box(state.float_box, bg_color, 2, theme->layout_border_color);
 
-  float value = color_picker.value.value();
+  float lightness = color_picker.value.lightness();
   struct Pixel {
     std::uint8_t r, g, b, a;
   };
@@ -77,21 +89,18 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
           angle += 2 * M_PI;
         }
         float hue = 180 * angle / M_PI;
-        Color color = Color::Hsl(hue, saturation, value);
+        Color color = Color::Hsl(hue, saturation, lightness);
         pixel.r = color.r * 255;
         pixel.g = color.g * 255;
         pixel.b = color.b * 255;
       }
     }
-    Vec2 pos =
-        state.float_box.lower + Vec2::uniform(theme->color_picker_padding);
-    Vec2 size = Vec2::uniform(theme->color_picker_hue_wheel_radius * 2);
-    renderer.queue_image(Box2(pos, pos + size), n, n, pixels.data());
+    renderer.queue_image(color_picker.hue_wheel_box, n, n, pixels.data());
   }
   {
     const std::size_t h = 100;
-    const std::size_t w = 100 * theme->color_picker_value_scale_width /
-                          (2 * theme->color_picker_hue_wheel_radius);
+    const std::size_t w = 100 * color_picker.lightness_box.size().x /
+                          color_picker.lightness_box.size().y;
 
     std::vector<Pixel> pixels(w * h);
     for (std::size_t i = 0; i < h; i++) {
@@ -104,14 +113,7 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
         pixel.a = 255;
       }
     }
-    Vec2 pos = state.float_box.lower_right();
-    pos.x -=
-        theme->color_picker_value_scale_width + theme->color_picker_padding;
-    pos.y += theme->color_picker_padding;
-    Vec2 size = Vec2(
-        theme->color_picker_value_scale_width,
-        theme->color_picker_hue_wheel_radius * 2);
-    renderer.queue_image(Box2(pos, pos + size), w, h, pixels.data());
+    renderer.queue_image(color_picker.lightness_box, w, h, pixels.data());
   }
 }
 
@@ -143,14 +145,10 @@ bool ColorPickerSystem::mouse_event(
     return false;
   }
 
-  Vec2 hue_wheel_origin =
-      state.float_box.lower +
-      Vec2::uniform(
-          theme->color_picker_padding + theme->color_picker_hue_wheel_radius);
-  Vec2 hue_wheel_offset = event.position - hue_wheel_origin;
+  Vec2 hue_wheel_offset = event.position - color_picker.hue_wheel_box.center();
 
   if (event.action == MouseAction::Press && !color_picker.wheel_held) {
-    if (hue_wheel_offset.length() < theme->color_picker_hue_wheel_radius) {
+    if (hue_wheel_offset.length() <= theme->color_picker_hue_wheel_radius) {
       color_picker.wheel_held = true;
     }
   }
@@ -164,35 +162,35 @@ bool ColorPickerSystem::mouse_event(
         hue_wheel_offset.length() / theme->color_picker_hue_wheel_radius;
     saturation = std::clamp(saturation, 0.f, 1.f);
 
-    Color new_color = Color::Hsl(hue, saturation, color_picker.value.value());
+    Color new_color =
+        Color::Hsl(hue, saturation, color_picker.value.lightness());
     color_picker.value = new_color;
-    color_picker.modified = true;
+    if (color_picker.always) {
+      color_picker.callback(new_color);
+    } else {
+      color_picker.modified = true;
+    }
   }
 
-  Vec2 value_box_origin;
-  value_box_origin.x = state.float_box.upper.x - theme->color_picker_padding -
-                       theme->color_picker_value_scale_width;
-  value_box_origin.y = state.float_box.lower.y + theme->color_picker_padding;
-
-  Vec2 value_box_size = Vec2(
-      theme->color_picker_value_scale_width,
-      2 * theme->color_picker_hue_wheel_radius);
-
-  Box2 value_box(value_box_origin, value_box_origin + value_box_size);
-
   if (event.action == MouseAction::Press &&
-      value_box.contains(event.position)) {
+      color_picker.lightness_box.contains(event.position)) {
     color_picker.scale_held = true;
   }
   if (color_picker.scale_held) {
-    float value = (value_box.upper.y - event.position.y) / value_box_size.y;
-    value = std::clamp(value, 0.f, 1.f);
+    float lightness = (color_picker.lightness_box.upper.y - event.position.y) /
+                      color_picker.lightness_box.lower.y;
+    lightness = std::clamp(lightness, 0.f, 1.f);
 
     Color new_color = Color::Hsl(
         color_picker.value.hue(),
         color_picker.value.saturation(),
-        value);
+        lightness);
     color_picker.value = new_color;
+    if (color_picker.always) {
+      color_picker.callback(new_color);
+    } else {
+      color_picker.modified = true;
+    }
   }
 
   return false;

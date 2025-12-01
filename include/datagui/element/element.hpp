@@ -52,6 +52,11 @@ struct Checkbox {
 struct ColorPicker {
   // Args
   std::function<void(Color)> callback;
+  bool always = false;
+
+  // Dependent
+  Box2 hue_wheel_box;
+  Box2 lightness_box;
 
   // State
   Color value;
@@ -143,6 +148,7 @@ struct Slider {
   double lower;
   double upper;
   std::function<void(double)> callback;
+  bool always = false;
 
   // State
   double value;

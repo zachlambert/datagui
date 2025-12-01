@@ -14,6 +14,11 @@ void Args::apply(ElementPtr element) {
   case Type::Checkbox: {
     break;
   }
+  case Type::ColorPicker: {
+    auto& color_picker = element.color_picker();
+    always_.consume(color_picker.always);
+    break;
+  }
   case Type::Dropdown: {
     break;
   }
@@ -47,6 +52,7 @@ void Args::apply(ElementPtr element) {
   }
   case Type::Slider: {
     auto& slider = element.slider();
+    always_.consume(slider.always);
     slider_.length.consume(slider.length);
     break;
   }
