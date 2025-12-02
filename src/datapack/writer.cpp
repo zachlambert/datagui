@@ -137,8 +137,7 @@ void GuiWriter::optional_begin(bool has_value) {
   gui.series();
   auto has_value_var = gui.variable<bool>(has_value);
   gui.checkbox(has_value_var);
-  gui.depend_variable(has_value_var);
-  if (!has_value) {
+  if (!*has_value_var) {
     gui.end();
   }
 }
@@ -157,7 +156,6 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   gui.series();
   auto choice_var = gui.variable<int>(value);
   gui.dropdown(labels_str, choice_var);
-  gui.depend_variable(choice_var);
   gui.key(*choice_var);
 }
 
@@ -229,7 +227,6 @@ void GuiWriter::list_begin() {
 
   gui.args().tight();
   gui.series();
-  gui.depend_variable(key_list);
 }
 
 void GuiWriter::list_next() {

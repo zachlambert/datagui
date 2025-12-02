@@ -64,6 +64,7 @@ void Gui::check_begin() {
 
 void Gui::move_down() {
   current.clear_dependencies();
+  tree.set_active_node(current);
   stack.emplace(current, var_current);
   current = current.child();
   var_current = VarPtr();
@@ -78,6 +79,11 @@ void Gui::end() {
     current.viewport().viewport->end();
   }
   current = current.next();
+  if (stack.empty()) {
+    tree.set_active_node(ConstElementPtr());
+  } else {
+    tree.set_active_node(stack.top().first);
+  }
 }
 
 void Gui::poll() {
@@ -192,7 +198,6 @@ bool Gui::floating(
   floating.height = height;
   floating.closed_callback = [open_var]() { open_var.set(false); };
 
-  depend_variable(open_var);
   if (*open_var != floating.open) {
     floating.open = *open_var;
   }
@@ -202,7 +207,7 @@ bool Gui::floating(
   }
   current.state().hidden = !floating.open;
 
-  if (!floating.open || !current.dirty()) {
+  if (!floating.open || (!current.dirty() && !overwrite)) {
     current = current.next();
     return false;
   }
@@ -218,7 +223,7 @@ bool Gui::labelled(const std::string& label) {
   auto& labelled = current.labelled();
   labelled.label = label;
 
-  if (current.dirty()) {
+  if (current.dirty() || overwrite) {
     move_down();
     return true;
   }
@@ -233,7 +238,7 @@ bool Gui::section(const std::string& label) {
   auto& section = current.section();
   section.label = label;
 
-  if (current.dirty()) {
+  if (current.dirty() || overwrite) {
     move_down();
     return true;
   }
@@ -246,7 +251,7 @@ bool Gui::series() {
   current.expect(Type::Series, read_key());
   args_.apply(current);
 
-  if (current.dirty()) {
+  if (current.dirty() || overwrite) {
     move_down();
     return true;
   }

@@ -8,15 +8,7 @@ void Tree::poll() {
   auto now = clock_t::now();
 
   for (auto& dep : dependencies) {
-    bool dirty;
-    if (auto type = std::get_if<DependencyVar>(&dep.dependency)) {
-      dirty = variables[type->variable].version != type->version;
-      type->version = variables[type->variable].version;
-    } else if (auto type = std::get_if<DependencyCondition>(&dep.dependency)) {
-      dirty = type->condition();
-    } else if (auto type = std::get_if<DependencyTimeout>(&dep.dependency)) {
-      dirty = type->timepoint >= now;
-    }
+    bool dirty = (variables[dep.variable].version != dep.version);
     if (dirty) {
       assert(dep.element != -1);
       set_dirty(dep.element);
@@ -229,15 +221,23 @@ void Tree::clear_variables(int element) {
   elements[element].first_variable = -1;
 }
 
-void Tree::create_dependency(int element, const Dependency& value) {
-  int dep = dependencies.emplace(element, value);
-  int first_dep = elements[element].first_dependency;
-  if (first_dep == -1) {
+void Tree::create_dependency(int element, int variable) {
+  int iter = elements[element].first_dependency;
+  int prev = -1;
+  while (iter != -1) {
+    if (dependencies[iter].variable == variable) {
+      return;
+    }
+    prev = iter;
+    iter = dependencies[iter].next;
+  }
+  int current_version = variables[variable].version;
+  int dep = dependencies.emplace(element, variable, current_version);
+  dependencies[dep].prev = prev;
+  if (prev == -1) {
     elements[element].first_dependency = dep;
   } else {
-    assert(dependencies[first_dep].element == element);
-    dependencies[dep].next = first_dep;
-    dependencies[first_dep].prev = dep;
+    dependencies[prev].next = dep;
   }
 }
 
@@ -256,32 +256,10 @@ void Tree::set_dirty(int element) {
     return;
   }
 
-  // Set dirty = true on element and descendents
-  std::stack<int> stack;
-  stack.push(element);
-  while (!stack.empty()) {
-    int element = stack.top();
-    stack.pop();
-
-    if (elements[element].dirty) {
-      // dirty is already set to true, no need to update
-      continue;
-    }
-    elements[element].dirty = true;
-
-    int child = elements[element].first_child;
-    while (child != -1) {
-      stack.push(child);
-      child = elements[child].next;
-    }
-  }
-
-  // Set dirty = true on anscestors
-  int iter = elements[element].parent;
+  int iter = element;
   while (iter != -1) {
     if (elements[iter].dirty) {
-      // dirty already set here, must mean already set
-      // for ancestors too
+      // If already true, must also be true for ancestors
       break;
     }
     elements[iter].dirty = true;

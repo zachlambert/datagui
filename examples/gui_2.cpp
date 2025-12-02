@@ -19,7 +19,6 @@ int main() {
 
       if (gui.series()) {
         gui.text_box("Name: ");
-        gui.depend_variable(name);
         gui.text_input(name);
         gui.end();
       }
@@ -49,7 +48,6 @@ int main() {
         gui.end();
       }
 
-      gui.depend_variable(timer);
       gui.text_box("Timer: " + std::to_string(*timer));
 
       gui.button("Reset", [&]() {

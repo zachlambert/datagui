@@ -6,9 +6,7 @@
 #include "datagui/element/vector_map.hpp"
 #include <assert.h>
 #include <chrono>
-#include <functional>
 #include <stdexcept>
-#include <variant>
 
 namespace datagui {
 
@@ -60,36 +58,14 @@ public:
   // ===========================================================
   // DependencyNode
 
-  struct DependencyVar {
-    int variable;
-    int version;
-    DependencyVar(int variable, int version) :
-        variable(variable), version(version) {}
-  };
-
-  struct DependencyCondition {
-    std::function<bool()> condition;
-    DependencyCondition(const std::function<bool()>& condition) :
-        condition(condition) {}
-  };
-
-  struct DependencyTimeout {
-    using clock_t = std::chrono::high_resolution_clock;
-    clock_t::time_point timepoint;
-    DependencyTimeout(const clock_t::time_point& timepoint) :
-        timepoint(timepoint) {}
-  };
-
-  using Dependency =
-      std::variant<DependencyVar, DependencyCondition, DependencyTimeout>;
-
   struct DependencyNode {
     int element;
-    Dependency dependency;
+    int variable;
+    int version = 0;
     int next = -1;
     int prev = -1;
-    DependencyNode(int element, const Dependency& dependency) :
-        element(element), dependency(dependency) {}
+    DependencyNode(int element, int variable, int version) :
+        element(element), variable(variable), version(version) {}
   };
 
   // ===========================================================
@@ -104,11 +80,17 @@ public:
     const T& operator*() const {
       assert(tree && variable != -1);
       auto data_ptr = tree->variables[variable].data.cast<T>();
+      if (tree->active_node_) {
+        tree->create_dependency(tree->active_node_.index, variable);
+      }
       return *data_ptr;
     }
     const T* operator->() const {
       assert(tree && variable != -1);
       auto data_ptr = tree->variables[variable].data.cast<T>();
+      if (tree->active_node_) {
+        tree->create_dependency(tree->active_node_.index, variable);
+      }
       return data_ptr;
     }
     void set(const T& value) const {
@@ -381,21 +363,6 @@ public:
       tree->clear_dependencies(index);
     }
 
-    template <typename T, bool Const>
-    void add_variable_dep(const Var_<T, Const>& var) const {
-      tree->create_dependency(
-          index,
-          DependencyVar(var.variable, var.version()));
-    }
-    void add_condition_dependency(const std::function<bool()>& condition) {
-      tree->create_dependency(index, DependencyCondition(condition));
-    }
-    void add_timeout_dependency(double period) {
-      auto now = clock_t::now();
-      auto future = now + std::chrono::nanoseconds(std::int64_t(period * 1e9));
-      tree->create_dependency(index, DependencyTimeout(future));
-    }
-
     template <
         bool OtherConst,
         typename = std::enable_if_t<IsConst || !OtherConst>>
@@ -444,6 +411,10 @@ public:
     return VarPtr(this, -1, external_var_);
   }
 
+  void set_active_node(ConstElementPtr ptr) {
+    active_node_ = ptr;
+  }
+
 private:
   int create_element(int parent, int prev, std::size_t id, Type type);
   void reset_element(int element, std::size_t id, Type type);
@@ -455,7 +426,7 @@ private:
   int create_variable(int element);
   void clear_variables(int element);
 
-  void create_dependency(int element, const Dependency& value);
+  void create_dependency(int element, int variable);
   void clear_dependencies(int element);
 
   void set_dirty(int node);
@@ -465,6 +436,8 @@ private:
   VectorMap<VarNode> variables;
   VectorMap<DependencyNode> dependencies;
   int external_var_ = -1;
+
+  ConstElementPtr active_node_ = ConstElementPtr();
 
   VectorMap<Button> button;
   VectorMap<Checkbox> checkbox;

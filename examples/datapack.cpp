@@ -86,6 +86,7 @@ DATAPACK_INLINE(Foo, value, packer) {
 int main() {
   datagui::Gui gui;
 
+  int revisit = 0;
   while (gui.running()) {
     if (gui.series()) {
       auto value = gui.variable<Foo>();
@@ -101,6 +102,7 @@ int main() {
       gui.text_box("Edit + Overwritten by above");
       gui.edit(value);
 
+      std::cout << "Revisit: " << revisit++ << std::endl;
       gui.end();
     }
     gui.poll();
