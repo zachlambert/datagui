@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <datapack/datapack.hpp>
 
 namespace datagui {
 
@@ -148,3 +149,9 @@ public:
 };
 
 } // namespace datagui
+
+namespace datapack {
+
+DATAPACK(datagui::Color);
+
+} // namespace datapack

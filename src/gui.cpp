@@ -355,12 +355,16 @@ void Gui::number_input(
   if (is_new || overwrite) {
     text_input.text = std::to_string(initial_value);
   }
-  text_input.callback = [callback](const std::string& value) {
-    T number;
-    if (text_to_number(value, number)) {
-      callback(number);
-    }
-  };
+  if (callback) {
+    text_input.callback = [callback](const std::string& value) {
+      T number;
+      if (text_to_number(value, number)) {
+        callback(number);
+      }
+    };
+  } else {
+    text_input.callback = {};
+  }
 }
 
 template <typename T>

@@ -17,6 +17,7 @@ find_package(Freetype REQUIRED)
 # Library
 
 add_library(datagui SHARED
+  src/color.cpp
   src/log.cpp
   src/theme.cpp
 

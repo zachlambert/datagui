@@ -36,6 +36,8 @@ struct Foo {
   Shape shape;
   std::optional<std::array<double, 3>> points;
   std::vector<std::string> names;
+  datagui::Color color = datagui::Color::Black();
+  double scale;
 };
 
 namespace datapack {
@@ -74,6 +76,9 @@ DATAPACK_INLINE(Foo, value, packer) {
   packer.value("shape", value.shape);
   packer.value("points", value.points);
   packer.value("names", value.names);
+  packer.value("color", value.color);
+  packer.constraint(ConstraintNumberRange(-1, 1));
+  packer.value("scale", value.scale);
   packer.object_end();
 }
 } // namespace datapack

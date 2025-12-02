@@ -16,10 +16,76 @@ T number_from_string(const std::string& string) {
 }
 
 void GuiReader::number(datapack::NumberType type, void* value) {
-  if (!node || node.type() != Type::TextInput) {
+  if (!node) {
     invalidate();
     return;
   }
+  if (in_color) {
+    switch (type) {
+    case datapack::NumberType::I32:
+      *(std::int32_t*)value = color.data[color_i - 1] * 255;
+      break;
+    case datapack::NumberType::I64:
+      *(std::int64_t*)value = color.data[color_i - 1] * 255;
+      break;
+    case datapack::NumberType::U32:
+      *(std::int32_t*)value = color.data[color_i - 1] * 255;
+      break;
+    case datapack::NumberType::U64:
+      *(std::uint64_t*)value = color.data[color_i - 1] * 255;
+      break;
+    case datapack::NumberType::F32:
+      *(float*)value = color.data[color_i - 1];
+      break;
+    case datapack::NumberType::F64:
+      *(double*)value = color.data[color_i - 1];
+      break;
+    case datapack::NumberType::U8:
+      *(std::uint8_t*)value = color.data[color_i - 1] * 255;
+      break;
+    }
+    return;
+  }
+  if (auto constraint = get_constraint<datapack::ConstraintNumber>()) {
+    if (auto range =
+            std::get_if<datapack::ConstraintNumberRange>(&(*constraint))) {
+      if (node.type() != Type::Slider) {
+        invalidate();
+        return;
+      }
+      double input = node.slider().value;
+      switch (type) {
+      case datapack::NumberType::I32:
+        *(std::int32_t*)value = input;
+        break;
+      case datapack::NumberType::I64:
+        *(std::int64_t*)value = input;
+        break;
+      case datapack::NumberType::U32:
+        *(std::uint32_t*)value = input;
+        break;
+      case datapack::NumberType::U64:
+        *(std::uint64_t*)value = input;
+        break;
+      case datapack::NumberType::U8:
+        *(std::uint8_t*)value = input;
+        break;
+      case datapack::NumberType::F32:
+        *(float*)value = input;
+        break;
+      case datapack::NumberType::F64:
+        *(double*)value = input;
+        break;
+      }
+      return;
+    }
+  }
+
+  if (node.type() != Type::TextInput) {
+    invalidate();
+    return;
+  }
+
   const auto& text = node.text_input().text;
 
   switch (type) {
@@ -125,6 +191,18 @@ void GuiReader::variant_end() {
 }
 
 void GuiReader::object_begin() {
+  if (auto constraint = get_constraint<datapack::ConstraintObject>()) {
+    if (std::get_if<datapack::ConstraintObjectColor>(&(*constraint))) {
+      if (!node || node.type() != Type::ColorPicker) {
+        invalidate();
+        return;
+      }
+      in_color = true;
+      color = node.color_picker().value;
+      color_i = 0;
+      return;
+    }
+  }
   if (!node || node.type() != Type::Series) {
     invalidate();
     return;
@@ -134,6 +212,14 @@ void GuiReader::object_begin() {
 }
 
 void GuiReader::object_next(const char* key) {
+  if (in_color) {
+    if (color_i > 3) {
+      invalidate();
+      return;
+    }
+    color_i++;
+    return;
+  }
   if (!at_object_begin) {
     node = node.parent().next();
   }
@@ -142,6 +228,14 @@ void GuiReader::object_next(const char* key) {
 }
 
 void GuiReader::object_end() {
+  if (in_color) {
+    if (color_i != 4) {
+      invalidate();
+    }
+    in_color = false;
+    node = node.next();
+    return;
+  }
   if (!at_object_begin) {
     if (node.next()) {
       invalidate();
@@ -154,6 +248,7 @@ void GuiReader::object_end() {
   }
   at_object_begin = false;
   node = node.parent();
+  in_color = false;
 }
 
 void GuiReader::tuple_begin() {
