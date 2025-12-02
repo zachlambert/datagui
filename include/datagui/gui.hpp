@@ -194,8 +194,8 @@ public:
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
 
-    if (is_new || var.version() != *var_version) {
-      var_version.set(var.version());
+    if (is_new || var.version() != var_version.mut_internal()) {
+      var_version.mut_internal() = var.version();
       overwrite = true;
       datapack_write(*this, *var);
       overwrite = false;
