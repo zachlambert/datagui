@@ -46,8 +46,8 @@ private:
   std::stack<ListState> list_stack;
   bool at_object_begin = false;
 
-  bool inside_color = false;
-  std::size_t color_i = 0;
+  bool in_color = false;
+  std::size_t color_i;
   Color color;
 };
 

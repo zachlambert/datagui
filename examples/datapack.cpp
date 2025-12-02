@@ -36,7 +36,7 @@ struct Foo {
   Shape shape;
   std::optional<std::array<double, 3>> points;
   std::vector<std::string> names;
-  datagui::Color color;
+  datagui::Color color = datagui::Color::Black();
   double number2;
 };
 
@@ -96,9 +96,9 @@ int main() {
         value.set(new_value);
       });
 
-      // gui.args().text_size(20).text_color(datagui::Color::Blue());
-      // gui.text_box("Edit + Overwritten by above");
-      // gui.edit(value);
+      gui.args().text_size(20).text_color(datagui::Color::Blue());
+      gui.text_box("Edit + Overwritten by above");
+      gui.edit(value);
 
       gui.end();
     }

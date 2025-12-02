@@ -155,23 +155,24 @@ void GuiReader::variant_end() {
 }
 
 void GuiReader::object_begin() {
-  if (!node) {
+  if (auto constraint = get_constraint<datapack::ConstraintObject>()) {
+    if (std::get_if<datapack::ConstraintObjectColor>(&(*constraint))) {
+      if (!node || node.type() != Type::ColorPicker) {
+        invalidate();
+        return;
+      }
+      in_color = true;
+      color = node.color_picker().value;
+      color_i = 0;
+      return;
+    }
+  }
+  if (!node || node.type() != Type::Series) {
     invalidate();
     return;
   }
-  if (node.type() == Type::Series) {
-    node = node.child();
-    at_object_begin = true;
-    return;
-  }
-  if (node.type() == Type::ColorPicker) {
-    in_color = true;
-    color_i = 0;
-    color = node.color_picker().value;
-    return;
-  }
-  invalidate();
-  assert(false);
+  node = node.child();
+  at_object_begin = true;
 }
 
 void GuiReader::object_next(const char* key) {
