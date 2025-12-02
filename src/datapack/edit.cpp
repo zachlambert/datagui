@@ -131,7 +131,15 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       break;
     }
 
-    if (iter.object_begin()) {
+    if (auto object_begin = iter.object_begin()) {
+      if (object_begin->constraint) {
+        if (std::get_if<datapack::ConstraintObjectColor>(
+                &(*object_begin->constraint))) {
+          gui.color_picker(Color::Black(), {});
+          iter = iter.skip();
+          continue;
+        }
+      }
       gui.args().tight();
       if (gui.series()) {
         stack.push(iter);

@@ -36,6 +36,8 @@ struct Foo {
   Shape shape;
   std::optional<std::array<double, 3>> points;
   std::vector<std::string> names;
+  datagui::Color color;
+  double number2;
 };
 
 namespace datapack {
@@ -74,6 +76,8 @@ DATAPACK_INLINE(Foo, value, packer) {
   packer.value("shape", value.shape);
   packer.value("points", value.points);
   packer.value("names", value.names);
+  packer.value("color", value.color);
+  packer.value("number2", value.number2);
   packer.object_end();
 }
 } // namespace datapack
@@ -92,9 +96,9 @@ int main() {
         value.set(new_value);
       });
 
-      gui.args().text_size(20).text_color(datagui::Color::Blue());
-      gui.text_box("Edit + Overwritten by above");
-      gui.edit(value);
+      // gui.args().text_size(20).text_color(datagui::Color::Blue());
+      // gui.text_box("Edit + Overwritten by above");
+      // gui.edit(value);
 
       gui.end();
     }

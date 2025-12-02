@@ -16,6 +16,36 @@ T number_from_string(const std::string& string) {
 }
 
 void GuiReader::number(datapack::NumberType type, void* value) {
+  if (!node) {
+    invalidate();
+    return;
+  }
+  if (in_color) {
+    switch (type) {
+    case datapack::NumberType::I32:
+      *(std::int32_t*)value = color.data[color_i - 1] * 255;
+      break;
+    case datapack::NumberType::I64:
+      *(std::int64_t*)value = color.data[color_i - 1] * 255;
+      break;
+    case datapack::NumberType::U32:
+      *(std::int32_t*)value = color.data[color_i - 1] * 255;
+      break;
+    case datapack::NumberType::U64:
+      *(std::uint64_t*)value = color.data[color_i - 1] * 255;
+      break;
+    case datapack::NumberType::F32:
+      *(float*)value = color.data[color_i - 1];
+      break;
+    case datapack::NumberType::F64:
+      *(double*)value = color.data[color_i - 1];
+      break;
+    case datapack::NumberType::U8:
+      *(std::uint8_t*)value = color.data[color_i - 1] * 255;
+      break;
+    }
+    return;
+  }
   if (!node || node.type() != Type::TextInput) {
     invalidate();
     return;
@@ -125,15 +155,34 @@ void GuiReader::variant_end() {
 }
 
 void GuiReader::object_begin() {
-  if (!node || node.type() != Type::Series) {
+  if (!node) {
     invalidate();
     return;
   }
-  node = node.child();
-  at_object_begin = true;
+  if (node.type() == Type::Series) {
+    node = node.child();
+    at_object_begin = true;
+    return;
+  }
+  if (node.type() == Type::ColorPicker) {
+    in_color = true;
+    color_i = 0;
+    color = node.color_picker().value;
+    return;
+  }
+  invalidate();
+  assert(false);
 }
 
 void GuiReader::object_next(const char* key) {
+  if (in_color) {
+    if (color_i > 3) {
+      invalidate();
+      return;
+    }
+    color_i++;
+    return;
+  }
   if (!at_object_begin) {
     node = node.parent().next();
   }
@@ -142,6 +191,14 @@ void GuiReader::object_next(const char* key) {
 }
 
 void GuiReader::object_end() {
+  if (in_color) {
+    if (color_i != 4) {
+      invalidate();
+    }
+    in_color = false;
+    node = node.next();
+    return;
+  }
   if (!at_object_begin) {
     if (node.next()) {
       invalidate();
@@ -154,6 +211,7 @@ void GuiReader::object_end() {
   }
   at_object_begin = false;
   node = node.parent();
+  in_color = false;
 }
 
 void GuiReader::tuple_begin() {

@@ -37,6 +37,10 @@ private:
   ConstElementPtr node;
   std::vector<std::uint8_t> binary_temp;
   bool at_object_begin = false;
+
+  bool in_color = false;
+  std::size_t color_i;
+  Color color;
 };
 
 template <typename T>
