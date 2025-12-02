@@ -227,6 +227,14 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
     }
 
     if (auto number = iter.number()) {
+      if (number->constraint) {
+        if (auto range = std::get_if<datapack::ConstraintNumberRange>(
+                &(*number->constraint))) {
+          gui.slider(range->lower, range->lower, range->upper, {});
+          iter = iter.next();
+          continue;
+        }
+      }
       switch (number->type) {
       case datapack::NumberType::I32:
         gui.number_input<std::int32_t>(0, {});

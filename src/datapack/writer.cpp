@@ -33,6 +33,55 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
     }
     return;
   }
+  if (auto constraint = get_constraint<datapack::ConstraintNumber>()) {
+    if (auto range =
+            std::get_if<datapack::ConstraintNumberRange>(&(*constraint))) {
+
+      switch (type) {
+      case datapack::NumberType::I32:
+        gui.slider<std::int32_t>(
+            *(std::int32_t*)value,
+            range->lower,
+            range->upper,
+            {});
+        break;
+      case datapack::NumberType::I64:
+        gui.slider<std::int64_t>(
+            *(std::int64_t*)value,
+            range->lower,
+            range->upper,
+            {});
+        break;
+      case datapack::NumberType::U32:
+        gui.slider<std::uint32_t>(
+            *(std::uint32_t*)value,
+            range->lower,
+            range->upper,
+            {});
+        break;
+      case datapack::NumberType::U64:
+        gui.slider<std::uint64_t>(
+            *(std::uint64_t*)value,
+            range->lower,
+            range->upper,
+            {});
+        break;
+      case datapack::NumberType::F32:
+        gui.slider<float>(*(float*)value, range->lower, range->upper, {});
+        break;
+      case datapack::NumberType::F64:
+        gui.slider<double>(*(double*)value, range->lower, range->upper, {});
+        break;
+      case datapack::NumberType::U8:
+        gui.slider<std::uint8_t>(
+            *(std::uint8_t*)value,
+            range->lower,
+            range->upper,
+            {});
+        break;
+      }
+    }
+  }
 
   std::string value_str;
   switch (type) {

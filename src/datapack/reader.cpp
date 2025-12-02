@@ -46,10 +46,46 @@ void GuiReader::number(datapack::NumberType type, void* value) {
     }
     return;
   }
-  if (!node || node.type() != Type::TextInput) {
+  if (auto constraint = get_constraint<datapack::ConstraintNumber>()) {
+    if (auto range =
+            std::get_if<datapack::ConstraintNumberRange>(&(*constraint))) {
+      if (node.type() != Type::Slider) {
+        invalidate();
+        return;
+      }
+      double input = node.slider().value;
+      switch (type) {
+      case datapack::NumberType::I32:
+        *(std::int32_t*)value = input;
+        break;
+      case datapack::NumberType::I64:
+        *(std::int64_t*)value = input;
+        break;
+      case datapack::NumberType::U32:
+        *(std::uint32_t*)value = input;
+        break;
+      case datapack::NumberType::U64:
+        *(std::uint64_t*)value = input;
+        break;
+      case datapack::NumberType::U8:
+        *(std::uint8_t*)value = input;
+        break;
+      case datapack::NumberType::F32:
+        *(float*)value = input;
+        break;
+      case datapack::NumberType::F64:
+        *(double*)value = input;
+        break;
+      }
+      return;
+    }
+  }
+
+  if (node.type() != Type::TextInput) {
     invalidate();
     return;
   }
+
   const auto& text = node.text_input().text;
 
   switch (type) {
