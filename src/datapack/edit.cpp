@@ -226,8 +226,30 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
 
-    if (iter.number()) {
-      gui.text_input("0", {});
+    if (auto number = iter.number()) {
+      switch (number->type) {
+      case datapack::NumberType::I32:
+        gui.number_input<std::int32_t>(0, {});
+        break;
+      case datapack::NumberType::I64:
+        gui.number_input<std::int64_t>(0, {});
+        break;
+      case datapack::NumberType::U32:
+        gui.number_input<std::uint32_t>(0, {});
+        break;
+      case datapack::NumberType::U64:
+        gui.number_input<std::uint64_t>(0, {});
+        break;
+      case datapack::NumberType::F32:
+        gui.number_input<float>(0, {});
+        break;
+      case datapack::NumberType::F64:
+        gui.number_input<double>(0, {});
+        break;
+      case datapack::NumberType::U8:
+        gui.number_input<std::uint8_t>(0, {});
+        break;
+      }
       iter = iter.next();
       continue;
     }
