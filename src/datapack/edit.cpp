@@ -165,7 +165,6 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
         auto keys = gui.variable<KeyList>();
         gui.args().tight();
         if (gui.series()) {
-          gui.depend_variable(keys);
           stack.push(iter);
           list_stack.push({keys, 0});
           iter = iter.next();
@@ -181,7 +180,6 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       if (gui.series()) {
         auto has_value = gui.variable<bool>(false);
         gui.checkbox(has_value);
-        gui.depend_variable(has_value);
         if (*has_value) {
           stack.push(iter);
           iter = iter.next();
@@ -198,7 +196,6 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
         auto choice = gui.variable<int>(0);
         gui.dropdown(variant_begin->labels, choice);
 
-        gui.depend_variable(choice);
         iter = iter.next();
         while (iter != schema.end()) {
           if (iter.variant_end()) {

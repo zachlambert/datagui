@@ -3,6 +3,7 @@
 #include <datapack/labelled_variant.hpp>
 #include <iostream>
 #include <optional>
+#include <thread>
 
 #include <datapack/std/array.hpp>
 #include <datapack/std/optional.hpp>
@@ -86,6 +87,7 @@ DATAPACK_INLINE(Foo, value, packer) {
 int main() {
   datagui::Gui gui;
 
+  int revisit = 0;
   while (gui.running()) {
     if (gui.series()) {
       auto value = gui.variable<Foo>();
@@ -97,13 +99,15 @@ int main() {
         value.set(new_value);
       });
 
-      gui.args().text_size(20).text_color(datagui::Color::Blue());
-      gui.text_box("Edit + Overwritten by above");
-      gui.edit(value);
+      // gui.args().text_size(20).text_color(datagui::Color::Blue());
+      // gui.text_box("Edit + Overwritten by above");
+      // gui.edit(value);
 
+      std::cout << "Revisit: " << revisit++ << std::endl;
       gui.end();
     }
     gui.poll();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   return 0;
 }

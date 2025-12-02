@@ -64,6 +64,7 @@ void Gui::check_begin() {
 
 void Gui::move_down() {
   current.clear_dependencies();
+  tree.set_active_node(current);
   stack.emplace(current, var_current);
   current = current.child();
   var_current = VarPtr();
@@ -78,6 +79,11 @@ void Gui::end() {
     current.viewport().viewport->end();
   }
   current = current.next();
+  if (stack.empty()) {
+    tree.set_active_node(ConstElementPtr());
+  } else {
+    tree.set_active_node(stack.top().first);
+  }
 }
 
 void Gui::poll() {
@@ -192,7 +198,6 @@ bool Gui::floating(
   floating.height = height;
   floating.closed_callback = [open_var]() { open_var.set(false); };
 
-  depend_variable(open_var);
   if (*open_var != floating.open) {
     floating.open = *open_var;
   }

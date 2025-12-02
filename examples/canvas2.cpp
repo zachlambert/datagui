@@ -17,11 +17,6 @@ int main() {
       auto radius = gui.variable<float>(10);
 
       if (auto canvas = gui.viewport<datagui::Canvas2>(200, 200)) {
-        gui.depend_variable(color);
-        gui.depend_variable(border_size);
-        gui.depend_variable(width);
-        gui.depend_variable(radius);
-
         Vec2 center = Vec2(100, 100);
         Vec2 lower = center - Vec2::uniform(*width / 2);
         Vec2 upper = center + Vec2::uniform(*width / 2);
@@ -41,17 +36,15 @@ int main() {
           }
           if (gui.labelled("Width")) {
             gui.args().always();
-            gui.slider<float>(0, 200, width);
+            gui.slider<float>(10, 200, width);
             gui.end();
           }
           if (gui.labelled("Border size")) {
-            gui.depend_variable(width);
             gui.args().always();
             gui.slider<float>(0, *width / 2, border_size);
             gui.end();
           }
           if (gui.labelled("Radius")) {
-            gui.depend_variable(width);
             gui.args().always();
             gui.slider<float>(0, *width / 2, radius);
             gui.end();

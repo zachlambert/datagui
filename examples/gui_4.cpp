@@ -13,7 +13,6 @@ void edit_list_1(datagui::Gui& gui) {
   auto persons = gui.variable<std::vector<Person>>();
 
   if (gui.series()) {
-    gui.depend_variable(persons);
     for (std::size_t i = 0; i < persons->size(); i++) {
       const auto& person = (*persons)[i];
       gui.key(person.name);
@@ -60,7 +59,6 @@ void edit_list_1(datagui::Gui& gui) {
       error.mut().clear();
     });
 
-    gui.depend_variable(error);
     gui.key<std::string>("error box");
     if (!error->empty()) {
       gui.text_box("Error: " + *error);
@@ -78,7 +76,6 @@ void edit_list_2(datagui::Gui& gui) {
 
   auto keys = gui.variable<datagui::KeyList>();
   if (gui.series()) {
-    gui.depend_variable(keys);
     for (std::size_t i = 0; i < keys->size(); i++) {
       gui.args().horizontal();
       gui.key((*keys)[i]);

@@ -41,26 +41,6 @@ public:
     this->key(std::hash<T>{}(key));
   }
 
-  template <typename T>
-  void depend_variable(const Var<T>& var) {
-    if (stack.empty()) {
-      return;
-    }
-    stack.top().first.add_variable_dep(var);
-  }
-  void depend_condition(const std::function<bool()>& condition) {
-    if (stack.empty()) {
-      return;
-    }
-    stack.top().first.add_condition_dependency(condition);
-  }
-  void depend_timeout(double period) {
-    if (stack.empty()) {
-      return;
-    }
-    stack.top().first.add_timeout_dependency(period);
-  }
-
   // Elements
 
   void button(const std::string& text, const std::function<void()>& callback);
@@ -209,7 +189,6 @@ public:
     if (!series()) {
       return;
     }
-    depend_variable(var);
 
     auto var_version = variable<int>(0);
     auto schema = variable<datapack::Schema>(
