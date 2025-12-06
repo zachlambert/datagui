@@ -16,17 +16,8 @@ void PopupSystem::set_input_state(ElementPtr element) {
 
   layout_set_input_state(element, theme, popup.layout, popup.layout_state);
 
-  Vec2 float_size = popup.fixed_size;
-  if (float_size.x == 0) {
-    float_size.x = popup.layout_state.content_fixed_size.x;
-  }
-  if (float_size.y == 0) {
-    float_size.y =
-        popup.layout_state.content_fixed_size.y + popup.header_height;
-  }
-
   state.floating_type =
-      FloatingTypeAbsolute(Vec2(popup.fixed_size.x, popup.fixed_size.y));
+      FloatingTypeAbsolute(Vec2(popup.popup_size.x, popup.popup_size.y));
 }
 
 void PopupSystem::set_dependent_state(ElementPtr element) {

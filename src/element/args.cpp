@@ -35,7 +35,7 @@ void Args::apply(ElementPtr element) {
     bg_color_.consume(group.bg_color);
     border_.consume(group.border);
     layout_.consume(group.layout);
-    fixed_size_.consume(group.fixed_size);
+    group_fixed_size_.consume(group.fixed_size);
     break;
   }
   case Type::Popup: {
@@ -43,7 +43,6 @@ void Args::apply(ElementPtr element) {
     header_color_.consume(popup.header_color);
     bg_color_.consume(popup.bg_color);
     layout_.consume(popup.layout);
-    fixed_size_.consume(popup.fixed_size);
     break;
   }
   case Type::Select: {

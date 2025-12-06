@@ -12,9 +12,17 @@ void GroupSystem::set_input_state(ElementPtr element) {
   state.fixed_size = group.layout_state.content_fixed_size;
   state.dynamic_size = group.layout_state.content_dynamic_size;
   state.floating = false;
-
   if (group.border) {
     state.fixed_size += Vec2::uniform(2 * theme->layout_border_width);
+  }
+
+  if (group.fixed_size.x > 0) {
+    state.fixed_size.x = group.fixed_size.x;
+    state.dynamic_size.x = 0;
+  }
+  if (group.fixed_size.y > 0) {
+    state.fixed_size.y = group.fixed_size.y;
+    state.dynamic_size.y = 0;
   }
 }
 

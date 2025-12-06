@@ -65,6 +65,7 @@ void layout_set_input_state(
   float inner_padding = layout.tight ? 0.f : theme->layout_inner_padding;
 
   state.content_fixed_size = Vec2::uniform(outer_padding * 2);
+  state.content_dynamic_size = Vec2();
   for (const auto& sizes : state.col_input_sizes) {
     state.content_fixed_size.x += sizes.fixed;
     state.content_dynamic_size.x += sizes.dynamic;
@@ -76,11 +77,11 @@ void layout_set_input_state(
 
   if (state.col_input_sizes.size() > 0) {
     state.content_fixed_size.x +=
-        inner_padding * (state.col_input_sizes.size() - 1) * inner_padding;
+        (state.col_input_sizes.size() - 1) * inner_padding;
   }
   if (state.row_input_sizes.size() > 0) {
     state.content_fixed_size.y +=
-        inner_padding * (state.row_input_sizes.size() - 1) * inner_padding;
+        (state.row_input_sizes.size() - 1) * inner_padding;
   }
 }
 
@@ -100,9 +101,11 @@ void layout_set_dependent_state(
     state.content_overrun.x = std::max(content_size - size, 0.f);
 
     for (std::size_t j = 0; j < col_sizes.size(); j++) {
-      col_sizes[j] =
-          state.col_input_sizes[j].fixed +
-          available * state.col_input_sizes[j].dynamic / dynamic_size;
+      col_sizes[j] = state.col_input_sizes[j].fixed;
+      if (dynamic_size > 0) {
+        col_sizes[j] +=
+            available * state.col_input_sizes[j].dynamic / dynamic_size;
+      }
     }
   }
 
@@ -114,10 +117,12 @@ void layout_set_dependent_state(
     float dynamic_size = state.content_dynamic_size.x;
     state.content_overrun.y = std::max(content_size - size, 0.f);
 
-    for (std::size_t j = 0; j < row_sizes.size(); j++) {
-      row_sizes[j] =
-          state.row_input_sizes[j].fixed +
-          available * state.row_input_sizes[j].dynamic / dynamic_size;
+    for (std::size_t i = 0; i < row_sizes.size(); i++) {
+      row_sizes[i] = state.row_input_sizes[i].fixed;
+      if (dynamic_size > 0) {
+        row_sizes[i] +=
+            available * state.row_input_sizes[i].dynamic / dynamic_size;
+      }
     }
   }
 
@@ -129,7 +134,8 @@ void layout_set_dependent_state(
   auto child = element.child();
   std::size_t i = 0;
   std::size_t j = 0;
-  Vec2 offset = content_box.lower - state.scroll_pos;
+  Vec2 origin = content_box.lower - state.scroll_pos;
+  Vec2 offset;
   while (child) {
     if (j == 0 && row_major) {
       offset.x = outer_padding;
@@ -179,8 +185,10 @@ void layout_set_dependent_state(
       position.y = offset.y + (cell_size.y - size.y);
       break;
     }
+    position += origin;
 
     if (row_major) {
+      j++;
       if (j == layout.cols) {
         offset.y += row_sizes[i];
         j = 0;
@@ -190,6 +198,7 @@ void layout_set_dependent_state(
         }
       }
     } else {
+      i++;
       if (i == layout.rows) {
         offset.x += col_sizes[i];
         i = 0;
@@ -273,7 +282,7 @@ bool layout_scroll_event(
         0.f,
         state.content_overrun.x);
   }
-  if (state.content_overrun.x > 0) {
+  if (state.content_overrun.y > 0) {
     new_pos.y = std::clamp(
         state.scroll_pos.y + event.amount,
         0.f,

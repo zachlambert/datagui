@@ -67,7 +67,11 @@ public:
 
   bool group();
 
-  bool popup(const Var<bool>& open, const std::string& title);
+  bool popup(
+      const Var<bool>& open,
+      const std::string& title,
+      float width,
+      float height);
 
   void select(
       const std::vector<std::string>& choices,

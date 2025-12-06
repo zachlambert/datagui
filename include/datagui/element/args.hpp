@@ -102,11 +102,11 @@ public:
   }
 
   Args& group_width_fixed(float length) {
-    fixed_size_->x = length;
+    group_fixed_size_->x = length;
     return *this;
   }
   Args& group_height_fixed(float length) {
-    fixed_size_->y = length;
+    group_fixed_size_->y = length;
     return *this;
   }
 
@@ -132,7 +132,7 @@ private:
   Arg<bool> border_ = false;
   Arg<bool> always_ = false;
   Arg<std::string> label_ = {};
-  Arg<Vec2> fixed_size_ = {};
+  Arg<Vec2> group_fixed_size_ = {};
   Arg<Layout> layout_ = {};
   ArgOpt<float> slider_length_;
 

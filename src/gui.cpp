@@ -26,12 +26,14 @@ Gui::Gui(const Window::Config& config) : window(config) {
   theme = std::make_shared<Theme>(theme_default());
   renderer.init(fm);
 
+  systems.resize(TypeCount);
+
 #define REGISTER(Name, System, args...) \
   systems[(std::size_t)Type::Name] = std::make_unique<System>(args);
 
   REGISTER(Button, ButtonSystem, fm, theme);
   REGISTER(Checkbox, CheckboxSystem, fm, theme);
-  REGISTER(ColorPicker, CollapsableSystem, fm, theme);
+  REGISTER(Collapsable, CollapsableSystem, fm, theme);
   REGISTER(ColorPicker, ColorPickerSystem, fm, theme);
   REGISTER(Dropdown, DropdownSystem, fm, theme);
   REGISTER(Group, GroupSystem, theme);
@@ -45,6 +47,9 @@ Gui::Gui(const Window::Config& config) : window(config) {
   REGISTER(ViewportPtr, ViewportPtrSystem);
 
 #undef REGISTER
+  for (const auto& system : systems) {
+    assert(system);
+  }
 }
 
 bool Gui::running() const {
@@ -193,7 +198,11 @@ bool Gui::group() {
   return false;
 }
 
-bool Gui::popup(const Var<bool>& open_var, const std::string& title) {
+bool Gui::popup(
+    const Var<bool>& open_var,
+    const std::string& title,
+    float width,
+    float height) {
   check_begin();
   current.expect(Type::Popup, read_key());
   args_.apply(current);
@@ -201,6 +210,7 @@ bool Gui::popup(const Var<bool>& open_var, const std::string& title) {
 
   popup.title = title;
   popup.closed_callback = [open_var]() { open_var.set(false); };
+  popup.popup_size = Vec2(width, height);
 
   if (*open_var != popup.open) {
     popup.open = *open_var;

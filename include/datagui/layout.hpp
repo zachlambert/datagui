@@ -27,8 +27,9 @@ struct LengthWrap {};
 using Length = std::variant<LengthFixed, LengthDynamic, LengthWrap>;
 
 struct Layout {
-  int rows = 0;
-  int cols = 0;
+  // Default to single columns
+  int rows = -1;
+  int cols = 1;
   XAlignment x_alignment = XAlignment::Left;
   YAlignment y_alignment = YAlignment::Center;
   bool tight = false;

@@ -15,7 +15,7 @@ int main() {
       gui.button("Open window 1", [=]() { window_1_open.set(true); });
 
       gui.args().bg_color(datagui::Color::Hsl(180, 0.7, 0.7));
-      if (gui.popup(window_1_open, "Floating 1")) {
+      if (gui.popup(window_1_open, "Floating 1", 400, 100)) {
         gui.text_input("Input", {});
         gui.text_box("Here is some text");
         gui.text_box("Foo");
@@ -30,7 +30,7 @@ int main() {
       gui.button("Open window 2", [=]() { window_2_open.set(true); });
 
       gui.args().bg_color(datagui::Color::Hsl(0, 0.7, 0.7));
-      if (gui.popup(window_2_open, "Floating 2")) {
+      if (gui.popup(window_2_open, "Floating 2", 300, 150)) {
         gui.end();
       }
 

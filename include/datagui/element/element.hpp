@@ -116,11 +116,11 @@ struct Group {
 struct Popup {
   // Definition
   std::string title;
+  Vec2 popup_size;
   std::function<void()> closed_callback;
 
   // Args
   Layout layout;
-  Vec2 fixed_size;
   std::optional<Color> header_color;
   std::optional<Color> bg_color;
 

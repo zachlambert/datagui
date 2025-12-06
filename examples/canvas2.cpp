@@ -38,6 +38,8 @@ int main() {
 
         gui.args().label("Radius").always();
         gui.slider<float>(0, *width / 2, radius);
+
+        gui.end();
       }
 
       gui.end();
