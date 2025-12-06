@@ -2,7 +2,7 @@
 #include <datagui/gui.hpp>
 
 void edit_list_1(datagui::Gui& gui) {
-  if (!gui.series()) {
+  if (!gui.group()) {
     return;
   }
 
@@ -12,20 +12,20 @@ void edit_list_1(datagui::Gui& gui) {
   };
   auto persons = gui.variable<std::vector<Person>>();
 
-  if (gui.series()) {
+  if (gui.group()) {
     for (std::size_t i = 0; i < persons->size(); i++) {
       const auto& person = (*persons)[i];
       gui.key(person.name);
-      if (!gui.series()) {
+      if (!gui.group()) {
         continue;
       }
       gui.text_box(person.name);
-      if (gui.labelled("Desc.")) {
-        gui.text_input(person.desc, [=](const std::string& value) {
-          persons.mut()[i].desc = value;
-        });
-        gui.end();
-      }
+
+      gui.args().label("Desc.");
+      gui.text_input(person.desc, [=](const std::string& value) {
+        persons.mut()[i].desc = value;
+      });
+
       gui.button("Remove", [=]() {
         persons.mut().erase(persons->begin() + i);
       });
@@ -33,7 +33,7 @@ void edit_list_1(datagui::Gui& gui) {
     }
     gui.end();
   }
-  if (gui.series()) {
+  if (gui.group()) {
     auto new_name = gui.variable<std::string>();
     gui.text_input(new_name);
 
@@ -70,16 +70,16 @@ void edit_list_1(datagui::Gui& gui) {
 }
 
 void edit_list_2(datagui::Gui& gui) {
-  if (!gui.series()) {
+  if (!gui.group()) {
     return;
   }
 
   auto keys = gui.variable<datagui::KeyList>();
-  if (gui.series()) {
+  if (gui.group()) {
     for (std::size_t i = 0; i < keys->size(); i++) {
       gui.args().horizontal();
       gui.key((*keys)[i]);
-      if (gui.series()) {
+      if (gui.group()) {
         gui.text_input("", {});
         gui.button("Remove", [=]() { keys.mut().remove(i); });
         gui.end();
@@ -87,7 +87,7 @@ void edit_list_2(datagui::Gui& gui) {
     }
     gui.end();
   }
-  if (gui.series()) {
+  if (gui.group()) {
     gui.button("Push", [=]() { keys.mut().append(); });
     gui.end();
   }
@@ -98,7 +98,7 @@ int main() {
   datagui::Gui gui;
 
   while (gui.running()) {
-    if (gui.series()) {
+    if (gui.group()) {
       edit_list_1(gui);
       edit_list_2(gui);
       gui.end();

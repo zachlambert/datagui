@@ -6,7 +6,7 @@ int main() {
   using datagui::Color;
 
   while (gui.running()) {
-    if (gui.series()) {
+    if (gui.group()) {
       gui.text_box("Number input");
       gui.number_input<int>(0, [](int value) {
         std::cout << "int: " << value << std::endl;

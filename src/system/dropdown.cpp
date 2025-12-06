@@ -22,4 +22,8 @@ void DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& tabs = element.tabs();
 }
 
+bool DropdownSystem::focus_leave(ElementPtr element, bool success) {
+  return true;
+}
+
 } // namespace datagui

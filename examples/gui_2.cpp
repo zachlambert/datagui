@@ -12,12 +12,12 @@ int main() {
   auto timer_paused = gui.variable<bool>(false);
 
   while (gui.running()) {
-    if (gui.series()) {
+    if (gui.group()) {
       gui.text_box("Welcome Screen!");
 
       auto name = gui.variable<std::string>("");
 
-      if (gui.series()) {
+      if (gui.group()) {
         gui.text_box("Name: ");
         gui.text_input(name);
         gui.end();
@@ -32,17 +32,17 @@ int main() {
         gui.text_box("Hello " + *name);
       }
 
-      gui.args().length_fixed(100).border();
-      if (gui.series()) {
+      gui.args().group_height_fixed(100).border();
+      if (gui.group()) {
         for (std::size_t i = 0; i < 10; i++) {
           gui.text_input("Item " + std::to_string(i), {});
         }
         gui.end();
       }
 
-      if (gui.series()) {
+      if (gui.group()) {
         const std::vector<std::string> colors = {"red", "green", "blue"};
-        gui.dropdown(colors, 0, [colors](int choice) {
+        gui.select(colors, 0, [colors](int choice) {
           std::cout << "Selected " << colors[choice] << "!" << std::endl;
         });
         gui.end();
@@ -55,22 +55,17 @@ int main() {
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
       });
 
-      if (gui.series()) {
+      if (gui.group()) {
         gui.checkbox(timer_paused);
         gui.text_box("Paused");
         gui.end();
       }
 
       gui.args().tight();
-      if (gui.section("Open me")) {
-        if (gui.series()) {
-          gui.text_box("Hello :)");
-          if (gui.labelled("Input")) {
-            gui.text_input("", {});
-            gui.end();
-          }
-          gui.end();
-        }
+      if (gui.collapsable("Open me")) {
+        gui.text_box("Hello :)");
+        gui.args().label("Input");
+        gui.text_input("", {});
         gui.end();
       }
 

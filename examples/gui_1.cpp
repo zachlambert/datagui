@@ -5,7 +5,7 @@ int main() {
   datagui::Gui gui;
 
   while (gui.running()) {
-    if (gui.series()) {
+    if (gui.group()) {
       std::cout << "Revisit" << std::endl;
       gui.text_box("Hello");
       gui.button("Click Me", []() { //

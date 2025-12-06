@@ -208,7 +208,6 @@ void layout_set_dependent_state(
 }
 
 void layout_render_scroll(
-    ConstElementPtr element,
     const Box2& content_box,
     const LayoutState& state,
     const std::shared_ptr<Theme>& theme,

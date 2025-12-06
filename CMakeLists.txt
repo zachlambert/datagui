@@ -62,9 +62,9 @@ add_library(datagui SHARED
 
   src/gui.cpp
 
-  src/datapack/edit.cpp
-  src/datapack/reader.cpp
-  src/datapack/writer.cpp
+  # src/datapack/edit.cpp
+  # src/datapack/reader.cpp
+  # src/datapack/writer.cpp
 )
 target_link_libraries(datagui
     PUBLIC GL glfw GLEW ${CMAKE_DL_LIBS} ${FREETYPE_LIBRARIES} datapack
