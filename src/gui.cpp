@@ -326,6 +326,7 @@ INSTANTIATE(std::uint8_t)
 #undef INSTANTIATE
 
 bool Gui::hsplit(float ratio) {
+  check_begin();
   bool is_new = current.expect(Type::Split, read_key());
   auto& split = current.split();
   args_.apply(current);
@@ -345,6 +346,7 @@ bool Gui::hsplit(float ratio) {
 }
 
 bool Gui::vsplit(float ratio) {
+  check_begin();
   bool is_new = current.expect(Type::Split, read_key());
   auto& split = current.split();
   args_.apply(current);

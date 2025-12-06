@@ -171,6 +171,9 @@ struct Split {
   // Args
   bool fixed = true;
 
+  // Dependent
+  Box2 divider_box;
+
   // State
   float ratio = 0.5;
 };

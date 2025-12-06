@@ -124,6 +124,7 @@ int Tree::emplace_type(Type type) {
     HANDLE(Popup, popup);
     HANDLE(Select, select);
     HANDLE(Slider, slider);
+    HANDLE(Split, split);
     HANDLE(Tabs, tabs);
     HANDLE(TextBox, text_box);
     HANDLE(TextInput, text_input);
@@ -152,6 +153,7 @@ void Tree::pop_type(Type type, std::size_t index) {
     HANDLE(Popup, popup);
     HANDLE(Select, select);
     HANDLE(Slider, slider);
+    HANDLE(Split, split);
     HANDLE(Tabs, tabs);
     HANDLE(TextBox, text_box);
     HANDLE(TextInput, text_input);

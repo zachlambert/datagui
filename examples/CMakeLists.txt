@@ -10,6 +10,7 @@ create_example(gui_2)
 create_example(gui_3)
 create_example(gui_4)
 create_example(gui_5)
+create_example(gui_6)
 
 # create_example(datapack)
 

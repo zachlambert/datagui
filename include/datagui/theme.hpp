@@ -46,6 +46,10 @@ struct Theme {
   float color_picker_value_scale_width = 0;
 
   Color header_color = Color::Black();
+
+  float split_divider_width = 0;
+  float split_divider_line_width = 0;
+  Color split_divider_color = Color::Black();
 };
 
 Theme theme_default();
