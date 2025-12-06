@@ -4,31 +4,63 @@ namespace datagui {
 
 void TextInputSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& text_input = element.text_input();
+  auto& text_input = element.text_input();
+
+  if (!text_input.label.empty()) {
+    text_input.label_size = fm->text_size(
+                                text_input.label,
+                                theme->text_font,
+                                theme->text_size,
+                                LengthWrap()) +
+                            Vec2::uniform(2 * theme->text_padding);
+  }
 
   const std::string& text = state.focused ? active_text : text_input.text;
+  Length text_length = text_input.width
+                           ? *text_input.width
+                           : LengthFixed(theme->text_input_default_width);
+  Vec2 text_size =
+      fm->text_size(text, theme->text_font, theme->text_size, text_length);
+
   state.fixed_size =
+      text_size +
       2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
+  state.fixed_size.x += text_input.label_size.x;
   state.dynamic_size = Vec2();
   state.floating = 0;
 
-  Vec2 text_size =
-      fm->text_size(text, theme->text_font, theme->text_size, text_input.width);
-  state.fixed_size.y += text_size.y;
-
-  if (auto width = std::get_if<LengthFixed>(&text_input.width)) {
-    state.fixed_size.x += width->value;
-  } else {
-    state.fixed_size.x += text_size.x;
-    if (auto width = std::get_if<LengthDynamic>(&text_input.width)) {
-      state.dynamic_size.x = width->weight;
+  if (text_input.width) {
+    auto dynamic = std::get_if<LengthDynamic>(&(*text_input.width));
+    if (dynamic) {
+      state.dynamic_size.x = dynamic->weight;
     }
   }
+}
+
+void TextInputSystem::set_dependent_state(ElementPtr element) {
+  const auto& state = element.state();
+  auto& text_input = element.text_input();
+
+  text_input.text_input_box = state.box();
+  text_input.text_input_box.lower.x += text_input.label_size.x;
 }
 
 void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& text_input = element.text_input();
+
+  if (!text_input.label.empty()) {
+    Vec2 offset;
+    offset.x = theme->text_padding;
+    offset.y = theme->text_padding + theme->input_border_width;
+    renderer.queue_text(
+        state.position + offset,
+        text_input.label,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthWrap());
+  }
 
   const std::string& text = state.focused ? active_text : text_input.text;
 
@@ -40,14 +72,18 @@ void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 
   renderer.queue_box(
-      state.box(),
+      text_input.text_input_box,
       theme->input_color_bg,
       theme->input_border_width,
       border_color);
 
   Vec2 text_position =
-      state.position +
+      text_input.text_input_box.lower +
       Vec2::uniform(theme->input_border_width + theme->text_padding);
+
+  Length text_length = text_input.width
+                           ? *text_input.width
+                           : LengthFixed(theme->text_input_default_width);
 
   if (state.focused) {
     render_selection(
@@ -58,7 +94,7 @@ void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
         theme->text_cursor_color,
         theme->text_highlight_color,
         theme->text_cursor_width,
-        text_input.width,
+        text_length,
         renderer);
   }
 
@@ -75,7 +111,7 @@ void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
       theme->text_font,
       theme->text_size,
       theme->text_color,
-      text_input.width);
+      text_length);
   renderer.pop_mask();
 }
 
@@ -83,21 +119,24 @@ void TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   const auto& text_input = element.text_input();
 
-  Vec2 text_origin =
-      state.position +
-      Vec2::uniform(theme->input_border_width + theme->text_padding);
-
-  const auto& font = fm->font_structure(theme->text_font, theme->text_size);
-
   if (event.action == MouseAction::Press) {
+    if (!text_input.text_input_box.contains(event.position)) {
+      return;
+    }
     active_text = text_input.text;
   }
 
-  std::size_t cursor_pos = find_cursor(
-      font,
-      active_text,
-      text_input.width,
-      event.position - text_origin);
+  Vec2 text_origin =
+      text_input.text_input_box.lower +
+      Vec2::uniform(theme->input_border_width + theme->text_padding);
+
+  const auto& font = fm->font_structure(theme->text_font, theme->text_size);
+  Length text_length = text_input.width
+                           ? *text_input.width
+                           : LengthFixed(theme->text_input_default_width);
+
+  std::size_t cursor_pos =
+      find_cursor(font, active_text, text_length, event.position - text_origin);
 
   if (event.action == MouseAction::Press) {
     active_selection.reset(cursor_pos);

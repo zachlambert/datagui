@@ -4,43 +4,47 @@ namespace datagui {
 
 void SelectSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& select = element.select();
+  auto& select = element.select();
 
-  const Vec2 none_size =
-      fm->text_size("<none>", theme->text_font, theme->text_size, LengthWrap());
+  if (!select.label.empty()) {
+    select.label_size = fm->text_size(
+                            select.label,
+                            theme->text_font,
+                            theme->text_size,
+                            LengthWrap()) +
+                        Vec2::uniform(2 * theme->text_padding);
+  } else {
+    select.label_size = Vec2();
+  }
 
-  float max_item_width = none_size.x;
+  float max_item_width = theme->select_min_width;
   for (const auto& choice : select.choices) {
     Vec2 choice_size =
         fm->text_size(choice, theme->text_font, theme->text_size, LengthWrap());
     max_item_width = std::max(max_item_width, choice_size.x);
   }
 
-  state.fixed_size = Vec2();
+  float padding = theme->text_padding + theme->input_border_width;
+  state.fixed_size.x = select.label_size.x + max_item_width + 2 * padding;
+  state.fixed_size.y =
+      fm->text_height(theme->text_font, theme->text_size) + 2 * padding;
   state.dynamic_size = Vec2();
-
-  if (auto width = std::get_if<LengthFixed>(&select.width)) {
-    state.fixed_size.x = std::min(max_item_width, width->value);
-  } else if (std::get_if<LengthWrap>(&select.width)) {
-    state.fixed_size.x = max_item_width;
-  } else if (auto width = std::get_if<LengthDynamic>(&select.width)) {
-    state.dynamic_size.x = width->weight;
-  }
-  state.fixed_size +=
-      2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
-  state.fixed_size.y += fm->text_height(theme->text_font, theme->text_size);
 
   if (!select.choices.empty()) {
     state.floating = select.open;
 
-    Vec2 select_size;
-    select_size.x = state.fixed_size.x;
-    select_size.y = select.choices.size() *
-                        fm->text_height(theme->text_font, theme->text_size) +
-                    (select.choices.size() + 1) *
-                        (theme->input_border_width + theme->text_padding);
-    state.floating_type = FloatingTypeRelative(Vec2(), select_size);
+    Vec2 floating_size;
+    floating_size.x = max_item_width + 2 * padding;
+    floating_size.y = select.choices.size() *
+                          fm->text_height(theme->text_font, theme->text_size) +
+                      (select.choices.size() + 1) *
+                          (theme->input_border_width + theme->text_padding);
 
+    Vec2 floating_offset;
+    floating_offset.x = select.label_size.x;
+    floating_offset.y = state.fixed_size.y;
+
+    state.floating_type = FloatingTypeRelative(floating_offset, floating_size);
   } else {
     state.floating = false;
   }
@@ -48,65 +52,60 @@ void SelectSystem::set_input_state(ElementPtr element) {
 
 void SelectSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& select = element.select();
+  auto& select = element.select();
 
-  state.float_box = state.box();
-  if (!state.floating) {
-    return;
-  }
-
-  state.float_box.upper.y +=
-      (select.choices.size() - 1) *
-      (fm->text_height(theme->text_font, theme->text_size) +
-       2.f * theme->text_padding + theme->input_border_width);
+  select.select_box = state.box();
+  select.select_box.lower.x += select.label_size.x;
 }
 
 void SelectSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& select = element.select();
 
-  if (!select.open || select.choices.empty()) {
-    renderer.queue_box(
-        state.box(),
-        theme->input_color_bg,
-        theme->input_border_width,
-        theme->input_color_border);
-
-    std::string text;
-    if (select.choices.empty() || select.choice == -1) {
-      text = "<none>";
-    } else {
-      text = select.choices[select.choice];
-    }
-
+  if (!select.label.empty()) {
+    Vec2 offset(
+        theme->text_padding,
+        theme->text_padding + theme->input_border_width);
     renderer.queue_text(
-        state.position +
-            Vec2::uniform(theme->input_border_width + theme->text_padding),
-        text,
+        state.position + offset,
+        select.label,
         theme->text_font,
         theme->text_size,
         theme->text_color,
-        LengthFixed(
-            state.size.x -
-            2.f * (theme->input_border_width + theme->text_padding)));
+        LengthWrap());
+  }
+
+  const Color& select_color =
+      select.open ? theme->input_color_bg_active : theme->input_color_bg;
+  renderer.queue_box(
+      select.select_box,
+      select_color,
+      theme->input_border_width,
+      theme->input_color_border);
+
+  if (!select.choices.empty() && select.choice >= 0) {
+    Vec2 offset =
+        Vec2(select.label_size.x, 0) +
+        Vec2::uniform(theme->text_padding + theme->input_border_width);
+    renderer.queue_text(
+        select.select_box.lower + offset,
+        select.choices[select.choice],
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthWrap());
+  }
+
+  if (!select.open) {
     return;
   }
 
-  Vec2 offset;
-
+  Vec2 position = state.float_box.lower;
+  Vec2 size = select.select_box.size();
   for (int i = 0; i < select.choices.size(); i++) {
-    Vec2 position = state.position + offset;
-    Vec2 size = Vec2(
-        state.size.x,
-        fm->text_height(theme->text_font, theme->text_size) +
-            2.f * (theme->text_padding + theme->input_border_width));
+    const Color& bg_color = (i == select.choice) ? theme->input_color_bg_active
+                                                 : theme->input_color_bg;
 
-    Color bg_color;
-    if (i == select.choice) {
-      bg_color = theme->input_color_bg_active;
-    } else {
-      bg_color = theme->input_color_bg;
-    }
     renderer.queue_box(
         Box2(position, position + size),
         bg_color,
@@ -124,8 +123,8 @@ void SelectSystem::render(ConstElementPtr element, Renderer& renderer) {
             state.size.x -
             2.f * (theme->input_border_width + theme->text_padding)));
 
-    offset.y += theme->input_border_width + 2 * theme->text_padding +
-                fm->text_height(theme->text_font, theme->text_size);
+    position.y += theme->input_border_width + 2 * theme->text_padding +
+                  fm->text_height(theme->text_font, theme->text_size);
   }
 }
 

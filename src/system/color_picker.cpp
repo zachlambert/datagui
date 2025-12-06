@@ -11,9 +11,22 @@ ColorPickerSystem::ColorPickerSystem(
 
 void ColorPickerSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& color_picker = element.color_picker();
+  auto& color_picker = element.color_picker();
 
   state.fixed_size = Vec2::uniform(theme->color_picker_icon_size);
+  if (color_picker.label.empty()) {
+    color_picker.label_size = fm->text_size(
+                                  color_picker.label,
+                                  theme->text_font,
+                                  theme->text_size,
+                                  LengthWrap()) +
+                              Vec2::uniform(2 * theme->text_padding);
+    state.fixed_size.x += color_picker.label_size.x;
+    state.fixed_size.y =
+        std::max(state.fixed_size.y, color_picker.label_size.y);
+  } else {
+    color_picker.label_size = Vec2();
+  }
   state.dynamic_size = Vec2();
 
   Vec2 float_offset(
@@ -54,8 +67,21 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& color_picker = element.color_picker();
 
+  if (!color_picker.label.empty()) {
+    renderer.queue_text(
+        state.position + Vec2::uniform(theme->text_padding),
+        color_picker.label,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthWrap());
+  }
+
+  Box2 icon_box = state.box();
+  icon_box.lower.x += color_picker.label_size.x;
   renderer
       .queue_box(state.box(), color_picker.value, 2, theme->input_color_border);
+
   if (!state.floating) {
     return;
   }

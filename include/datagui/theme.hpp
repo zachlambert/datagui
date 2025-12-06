@@ -50,6 +50,10 @@ struct Theme {
   float split_divider_width = 0;
   Color split_divider_color = Color::Black();
   Color split_divider_color_active = Color::Black();
+
+  float select_min_width = 0;
+
+  float text_input_default_width = 0;
 };
 
 Theme theme_default();

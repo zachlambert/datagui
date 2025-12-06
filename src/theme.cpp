@@ -50,6 +50,10 @@ Theme theme_default() {
   theme.split_divider_color = Color::Gray(0.85);
   theme.split_divider_color_active = Color::Gray(0.5);
 
+  theme.select_min_width = 80;
+
+  theme.text_input_default_width = 100;
+
   return theme;
 }
 

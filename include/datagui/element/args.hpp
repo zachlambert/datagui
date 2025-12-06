@@ -129,6 +129,15 @@ public:
     return *this;
   }
 
+  Args& text_input_expand(float weight = 1) {
+    *text_input_width_ = LengthDynamic(weight);
+    return *this;
+  }
+  Args& text_input_width(float width) {
+    *text_input_width_ = LengthFixed(width);
+    return *this;
+  }
+
 private:
   void apply(ElementPtr element);
 
@@ -143,6 +152,7 @@ private:
   Arg<Layout> layout_ = {};
   ArgOpt<float> slider_length_;
   Arg<bool> split_fixed_ = false;
+  ArgOpt<Length> text_input_width_;
 
   friend class Gui;
 };

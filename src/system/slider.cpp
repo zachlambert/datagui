@@ -4,13 +4,24 @@ namespace datagui {
 
 void SliderSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& slider = element.slider();
+  auto& slider = element.slider();
+
+  if (!slider.label.empty()) {
+    slider.label_size = fm->text_size(
+                            slider.label,
+                            theme->text_font,
+                            theme->text_size,
+                            LengthWrap()) +
+                        Vec2::uniform(2 * theme->text_padding);
+  } else {
+    slider.label_size = Vec2();
+  }
 
   float slider_length =
       slider.length ? *slider.length : theme->slider_default_length;
 
-  state.fixed_size.x = slider_length;
-  state.fixed_size.y = theme->slider_height;
+  state.fixed_size.x = slider_length + slider.label_size.x;
+  state.fixed_size.y = std::max(theme->slider_height, slider.label_size.y);
   state.dynamic_size = Vec2();
   state.floating = false;
 
@@ -26,17 +37,34 @@ void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& slider = element.slider();
 
+  if (!slider.label.empty()) {
+    Vec2 offset;
+    offset.x = theme->text_padding;
+    offset.y = (state.size.y - slider.label_size.y) / 2 + theme->text_padding;
+    renderer.queue_text(
+        state.position + offset,
+        slider.label,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthWrap());
+  }
+
+  Vec2 bg_position = state.position;
+  bg_position.x += slider.label_size.x;
+  bg_position.y += (state.size.y - theme->slider_height) / 2;
+
   float slider_length =
       slider.length ? *slider.length : theme->slider_default_length;
   Vec2 bg_size(slider_length, theme->slider_height);
 
   renderer.queue_box(
-      Box2(state.position, state.position + bg_size),
+      Box2(bg_position, bg_position + bg_size),
       theme->slider_bg_color,
       theme->slider_border_width,
       theme->slider_border_color);
 
-  Vec2 slider_pos = state.position + Vec2::uniform(theme->slider_border_width);
+  Vec2 slider_pos = bg_position + Vec2::uniform(theme->slider_border_width);
   slider_pos.x += theme->slider_width / 2;
   float inner_width =
       slider_length - theme->slider_border_width * 2 - theme->slider_width;
@@ -59,7 +87,7 @@ void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
 
   renderer.queue_box(Box2(slider_pos, slider_pos + slider_size), slider_color);
 
-  Vec2 text_pos = state.position;
+  Vec2 text_pos = bg_position;
   text_pos.x += slider_length + theme->text_padding;
   text_pos.y += (theme->slider_height / 2) -
                 (fm->text_height(theme->text_font, theme->text_size) / 2);
@@ -79,6 +107,10 @@ void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   if (!slider.held && event.action == MouseAction::Press) {
     float slider_length =
         slider.length ? *slider.length : theme->slider_default_length;
+
+    Vec2 bg_position = state.position;
+    bg_position.x += slider.label_size.x;
+    bg_position.y += (state.size.y - theme->slider_height) / 2;
 
     Box2 slider_box;
     slider_box.lower =
