@@ -32,7 +32,7 @@ int main() {
         gui.text_box("Hello " + *name);
       }
 
-      gui.args().group_height_fixed(100).border();
+      gui.args().height_fixed(100).border();
       if (gui.group()) {
         for (std::size_t i = 0; i < 10; i++) {
           gui.text_input("Item " + std::to_string(i), {});

@@ -21,23 +21,35 @@ void SplitSystem::set_input_state(ElementPtr element) {
     a_dynamic_size = first.state().dynamic_size;
     auto second = first.next();
     if (second) {
-      b_fixed_size = first.state().fixed_size;
-      b_dynamic_size = first.state().dynamic_size;
+      b_fixed_size = second.state().fixed_size;
+      b_dynamic_size = second.state().dynamic_size;
     }
   }
 
   if (split.direction == Direction::Horizontal) {
-    state.fixed_size.x = std::max(a_fixed_size.x, b_fixed_size.x);
     state.fixed_size.y =
         a_fixed_size.y + b_fixed_size.y + theme->split_divider_width;
-    state.dynamic_size.x = std::max(a_dynamic_size.x, b_dynamic_size.x);
     state.dynamic_size.y = 1;
+
+    state.fixed_size.x = std::max(a_fixed_size.x, b_fixed_size.x);
+    if (split.fixed_size.x > 0) {
+      state.fixed_size.x = std::max(state.fixed_size.x, split.fixed_size.x);
+      state.dynamic_size.x = 0;
+    } else {
+      state.dynamic_size.x = 1;
+    }
   } else {
     state.fixed_size.x =
         a_fixed_size.x + b_fixed_size.x + theme->split_divider_width;
-    state.fixed_size.y = std::max(a_fixed_size.y, b_fixed_size.y);
     state.dynamic_size.x = 1;
-    state.dynamic_size.y = std::max(a_dynamic_size.y, b_dynamic_size.y);
+
+    state.fixed_size.y = std::max(a_fixed_size.y, b_fixed_size.y);
+    if (split.fixed_size.y > 0) {
+      state.fixed_size.y = std::max(state.fixed_size.y, split.fixed_size.y);
+      state.dynamic_size.y = 0;
+    } else {
+      state.dynamic_size.y = 1;
+    }
   }
 }
 
@@ -53,8 +65,6 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   }
 
   float div_size = theme->split_divider_width;
-  float line_offset =
-      (theme->split_divider_width - theme->split_divider_line_width) / 2;
 
   first.state().position = element.state().position;
   if (split.direction == Direction::Horizontal) {
@@ -65,7 +75,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
 
     auto& f_state = first.state();
     f_state.position = state.position;
-    f_state.size = f_state.fixed_size;
+    f_state.size = minimum(f_state.fixed_size, Vec2(state.size.x, height_f));
     if (f_state.dynamic_size.x > 0) {
       f_state.size.x = state.size.x;
     }
@@ -74,8 +84,8 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
     }
 
     split.divider_box = state.box();
-    split.divider_box.lower.y += (height_f + line_offset);
-    split.divider_box.upper.y -= (height_s + line_offset);
+    split.divider_box.lower.y += height_f;
+    split.divider_box.upper.y -= height_s;
 
     auto second = first.next();
     if (!second) {
@@ -84,7 +94,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
     auto& s_state = second.state();
     s_state.position = state.position;
     s_state.position.y += height_f + div_size;
-    s_state.size = s_state.fixed_size;
+    f_state.size = minimum(s_state.fixed_size, Vec2(state.size.x, height_s));
     if (s_state.dynamic_size.x > 0) {
       s_state.size.x = state.size.x;
     }
@@ -101,6 +111,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
     auto& f_state = first.state();
     f_state.position = state.position;
     f_state.size = f_state.fixed_size;
+    f_state.size = minimum(f_state.fixed_size, Vec2(width_f, state.size.y));
     if (f_state.dynamic_size.x > 0) {
       f_state.size.x = width_f;
     }
@@ -109,8 +120,8 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
     }
 
     split.divider_box = state.box();
-    split.divider_box.lower.x += (width_f + line_offset);
-    split.divider_box.upper.x -= (width_s + line_offset);
+    split.divider_box.lower.x += width_f;
+    split.divider_box.upper.x -= width_s;
 
     auto second = first.next();
     if (!second) {
@@ -119,7 +130,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
     auto& s_state = second.state();
     s_state.position = state.position;
     s_state.position.x += width_f + div_size;
-    s_state.size = s_state.fixed_size;
+    s_state.size = minimum(s_state.fixed_size, Vec2(width_s, state.size.y));
     if (s_state.dynamic_size.x > 0) {
       s_state.size.x = width_s;
     }
@@ -131,7 +142,41 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
 
 void SplitSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& split = element.split();
-  renderer.queue_box(split.divider_box, theme->split_divider_color);
+  const Color& color = split.held ? theme->split_divider_color_active
+                                  : theme->split_divider_color;
+  renderer.queue_box(split.divider_box, color);
+}
+
+void SplitSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+  const auto& state = element.state();
+  auto& split = element.split();
+
+  if (event.action == MouseAction::Release) {
+    split.held = false;
+  }
+  if (event.action == MouseAction::Press) {
+    if (split.divider_box.contains(event.position)) {
+      // Allow held=true for fixed split too, to visually show it is held,
+      // but don't update the ratio
+      split.held = true;
+    }
+    return;
+  }
+  if (!split.held || split.fixed) {
+    return;
+  }
+
+  if (split.direction == Direction::Horizontal) {
+    split.ratio = std::clamp(
+        (event.position.y - state.position.y) / state.size.y,
+        0.f,
+        1.f);
+  } else {
+    split.ratio = std::clamp(
+        (event.position.x - state.position.x) / state.size.x,
+        0.f,
+        1.f);
+  }
 }
 
 } // namespace datagui

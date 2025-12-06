@@ -19,10 +19,14 @@ void GroupSystem::set_input_state(ElementPtr element) {
   if (group.fixed_size.x > 0) {
     state.fixed_size.x = group.fixed_size.x;
     state.dynamic_size.x = 0;
+  } else {
+    state.dynamic_size.x = std::max(state.dynamic_size.x, 1.f);
   }
   if (group.fixed_size.y > 0) {
     state.fixed_size.y = group.fixed_size.y;
     state.dynamic_size.y = 0;
+  } else {
+    state.dynamic_size.y = std::max(state.dynamic_size.y, 1.f);
   }
 }
 

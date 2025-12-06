@@ -103,11 +103,11 @@ public:
     return *this;
   }
 
-  Args& group_width_fixed(float length) {
+  Args& width_fixed(float length) {
     fixed_size_->x = length;
     return *this;
   }
-  Args& group_height_fixed(float length) {
+  Args& height_fixed(float length) {
     fixed_size_->y = length;
     return *this;
   }
@@ -117,10 +117,15 @@ public:
     return *this;
   }
 
-  // Slider
+  // Other
 
   Args& slider_length(float length) {
     *slider_length_ = length;
+    return *this;
+  }
+
+  Args& split_fixed() {
+    *split_fixed_ = true;
     return *this;
   }
 
@@ -137,6 +142,7 @@ private:
   Arg<Vec2> fixed_size_ = {};
   Arg<Layout> layout_ = {};
   ArgOpt<float> slider_length_;
+  Arg<bool> split_fixed_ = false;
 
   friend class Gui;
 };

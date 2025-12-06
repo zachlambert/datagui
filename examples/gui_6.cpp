@@ -1,5 +1,4 @@
 #include <datagui/gui.hpp>
-#include <iostream>
 
 int main() {
   datagui::Gui gui;
@@ -12,9 +11,20 @@ int main() {
         gui.text_box("Second");
         gui.end();
       }
-      if (gui.group()) {
+      if (gui.hsplit(0.5)) {
         gui.text_box("Third");
-        gui.text_box("Fourth");
+        gui.args().split_fixed();
+        if (gui.vsplit(0.6)) {
+          if (gui.group()) {
+            gui.text_box("Fourth");
+            for (std::size_t i = 0; i < 20; i++) {
+              gui.text_box("Fourth [" + std::to_string(i) + "]");
+            }
+            gui.end();
+          }
+          gui.text_box("Fifth");
+          gui.end();
+        }
         gui.end();
       }
       gui.end();

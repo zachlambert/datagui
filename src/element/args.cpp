@@ -56,6 +56,9 @@ void Args::apply(ElementPtr element) {
     break;
   }
   case Type::Split: {
+    auto& split = element.split();
+    split_fixed_.consume(split.fixed);
+    fixed_size_.consume(split.fixed_size);
     break;
   }
   case Type::Tabs: {

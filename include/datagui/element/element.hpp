@@ -170,12 +170,14 @@ struct Split {
 
   // Args
   bool fixed = true;
+  Vec2 fixed_size;
 
   // Dependent
   Box2 divider_box;
 
   // State
   float ratio = 0.5;
+  bool held = false;
 };
 
 struct Tabs {

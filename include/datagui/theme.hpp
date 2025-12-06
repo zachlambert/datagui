@@ -48,8 +48,8 @@ struct Theme {
   Color header_color = Color::Black();
 
   float split_divider_width = 0;
-  float split_divider_line_width = 0;
   Color split_divider_color = Color::Black();
+  Color split_divider_color_active = Color::Black();
 };
 
 Theme theme_default();

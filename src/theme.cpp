@@ -46,9 +46,9 @@ Theme theme_default() {
 
   theme.header_color = Color::Gray(0.6);
 
-  theme.split_divider_width = 10;
-  theme.split_divider_line_width = 4;
-  theme.split_divider_color = Color::Gray(0.6);
+  theme.split_divider_width = 8;
+  theme.split_divider_color = Color::Gray(0.85);
+  theme.split_divider_color_active = Color::Gray(0.5);
 
   return theme;
 }
