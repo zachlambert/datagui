@@ -2,6 +2,7 @@
 
 #include "datagui/geometry.hpp"
 #include <variant>
+#include <vector>
 
 namespace datagui {
 
@@ -30,13 +31,22 @@ struct Layout {
   int cols = 0;
   XAlignment x_alignment = XAlignment::Left;
   YAlignment y_alignment = YAlignment::Center;
-  Length width = LengthWrap();
-  Length height = LengthDynamic(1);
+  bool tight = false;
 };
 
-struct ScrollState {
-  float overrun = 0;
-  float scroll_pos = 0;
+struct InputSizes {
+  float fixed;
+  float dynamic;
+};
+
+struct LayoutState {
+  std::vector<InputSizes> row_input_sizes;
+  std::vector<InputSizes> col_input_sizes;
+
+  Vec2 content_fixed_size;
+  Vec2 content_dynamic_size;
+  Vec2 content_overrun;
+  Vec2 scroll_pos;
 };
 
 class BoxDims {

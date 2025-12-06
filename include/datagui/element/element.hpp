@@ -66,7 +66,7 @@ struct Collapsable {
 
   // State
   bool open = false;
-  ScrollState scroll;
+  LayoutState layout_state;
 };
 
 struct ColorPicker {
@@ -109,7 +109,7 @@ struct Group {
   float content_length = 0;
 
   // State
-  ScrollState scroll;
+  LayoutState layout_state;
 };
 
 struct Popup {

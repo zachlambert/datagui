@@ -55,10 +55,6 @@ public:
     *border_ = true;
     return *this;
   }
-  Args& tight() {
-    *tight_ = true;
-    return *this;
-  }
   Args& always() {
     *always_ = true;
     return *this;
@@ -76,6 +72,7 @@ public:
     layout_->x_alignment = XAlignment::Left;
     layout_->width = LengthDynamic(1);
     layout_->height = LengthWrap();
+    return *this;
   }
   Args& horizontal() {
     layout_->rows = 1;
@@ -83,6 +80,7 @@ public:
     layout_->y_alignment = YAlignment::Center;
     layout_->width = LengthWrap();
     layout_->height = LengthDynamic(1);
+    return *this;
   }
   Args& grid(int rows, int cols) {
     if (rows == -1 && cols == -1) {
@@ -102,15 +100,19 @@ public:
     } else {
       layout_->width = LengthWrap();
     }
+    return *this;
   }
   Args& align_left() {
     layout_->x_alignment = XAlignment::Left;
+    return *this;
   }
   Args& align_center_h() {
     layout_->x_alignment = XAlignment::Left;
+    return *this;
   }
   Args& align_right() {
     layout_->x_alignment = XAlignment::Right;
+    return *this;
   }
 
   Args& width_fixed(float length) {
@@ -119,6 +121,11 @@ public:
   }
   Args& height_fixed(float length) {
     layout_->height = LengthFixed(length);
+    return *this;
+  }
+
+  Args& tight() {
+    layout_->tight = true;
     return *this;
   }
 
@@ -137,7 +144,6 @@ private:
   ArgOpt<Color> bg_color_;
   ArgOpt<Color> header_color_;
   Arg<bool> border_ = false;
-  Arg<bool> tight_ = false;
   Arg<bool> always_ = false;
   Arg<std::string> label_ = {};
   Arg<Layout> layout_ = {};
