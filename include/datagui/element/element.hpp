@@ -106,7 +106,7 @@ struct Group {
   bool tight = false;
 
   // Dependent
-  float content_length = 0;
+  Box2 content_box;
 
   // State
   LayoutState layout_state;

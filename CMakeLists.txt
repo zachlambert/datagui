@@ -40,6 +40,8 @@ add_library(datagui SHARED
   src/input/number_input.cpp
   src/input/text_selection.cpp
 
+  src/system_utils/layout.cpp
+
   src/system/button.cpp
   src/system/checkbox.cpp
   src/system/collapsable.cpp
