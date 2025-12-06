@@ -7,8 +7,8 @@
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/writer.hpp"
 #include "datagui/element/args.hpp"
+#include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
-#include "datagui/system/system.hpp"
 #include "datagui/theme.hpp"
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
@@ -51,6 +51,8 @@ public:
   }
   void checkbox(const Var<bool>& var);
 
+  bool collapsable(const std::string& label);
+
   void color_picker(
       const Color& initial_value,
       const std::function<void(const Color&)>& callback);
@@ -61,30 +63,20 @@ public:
     });
   }
 
-  void dropdown(
+  bool dropdown();
+
+  bool group();
+
+  bool popup(const Var<bool>& open, const std::string& title);
+
+  void select(
       const std::vector<std::string>& choices,
       int initial_choice,
       const std::function<void(int)>& callback);
-  void dropdown(const std::vector<std::string>& choices, int& choice) {
-    dropdown(choices, choice, [&choice](int new_choice) {
-      choice = new_choice;
-    });
+  void select(const std::vector<std::string>& choices, int& choice) {
+    select(choices, choice, [&choice](int new_choice) { choice = new_choice; });
   }
-  void dropdown(
-      const std::vector<std::string>& choices,
-      const Var<int>& choice);
-
-  bool floating(
-      const Var<bool>& open,
-      const std::string& title,
-      float width,
-      float height);
-
-  bool labelled(const std::string& label);
-
-  bool section(const std::string& label);
-
-  bool series();
+  void select(const std::vector<std::string>& choices, const Var<int>& choice);
 
   template <typename T>
   void slider(
@@ -98,6 +90,11 @@ public:
   void slider(T& value, T lower, T upper) {
     slider(value, lower, upper, [&value](T new_value) { value = new_value; });
   }
+
+  bool hsplit(float ratio);
+  bool vsplit(float ratio);
+
+  bool tabs(const std::vector<std::string>& labels);
 
   void text_input(
       const std::string& initial_value,
@@ -169,7 +166,7 @@ public:
   void edit(const std::function<void(const T&)>& callback) {
     bool is_new = !current;
     args_.tight();
-    if (!series()) {
+    if (!group()) {
       return;
     }
     auto schema = variable<datapack::Schema>(
@@ -186,7 +183,7 @@ public:
   void edit(const Var<T>& var) {
     bool is_new = !current;
     args_.tight();
-    if (!series()) {
+    if (!group()) {
       return;
     }
 

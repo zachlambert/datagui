@@ -22,14 +22,12 @@ enum class Type {
   Select,
   Slider,
   Split,
+  Tabs,
   TextBox,
   TextInput,
   ViewportPtr,
 };
-static constexpr std::size_t TypeCount = 12;
-
-// =================================================================
-// Primitive state-less elements
+static constexpr std::size_t TypeCount = 14;
 
 struct Button {
   // Definition
@@ -44,24 +42,6 @@ struct Button {
   bool down = false;
 };
 
-struct TextBox {
-  // Definition
-  std::string text;
-
-  // Args
-  std::optional<Color> text_color;
-  int text_size = 0;
-};
-
-struct ViewportPtr {
-  float width;
-  float height;
-  std::unique_ptr<Viewport> viewport;
-};
-
-// =================================================================
-// Primitive input elements
-
 struct Checkbox {
   // Definition
   std::function<void(bool)> callback;
@@ -69,6 +49,24 @@ struct Checkbox {
   // State
   bool checked = false;
   int var_version = 0;
+};
+
+struct Collapsable {
+  // Args
+  Layout layout;
+  std::string label;
+  std::optional<Color> header_color;
+  std::optional<Color> bg_color;
+  bool border = false;
+  bool tight = false;
+
+  // Dependent
+  Vec2 header_size;
+  float content_length = 0;
+
+  // State
+  bool open = false;
+  ScrollState scroll;
 };
 
 struct ColorPicker {
@@ -86,6 +84,53 @@ struct ColorPicker {
   bool modified = false;
   bool wheel_held = false;
   bool scale_held = false;
+};
+
+struct Dropdown {
+  // Definition
+  Direction direction;
+  Layout layout;
+
+  // Args
+  std::optional<Color> bg_color;
+
+  // State
+  bool open = false;
+};
+
+struct Group {
+  // Args
+  Layout layout;
+  std::optional<Color> bg_color;
+  bool border = false;
+  bool tight = false;
+
+  // Dependent
+  float content_length = 0;
+
+  // State
+  ScrollState scroll;
+};
+
+struct Popup {
+  // Definition
+  std::string title;
+  std::function<void()> closed_callback;
+
+  // Args
+  Layout layout;
+  float width;
+  float height;
+  std::optional<Color> header_color;
+  std::optional<Color> bg_color;
+
+  // Dependent
+  Box2 title_bar_box;
+  float title_bar_text_width;
+  Box2 close_button_box;
+
+  // State
+  bool open = false;
 };
 
 struct Select {
@@ -115,6 +160,25 @@ struct Slider {
   bool held = false;
 };
 
+struct Split {
+  // Definition
+  Direction direction = Direction::Vertical;
+
+  // Args
+  bool fixed = true;
+
+  // State
+  float ratio = 0.5;
+};
+
+struct Tabs {
+  // Definition
+  std::vector<std::string> labels;
+
+  // State
+  std::size_t tab = 0;
+};
+
 struct TextInput {
   // Definition
   std::function<void(const std::string&)> callback;
@@ -129,82 +193,19 @@ struct TextInput {
   int var_version = 0;
 };
 
-// =================================================================
-// Containers
-
-// Creates a new region within a container that is collapsable
-struct Collapsable {
-  // Args
-  Layout layout;
-  std::string label;
-  std::optional<Color> header_color;
-  std::optional<Color> bg_color;
-  bool border = false;
-  bool tight = false;
-
-  // Dependent
-  Vec2 header_size;
-  float content_length = 0;
-
-  // State
-  bool open = false;
-  ScrollState scroll;
-};
-
-// Creates a dropdown box adjacent to itself
-struct Dropdown {
+struct TextBox {
   // Definition
-  Layout layout;
+  std::string text;
 
   // Args
-  std::optional<Color> bg_color;
-
-  // State
-  bool open = false;
+  std::optional<Color> text_color;
+  int text_size = 0;
 };
 
-// Creates a new region within a container
-struct Group {
-  // Args
-  Layout layout;
-  std::optional<Color> bg_color;
-  bool border = false;
-  bool tight = false;
-
-  // Dependent
-  float content_length = 0;
-
-  // State
-  ScrollState scroll;
-};
-
-// Creates a popup window
-struct Popup {
-  // Definition
-  std::string title;
-  Layout layout;
+struct ViewportPtr {
   float width;
   float height;
-  std::function<void()> closed_callback;
-
-  // Args
-  std::optional<Color> header_color;
-  std::optional<Color> bg_color;
-
-  // Dependent
-  Box2 title_bar_box;
-  float title_bar_text_width;
-  Box2 close_button_box;
-
-  // State
-  bool open = false;
-};
-
-// Splits a container into two parts
-struct Split {
-  // State
-  float location = 0.5;
-  Direction direction = Direction::Vertical;
+  std::unique_ptr<Viewport> viewport;
 };
 
 } // namespace datagui

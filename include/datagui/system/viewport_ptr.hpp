@@ -4,9 +4,9 @@
 
 namespace datagui {
 
-class ViewportSystem : public System {
+class ViewportPtrSystem : public System {
 public:
-  ViewportSystem() {}
+  ViewportPtrSystem() {}
   void set_input_state(ElementPtr element) override;
   void render(ConstElementPtr element, Renderer& renderer) override;
   bool mouse_event(ElementPtr element, const MouseEvent& event) override;

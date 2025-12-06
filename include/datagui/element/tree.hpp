@@ -234,6 +234,7 @@ public:
     PROPS_METHOD(Select, select)
     PROPS_METHOD(Slider, slider)
     PROPS_METHOD(Split, split)
+    PROPS_METHOD(Tabs, tabs)
     PROPS_METHOD(TextBox, text_box)
     PROPS_METHOD(TextInput, text_input)
     PROPS_METHOD(ViewportPtr, viewport)
@@ -450,6 +451,7 @@ private:
   VectorMap<Select> select;
   VectorMap<Slider> slider;
   VectorMap<Split> split;
+  VectorMap<Tabs> tabs;
   VectorMap<TextBox> text_box;
   VectorMap<TextInput> text_input;
   VectorMap<ViewportPtr> viewport;

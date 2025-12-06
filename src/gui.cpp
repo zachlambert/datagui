@@ -1,20 +1,21 @@
 #include "datagui/gui.hpp"
-#include <charconv>
 #include <sstream>
 #include <stack>
 
 #include "datagui/system/button.hpp"
 #include "datagui/system/checkbox.hpp"
+#include "datagui/system/collapsable.hpp"
 #include "datagui/system/color_picker.hpp"
 #include "datagui/system/dropdown.hpp"
-#include "datagui/system/floating.hpp"
-#include "datagui/system/labelled.hpp"
-#include "datagui/system/section.hpp"
-#include "datagui/system/series.hpp"
+#include "datagui/system/group.hpp"
+#include "datagui/system/popup.hpp"
+#include "datagui/system/select.hpp"
 #include "datagui/system/slider.hpp"
+#include "datagui/system/split.hpp"
+#include "datagui/system/tabs.hpp"
 #include "datagui/system/text_box.hpp"
 #include "datagui/system/text_input.hpp"
-#include "datagui/system/viewport.hpp"
+#include "datagui/system/viewport_ptr.hpp"
 
 namespace datagui {
 
@@ -25,29 +26,25 @@ Gui::Gui(const Window::Config& config) : window(config) {
   theme = std::make_shared<Theme>(theme_default());
   renderer.init(fm);
 
-  systems.resize(TypeCount);
-  systems[(std::size_t)Type::Button] =
-      std::make_unique<ButtonSystem>(fm, theme);
-  systems[(std::size_t)Type::Checkbox] =
-      std::make_unique<CheckboxSystem>(fm, theme);
-  systems[(std::size_t)Type::ColorPicker] =
-      std::make_unique<ColorPickerSystem>(fm, theme);
-  systems[(std::size_t)Type::Dropdown] =
-      std::make_unique<DropdownSystem>(fm, theme);
-  systems[(std::size_t)Type::Floating] =
-      std::make_unique<FloatingSystem>(fm, theme);
-  systems[(std::size_t)Type::Labelled] =
-      std::make_unique<LabelledSystem>(fm, theme);
-  systems[(std::size_t)Type::Section] =
-      std::make_unique<SectionSystem>(fm, theme);
-  systems[(std::size_t)Type::Series] = std::make_unique<SeriesSystem>(theme);
-  systems[(std::size_t)Type::Slider] =
-      std::make_unique<SliderSystem>(fm, theme);
-  systems[(std::size_t)Type::TextBox] =
-      std::make_unique<TextBoxSystem>(fm, theme);
-  systems[(std::size_t)Type::TextInput] =
-      std::make_unique<TextInputSystem>(fm, theme);
-  systems[(std::size_t)Type::ViewportPtr] = std::make_unique<ViewportSystem>();
+#define REGISTER(Name, System, args...) \
+  systems[(std::size_t)Type::Name] = std::make_unique<System>(args);
+
+  REGISTER(Button, ButtonSystem, fm, theme);
+  REGISTER(Checkbox, CheckboxSystem, fm, theme);
+  REGISTER(ColorPicker, CollapsableSystem, fm, theme);
+  REGISTER(ColorPicker, ColorPickerSystem, fm, theme);
+  REGISTER(Dropdown, DropdownSystem, fm, theme);
+  REGISTER(Group, GroupSystem, theme);
+  REGISTER(Popup, PopupSystem, fm, theme);
+  REGISTER(Select, SelectSystem, fm, theme);
+  REGISTER(Slider, SliderSystem, fm, theme);
+  REGISTER(Split, SplitSystem, theme);
+  REGISTER(Tabs, TabsSystem, fm, theme);
+  REGISTER(TextBox, TextBoxSystem, fm, theme);
+  REGISTER(TextInput, TextInputSystem, fm, theme);
+  REGISTER(ViewportPtr, ViewportPtrSystem);
+
+#undef REGISTER
 }
 
 bool Gui::running() const {
@@ -130,6 +127,21 @@ void Gui::checkbox(const Var<bool>& var) {
   checkbox.checked = *var;
 }
 
+bool Gui::collapsable(const std::string& label) {
+  check_begin();
+  current.expect(Type::Collapsable, read_key());
+  args_.apply(current);
+  auto& collapsable = current.collapsable();
+  collapsable.label = label;
+
+  if (current.dirty() || overwrite) {
+    move_down();
+    return true;
+  }
+  current = current.next();
+  return false;
+}
+
 void Gui::color_picker(
     const Color& initial_value,
     const std::function<void(const Color&)>& callback) {
@@ -154,60 +166,52 @@ void Gui::color_picker(const Var<Color>& var) {
   color_picker.value = *var;
 }
 
-void Gui::dropdown(
-    const std::vector<std::string>& choices,
-    int initial_choice,
-    const std::function<void(int)>& callback) {
-  bool is_new = current.expect(Type::Dropdown, read_key());
-  auto& dropdown = current.dropdown();
-  args_.apply(current);
-  current = current.next();
-
-  if (is_new || overwrite) {
-    dropdown.choice = initial_choice;
-  }
-  dropdown.choices = choices;
-  dropdown.callback = callback;
-}
-
-void Gui::dropdown(
-    const std::vector<std::string>& choices,
-    const Var<int>& var) {
-  current.expect(Type::Dropdown, read_key());
-  auto& dropdown = current.dropdown();
-  args_.apply(current);
-  current = current.next();
-
-  dropdown.choices = choices;
-  dropdown.choice = *var;
-  dropdown.callback = [var](int value) { var.set(value); };
-}
-
-bool Gui::floating(
-    const Var<bool>& open_var,
-    const std::string& title,
-    float width,
-    float height) {
+bool Gui::dropdown() {
   check_begin();
-  current.expect(Type::Floating, read_key());
+  current.expect(Type::Dropdown, read_key());
   args_.apply(current);
-  auto& floating = current.floating();
+  auto& dropdown = current.dropdown();
 
-  floating.title = title;
-  floating.width = width;
-  floating.height = height;
-  floating.closed_callback = [open_var]() { open_var.set(false); };
+  if (dropdown.open && (current.dirty() || overwrite)) {
+    move_down();
+    return true;
+  }
+  current = current.next();
+  return false;
+}
 
-  if (*open_var != floating.open) {
-    floating.open = *open_var;
+bool Gui::group() {
+  check_begin();
+  current.expect(Type::Group, read_key());
+  args_.apply(current);
+
+  if (current.dirty() || overwrite) {
+    move_down();
+    return true;
+  }
+  current = current.next();
+  return false;
+}
+
+bool Gui::popup(const Var<bool>& open_var, const std::string& title) {
+  check_begin();
+  current.expect(Type::Popup, read_key());
+  args_.apply(current);
+  auto& popup = current.popup();
+
+  popup.title = title;
+  popup.closed_callback = [open_var]() { open_var.set(false); };
+
+  if (*open_var != popup.open) {
+    popup.open = *open_var;
   }
 
-  if (!floating.open && !current.state().hidden) {
+  if (!popup.open && !current.state().hidden) {
     current.clear_children();
   }
-  current.state().hidden = !floating.open;
+  current.state().hidden = !popup.open;
 
-  if (!floating.open || (!current.dirty() && !overwrite)) {
+  if (!popup.open || (!current.dirty() && !overwrite)) {
     current = current.next();
     return false;
   }
@@ -216,47 +220,31 @@ bool Gui::floating(
   return true;
 }
 
-bool Gui::labelled(const std::string& label) {
-  check_begin();
-  current.expect(Type::Labelled, read_key());
+void Gui::select(
+    const std::vector<std::string>& choices,
+    int initial_choice,
+    const std::function<void(int)>& callback) {
+  bool is_new = current.expect(Type::Select, read_key());
+  auto& select = current.select();
   args_.apply(current);
-  auto& labelled = current.labelled();
-  labelled.label = label;
-
-  if (current.dirty() || overwrite) {
-    move_down();
-    return true;
-  }
   current = current.next();
-  return false;
+
+  if (is_new || overwrite) {
+    select.choice = initial_choice;
+  }
+  select.choices = choices;
+  select.callback = callback;
 }
 
-bool Gui::section(const std::string& label) {
-  check_begin();
-  current.expect(Type::Section, read_key());
+void Gui::select(const std::vector<std::string>& choices, const Var<int>& var) {
+  current.expect(Type::Select, read_key());
+  auto& select = current.select();
   args_.apply(current);
-  auto& section = current.section();
-  section.label = label;
-
-  if (current.dirty() || overwrite) {
-    move_down();
-    return true;
-  }
   current = current.next();
-  return false;
-}
 
-bool Gui::series() {
-  check_begin();
-  current.expect(Type::Series, read_key());
-  args_.apply(current);
-
-  if (current.dirty() || overwrite) {
-    move_down();
-    return true;
-  }
-  current = current.next();
-  return false;
+  select.choices = choices;
+  select.choice = *var;
+  select.callback = [var](int value) { var.set(value); };
 }
 
 template <typename T>
@@ -322,6 +310,44 @@ INSTANTIATE(float)
 INSTANTIATE(double)
 INSTANTIATE(std::uint8_t)
 #undef INSTANTIATE
+
+bool Gui::hsplit(float ratio) {
+  bool is_new = current.expect(Type::Split, read_key());
+  auto& split = current.split();
+  args_.apply(current);
+
+  split.direction = Direction::Horizontal;
+  if (is_new) {
+    split.ratio = ratio;
+  }
+
+  if (current.dirty() || overwrite) {
+    move_down();
+    return true;
+  }
+
+  current = current.next();
+  return false;
+}
+
+bool Gui::vsplit(float ratio) {
+  bool is_new = current.expect(Type::Split, read_key());
+  auto& split = current.split();
+  args_.apply(current);
+
+  split.direction = Direction::Vertical;
+  if (is_new) {
+    split.ratio = ratio;
+  }
+
+  if (current.dirty() || overwrite) {
+    move_down();
+    return true;
+  }
+
+  current = current.next();
+  return false;
+}
 
 void Gui::text_input(
     const std::string& initial_value,
