@@ -71,6 +71,7 @@ void ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   switch (event.action) {
   case MouseAction::Press:
     button.down = true;
+    break;
   case MouseAction::Release:
     button.down = false;
     if (state.box().contains(event.position)) {

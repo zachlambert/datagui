@@ -212,22 +212,26 @@ bool Gui::popup(
   popup.closed_callback = [open_var]() { open_var.set(false); };
   popup.popup_size = Vec2(width, height);
 
+  bool just_opened = false;
   if (*open_var != popup.open) {
     popup.open = *open_var;
+    if (popup.open) {
+      just_opened = true;
+    }
   }
 
-  if (!popup.open && !current.state().hidden) {
+  if (!popup.open && current.child()) {
     current.clear_children();
   }
   current.state().hidden = !popup.open;
 
-  if (!popup.open || (!current.dirty() && !overwrite)) {
-    current = current.next();
-    return false;
+  if (popup.open && (just_opened || current.dirty() || overwrite)) {
+    move_down();
+    return true;
   }
 
-  move_down();
-  return true;
+  current = current.next();
+  return false;
 }
 
 void Gui::select(
@@ -488,7 +492,7 @@ void Gui::render() {
 
   render_tree(tree.root());
 
-  for (auto element : floating_elements) {
+  for (auto element : ordered_floating_elements) {
     renderer.new_layer();
     render_tree(element);
   }
@@ -599,6 +603,7 @@ void Gui::calculate_sizes() {
     return;
   }
 
+  auto prev_floating_elements = floating_elements;
   floating_elements.clear();
   {
     struct State {
@@ -652,7 +657,11 @@ void Gui::calculate_sizes() {
       }
 
       if (element.state().floating) {
+        if (!prev_floating_elements.contains(element)) {
+          element.state().float_priority = next_float_priority++;
+        }
         floating_elements.insert(element);
+
         if (auto type = std::get_if<FloatingTypeAbsolute>(
                 &element.state().floating_type)) {
           element.state().float_box.lower =
@@ -677,6 +686,11 @@ void Gui::calculate_sizes() {
         stack.push(child);
       }
     }
+  }
+
+  ordered_floating_elements.clear();
+  for (auto element : floating_elements) {
+    ordered_floating_elements.insert(element);
   }
 }
 
@@ -775,7 +789,8 @@ ElementPtr Gui::get_leaf_node(const Vec2& position) {
     return leaf;
   };
 
-  for (auto iter = floating_elements.rbegin(); iter != floating_elements.rend();
+  for (auto iter = ordered_floating_elements.rbegin();
+       iter != ordered_floating_elements.rend();
        iter++) {
     auto leaf = get_tree_leaf(*iter);
     if (leaf) {

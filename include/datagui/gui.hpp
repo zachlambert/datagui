@@ -14,6 +14,7 @@
 #include "datagui/visual/window.hpp"
 #include <memory>
 #include <set>
+#include <unordered_set>
 #include <vector>
 
 namespace datagui {
@@ -288,12 +289,8 @@ private:
   std::size_t next_key = 0;
   bool overwrite = false; // Only used for datapack_write, special case
 
-  struct Compare {
-    bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
-      return lhs.state().float_priority >= rhs.state().float_priority;
-    }
-  };
-  std::set<ElementPtr, Compare> floating_elements;
+  std::unordered_set<ElementPtr, ElementPtr::HashFunc> floating_elements;
+  std::set<ElementPtr, ElementPtr::FloatCompare> ordered_floating_elements;
 
   Args args_;
 

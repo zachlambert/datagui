@@ -209,6 +209,20 @@ public:
   template <bool IsConst>
   class ElementPtr_ {
   public:
+    struct FloatCompare {
+      bool operator()(const ElementPtr_& lhs, const ElementPtr_& rhs) const {
+        return std::tie(lhs.state().float_priority, lhs.index) <
+               std::tie(rhs.state().float_priority, rhs.index);
+      }
+    };
+    friend struct FloatCompare;
+    struct HashFunc {
+      std::size_t operator()(const ElementPtr_& element) const {
+        return std::hash<int>{}(element.index);
+      }
+    };
+    friend struct HashFunc;
+
     Type type() const {
       assert(tree && index != -1);
       return tree->elements[index].type;
