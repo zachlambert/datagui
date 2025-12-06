@@ -101,6 +101,7 @@ struct Dropdown {
 struct Group {
   // Args
   Layout layout;
+  Vec2 fixed_size;
   std::optional<Color> bg_color;
   bool border = false;
   bool tight = false;
@@ -119,18 +120,20 @@ struct Popup {
 
   // Args
   Layout layout;
-  float width;
-  float height;
+  Vec2 fixed_size;
   std::optional<Color> header_color;
   std::optional<Color> bg_color;
 
   // Dependent
-  Box2 title_bar_box;
-  float title_bar_text_width;
+  float header_height;
+  Box2 header_box;
+  float header_text_width;
   Box2 close_button_box;
+  Box2 content_box;
 
   // State
   bool open = false;
+  LayoutState layout_state;
 };
 
 struct Select {

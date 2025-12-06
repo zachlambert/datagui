@@ -129,7 +129,7 @@ void layout_set_dependent_state(
   auto child = element.child();
   std::size_t i = 0;
   std::size_t j = 0;
-  Vec2 offset = content_box.lower;
+  Vec2 offset = content_box.lower - state.scroll_pos;
   while (child) {
     if (j == 0 && row_major) {
       offset.x = outer_padding;
@@ -254,58 +254,6 @@ void layout_render_scroll(
     fg.lower.y = origin.y + location * size.y;
     fg.upper.y = origin.y + (location + ratio) * size.y;
 
-    renderer.queue_box(bg, theme->scroll_bar_bg);
-    renderer.queue_box(fg, theme->scroll_bar_fg);
-  }
-}
-
-void GroupSystem::render(ConstElementPtr element, Renderer& renderer) {
-  if (group.bg_color || group.border) {
-    Color bg_color = group.bg_color ? *group.bg_color : Color::Clear();
-    int border_width =
-        group.border ? theme->layout_border_width : theme->layout_border_width;
-    renderer.queue_box(
-        state.box(),
-        bg_color,
-        border_width,
-        theme->layout_border_color);
-  }
-
-  if (group.overrun > 0) {
-    Vec2 origin = state.position;
-    Vec2 size = state.size;
-    if (group.border) {
-      origin += Vec2::uniform(theme->layout_border_width);
-      size -= 2.f * Vec2::uniform(theme->layout_border_width);
-    }
-    Box2 bg;
-    Box2 fg;
-    if (group.direction == Direction::Vertical) {
-      bg.lower.x = origin.x + size.x - theme->scroll_bar_width;
-      bg.upper.x = origin.x + size.x;
-      bg.lower.y = origin.y;
-      bg.upper.y = origin.y + size.y;
-
-      float ratio = size.y / (group.overrun + size.y);
-      float location = group.scroll_pos / (group.overrun + size.y);
-
-      fg = bg;
-      fg.lower.y = origin.y + location * size.y;
-      fg.upper.y = origin.y + (location + ratio) * size.y;
-
-    } else {
-      bg.lower.x = origin.x;
-      bg.upper.x = origin.x + size.x;
-      bg.lower.y = origin.y + size.y - theme->scroll_bar_width;
-      bg.upper.y = origin.y + size.y;
-
-      float ratio = size.x / (group.overrun + size.x);
-      float location = group.scroll_pos / (group.overrun + size.x);
-
-      fg = bg;
-      fg.lower.x = origin.x + location * size.x;
-      fg.upper.x = origin.x + (location + ratio) * size.x;
-    }
     renderer.queue_box(bg, theme->scroll_bar_bg);
     renderer.queue_box(fg, theme->scroll_bar_fg);
   }

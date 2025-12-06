@@ -14,6 +14,14 @@ void Args::apply(ElementPtr element) {
   case Type::Checkbox: {
     break;
   }
+  case Type::Collapsable: {
+    auto& collapsable = element.collapsable();
+    header_color_.consume(collapsable.header_color);
+    bg_color_.consume(collapsable.bg_color);
+    border_.consume(collapsable.border);
+    layout_.consume(collapsable.layout);
+    break;
+  }
   case Type::ColorPicker: {
     auto& color_picker = element.color_picker();
     always_.consume(color_picker.always);
@@ -22,38 +30,35 @@ void Args::apply(ElementPtr element) {
   case Type::Dropdown: {
     break;
   }
-  case Type::Floating: {
-    auto& floating = element.floating();
-    header_color_.consume(floating.header_color);
-    bg_color_.consume(floating.bg_color);
+  case Type::Group: {
+    auto& group = element.group();
+    bg_color_.consume(group.bg_color);
+    border_.consume(group.border);
+    layout_.consume(group.layout);
+    fixed_size_.consume(group.fixed_size);
     break;
   }
-  case Type::Labelled: {
+  case Type::Popup: {
+    auto& popup = element.popup();
+    header_color_.consume(popup.header_color);
+    bg_color_.consume(popup.bg_color);
+    layout_.consume(popup.layout);
+    fixed_size_.consume(popup.fixed_size);
     break;
   }
-  case Type::Section: {
-    auto& section = element.section();
-    header_color_.consume(section.header_color);
-    bg_color_.consume(section.bg_color);
-    border_.consume(section.border);
-    tight_.consume(section.tight);
-    break;
-  }
-  case Type::Series: {
-    auto& series = element.series();
-    bg_color_.consume(series.bg_color);
-    border_.consume(series.border);
-    tight_.consume(series.tight);
-    series_.direction.consume(series.direction);
-    series_.alignment.consume(series.alignment);
-    series_.length.consume(series.length);
-    series_.width.consume(series.width);
+  case Type::Select: {
     break;
   }
   case Type::Slider: {
     auto& slider = element.slider();
     always_.consume(slider.always);
-    slider_.length.consume(slider.length);
+    slider_length_.consume(slider.length);
+    break;
+  }
+  case Type::Split: {
+    break;
+  }
+  case Type::Tabs: {
     break;
   }
   case Type::TextBox: {

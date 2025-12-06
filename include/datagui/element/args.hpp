@@ -70,16 +70,12 @@ public:
     layout_->rows = -1;
     layout_->cols = 1;
     layout_->x_alignment = XAlignment::Left;
-    layout_->width = LengthDynamic(1);
-    layout_->height = LengthWrap();
     return *this;
   }
   Args& horizontal() {
     layout_->rows = 1;
     layout_->cols = -1;
     layout_->y_alignment = YAlignment::Center;
-    layout_->width = LengthWrap();
-    layout_->height = LengthDynamic(1);
     return *this;
   }
   Args& grid(int rows, int cols) {
@@ -90,16 +86,6 @@ public:
     layout_->cols = cols;
     layout_->x_alignment = XAlignment::Left;
     layout_->y_alignment = YAlignment::Center;
-    if (rows == -1) {
-      layout_->height = LengthDynamic(-1);
-    } else {
-      layout_->height = LengthWrap();
-    }
-    if (cols == -1) {
-      layout_->width = LengthDynamic(-1);
-    } else {
-      layout_->width = LengthWrap();
-    }
     return *this;
   }
   Args& align_left() {
@@ -115,12 +101,12 @@ public:
     return *this;
   }
 
-  Args& width_fixed(float length) {
-    layout_->width = LengthFixed(length);
+  Args& group_width_fixed(float length) {
+    fixed_size_->x = length;
     return *this;
   }
-  Args& height_fixed(float length) {
-    layout_->height = LengthFixed(length);
+  Args& group_height_fixed(float length) {
+    fixed_size_->y = length;
     return *this;
   }
 
@@ -146,6 +132,7 @@ private:
   Arg<bool> border_ = false;
   Arg<bool> always_ = false;
   Arg<std::string> label_ = {};
+  Arg<Vec2> fixed_size_ = {};
   Arg<Layout> layout_ = {};
   ArgOpt<float> slider_length_;
 

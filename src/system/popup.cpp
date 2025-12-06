@@ -1,56 +1,64 @@
 #include "datagui/system/popup.hpp"
+#include "datagui/system_utils/layout.hpp"
 
 namespace datagui {
 
 void PopupSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& popup = element.popup();
+  auto& popup = element.popup();
 
   state.fixed_size = Vec2();
   state.dynamic_size = Vec2();
   state.floating = true;
-  state.floating_type = FloatingTypeAbsolute(Vec2(popup.width, popup.height));
+
+  popup.header_height = fm->text_height(theme->text_font, theme->text_size) +
+                        2 * theme->text_padding;
+
+  layout_set_input_state(element, theme, popup.layout, popup.layout_state);
+
+  Vec2 float_size = popup.fixed_size;
+  if (float_size.x == 0) {
+    float_size.x = popup.layout_state.content_fixed_size.x;
+  }
+  if (float_size.y == 0) {
+    float_size.y =
+        popup.layout_state.content_fixed_size.y + popup.header_height;
+  }
+
+  state.floating_type =
+      FloatingTypeAbsolute(Vec2(popup.fixed_size.x, popup.fixed_size.y));
 }
 
 void PopupSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& popup = element.popup();
 
-  Vec2 close_button_size =
-      fm->text_size("x", theme->text_font, theme->text_size, LengthWrap()) +
-      2.f * Vec2::uniform(theme->text_padding);
+  popup.header_box.lower = state.float_box.lower;
+  popup.header_box.upper.x = state.float_box.upper.x;
+  popup.header_box.upper.y = state.float_box.lower.y + popup.header_height;
 
-  popup.title_bar_text_width = std::max(
-      state.float_box.size().x - close_button_size.x -
-          2.f * theme->text_padding,
+  Vec2 x_size =
+      fm->text_size("x", theme->text_font, theme->text_size, LengthWrap()) +
+      Vec2::uniform(2 * theme->text_padding);
+
+  popup.close_button_box.lower.x = state.float_box.upper.x - x_size.x;
+  popup.close_button_box.lower.y = state.float_box.lower.y;
+  popup.close_button_box.upper = popup.close_button_box.lower + x_size;
+
+  popup.header_text_width = std::max(
+      state.float_box.size().x - x_size.x - 2.f * theme->text_padding,
       0.f);
 
-  {
-    auto& box = popup.title_bar_box;
-    box.lower = state.float_box.lower;
-    box.upper.x = state.float_box.upper.x;
-    box.upper.y = state.float_box.lower.y + close_button_size.y;
-  }
+  popup.content_box = state.float_box;
+  popup.content_box.lower.y += popup.header_height;
+  state.child_mask = popup.content_box;
 
-  {
-    auto& box = popup.close_button_box;
-    box.lower.x = popup.title_bar_box.upper.x - close_button_size.x;
-    box.lower.y = popup.title_bar_box.lower.y;
-    box.upper = popup.title_bar_box.upper;
-  }
-
-  auto child = element.child();
-  if (!child) {
-    state.child_mask = state.box();
-    return;
-  }
-  for (auto other = child.next(); other; other = other.next()) {
-    other.state().hidden = true;
-  }
-
-  child.state().position = popup.title_bar_box.upper_left();
-  child.state().size = state.float_box.upper - child.state().position;
-  state.child_mask = child.state().box();
+  layout_set_dependent_state(
+      element,
+      popup.content_box,
+      theme,
+      popup.layout,
+      popup.layout_state);
 }
 
 void PopupSystem::render(ConstElementPtr element, Renderer& renderer) {
@@ -63,7 +71,7 @@ void PopupSystem::render(ConstElementPtr element, Renderer& renderer) {
       popup.bg_color ? *popup.bg_color : theme->layout_color_bg;
 
   renderer.queue_box(state.float_box, bg_color);
-  renderer.queue_box(popup.title_bar_box, header_color);
+  renderer.queue_box(popup.header_box, header_color);
 
   renderer.queue_text(
       state.float_box.lower +
@@ -72,7 +80,7 @@ void PopupSystem::render(ConstElementPtr element, Renderer& renderer) {
       theme->text_font,
       theme->text_size,
       theme->text_color,
-      LengthFixed(popup.title_bar_text_width));
+      LengthFixed(popup.header_text_width));
 
   renderer.queue_box(popup.close_button_box, theme->input_color_bg);
 

@@ -110,78 +110,58 @@ void Tree::remove_element(int element, bool children_only) {
 }
 
 int Tree::emplace_type(Type type) {
+#define HANDLE(Name, name) \
+  case Type::Name: \
+    return name.emplace();
+
   switch (type) {
-  case Type::Button:
-    return button.emplace();
-  case Type::Checkbox:
-    return checkbox.emplace();
-  case Type::ColorPicker:
-    return color_picker.emplace();
-  case Type::Dropdown:
-    return dropdown.emplace();
-  case Type::Floating:
-    return floating.emplace();
-  case Type::Labelled:
-    return labelled.emplace();
-  case Type::Section:
-    return section.emplace();
-  case Type::Series:
-    return series.emplace();
-  case Type::Slider:
-    return slider.emplace();
-  case Type::TextBox:
-    return text_box.emplace();
-  case Type::TextInput:
-    return text_input.emplace();
-  case Type::ViewportPtr:
-    return viewport.emplace();
+    HANDLE(Button, button);
+    HANDLE(Checkbox, checkbox);
+    HANDLE(Collapsable, collapsable);
+    HANDLE(ColorPicker, color_picker);
+    HANDLE(Dropdown, dropdown);
+    HANDLE(Group, group);
+    HANDLE(Popup, popup);
+    HANDLE(Select, select);
+    HANDLE(Slider, slider);
+    HANDLE(Tabs, tabs);
+    HANDLE(TextBox, text_box);
+    HANDLE(TextInput, text_input);
+    HANDLE(ViewportPtr, viewport);
   default:
     assert(false);
     return -1;
   }
+
+#undef HANDLE
 }
 
 void Tree::pop_type(Type type, std::size_t index) {
+#define HANDLE(Name, name) \
+  case Type::Name: \
+    name.pop(index); \
+    break;
+
   switch (type) {
-  case Type::Button:
-    button.pop(index);
-    break;
-  case Type::Checkbox:
-    checkbox.pop(index);
-    break;
-  case Type::ColorPicker:
-    color_picker.pop(index);
-    break;
-  case Type::Dropdown:
-    dropdown.pop(index);
-    break;
-  case Type::Floating:
-    floating.pop(index);
-    break;
-  case Type::Labelled:
-    labelled.pop(index);
-    break;
-  case Type::Section:
-    section.pop(index);
-    break;
-  case Type::Series:
-    series.pop(index);
-    break;
-  case Type::Slider:
-    slider.pop(index);
-    break;
-  case Type::TextBox:
-    text_box.pop(index);
-    break;
-  case Type::TextInput:
-    text_input.pop(index);
-    break;
-  case Type::ViewportPtr:
-    viewport.pop(index);
-    break;
+    HANDLE(Button, button);
+    HANDLE(Checkbox, checkbox);
+    HANDLE(Collapsable, collapsable);
+    HANDLE(ColorPicker, color_picker);
+    HANDLE(Dropdown, dropdown);
+    HANDLE(Group, group);
+    HANDLE(Popup, popup);
+    HANDLE(Select, select);
+    HANDLE(Slider, slider);
+    HANDLE(Tabs, tabs);
+    HANDLE(TextBox, text_box);
+    HANDLE(TextInput, text_input);
+    HANDLE(ViewportPtr, viewport);
   default:
     assert(false);
+    break;
   }
+
+#undef HANDLE
 }
 
 int Tree::create_variable(int element) {
