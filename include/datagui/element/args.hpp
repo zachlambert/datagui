@@ -12,12 +12,13 @@ class Args {
     Arg(T default_value = T()) :
         default_value(default_value), value(default_value) {}
 
-    void operator=(const T& value) {
-      this->value = value;
+    T& operator*() {
+      return value;
     }
-    void operator=(T&& value) {
-      this->value = std::move(value);
+    T* operator->() {
+      return &value;
     }
+
     void consume(T& output) {
       output = value;
       value = default_value;
@@ -35,59 +36,96 @@ public:
   // Common
 
   Args& text_color(const Color& text_color) {
-    text_color_ = text_color;
+    *text_color_ = text_color;
     return *this;
   }
   Args& text_size(int text_size) {
-    text_size_ = text_size;
+    *text_size_ = text_size;
     return *this;
   }
   Args& bg_color(const Color& bg_color) {
-    bg_color_ = bg_color;
+    *bg_color_ = bg_color;
     return *this;
   }
   Args& header_color(const Color& header_color) {
-    header_color_ = header_color;
+    *header_color_ = header_color;
     return *this;
   }
   Args& border() {
-    border_ = true;
+    *border_ = true;
     return *this;
   }
   Args& tight() {
-    tight_ = true;
+    *tight_ = true;
     return *this;
   }
   Args& always() {
-    always_ = true;
+    *always_ = true;
+    return *this;
+  }
+  Args& label(const std::string& label) {
+    *label_ = label;
     return *this;
   }
 
-  // Series
+  // Layout
 
+  Args& vertical() {
+    layout_->rows = -1;
+    layout_->cols = 1;
+    layout_->x_alignment = XAlignment::Left;
+    layout_->width = LengthDynamic(1);
+    layout_->height = LengthWrap();
+  }
   Args& horizontal() {
-    series_.direction = Direction::Horizontal;
-    series_.length = LengthDynamic();
-    series_.width = LengthWrap();
+    layout_->rows = 1;
+    layout_->cols = -1;
+    layout_->y_alignment = YAlignment::Center;
+    layout_->width = LengthWrap();
+    layout_->height = LengthDynamic(1);
+  }
+  Args& grid(int rows, int cols) {
+    if (rows == -1 && cols == -1) {
+      cols = 1;
+    }
+    layout_->rows = rows;
+    layout_->cols = cols;
+    layout_->x_alignment = XAlignment::Left;
+    layout_->y_alignment = YAlignment::Center;
+    if (rows == -1) {
+      layout_->height = LengthDynamic(-1);
+    } else {
+      layout_->height = LengthWrap();
+    }
+    if (cols == -1) {
+      layout_->width = LengthDynamic(-1);
+    } else {
+      layout_->width = LengthWrap();
+    }
+  }
+  Args& align_left() {
+    layout_->x_alignment = XAlignment::Left;
+  }
+  Args& align_center_h() {
+    layout_->x_alignment = XAlignment::Left;
+  }
+  Args& align_right() {
+    layout_->x_alignment = XAlignment::Right;
+  }
+
+  Args& width_fixed(float length) {
+    layout_->width = LengthFixed(length);
     return *this;
   }
-  Args& align_center() {
-    series_.alignment = Alignment::Center;
-    return *this;
-  }
-  Args& align_max() {
-    series_.alignment = Alignment::Max;
-    return *this;
-  }
-  Args& length_fixed(float length) {
-    series_.length = LengthFixed(length);
+  Args& height_fixed(float length) {
+    layout_->height = LengthFixed(length);
     return *this;
   }
 
   // Slider
 
   Args& slider_length(float length) {
-    slider_.length = length;
+    *slider_length_ = length;
     return *this;
   }
 
@@ -101,17 +139,9 @@ private:
   Arg<bool> border_ = false;
   Arg<bool> tight_ = false;
   Arg<bool> always_ = false;
-
-  struct {
-    Arg<Direction> direction = Direction::Vertical;
-    Arg<Alignment> alignment = Alignment::Min;
-    Arg<Length> length = Length(LengthWrap());
-    Arg<Length> width = Length(LengthDynamic(1));
-  } series_;
-
-  struct {
-    ArgOpt<float> length;
-  } slider_;
+  Arg<std::string> label_ = {};
+  Arg<Layout> layout_ = {};
+  ArgOpt<float> slider_length_;
 
   friend class Gui;
 };

@@ -5,8 +5,9 @@
 
 namespace datagui {
 
-enum class Direction { Horizontal, Vertical };
-enum class Alignment { Min, Center, Max };
+enum class XAlignment { Left, Center, Right };
+enum class YAlignment { Top, Center, Bottom };
+enum class Direction { Vertical, Horizontal };
 
 struct LengthFixed {
   float value = 0;
@@ -23,6 +24,20 @@ struct LengthDynamic {
 struct LengthWrap {};
 
 using Length = std::variant<LengthFixed, LengthDynamic, LengthWrap>;
+
+struct Layout {
+  int rows = 0;
+  int cols = 0;
+  XAlignment x_alignment = XAlignment::Left;
+  YAlignment y_alignment = YAlignment::Center;
+  Length width = LengthWrap();
+  Length height = LengthDynamic(1);
+};
+
+struct ScrollState {
+  float overrun = 0;
+  float scroll_pos = 0;
+};
 
 class BoxDims {
 public:

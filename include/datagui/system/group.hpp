@@ -1,24 +1,20 @@
 #pragma once
 
-#include "datagui/system/system.hpp"
+#include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/visual/font_manager.hpp"
 
 namespace datagui {
 
-class LabelledSystem : public System {
+class GroupSystem : public System {
 public:
-  LabelledSystem(
-      std::shared_ptr<FontManager> fm,
-      std::shared_ptr<Theme> theme) :
-      fm(fm), theme(theme) {}
+  GroupSystem(std::shared_ptr<Theme> theme) : theme(theme) {}
 
   void set_input_state(ElementPtr element) override;
   void set_dependent_state(ElementPtr element) override;
   void render(ConstElementPtr element, Renderer& renderer) override;
+  bool scroll_event(ElementPtr element, const ScrollEvent& event) override;
 
 private:
-  std::shared_ptr<FontManager> fm;
   std::shared_ptr<Theme> theme;
 };
 

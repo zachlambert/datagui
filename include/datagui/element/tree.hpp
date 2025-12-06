@@ -226,13 +226,14 @@ public:
 
     PROPS_METHOD(Button, button)
     PROPS_METHOD(Checkbox, checkbox)
+    PROPS_METHOD(Collapsable, collapsable)
     PROPS_METHOD(ColorPicker, color_picker)
     PROPS_METHOD(Dropdown, dropdown)
-    PROPS_METHOD(Floating, floating)
-    PROPS_METHOD(Labelled, labelled)
-    PROPS_METHOD(Section, section)
-    PROPS_METHOD(Series, series)
+    PROPS_METHOD(Group, group)
+    PROPS_METHOD(Popup, popup)
+    PROPS_METHOD(Select, select)
     PROPS_METHOD(Slider, slider)
+    PROPS_METHOD(Split, split)
     PROPS_METHOD(TextBox, text_box)
     PROPS_METHOD(TextInput, text_input)
     PROPS_METHOD(ViewportPtr, viewport)
@@ -441,13 +442,14 @@ private:
 
   VectorMap<Button> button;
   VectorMap<Checkbox> checkbox;
+  VectorMap<Collapsable> collapsable;
   VectorMap<ColorPicker> color_picker;
   VectorMap<Dropdown> dropdown;
-  VectorMap<Floating> floating;
-  VectorMap<Labelled> labelled;
-  VectorMap<Section> section;
-  VectorMap<Series> series;
+  VectorMap<Group> group;
+  VectorMap<Popup> popup;
+  VectorMap<Select> select;
   VectorMap<Slider> slider;
+  VectorMap<Split> split;
   VectorMap<TextBox> text_box;
   VectorMap<TextInput> text_input;
   VectorMap<ViewportPtr> viewport;

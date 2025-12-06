@@ -1,13 +1,13 @@
 #pragma once
 
-#include "datagui/system/system.hpp"
+#include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
 
 namespace datagui {
 
-class SeriesSystem : public System {
+class SplitSystem : public System {
 public:
-  SeriesSystem(std::shared_ptr<Theme> theme) : theme(theme) {}
+  SplitSystem(std::shared_ptr<Theme> theme) : theme(theme) {}
 
   void set_input_state(ElementPtr element) override;
   void set_dependent_state(ElementPtr element) override;

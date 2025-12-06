@@ -1,14 +1,16 @@
 #pragma once
 
-#include "datagui/system/system.hpp"
+#include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
 #include "datagui/visual/font_manager.hpp"
 
 namespace datagui {
 
-class SectionSystem : public System {
+class CollapsableSystem : public System {
 public:
-  SectionSystem(std::shared_ptr<FontManager> fm, std::shared_ptr<Theme> theme) :
+  CollapsableSystem(
+      std::shared_ptr<FontManager> fm,
+      std::shared_ptr<Theme> theme) :
       fm(fm), theme(theme) {}
 
   void set_input_state(ElementPtr element) override;

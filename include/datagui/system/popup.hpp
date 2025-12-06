@@ -1,16 +1,13 @@
 #pragma once
 
-#include "datagui/system/system.hpp"
+#include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
-#include <optional>
 
 namespace datagui {
 
-class FloatingSystem : public System {
+class PopupSystem : public System {
 public:
-  FloatingSystem(
-      std::shared_ptr<FontManager> fm,
-      std::shared_ptr<Theme> theme) :
+  PopupSystem(std::shared_ptr<FontManager> fm, std::shared_ptr<Theme> theme) :
       fm(fm), theme(theme) {}
 
   void set_input_state(ElementPtr element) override;
