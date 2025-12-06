@@ -72,7 +72,7 @@ void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
       theme->text_color);
 }
 
-bool SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   auto& slider = element.slider();
 
@@ -93,21 +93,22 @@ bool SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
       active_value = slider.value;
       slider.held = true;
     }
-    return false;
+    return;
   }
   if (slider.held && event.action == MouseAction::Release) {
     slider.held = false;
     if (!slider.always && slider.value != active_value) {
       slider.value = active_value;
-      if (!slider.callback) {
-        return true;
+      if (slider.callback) {
+        slider.callback(slider.value);
+      } else {
+        element.set_dirty();
       }
-      slider.callback(slider.value);
     }
-    return false;
+    return;
   }
   if (!slider.held || event.action != MouseAction::Hold) {
-    return false;
+    return;
   }
 
   float slider_length =
@@ -148,8 +149,6 @@ bool SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     slider.value = active_value;
     slider.callback(active_value);
   }
-
-  return false;
 }
 
 std::string SliderSystem::get_slider_text(const Slider& slider) const {

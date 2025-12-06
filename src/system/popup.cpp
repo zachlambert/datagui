@@ -85,18 +85,17 @@ void PopupSystem::render(ConstElementPtr element, Renderer& renderer) {
       LengthWrap());
 }
 
-bool PopupSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void PopupSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   auto& popup = element.popup();
 
   if (event.action != MouseAction::Release) {
-    return false;
+    return;
   }
 
   if (!popup.close_button_box.contains(event.position)) {
-    return false;
+    return;
   }
   popup.closed_callback();
-  return false;
 }
 
 } // namespace datagui

@@ -129,20 +129,20 @@ void SelectSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 }
 
-bool SelectSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void SelectSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   auto& select = element.select();
 
   if (event.action != MouseAction::Press) {
-    return false;
+    return;
   }
 
   if (!select.open) {
     select.open = true;
-    return false;
+    return;
   }
   if (select.choices.empty()) {
-    return false;
+    return;
   }
 
   Vec2 offset;
@@ -168,13 +168,13 @@ bool SelectSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     select.open = false;
     if (select.choice != clicked) {
       select.choice = clicked;
-      if (!select.callback) {
-        return true;
+      if (select.callback) {
+        select.callback(select.choice);
+      } else {
+        element.set_dirty();
       }
-      select.callback(select.choice);
     }
   }
-  return false;
 }
 
 void SelectSystem::focus_enter(ElementPtr element) {

@@ -306,20 +306,20 @@ private:
   void render(ConstElementPtr element) {
     system(element).render(element, renderer);
   }
-  bool mouse_event(ElementPtr element, const MouseEvent& event) {
-    return system(element).mouse_event(element, event);
+  void mouse_event(ElementPtr element, const MouseEvent& event) {
+    system(element).mouse_event(element, event);
   }
-  bool mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
-    return system(element).mouse_hover(element, mouse_pos);
+  void mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
+    system(element).mouse_hover(element, mouse_pos);
   }
   bool scroll_event(ElementPtr element, const ScrollEvent& event) {
     return system(element).scroll_event(element, event);
   }
-  bool key_event(ElementPtr element, const KeyEvent& event) {
-    return system(element).key_event(element, event);
+  void key_event(ElementPtr element, const KeyEvent& event) {
+    system(element).key_event(element, event);
   }
-  bool text_event(ElementPtr element, const TextEvent& event) {
-    return system(element).text_event(element, event);
+  void text_event(ElementPtr element, const TextEvent& event) {
+    system(element).text_event(element, event);
   }
   void focus_enter(ElementPtr element) {
     system(element).focus_enter(element);

@@ -720,17 +720,13 @@ void Gui::event_handling() {
     }
 
     if (!handled && element_focus) {
-      if (key_event(element_focus, event)) {
-        element_focus.set_dirty(true);
-      }
+      key_event(element_focus, event);
     }
   }
 
   if (element_focus) {
     for (const auto& event : window.text_events()) {
-      if (text_event(element_focus, event)) {
-        element_focus.set_dirty(true);
-      }
+      text_event(element_focus, event);
     }
   }
 
@@ -784,8 +780,8 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // Pass-through the hold or release event
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
-    if (element_focus && mouse_event(element_focus, event)) {
-      element_focus.set_dirty(true);
+    if (element_focus) {
+      mouse_event(element_focus, event);
     }
     return;
   }
@@ -808,8 +804,8 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
       set_tree_focus(element_focus, true);
     }
   }
-  if (element_focus && mouse_event(element_focus, event)) {
-    element_focus.set_dirty(true);
+  if (element_focus) {
+    mouse_event(element_focus, event);
   }
 }
 

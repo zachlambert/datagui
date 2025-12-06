@@ -29,9 +29,7 @@ public:
 
   virtual void begin() = 0;
   virtual void end() = 0;
-  virtual bool mouse_event(const MouseEvent& event) {
-    return false;
-  }
+  virtual void mouse_event(const MouseEvent& event) {}
   unsigned int texture() const {
     return texture_;
   }

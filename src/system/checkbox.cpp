@@ -37,31 +37,31 @@ void CheckboxSystem::render(ConstElementPtr element, Renderer& renderer) {
   renderer.queue_box(icon_box, theme->input_color_bg_active);
 }
 
-bool CheckboxSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void CheckboxSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   auto& checkbox = element.checkbox();
 
   if (event.action == MouseAction::Release &&
       event.button == MouseButton::Left) {
     checkbox.checked = !checkbox.checked;
-    if (!checkbox.callback) {
-      return true;
+    if (checkbox.callback) {
+      checkbox.callback(checkbox.checked);
+    } else {
+      element.set_dirty();
     }
-    checkbox.callback(checkbox.checked);
   }
-  return false;
 }
 
-bool CheckboxSystem::key_event(ElementPtr element, const KeyEvent& event) {
+void CheckboxSystem::key_event(ElementPtr element, const KeyEvent& event) {
   auto& checkbox = element.checkbox();
 
   if (event.action == KeyAction::Release && event.key == Key::Enter) {
     checkbox.checked = !checkbox.checked;
-    if (!checkbox.callback) {
-      return true;
+    if (checkbox.callback) {
+      checkbox.callback(checkbox.checked);
+    } else {
+      element.set_dirty();
     }
-    checkbox.callback(checkbox.checked);
   }
-  return false;
 }
 
 } // namespace datagui

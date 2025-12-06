@@ -141,7 +141,7 @@ void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 }
 
-bool ColorPickerSystem::mouse_event(
+void ColorPickerSystem::mouse_event(
     ElementPtr element,
     const MouseEvent& event) {
   const auto& state = element.state();
@@ -152,21 +152,20 @@ bool ColorPickerSystem::mouse_event(
     color_picker.scale_held = false;
     if (!color_picker.open) {
       color_picker.open = true;
-      return false;
-    } else {
-      if (color_picker.modified) {
-        color_picker.modified = false;
-        if (color_picker.callback) {
-          color_picker.callback(color_picker.value);
-          return false;
-        }
-        return true;
-      }
-      return false;
+      return;
     }
+    if (color_picker.modified) {
+      color_picker.modified = false;
+      if (color_picker.callback) {
+        color_picker.callback(color_picker.value);
+      } else {
+        element.set_dirty();
+      }
+    }
+    return;
   }
   if (!color_picker.open) {
-    return false;
+    return;
   }
 
   Vec2 hue_wheel_offset = event.position - color_picker.hue_wheel_box.center();
@@ -216,14 +215,12 @@ bool ColorPickerSystem::mouse_event(
       color_picker.modified = true;
     }
   }
-
-  return false;
 }
 
 bool ColorPickerSystem::focus_leave(ElementPtr element, bool success) {
   auto& color_picker = element.color_picker();
   color_picker.open = false;
-  return false;
+  return true;
 }
 
 } // namespace datagui

@@ -17,10 +17,9 @@ void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& tabs = element.tabs();
 }
 
-bool DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   const auto& tabs = element.tabs();
-  return false;
 }
 
 } // namespace datagui

@@ -14,29 +14,14 @@ public:
 
   virtual void render(ConstElementPtr element, Renderer& renderer) = 0;
 
-  // Mouse press, hold or release inside the element bounding box
-  // Returns true if event needs external handling
-  virtual bool mouse_event(ElementPtr element, const MouseEvent& event) {
-    return false;
-  }
-  // Returns true if event needs external handling
-  virtual bool mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
-    return false;
-  }
-  // If an element captures the scroll event, process it and return true
+  // Return true/false depending on if the event is handled
+  virtual void mouse_event(ElementPtr element, const MouseEvent& event) {}
+  virtual void mouse_hover(ElementPtr element, const Vec2& mouse_pos) {}
   virtual bool scroll_event(ElementPtr element, const ScrollEvent& event) {
     return false;
   }
-  // Key press, hold or release, while a node is focused
-  // Returns true if event needs external handling
-  virtual bool key_event(ElementPtr element, const KeyEvent& event) {
-    return false;
-  }
-  // Text input while a node is focused
-  // Returns true if event needs external handling
-  virtual bool text_event(ElementPtr element, const TextEvent& event) {
-    return false;
-  }
+  virtual void key_event(ElementPtr element, const KeyEvent& event) {}
+  virtual void text_event(ElementPtr element, const TextEvent& event) {}
 
   // Node is focused via tab instead of clicking on it
   virtual void focus_enter(ElementPtr element) {}

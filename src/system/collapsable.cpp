@@ -117,7 +117,7 @@ void CollapsableSystem::render(ConstElementPtr element, Renderer& renderer) {
       LengthWrap());
 }
 
-bool CollapsableSystem::mouse_event(
+void CollapsableSystem::mouse_event(
     ElementPtr element,
     const MouseEvent& event) {
   const auto& state = element.state();
@@ -128,23 +128,21 @@ bool CollapsableSystem::mouse_event(
       state.position + Vec2(state.size.x, collapsable.header_size.y));
 
   if (!header_box.contains(event.position)) {
-    return false;
+    return;
   }
 
   if (event.action == MouseAction::Release &&
       event.button == MouseButton::Left) {
     collapsable.open = !collapsable.open;
   }
-  return false;
 }
 
-bool CollapsableSystem::key_event(ElementPtr element, const KeyEvent& event) {
+void CollapsableSystem::key_event(ElementPtr element, const KeyEvent& event) {
   auto& collapsable = element.collapsable();
 
   if (event.action == KeyAction::Release && event.key == Key::Enter) {
     collapsable.open = !collapsable.open;
   }
-  return false;
 }
 
 } // namespace datagui

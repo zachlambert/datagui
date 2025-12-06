@@ -79,7 +79,7 @@ void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
   renderer.pop_mask();
 }
 
-bool TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   const auto& text_input = element.text_input();
 
@@ -104,11 +104,9 @@ bool TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   } else if (event.action == MouseAction::Hold) {
     active_selection.end = cursor_pos;
   }
-
-  return false;
 }
 
-bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
+void TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
   auto& text_input = element.text_input();
 
   if (event.action == KeyAction::Press && event.key == Key::Enter) {
@@ -118,15 +116,15 @@ bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
         active_text = text_input.text;
         active_selection.reset(
             std::min(active_selection.begin, active_text.size()));
-        return false;
+        return;
       }
       text_input.text = active_text;
       if (!text_input.callback) {
-        return true;
+        return;
       }
       text_input.callback(text_input.text);
     }
-    return false;
+    return;
   }
 
   selection_key_event(
@@ -134,17 +132,15 @@ bool TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
       active_selection,
       text_input.editable,
       event);
-  return false;
 }
 
-bool TextInputSystem::text_event(ElementPtr element, const TextEvent& event) {
+void TextInputSystem::text_event(ElementPtr element, const TextEvent& event) {
   const auto& text_input = element.text_input();
   selection_text_event(
       active_text,
       active_selection,
       text_input.editable,
       event);
-  return false;
 }
 
 void TextInputSystem::focus_enter(ElementPtr element) {

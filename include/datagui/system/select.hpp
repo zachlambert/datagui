@@ -13,10 +13,8 @@ public:
 
   void set_input_state(ElementPtr element) override;
   void set_dependent_state(ElementPtr element) override;
-
   void render(ConstElementPtr element, Renderer& renderer) override;
-  bool mouse_event(ElementPtr element, const MouseEvent& event) override;
-
+  void mouse_event(ElementPtr element, const MouseEvent& event) override;
   void focus_enter(ElementPtr element) override;
   bool focus_leave(ElementPtr element, bool success) override;
 

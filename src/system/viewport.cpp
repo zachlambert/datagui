@@ -1,8 +1,8 @@
-#include "datagui/system/viewport.hpp"
+#include "datagui/system/viewport_ptr.hpp"
 
 namespace datagui {
 
-void ViewportSystem::set_input_state(ElementPtr element) {
+void ViewportPtrSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   const auto& viewport = element.viewport();
 
@@ -11,19 +11,21 @@ void ViewportSystem::set_input_state(ElementPtr element) {
   state.floating = false;
 }
 
-void ViewportSystem::render(ConstElementPtr element, Renderer& renderer) {
+void ViewportPtrSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& viewport = element.viewport();
   renderer.queue_image(state.box(), viewport.viewport->texture());
 }
 
-bool ViewportSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void ViewportPtrSystem::mouse_event(
+    ElementPtr element,
+    const MouseEvent& event) {
   const auto& state = element.state();
   const auto& viewport = element.viewport();
 
   MouseEvent event_viewport = event;
   event_viewport.position = event.position - element.state().position;
-  return viewport.viewport->mouse_event(event_viewport);
+  viewport.viewport->mouse_event(event_viewport);
 }
 
 } // namespace datagui
