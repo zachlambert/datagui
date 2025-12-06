@@ -1,4 +1,5 @@
 #include "datagui/system/collapsable.hpp"
+#include "datagui/system_utils/layout.hpp"
 
 namespace datagui {
 
@@ -12,73 +13,67 @@ void CollapsableSystem::set_input_state(ElementPtr element) {
                                 theme->text_size,
                                 LengthWrap()) +
                             Vec2::uniform(2 * theme->text_padding);
-  if (collapsable.border) {
-    collapsable.header_size += Vec2::uniform(2 * theme->layout_border_width);
-  }
   state.fixed_size = collapsable.header_size;
 
-  state.dynamic_size.x = 1;
-  state.dynamic_size.y = 0;
-  state.floating = false;
+  layout_set_input_state(
+      element,
+      theme,
+      collapsable.layout,
+      collapsable.layout_state);
 
-  auto child = element.child();
-  if (!child) {
-    return;
+  if (collapsable.fixed_size.x > 0) {
+    state.fixed_size.x = collapsable.fixed_size.x;
+  } else {
+    state.fixed_size.x = std::max(
+        collapsable.layout_state.content_fixed_size.x,
+        collapsable.header_size.x);
   }
 
-  Vec2 content_size = child.state().fixed_size;
-  if (!collapsable.tight) {
-    content_size += 2.f * Vec2::uniform(theme->layout_outer_padding);
-  }
-
-  state.fixed_size.x = std::max(state.fixed_size.x, content_size.x);
+  state.fixed_size.y = collapsable.header_size.y;
   if (collapsable.open) {
-    state.fixed_size.y += content_size.y;
+    if (collapsable.fixed_size.y > 0) {
+      state.fixed_size.y += collapsable.fixed_size.y;
+    } else {
+      state.fixed_size.y += collapsable.layout_state.content_fixed_size.y;
+    }
   }
+
+  if (collapsable.border) {
+    state.fixed_size += Vec2::uniform(2 * theme->layout_border_width);
+  }
+
+  state.dynamic_size.x = collapsable.layout_state.content_dynamic_size.x;
+  state.dynamic_size.y = 0;
+
+  state.floating = false;
 }
 
 void CollapsableSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& collapsable = element.collapsable();
+  auto& collapsable = element.collapsable();
 
-  auto child = element.child();
-  if (!child) {
-    state.child_mask = state.box();
-    return;
+  for (auto child = element.child(); child; child = child.next()) {
+    child.state().hidden = !collapsable.open;
   }
-  for (auto other = child.next(); other; other = other.next()) {
-    other.state().hidden = true;
-  }
-
   if (!collapsable.open) {
-    child.state().hidden = true;
     return;
   }
-  child.state().hidden = false;
 
-  child.state().position = state.position + Vec2(0, collapsable.header_size.y);
-  if (!collapsable.tight) {
-    child.state().position += Vec2::uniform(theme->layout_outer_padding);
+  collapsable.content_box = state.box();
+  if (collapsable.border) {
+    collapsable.content_box.lower += Vec2::uniform(theme->layout_border_width);
+    collapsable.content_box.upper -= Vec2::uniform(theme->layout_border_width);
   }
+  collapsable.content_box.lower.y += collapsable.header_size.y;
 
-  Vec2 available_size = state.size;
-  available_size.y -= collapsable.header_size.y;
-  if (!collapsable.tight) {
-    available_size -= Vec2::uniform(2 * theme->layout_outer_padding);
-  }
+  layout_set_dependent_state(
+      element,
+      collapsable.content_box,
+      theme,
+      collapsable.layout,
+      collapsable.layout_state);
 
-  if (child.state().dynamic_size.x > 0) {
-    child.state().size.x = available_size.x;
-  } else {
-    child.state().size.x = child.state().fixed_size.x;
-  }
-  if (child.state().dynamic_size.y > 0) {
-    child.state().size.y = available_size.y;
-  } else {
-    child.state().size.y = child.state().fixed_size.y;
-  }
-
-  state.child_mask = child.state().box();
+  state.child_mask = collapsable.content_box;
 }
 
 void CollapsableSystem::render(ConstElementPtr element, Renderer& renderer) {
@@ -108,6 +103,7 @@ void CollapsableSystem::render(ConstElementPtr element, Renderer& renderer) {
 
   Vec2 text_origin =
       state.position + Vec2::uniform(theme->text_padding + border_width);
+
   renderer.queue_text(
       text_origin,
       collapsable.label,
@@ -115,6 +111,12 @@ void CollapsableSystem::render(ConstElementPtr element, Renderer& renderer) {
       theme->text_size,
       theme->text_color,
       LengthWrap());
+
+  layout_render_scroll(
+      collapsable.content_box,
+      collapsable.layout_state,
+      theme,
+      renderer);
 }
 
 void CollapsableSystem::mouse_event(
@@ -135,6 +137,16 @@ void CollapsableSystem::mouse_event(
       event.button == MouseButton::Left) {
     collapsable.open = !collapsable.open;
   }
+}
+
+bool CollapsableSystem::scroll_event(
+    ElementPtr element,
+    const ScrollEvent& event) {
+  auto& collapsable = element.collapsable();
+  return layout_scroll_event(
+      collapsable.content_box,
+      collapsable.layout_state,
+      event);
 }
 
 void CollapsableSystem::key_event(ElementPtr element, const KeyEvent& event) {

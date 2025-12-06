@@ -70,11 +70,13 @@ public:
     layout_->rows = -1;
     layout_->cols = 1;
     layout_->x_alignment = XAlignment::Left;
+    layout_->y_alignment = YAlignment::Center;
     return *this;
   }
   Args& horizontal() {
     layout_->rows = 1;
     layout_->cols = -1;
+    layout_->x_alignment = XAlignment::Left;
     layout_->y_alignment = YAlignment::Center;
     return *this;
   }
@@ -102,11 +104,11 @@ public:
   }
 
   Args& group_width_fixed(float length) {
-    group_fixed_size_->x = length;
+    fixed_size_->x = length;
     return *this;
   }
   Args& group_height_fixed(float length) {
-    group_fixed_size_->y = length;
+    fixed_size_->y = length;
     return *this;
   }
 
@@ -132,7 +134,7 @@ private:
   Arg<bool> border_ = false;
   Arg<bool> always_ = false;
   Arg<std::string> label_ = {};
-  Arg<Vec2> group_fixed_size_ = {};
+  Arg<Vec2> fixed_size_ = {};
   Arg<Layout> layout_ = {};
   ArgOpt<float> slider_length_;
 

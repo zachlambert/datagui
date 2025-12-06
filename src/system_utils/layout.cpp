@@ -134,17 +134,11 @@ void layout_set_dependent_state(
   auto child = element.child();
   std::size_t i = 0;
   std::size_t j = 0;
-  Vec2 origin = content_box.lower - state.scroll_pos;
+  Vec2 origin =
+      content_box.lower - state.scroll_pos + Vec2::uniform(outer_padding);
   Vec2 offset;
-  while (child) {
-    if (j == 0 && row_major) {
-      offset.x = outer_padding;
-      offset.y += (i == 0) ? outer_padding : inner_padding;
-    } else if (i == 0 && !row_major) {
-      offset.y = outer_padding;
-      offset.x += (j == 0) ? outer_padding : inner_padding;
-    }
 
+  while (child) {
     const Vec2 cell_size = Vec2(col_sizes[j], row_sizes[i]);
     const Vec2& fixed_size = child.state().fixed_size;
     const Vec2& dynamic_size = child.state().dynamic_size;
@@ -189,8 +183,10 @@ void layout_set_dependent_state(
 
     if (row_major) {
       j++;
+      offset.x += cell_size.x + inner_padding;
       if (j == layout.cols) {
-        offset.y += row_sizes[i];
+        offset.y += cell_size.y + inner_padding;
+        offset.x = 0;
         j = 0;
         i++;
         if (i == layout.rows) {
@@ -199,8 +195,10 @@ void layout_set_dependent_state(
       }
     } else {
       i++;
+      offset.y += cell_size.y + inner_padding;
       if (i == layout.rows) {
-        offset.x += col_sizes[i];
+        offset.x += cell_size.x + inner_padding;
+        offset.y = 0;
         i = 0;
         j++;
         if (j == layout.cols) {

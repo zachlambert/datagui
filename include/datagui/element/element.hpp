@@ -54,6 +54,7 @@ struct Checkbox {
 struct Collapsable {
   // Args
   Layout layout;
+  Vec2 fixed_size;
   std::string label;
   std::optional<Color> header_color;
   std::optional<Color> bg_color;
@@ -62,7 +63,7 @@ struct Collapsable {
 
   // Dependent
   Vec2 header_size;
-  float content_length = 0;
+  Box2 content_box;
 
   // State
   bool open = false;

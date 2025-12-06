@@ -40,13 +40,10 @@ int main() {
         gui.end();
       }
 
-      if (gui.group()) {
-        const std::vector<std::string> colors = {"red", "green", "blue"};
-        gui.select(colors, 0, [colors](int choice) {
-          std::cout << "Selected " << colors[choice] << "!" << std::endl;
-        });
-        gui.end();
-      }
+      const std::vector<std::string> colors = {"red", "green", "blue"};
+      gui.select(colors, 0, [colors](int choice) {
+        std::cout << "Selected " << colors[choice] << "!" << std::endl;
+      });
 
       gui.text_box("Timer: " + std::to_string(*timer));
 
@@ -55,13 +52,13 @@ int main() {
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
       });
 
+      gui.args().horizontal().tight();
       if (gui.group()) {
         gui.checkbox(timer_paused);
         gui.text_box("Paused");
         gui.end();
       }
 
-      gui.args().tight();
       if (gui.collapsable("Open me")) {
         gui.text_box("Hello :)");
         gui.args().label("Input");

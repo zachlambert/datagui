@@ -20,6 +20,7 @@ void Args::apply(ElementPtr element) {
     bg_color_.consume(collapsable.bg_color);
     border_.consume(collapsable.border);
     layout_.consume(collapsable.layout);
+    fixed_size_.consume(collapsable.fixed_size);
     break;
   }
   case Type::ColorPicker: {
@@ -35,7 +36,7 @@ void Args::apply(ElementPtr element) {
     bg_color_.consume(group.bg_color);
     border_.consume(group.border);
     layout_.consume(group.layout);
-    group_fixed_size_.consume(group.fixed_size);
+    fixed_size_.consume(group.fixed_size);
     break;
   }
   case Type::Popup: {
