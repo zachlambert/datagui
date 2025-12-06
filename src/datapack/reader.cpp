@@ -130,11 +130,11 @@ const char* GuiReader::string() {
 }
 
 int GuiReader::enumerate(const std::span<const char*>& labels) {
-  if (!node || node.type() != Type::Dropdown) {
+  if (!node || node.type() != Type::Select) {
     invalidate();
     return 0;
   }
-  return node.dropdown().choice;
+  return node.select().choice;
 }
 
 std::span<const std::uint8_t> GuiReader::binary() {
@@ -175,12 +175,12 @@ void GuiReader::optional_end() {
 int GuiReader::variant_begin(const std::span<const char*>& labels) {
   node = node.child();
 
-  if (!node || node.type() != Type::Dropdown) {
+  if (!node || node.type() != Type::Select) {
     invalidate();
     node = node.parent();
     return 0;
   }
-  int choice = node.dropdown().choice;
+  int choice = node.select().choice;
   node = node.next();
   assert(node);
   return choice;
@@ -203,7 +203,7 @@ void GuiReader::object_begin() {
       return;
     }
   }
-  if (!node || node.type() != Type::Series) {
+  if (!node || node.type() != Type::Group) {
     invalidate();
     return;
   }
@@ -252,7 +252,7 @@ void GuiReader::object_end() {
 }
 
 void GuiReader::tuple_begin() {
-  if (!node || node.type() != Type::Series) {
+  if (!node || node.type() != Type::Group) {
     invalidate();
     return;
   }

@@ -88,19 +88,25 @@ int main() {
 
   int revisit = 0;
   while (gui.running()) {
-    if (gui.series()) {
+    if (gui.group()) {
       auto value = gui.variable<Foo>();
 
       gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit");
-      gui.edit<Foo>([=](const Foo& new_value) {
-        std::cout << datapack::debug(new_value) << std::endl;
-        value.set(new_value);
-      });
+      if (gui.collapsable("Value")) {
+        gui.edit<Foo>([=](const Foo& new_value) {
+          std::cout << datapack::debug(new_value) << std::endl;
+          value.set(new_value);
+        });
+        gui.end();
+      }
 
       gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit + Overwritten by above");
-      gui.edit(value);
+      if (gui.collapsable("Value")) {
+        gui.edit(value);
+        gui.end();
+      }
 
       std::cout << "Revisit: " << revisit++ << std::endl;
       gui.end();

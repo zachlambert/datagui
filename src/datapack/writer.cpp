@@ -124,7 +124,7 @@ void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
   for (auto label : labels) {
     labels_str.emplace_back(label);
   }
-  gui.dropdown(labels_str, value, {});
+  gui.select(labels_str, value, {});
 }
 
 void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
@@ -134,7 +134,7 @@ void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
 
 void GuiWriter::optional_begin(bool has_value) {
   gui.args().tight();
-  gui.series();
+  gui.group();
   auto has_value_var = gui.variable<bool>(has_value);
   gui.checkbox(has_value_var);
   if (!*has_value_var) {
@@ -153,9 +153,9 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   }
 
   gui.args().tight();
-  gui.series();
+  gui.group();
   auto choice_var = gui.variable<int>(value);
-  gui.dropdown(labels_str, choice_var);
+  gui.select(labels_str, choice_var);
   gui.key(*choice_var);
 }
 
@@ -173,7 +173,7 @@ void GuiWriter::object_begin() {
     }
   }
   gui.args().tight();
-  gui.series();
+  gui.group();
   at_object_begin = true;
 }
 
@@ -187,7 +187,7 @@ void GuiWriter::object_next(const char* key) {
     gui.end();
   }
   at_object_begin = false;
-  gui.section(key);
+  gui.collapsable(key);
 }
 
 void GuiWriter::object_end() {
@@ -206,7 +206,7 @@ void GuiWriter::object_end() {
 
 void GuiWriter::tuple_begin() {
   gui.args().tight();
-  gui.series();
+  gui.group();
 }
 
 void GuiWriter::tuple_next() {
@@ -219,14 +219,14 @@ void GuiWriter::tuple_end() {
 
 void GuiWriter::list_begin() {
   gui.args().tight();
-  gui.series();
+  gui.group();
 
   auto key_list = gui.variable<KeyList>();
   ListState state = {key_list, 0};
   list_stack.push(state);
 
   gui.args().tight();
-  gui.series();
+  gui.group();
 }
 
 void GuiWriter::list_next() {
@@ -245,7 +245,7 @@ void GuiWriter::list_next() {
 
   gui.key((*state.keys)[state.index]);
   gui.args().horizontal();
-  gui.series();
+  gui.group();
 
   state.index++;
 }

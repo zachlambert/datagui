@@ -34,7 +34,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
           if (!object_next) {
             throw datapack::SchemaError("Expected ObjectNext");
           }
-          if (!gui.section(object_next->key)) {
+          if (!gui.collapsable(object_next->key)) {
             iter = iter.next().skip();
             continue;
           }
@@ -74,7 +74,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
         while (state.i < state.keys->size()) {
           gui.key((*state.keys)[state.i]);
           gui.args().horizontal();
-          if (gui.series()) {
+          if (gui.group()) {
             break;
           }
           state.i++;
@@ -141,7 +141,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
         }
       }
       gui.args().tight();
-      if (gui.series()) {
+      if (gui.group()) {
         stack.push(iter);
         iter = iter.next();
         continue;
@@ -151,7 +151,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
     }
     if (iter.tuple_begin()) {
       gui.args().tight();
-      if (gui.series()) {
+      if (gui.group()) {
         stack.push(iter);
         iter = iter.next();
         continue;
@@ -161,10 +161,10 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
     }
     if (iter.list()) {
       gui.args().tight();
-      if (gui.series()) {
+      if (gui.group()) {
         auto keys = gui.variable<KeyList>();
         gui.args().tight();
-        if (gui.series()) {
+        if (gui.group()) {
           stack.push(iter);
           list_stack.push({keys, 0});
           iter = iter.next();
@@ -177,7 +177,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
     }
     if (iter.optional()) {
       gui.args().tight();
-      if (gui.series()) {
+      if (gui.group()) {
         auto has_value = gui.variable<bool>(false);
         gui.checkbox(has_value);
         if (*has_value) {
@@ -192,9 +192,9 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
     }
     if (auto variant_begin = iter.variant_begin()) {
       gui.args().tight();
-      if (gui.series()) {
+      if (gui.group()) {
         auto choice = gui.variable<int>(0);
-        gui.dropdown(variant_begin->labels, choice);
+        gui.select(variant_begin->labels, choice);
 
         iter = iter.next();
         while (iter != schema.end()) {
@@ -269,7 +269,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (auto enumerate = iter.enumerate()) {
-      gui.dropdown(enumerate->labels, -1, {});
+      gui.select(enumerate->labels, -1, {});
       iter = iter.next();
       continue;
     }
