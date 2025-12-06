@@ -1,18 +1,18 @@
-#include "datagui/system/series.hpp"
+#include "datagui/system/group.hpp"
 
 namespace datagui {
 
-void SeriesSystem::set_input_state(ElementPtr element) {
+void GroupSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
-  auto& series = element.series();
+  auto& group = element.group();
 
   state.fixed_size = Vec2();
   state.dynamic_size = Vec2();
   state.floating = false;
 
-  float outer_padding = series.tight ? 0.f : theme->layout_outer_padding;
-  float inner_padding = series.tight ? 0.f : theme->layout_inner_padding;
-  if (series.border) {
+  float outer_padding = group.tight ? 0.f : theme->layout_outer_padding;
+  float inner_padding = group.tight ? 0.f : theme->layout_inner_padding;
+  if (group.border) {
     outer_padding += theme->layout_border_width;
   }
 
@@ -26,7 +26,7 @@ void SeriesSystem::set_input_state(ElementPtr element) {
         continue;
       }
 
-      if (series.direction == Direction::Horizontal) {
+      if (group.direction == Direction::Horizontal) {
         state.fixed_size.x += c_state.fixed_size.x;
         state.dynamic_size.x += c_state.dynamic_size.x;
       } else {
@@ -37,27 +37,27 @@ void SeriesSystem::set_input_state(ElementPtr element) {
     }
 
     if (child_count > 0) {
-      if (series.direction == Direction::Horizontal) {
+      if (group.direction == Direction::Horizontal) {
         state.fixed_size.x += (child_count - 1) * inner_padding;
       } else {
         state.fixed_size.y += (child_count - 1) * inner_padding;
       }
     }
 
-    if (series.direction == Direction::Horizontal) {
-      series.content_length = state.fixed_size.x;
+    if (group.direction == Direction::Horizontal) {
+      group.content_length = state.fixed_size.x;
     } else {
-      series.content_length = state.fixed_size.y;
+      group.content_length = state.fixed_size.y;
     }
   }
-  if (auto length = std::get_if<LengthFixed>(&series.length)) {
-    if (series.direction == Direction::Horizontal) {
+  if (auto length = std::get_if<LengthFixed>(&group.length)) {
+    if (group.direction == Direction::Horizontal) {
       state.fixed_size.x = length->value;
     } else {
       state.fixed_size.y = length->value;
     }
-  } else if (auto length = std::get_if<LengthDynamic>(&series.length)) {
-    if (series.direction == Direction::Horizontal) {
+  } else if (auto length = std::get_if<LengthDynamic>(&group.length)) {
+    if (group.direction == Direction::Horizontal) {
       state.dynamic_size.y = length->weight;
     } else {
       state.dynamic_size.x = length->weight;
@@ -66,8 +66,8 @@ void SeriesSystem::set_input_state(ElementPtr element) {
 
   // Secondary direction
 
-  if (auto width = std::get_if<LengthFixed>(&series.width)) {
-    if (series.direction == Direction::Horizontal) {
+  if (auto width = std::get_if<LengthFixed>(&group.width)) {
+    if (group.direction == Direction::Horizontal) {
       state.fixed_size.y = width->value;
     } else {
       state.fixed_size.x = width->value;
@@ -79,7 +79,7 @@ void SeriesSystem::set_input_state(ElementPtr element) {
         continue;
       }
 
-      if (series.direction == Direction::Horizontal) {
+      if (group.direction == Direction::Horizontal) {
         state.fixed_size.y = std::max(state.fixed_size.y, c_state.fixed_size.y);
         state.dynamic_size.y =
             std::max(state.dynamic_size.y, c_state.dynamic_size.y);
@@ -90,8 +90,8 @@ void SeriesSystem::set_input_state(ElementPtr element) {
       }
     }
 
-    if (auto width = std::get_if<LengthDynamic>(&series.width)) {
-      if (series.direction == Direction::Horizontal) {
+    if (auto width = std::get_if<LengthDynamic>(&group.width)) {
+      if (group.direction == Direction::Horizontal) {
         state.dynamic_size.y = width->weight;
       } else {
         state.dynamic_size.x = width->weight;
@@ -100,32 +100,32 @@ void SeriesSystem::set_input_state(ElementPtr element) {
   }
 
   state.fixed_size += Vec2::uniform(2 * outer_padding);
-  series.content_length += 2 * outer_padding;
+  group.content_length += 2 * outer_padding;
 }
 
-void SeriesSystem::set_dependent_state(ElementPtr element) {
+void GroupSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
-  auto& series = element.series();
+  auto& group = element.group();
 
   state.child_mask = state.box();
-  if (series.border) {
+  if (group.border) {
     state.child_mask.lower += Vec2::uniform(theme->layout_border_width);
     state.child_mask.upper -= Vec2::uniform(theme->layout_border_width);
   }
 
-  float outer_padding = series.tight ? 0.f : theme->layout_outer_padding;
-  float inner_padding = series.tight ? 0.f : theme->layout_inner_padding;
-  if (series.border) {
+  float outer_padding = group.tight ? 0.f : theme->layout_outer_padding;
+  float inner_padding = group.tight ? 0.f : theme->layout_inner_padding;
+  if (group.border) {
     outer_padding += theme->layout_border_width;
   }
 
   Vec2 available = maximum(state.size - state.fixed_size, Vec2());
-  float offset = outer_padding - series.scroll_pos;
+  float offset = outer_padding - group.scroll_pos;
 
-  if (series.direction == Direction::Horizontal) {
-    series.overrun = std::max(series.content_length - state.size.x, 0.f);
+  if (group.direction == Direction::Horizontal) {
+    group.overrun = std::max(group.content_length - state.size.x, 0.f);
   } else {
-    series.overrun = std::max(series.content_length - state.size.y, 0.f);
+    group.overrun = std::max(group.content_length - state.size.y, 0.f);
   }
 
   // Node dynamic size may differ from sum of child dynamic sizes, so need to
@@ -143,7 +143,7 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
 
     c_state.size = c_state.fixed_size;
 
-    if (series.direction == Direction::Horizontal) {
+    if (group.direction == Direction::Horizontal) {
       if (c_state.dynamic_size.x > 0) {
         c_state.size.x +=
             (c_state.dynamic_size.x / children_dynamic_size.x) * available.x;
@@ -155,7 +155,7 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
       c_state.position.x = state.position.x + offset;
       offset += c_state.size.x + inner_padding;
 
-      switch (series.alignment) {
+      switch (group.alignment) {
       case Alignment::Min:
         c_state.position.y = state.position.y + outer_padding;
         break;
@@ -184,7 +184,7 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
       c_state.position.y = state.position.y + offset;
       offset += c_state.size.y + inner_padding;
 
-      switch (series.alignment) {
+      switch (group.alignment) {
       case Alignment::Min:
         c_state.position.x = state.position.x + outer_padding;
         break;
@@ -204,14 +204,14 @@ void SeriesSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
+void GroupSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
-  const auto& series = element.series();
+  const auto& group = element.group();
 
-  if (series.bg_color || series.border) {
-    Color bg_color = series.bg_color ? *series.bg_color : Color::Clear();
+  if (group.bg_color || group.border) {
+    Color bg_color = group.bg_color ? *group.bg_color : Color::Clear();
     int border_width =
-        series.border ? theme->layout_border_width : theme->layout_border_width;
+        group.border ? theme->layout_border_width : theme->layout_border_width;
     renderer.queue_box(
         state.box(),
         bg_color,
@@ -219,23 +219,23 @@ void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
         theme->layout_border_color);
   }
 
-  if (series.overrun > 0) {
+  if (group.overrun > 0) {
     Vec2 origin = state.position;
     Vec2 size = state.size;
-    if (series.border) {
+    if (group.border) {
       origin += Vec2::uniform(theme->layout_border_width);
       size -= 2.f * Vec2::uniform(theme->layout_border_width);
     }
     Box2 bg;
     Box2 fg;
-    if (series.direction == Direction::Vertical) {
+    if (group.direction == Direction::Vertical) {
       bg.lower.x = origin.x + size.x - theme->scroll_bar_width;
       bg.upper.x = origin.x + size.x;
       bg.lower.y = origin.y;
       bg.upper.y = origin.y + size.y;
 
-      float ratio = size.y / (series.overrun + size.y);
-      float location = series.scroll_pos / (series.overrun + size.y);
+      float ratio = size.y / (group.overrun + size.y);
+      float location = group.scroll_pos / (group.overrun + size.y);
 
       fg = bg;
       fg.lower.y = origin.y + location * size.y;
@@ -247,8 +247,8 @@ void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
       bg.lower.y = origin.y + size.y - theme->scroll_bar_width;
       bg.upper.y = origin.y + size.y;
 
-      float ratio = size.x / (series.overrun + size.x);
-      float location = series.scroll_pos / (series.overrun + size.x);
+      float ratio = size.x / (group.overrun + size.x);
+      float location = group.scroll_pos / (group.overrun + size.x);
 
       fg = bg;
       fg.lower.x = origin.x + location * size.x;
@@ -259,19 +259,19 @@ void SeriesSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 }
 
-bool SeriesSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
-  auto& series = element.series();
+bool GroupSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
+  auto& group = element.group();
 
-  if (series.overrun == 0) {
+  if (group.overrun == 0) {
     return false;
   }
-  if (series.scroll_pos == series.overrun && event.amount > 0 ||
-      series.scroll_pos == 0 && event.amount < 0) {
+  if (group.scroll_pos == group.overrun && event.amount > 0 ||
+      group.scroll_pos == 0 && event.amount < 0) {
     return false;
   }
 
-  series.scroll_pos =
-      std::clamp(series.scroll_pos + event.amount, 0.f, series.overrun);
+  group.scroll_pos =
+      std::clamp(group.scroll_pos + event.amount, 0.f, group.overrun);
   return true;
 }
 
