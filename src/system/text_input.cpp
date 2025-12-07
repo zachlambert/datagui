@@ -124,10 +124,11 @@ void TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
         return;
       }
       text_input.text = active_text;
-      if (!text_input.callback) {
-        return;
+      if (text_input.callback) {
+        text_input.callback(text_input.text);
+      } else {
+        element.set_dirty();
       }
-      text_input.callback(text_input.text);
     }
     return;
   }

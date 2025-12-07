@@ -16,10 +16,7 @@ T number_from_string(const std::string& string) {
 }
 
 void GuiReader::number(datapack::NumberType type, void* value) {
-  if (!node) {
-    invalidate();
-    return;
-  }
+  assert(node);
   if (in_color) {
     switch (type) {
     case datapack::NumberType::I32:
@@ -49,10 +46,7 @@ void GuiReader::number(datapack::NumberType type, void* value) {
   if (auto constraint = get_constraint<datapack::ConstraintNumber>()) {
     if (auto range =
             std::get_if<datapack::ConstraintNumberRange>(&(*constraint))) {
-      if (node.type() != Type::Slider) {
-        invalidate();
-        return;
-      }
+      assert(node.type() == Type::Slider);
       double input = node.slider().value;
       switch (type) {
       case datapack::NumberType::I32:
@@ -81,10 +75,7 @@ void GuiReader::number(datapack::NumberType type, void* value) {
     }
   }
 
-  if (node.type() != Type::TextInput) {
-    invalidate();
-    return;
-  }
+  assert(node.type() == Type::TextInput);
 
   const auto& text = node.text_input().text;
 
@@ -114,34 +105,22 @@ void GuiReader::number(datapack::NumberType type, void* value) {
 }
 
 bool GuiReader::boolean() {
-  if (!node || node.type() != Type::Checkbox) {
-    invalidate();
-    return false;
-  }
+  assert(node && node.type() == Type::Checkbox);
   return node.checkbox().checked;
 }
 
 const char* GuiReader::string() {
-  if (!node || node.type() != Type::TextInput) {
-    invalidate();
-    return "";
-  }
+  assert(node && node.type() == Type::TextInput);
   return node.text_input().text.c_str();
 }
 
 int GuiReader::enumerate(const std::span<const char*>& labels) {
-  if (!node || node.type() != Type::Select) {
-    invalidate();
-    return 0;
-  }
+  assert(node && node.type() == Type::Select);
   return node.select().choice;
 }
 
 std::span<const std::uint8_t> GuiReader::binary() {
-  if (!node || node.type() != Type::TextInput) {
-    invalidate();
-    return {};
-  }
+  assert(node && node.type() == Type::TextInput);
   try {
     binary_temp = datapack::base64_decode(node.text_input().text);
   } catch (const datapack::Base64Exception&) {
@@ -153,33 +132,26 @@ std::span<const std::uint8_t> GuiReader::binary() {
 
 bool GuiReader::optional_begin() {
   node = node.child();
+  assert(node && node.type() == Type::Checkbox);
 
-  if (!node || node.type() != Type::Checkbox) {
-    invalidate();
-    node = node.parent();
-    return false;
-  }
   bool has_value = node.checkbox().checked;
   if (!has_value) {
     node = node.parent();
     return false;
   }
   node = node.next();
+  assert(node);
   return true;
 }
 
 void GuiReader::optional_end() {
   node = node.parent();
+  assert(node);
 }
 
 int GuiReader::variant_begin(const std::span<const char*>& labels) {
   node = node.child();
-
-  if (!node || node.type() != Type::Select) {
-    invalidate();
-    node = node.parent();
-    return 0;
-  }
+  assert(node && node.type() == Type::Select);
   int choice = node.select().choice;
   node = node.next();
   assert(node);
@@ -188,74 +160,66 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
 
 void GuiReader::variant_end() {
   node = node.parent();
+  assert(node);
 }
 
 void GuiReader::object_begin() {
   if (auto constraint = get_constraint<datapack::ConstraintObject>()) {
     if (std::get_if<datapack::ConstraintObjectColor>(&(*constraint))) {
-      if (!node || node.type() != Type::ColorPicker) {
-        invalidate();
-        return;
-      }
+      assert(node && node.type() == Type::ColorPicker);
       in_color = true;
       color = node.color_picker().value;
       color_i = 0;
       return;
     }
   }
-  if (!node || node.type() != Type::Group) {
-    invalidate();
-    return;
-  }
+  assert(node.type() == Type::Collapsable);
   node = node.child();
+  assert(node);
   at_object_begin = true;
 }
 
 void GuiReader::object_next(const char* key) {
   if (in_color) {
-    if (color_i > 3) {
-      invalidate();
-      return;
-    }
+    assert(color_i < 4);
     color_i++;
     return;
   }
   if (!at_object_begin) {
-    node = node.parent().next();
+    node = node.next();
   }
   at_object_begin = false;
-  node = node.child();
+  assert(node);
+
+  // The only time TextBox is used is for object labels so safe to check here
+  // For compound objects, there is no text box label, instead it's a
+  // collapsable with the label
+  if (node.type() == Type::TextBox) {
+    node = node.next();
+    assert(node);
+  } else {
+    assert(node.type() == Type::Collapsable);
+  }
 }
 
 void GuiReader::object_end() {
   if (in_color) {
-    if (color_i != 4) {
-      invalidate();
-    }
+    assert(color_i == 4);
     in_color = false;
-    node = node.next();
     return;
   }
   if (!at_object_begin) {
-    if (node.next()) {
-      invalidate();
-    }
-    node = node.parent();
-  } else {
-    if (node.child()) {
-      invalidate();
-    }
+    assert(node);
+    assert(!node.next());
   }
-  at_object_begin = false;
   node = node.parent();
+  assert(node);
+  at_object_begin = false;
   in_color = false;
 }
 
 void GuiReader::tuple_begin() {
-  if (!node || node.type() != Type::Group) {
-    invalidate();
-    return;
-  }
+  assert(node && node.type() == Type::Collapsable);
   node = node.child();
   at_object_begin = true;
 }
@@ -265,30 +229,32 @@ void GuiReader::tuple_next() {
     node = node.next();
   }
   at_object_begin = false;
+  assert(node);
 }
 
 void GuiReader::tuple_end() {
   if (at_object_begin) {
     if (node) {
-      invalidate();
+      assert(false);
     }
   } else {
     if (node.next()) {
-      invalidate();
+      assert(false);
     }
   }
   at_object_begin = false;
   node = node.parent();
+  assert(node);
 }
 
 void GuiReader::list_begin() {
   // List =
-  // series           # List wrapper
-  //   series         # Items wrapper
-  //     series       # Item 0 wrapper
+  // collapsable      # List wrapper
+  //   group          # Items wrapper
+  //     group        # Item 0 wrapper
   //       <content>  # Item 0 content
   //       button     # Remove button
-  //     series       # Item 1 wrapper
+  //     group        # Item 1 wrapper
   //       <content>  # Item 1 content
   //       button     # Remove button
   //     etc...
@@ -308,6 +274,8 @@ bool GuiReader::list_next() {
   if (!node) {
     return false;
   }
+  assert(node.type() == Type::Group);
+
   // item i wrapper -> item i content
   node = node.child();
   assert(node);

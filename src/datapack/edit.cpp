@@ -33,7 +33,6 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
             throw datapack::SchemaError("Expected ObjectNext");
           }
           next_label = object_next->key;
-          printf("Next label: %s\n", next_label.c_str());
           have_next = true;
           iter = iter.next();
           break;
@@ -175,9 +174,10 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
           continue;
         }
         gui.button("new", [keys]() { keys.mut().append(); });
+        gui.end();
       }
-      gui.end();
       iter = iter.next().skip();
+      continue;
     }
     if (iter.optional()) {
       gui.args().num_cells(n_cells).width_expand();
