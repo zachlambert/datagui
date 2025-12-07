@@ -1,4 +1,6 @@
 #include "datagui/system/slider.hpp"
+#include <iomanip>
+#include <sstream>
 
 namespace datagui {
 
@@ -18,7 +20,8 @@ void SliderSystem::set_input_state(ElementPtr element) {
       theme->text_font,
       theme->text_size,
       LengthWrap());
-  state.fixed_size.x += theme->text_padding + text_size.x;
+  state.fixed_size.x += theme->text_padding +
+                        std::max(text_size.x, theme->slider_default_text_size);
 }
 
 void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
@@ -158,6 +161,7 @@ void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
 
 std::string SliderSystem::get_slider_text(const Slider& slider) const {
   double slider_value = slider.held ? active_value : slider.value;
+  std::string result;
   switch (slider.type) {
   case NumberType::I32:
     return std::to_string(std::int32_t(slider_value));
@@ -167,13 +171,20 @@ std::string SliderSystem::get_slider_text(const Slider& slider) const {
     return std::to_string(std::uint32_t(slider_value));
   case NumberType::U64:
     return std::to_string(std::uint64_t(slider_value));
-  case NumberType::F32:
-    return std::to_string(float(slider_value));
-  case NumberType::F64:
-    return std::to_string(double(slider_value));
+  case NumberType::F32: {
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << float(slider_value);
+    return ss.str();
+  }
+  case NumberType::F64: {
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << slider_value;
+    return ss.str();
+  }
   case NumberType::U8:
     return std::to_string(std::uint8_t(slider_value));
   }
+  assert(false);
   return "";
 }
 

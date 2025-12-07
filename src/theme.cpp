@@ -31,6 +31,7 @@ Theme theme_default() {
   theme.input_border_width = 2;
 
   theme.slider_default_length = 100;
+  theme.slider_default_text_size = 100;
   theme.slider_height = 20;
   theme.slider_width = 8;
   theme.slider_color = Color::Gray(0.7);

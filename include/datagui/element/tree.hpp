@@ -128,6 +128,9 @@ public:
     }
 
     int version() const {
+      if (tree->active_node_) {
+        tree->create_dependency(tree->active_node_.index, variable);
+      }
       return tree->variables[variable].version;
     }
     T& mut_internal() const {

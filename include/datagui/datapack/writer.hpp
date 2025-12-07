@@ -39,12 +39,15 @@ public:
 private:
   Gui& gui;
 
+  void make_label();
+  void make_collapsable();
+  std::string next_label;
+
   struct ListState {
     Var<KeyList> keys;
     std::size_t index;
   };
   std::stack<ListState> list_stack;
-  bool at_object_begin = false;
 
   bool in_color = false;
   std::size_t color_i;

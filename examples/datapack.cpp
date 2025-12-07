@@ -98,14 +98,9 @@ int main() {
         value.set(new_value);
       });
 
-#if 0
       gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit + Overwritten by above");
-      if (gui.collapsable("Value")) {
-        gui.edit(value);
-        gui.end();
-      }
-#endif
+      gui.edit(value);
 
       std::cout << "Revisit: " << revisit++ << std::endl;
       gui.end();
