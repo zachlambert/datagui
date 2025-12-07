@@ -235,8 +235,8 @@ void GuiWriter::list_next() {
 
   if (state.index != 0) {
     auto keys = state.keys;
-    std::size_t remove_i = state.index - 1;
-    gui.button("Remove", [=]() { keys.mut().remove(remove_i); });
+    std::size_t key = (*keys)[state.index - 1];
+    gui.button("Remove", [=]() { keys.mut().remove(key); });
     gui.end();
   }
 

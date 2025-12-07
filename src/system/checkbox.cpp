@@ -53,8 +53,7 @@ void CheckboxSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 
   Box2 icon_box = checkbox_box;
-  Vec2 offset = Vec2::uniform(
-      std::min(checkbox.checkbox_size / 2, theme->input_border_width));
+  Vec2 offset = Vec2::uniform(checkbox.checkbox_size * 0.2);
   icon_box.lower += offset;
   icon_box.upper -= offset;
 

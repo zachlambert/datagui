@@ -12,6 +12,7 @@ void edit_list_1(datagui::Gui& gui) {
   };
   auto persons = gui.variable<std::vector<Person>>();
 
+  gui.args().border().width_expand();
   if (gui.group()) {
     for (std::size_t i = 0; i < persons->size(); i++) {
       const auto& person = (*persons)[i];
@@ -33,6 +34,8 @@ void edit_list_1(datagui::Gui& gui) {
     }
     gui.end();
   }
+
+  gui.args().border();
   if (gui.group()) {
     auto new_name = gui.variable<std::string>();
     gui.text_input(new_name);
@@ -59,8 +62,8 @@ void edit_list_1(datagui::Gui& gui) {
       error.mut().clear();
     });
 
-    gui.key<std::string>("error box");
     if (!error->empty()) {
+      gui.key<std::string>("error box");
       gui.text_box("Error: " + *error);
     }
 
@@ -78,10 +81,11 @@ void edit_list_2(datagui::Gui& gui) {
   if (gui.group()) {
     for (std::size_t i = 0; i < keys->size(); i++) {
       gui.args().horizontal();
-      gui.key((*keys)[i]);
+      auto key = (*keys)[i];
+      gui.key(key);
       if (gui.group()) {
         gui.text_input("", {});
-        gui.button("Remove", [=]() { keys.mut().remove(i); });
+        gui.button("Remove", [=]() { keys.mut().remove(key); });
         gui.end();
       }
     }

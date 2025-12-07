@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+#include <stdexcept>
 #include <vector>
 
 namespace datagui {
@@ -18,8 +20,12 @@ public:
     return key;
   }
 
-  void remove(std::size_t pos) {
-    keys.erase(keys.begin() + pos);
+  void remove(std::size_t key) {
+    auto iter = std::find(keys.begin(), keys.end(), key);
+    if (iter == keys.end()) {
+      throw std::runtime_error("Key doesn't exist, cannot remove");
+    }
+    keys.erase(iter);
   }
 
   std::size_t operator[](std::size_t i) const {

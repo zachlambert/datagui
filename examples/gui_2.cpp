@@ -52,12 +52,8 @@ int main() {
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
       });
 
-      gui.args().horizontal().tight();
-      if (gui.group()) {
-        gui.checkbox(timer_paused);
-        gui.text_box("Paused");
-        gui.end();
-      }
+      gui.args().label("Paused").tight();
+      gui.checkbox(timer_paused);
 
       if (gui.collapsable("Open me")) {
         gui.text_box("Hello :)");

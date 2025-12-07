@@ -158,7 +158,7 @@ private:
   Arg<std::string> label_ = {};
   Arg<Length> width_ = Length(LengthWrap());
   Arg<Length> height_ = Length(LengthWrap());
-  Arg<Layout> layout_ = {};
+  Arg<Layout> layout_ = Layout();
   ArgOpt<float> slider_length_;
   Arg<bool> split_fixed_ = false;
   ArgOpt<Length> text_input_width_;
