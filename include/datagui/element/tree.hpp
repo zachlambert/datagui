@@ -64,6 +64,7 @@ public:
     int version = 0;
     int next = -1;
     int prev = -1;
+    bool valid = true; // Note: Set as false when corresponding variable removed
     DependencyNode(int element, int variable, int version) :
         element(element), variable(variable), version(version) {}
   };
@@ -272,9 +273,12 @@ public:
       assert(tree && index != -1);
       return ElementPtr_(tree, index, tree->elements[index].last_child);
     }
-    void clear_children() const {
+    void clear(bool remove_vars = true) const {
       assert(tree && index != -1);
       tree->remove_element(index, true); // Children only
+      if (remove_vars) {
+        tree->clear_variables(index);
+      }
     }
 
     ElementPtr_ next() const {
@@ -361,10 +365,6 @@ public:
       }
     }
 
-    void clear_vars() const {
-      assert(tree && index != -1);
-      tree->clear_vars(index);
-    }
     VarPtr var() const {
       assert(tree && index != -1);
       return VarPtr(tree, index, tree->elements[index].first_variable);

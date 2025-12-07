@@ -10,6 +10,10 @@ void TabsSystem::set_input_state(ElementPtr element) {
   state.dynamic_size = Vec2();
   auto child = element.child();
   for (std::size_t i = 0; i < tabs.labels.size(); i++) {
+    if (child.state().float_only) {
+      child = child.next();
+      continue;
+    }
     if (!child) {
       break;
     }
@@ -56,6 +60,10 @@ void TabsSystem::set_dependent_state(ElementPtr element) {
   auto child = element.child();
   std::size_t i = 0;
   while (child) {
+    if (child.state().float_only) {
+      child = child.next();
+      continue;
+    }
     child.state().position = child_pos;
     auto& c_state = child.state();
     if (c_state.dynamic_size.x > 0) {

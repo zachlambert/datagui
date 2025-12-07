@@ -9,7 +9,12 @@ void PopupSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size = Vec2();
   state.dynamic_size = Vec2();
-  state.floating = true;
+  state.floating = popup.open;
+  state.float_only = true;
+
+  if (!popup.open) {
+    return;
+  }
 
   popup.header_height = fm->text_height(theme->text_font, theme->text_size) +
                         2 * theme->text_padding;
@@ -23,6 +28,10 @@ void PopupSystem::set_input_state(ElementPtr element) {
 void PopupSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& popup = element.popup();
+
+  if (!popup.open) {
+    return;
+  }
 
   popup.header_box.lower = state.float_box.lower;
   popup.header_box.upper.x = state.float_box.upper.x;
@@ -55,6 +64,10 @@ void PopupSystem::set_dependent_state(ElementPtr element) {
 void PopupSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& popup = element.popup();
+
+  if (!popup.open) {
+    return;
+  }
 
   const Color& header_color =
       popup.header_color ? *popup.header_color : theme->layout_color_bg;

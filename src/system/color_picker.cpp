@@ -27,6 +27,7 @@ void ColorPickerSystem::set_input_state(ElementPtr element) {
 
   state.floating = color_picker.open;
   state.floating_type = FloatingTypeRelative(float_offset, float_size);
+  state.float_only = false;
 }
 
 void ColorPickerSystem::set_dependent_state(ElementPtr element) {

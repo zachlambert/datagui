@@ -25,6 +25,8 @@ void DropdownSystem::set_input_state(ElementPtr element) {
       dropdown.layout_state);
 
   state.floating = dropdown.open;
+  state.float_only = false;
+
   if (state.floating) {
     Vec2 offset;
     if (dropdown.direction == Direction::Horizontal) {
@@ -41,9 +43,6 @@ void DropdownSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& dropdown = element.dropdown();
 
-  for (auto child = element.child(); child; child = child.next()) {
-    child.state().hidden = !dropdown.open;
-  }
   if (!dropdown.open) {
     return;
   }
@@ -116,6 +115,7 @@ void DropdownSystem::focus_enter(ElementPtr element) {
 void DropdownSystem::focus_tree_leave(ElementPtr element) {
   auto& dropdown = element.dropdown();
   dropdown.open = false;
+  element.set_dirty();
 }
 
 } // namespace datagui

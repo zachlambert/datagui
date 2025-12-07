@@ -15,7 +15,19 @@ void SplitSystem::set_input_state(ElementPtr element) {
   Vec2 b_fixed_size;
   Vec2 b_dynamic_size;
 
-  auto first = element.child();
+  ElementPtr first, second;
+  for (auto child = element.child(); child; child = child.next()) {
+    if (child.state().float_only) {
+      continue;
+    }
+    if (!first) {
+      first = child;
+    } else {
+      second = child;
+      break;
+    }
+  }
+
   if (first) {
     a_fixed_size = first.state().fixed_size;
     a_dynamic_size = first.state().dynamic_size;
@@ -63,8 +75,16 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   state.child_mask = state.box();
 
   auto first = element.child();
+  while (first && first.state().float_only) {
+    first = first.next();
+  }
   if (!first) {
     return;
+  }
+
+  auto second = first.next();
+  while (second && second.state().float_only) {
+    second = second.next();
   }
 
   float div_size = theme->split_divider_width;

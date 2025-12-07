@@ -8,6 +8,10 @@ void Tree::poll() {
   auto now = clock_t::now();
 
   for (auto& dep : dependencies) {
+    if (!dep.valid) {
+      continue;
+    }
+    assert(variables.contains(dep.variable));
     bool dirty = (variables[dep.variable].version != dep.version);
     if (dirty) {
       assert(dep.element != -1);
@@ -196,6 +200,12 @@ int Tree::create_variable(int element) {
 void Tree::clear_variables(int element) {
   int var = elements[element].first_variable;
   while (var != -1) {
+    for (auto& dep : dependencies) {
+      if (dep.variable == var) {
+        dep.valid = false;
+        break;
+      }
+    }
     int next = variables[var].next;
     variables.pop(var);
     var = next;

@@ -32,6 +32,7 @@ void Args::apply(ElementPtr element) {
   case Type::Dropdown: {
     auto& dropdown = element.dropdown();
     layout_.consume(dropdown.layout);
+    retain_.consume(dropdown.retain);
     dropdown_direction_.consume(dropdown.direction);
     break;
   }
@@ -49,6 +50,7 @@ void Args::apply(ElementPtr element) {
     header_color_.consume(popup.header_color);
     bg_color_.consume(popup.bg_color);
     layout_.consume(popup.layout);
+    retain_.consume(popup.retain);
     break;
   }
   case Type::Select: {

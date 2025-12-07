@@ -179,7 +179,15 @@ bool Gui::dropdown(const std::string& label) {
 
   dropdown.label = label;
 
-  if (dropdown.open && (current.dirty() || overwrite)) {
+  if (!dropdown.open) {
+    if (!dropdown.retain) {
+      current.clear();
+    }
+    current = current.next();
+    return false;
+  }
+
+  if (current.dirty() || overwrite) {
     move_down();
     return true;
   }
@@ -214,24 +222,21 @@ bool Gui::popup(
   popup.closed_callback = [open_var]() { open_var.set(false); };
   popup.popup_size = Vec2(width, height);
 
-  bool just_opened = false;
-  if (*open_var != popup.open) {
-    popup.open = *open_var;
-    if (popup.open) {
-      just_opened = true;
-    }
-  }
+  bool opened = (*open_var && !popup.open);
+  popup.open = *open_var;
 
   if (!popup.open && current.child()) {
-    current.clear_children();
+    if (!popup.retain) {
+      current.clear();
+    }
+    current = current.next();
+    return false;
   }
-  current.state().hidden = !popup.open;
 
-  if (popup.open && (just_opened || current.dirty() || overwrite)) {
+  if (popup.open && (opened || current.dirty() || overwrite)) {
     move_down();
     return true;
   }
-
   current = current.next();
   return false;
 }
@@ -553,7 +558,6 @@ void Gui::debug_render() {
       continue;
     }
     if (!state.first_visit) {
-      renderer.pop_mask();
       layer_stack.pop();
       continue;
     }
@@ -577,8 +581,6 @@ void Gui::debug_render() {
           2,
           element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1));
     }
-
-    renderer.push_mask(element.state().child_mask);
 
     for (auto child = element.child(); child; child = child.next()) {
       layer_stack.push(child);
@@ -793,13 +795,14 @@ ElementPtr Gui::get_leaf_node(const Vec2& position) {
       if (element.state().hidden) {
         continue;
       }
+      bool contains = false;
+      if (!element.state().float_only) {
+        contains |= element.state().box().contains(position);
+      }
       if (element.state().floating) {
-        if (element != root) {
-          continue;
-        } else if (!element.state().float_box.contains(position)) {
-          continue;
-        }
-      } else if (!element.state().box().contains(position)) {
+        contains |= element.state().float_box.contains(position);
+      }
+      if (!contains) {
         continue;
       }
       leaf = element;

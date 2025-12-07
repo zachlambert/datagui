@@ -99,6 +99,7 @@ struct Dropdown {
 
   // Args
   LayoutState layout_state;
+  bool retain = false; // Retain state after closing
 
   // State
   bool open = false;
@@ -130,6 +131,7 @@ struct Popup {
   Layout layout;
   std::optional<Color> header_color;
   std::optional<Color> bg_color;
+  bool retain = false; // Retain state after closing
 
   // Dependent
   float header_height;

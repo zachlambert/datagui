@@ -23,19 +23,29 @@ int main() {
       }
       gui.args().width_expand();
       if (gui.hsplit(0.5)) {
+
+        auto popup_open = gui.variable<bool>(false);
+        if (gui.popup(popup_open, "Popup", 200, 200)) {
+          auto counter = gui.variable<int>(0);
+          gui.text_box("Popup " + std::to_string(*counter));
+          gui.button("Increment", [=]() { counter.mut()++; });
+          gui.end();
+        }
+
         gui.args().tight();
         if (gui.dropdown("Third")) {
           gui.text_box("One");
+
           gui.args().dropdown_horizontal().tight();
           if (gui.dropdown("Two - Click!")) {
             gui.text_box("Item 0");
             gui.text_box("Item 1");
-            gui.text_box("Item 2");
+            gui.button("Spawn popup", [=]() { popup_open.set(true); });
             gui.text_box("Item 3");
             gui.end();
           }
-          // gui.text_box("Three");
-          // gui.text_box("Four");
+          gui.text_box("Three");
+          gui.text_box("Four");
           gui.end();
         }
 

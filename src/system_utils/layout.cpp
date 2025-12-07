@@ -24,7 +24,7 @@ void layout_set_input_state(
   std::size_t i = 0;
   std::size_t j = 0;
   while (child) {
-    if (child.state().hidden) {
+    if (child.state().float_only) {
       child = child.next();
       continue;
     }
@@ -143,7 +143,8 @@ void layout_set_dependent_state(
   Vec2 offset;
 
   while (child) {
-    if (child.state().hidden) {
+    if (child.state().float_only) {
+      child.state().position = content_box.lower;
       child = child.next();
       continue;
     }

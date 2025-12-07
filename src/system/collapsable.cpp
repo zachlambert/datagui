@@ -55,10 +55,10 @@ void CollapsableSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& collapsable = element.collapsable();
 
-  for (auto child = element.child(); child; child = child.next()) {
-    child.state().hidden = !collapsable.open;
-  }
   if (!collapsable.open) {
+    for (auto child = element.child(); child; child = child.next()) {
+      child.state().hidden = true;
+    }
     return;
   }
 

@@ -125,6 +125,11 @@ public:
     return *this;
   }
 
+  Args& retain() {
+    *retain_ = true;
+    return *this;
+  }
+
   // Other
 
   Args& slider_length(float length) {
@@ -159,11 +164,14 @@ private:
   ArgOpt<Color> bg_color_;
   ArgOpt<Color> header_color_;
   Arg<bool> border_ = false;
-  Arg<bool> always_ = false;
   Arg<std::string> label_ = {};
   Arg<Length> width_ = Length(LengthWrap());
   Arg<Length> height_ = Length(LengthWrap());
   Arg<Layout> layout_ = Layout();
+
+  Arg<bool> always_ = false;
+  Arg<bool> retain_ = false;
+
   ArgOpt<float> slider_length_;
   Arg<bool> split_fixed_ = false;
   ArgOpt<Length> text_input_width_;

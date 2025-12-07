@@ -28,6 +28,8 @@ void GroupSystem::set_input_state(ElementPtr element) {
   } else if (auto height = std::get_if<LengthDynamic>(&group.height)) {
     state.dynamic_size.y = std::max(state.dynamic_size.y, height->weight);
   }
+
+  state.floating = false;
 }
 
 void GroupSystem::set_dependent_state(ElementPtr element) {
