@@ -18,7 +18,18 @@ int main() {
           gui.button("Decrement", [counter]() { counter.mut()--; });
           gui.end();
         }
-        gui.text_box("Second");
+        gui.args().grid(-1, 3);
+        if (gui.group()) {
+          gui.text_box("aaa");
+          gui.text_box("bbb");
+          gui.text_box("ccc");
+          gui.args().num_cells(2);
+          gui.text_box("ddddddddddddddd");
+          gui.text_box("ee");
+          gui.args().num_cells(3).text_input_wrap();
+          gui.text_input("fffffffffffff", {});
+          gui.end();
+        }
         gui.end();
       }
       gui.args().width_expand();

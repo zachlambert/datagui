@@ -11,6 +11,7 @@ struct State {
 
   Vec2 fixed_size;
   Vec2 dynamic_size;
+  int num_cells = 1; // Used in layout
 
   // If true, then the element will have an additional floating component
   bool floating = false;

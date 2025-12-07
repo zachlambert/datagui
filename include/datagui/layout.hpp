@@ -31,7 +31,7 @@ struct Layout {
   int rows = -1;
   int cols = 1;
   XAlignment x_alignment = XAlignment::Left;
-  YAlignment y_alignment = YAlignment::Center;
+  YAlignment y_alignment = YAlignment::Top;
   bool tight = false;
 };
 

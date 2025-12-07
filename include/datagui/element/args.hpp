@@ -35,6 +35,11 @@ class Args {
 public:
   // Common
 
+  Args& num_cells(int num_cells) {
+    *num_cells_ = num_cells;
+    return *this;
+  }
+
   Args& text_color(const Color& text_color) {
     *text_color_ = text_color;
     return *this;
@@ -66,11 +71,12 @@ public:
 
   // Layout
 
+  // Note: Shouldn't need to use this, is the default layout
   Args& vertical() {
     layout_->rows = -1;
     layout_->cols = 1;
     layout_->x_alignment = XAlignment::Left;
-    layout_->y_alignment = YAlignment::Center;
+    layout_->y_alignment = YAlignment::Top;
     return *this;
   }
   Args& horizontal() {
@@ -95,11 +101,23 @@ public:
     return *this;
   }
   Args& align_center_h() {
-    layout_->x_alignment = XAlignment::Left;
+    layout_->x_alignment = XAlignment::Center;
     return *this;
   }
   Args& align_right() {
     layout_->x_alignment = XAlignment::Right;
+    return *this;
+  }
+  Args& align_top() {
+    layout_->y_alignment = YAlignment::Top;
+    return *this;
+  }
+  Args& align_center_v() {
+    layout_->y_alignment = YAlignment::Center;
+    return *this;
+  }
+  Args& align_bottom() {
+    layout_->y_alignment = YAlignment::Bottom;
     return *this;
   }
 
@@ -150,6 +168,10 @@ public:
     *text_input_width_ = LengthFixed(width);
     return *this;
   }
+  Args& text_input_wrap() {
+    *text_input_width_ = LengthWrap();
+    return *this;
+  }
 
   Args& dropdown_horizontal() {
     *dropdown_direction_ = Direction::Horizontal;
@@ -159,6 +181,7 @@ public:
 private:
   void apply(ElementPtr element);
 
+  Arg<int> num_cells_ = 1;
   ArgOpt<Color> text_color_;
   Arg<int> text_size_ = 0;
   ArgOpt<Color> bg_color_;

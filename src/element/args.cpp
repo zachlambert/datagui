@@ -4,6 +4,7 @@
 namespace datagui {
 
 void Args::apply(ElementPtr element) {
+  num_cells_.consume(element.state().num_cells);
   switch (element.type()) {
   case Type::Button: {
     auto& button = element.button();

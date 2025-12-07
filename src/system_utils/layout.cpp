@@ -13,12 +13,25 @@ void layout_set_input_state(
   if (row_major) {
     assert(layout.cols > 0);
     state.col_input_sizes.resize(layout.cols);
+    for (std::size_t j = 0; j < layout.cols; j++) {
+      state.col_input_sizes[j] = InputSizes();
+    }
     state.row_input_sizes.clear();
   } else {
     assert(layout.rows > 0);
     state.row_input_sizes.resize(layout.rows);
+    for (std::size_t i = 0; i < layout.rows; i++) {
+      state.row_input_sizes[i] = InputSizes();
+    }
     state.col_input_sizes.clear();
   }
+
+  struct MultiCell {
+    std::size_t i;
+    std::size_t j;
+    ElementPtr element;
+  };
+  std::vector<MultiCell> multi_cells;
 
   auto child = element.child();
   std::size_t i = 0;
@@ -34,18 +47,25 @@ void layout_set_input_state(
       state.col_input_sizes.push_back({0, 0});
     }
 
-    auto& row_size = state.row_input_sizes[i];
-    auto& col_size = state.col_input_sizes[j];
     const auto& c_state = child.state();
 
-    col_size.fixed = std::max(col_size.fixed, c_state.fixed_size.x);
-    col_size.dynamic = std::max(col_size.dynamic, c_state.dynamic_size.x);
-    row_size.fixed = std::max(row_size.fixed, c_state.fixed_size.y);
-    row_size.dynamic = std::max(row_size.dynamic, c_state.dynamic_size.y);
+    if (row_major || c_state.num_cells == 1) {
+      auto& row_size = state.row_input_sizes[i];
+      row_size.fixed = std::max(row_size.fixed, c_state.fixed_size.y);
+      row_size.dynamic = std::max(row_size.dynamic, c_state.dynamic_size.y);
+    }
+    if (!row_major || c_state.num_cells == 1) {
+      auto& col_size = state.col_input_sizes[j];
+      col_size.fixed = std::max(col_size.fixed, c_state.fixed_size.x);
+      col_size.dynamic = std::max(col_size.dynamic, c_state.dynamic_size.x);
+    }
+    if (c_state.num_cells > 1) {
+      multi_cells.push_back({i, j, child});
+    }
 
     if (row_major) {
-      j++;
-      if (j == layout.cols) {
+      j += child.state().num_cells;
+      if (j >= layout.cols) {
         j = 0;
         i++;
         if (layout.rows > 0 && i == layout.rows) {
@@ -53,8 +73,8 @@ void layout_set_input_state(
         }
       }
     } else {
-      i++;
-      if (i == layout.rows) {
+      i += child.state().num_cells;
+      if (i >= layout.rows) {
         i = 0;
         j++;
         if (layout.cols > 0 && j == layout.cols) {
@@ -67,6 +87,38 @@ void layout_set_input_state(
 
   float outer_padding = layout.tight ? 0.f : theme->layout_outer_padding;
   float inner_padding = layout.tight ? 0.f : theme->layout_inner_padding;
+
+  for (const auto& [i, j, child] : multi_cells) {
+    std::size_t n = child.state().num_cells;
+    float fixed = (n - 1) * inner_padding;
+    float dynamic = 0;
+    for (std::size_t k = 0; k < n; k++) {
+      if (row_major) {
+        fixed += state.col_input_sizes[j + k].fixed;
+        dynamic += state.col_input_sizes[j + k].dynamic;
+      } else {
+        fixed += state.row_input_sizes[i + k].fixed;
+        dynamic += state.row_input_sizes[i + k].dynamic;
+      }
+    }
+    if (row_major) {
+      float fixed_extra = std::max(child.state().fixed_size.x - fixed, 0.f);
+      float dynamic_extra =
+          std::max(dynamic - child.state().dynamic_size.x, 0.f);
+      for (std::size_t k = 0; k < n; k++) {
+        state.col_input_sizes[j + k].fixed += fixed_extra / n;
+        state.col_input_sizes[j + k].dynamic += dynamic_extra / n;
+      }
+    } else {
+      float fixed_extra = std::max(child.state().fixed_size.y - fixed, 0.f);
+      float dynamic_extra =
+          std::max(dynamic - child.state().dynamic_size.y, 0.f);
+      for (std::size_t k = 0; k < n; k++) {
+        state.row_input_sizes[i + k].fixed += fixed_extra / n;
+        state.row_input_sizes[i + k].dynamic += dynamic_extra / n;
+      }
+    }
+  }
 
   state.content_fixed_size = Vec2::uniform(outer_padding * 2);
   state.content_dynamic_size = Vec2();
@@ -148,7 +200,27 @@ void layout_set_dependent_state(
       child = child.next();
       continue;
     }
-    const Vec2 cell_size = Vec2(col_sizes[j], row_sizes[i]);
+
+    Vec2 cell_size;
+    if (child.state().num_cells == 1) {
+      cell_size = Vec2(col_sizes[j], row_sizes[i]);
+    } else {
+      std::size_t n = child.state().num_cells;
+      if (row_major) {
+        cell_size.y = row_sizes[i];
+        cell_size.x = (n - 1) * inner_padding;
+        for (std::size_t k = 0; k < n; k++) {
+          cell_size.x += col_sizes[j + k];
+        }
+      } else {
+        cell_size.x = col_sizes[j];
+        cell_size.y = (n - 1) * inner_padding;
+        for (std::size_t k = 0; k < n; k++) {
+          cell_size.y += row_sizes[i + k];
+        }
+      }
+    }
+
     const Vec2& fixed_size = child.state().fixed_size;
     const Vec2& dynamic_size = child.state().dynamic_size;
     Vec2& size = child.state().size;
@@ -191,26 +263,28 @@ void layout_set_dependent_state(
     position += origin;
 
     if (row_major) {
-      j++;
+      j += child.state().num_cells;
       offset.x += cell_size.x + inner_padding;
-      if (j == layout.cols) {
+      if (j >= layout.cols) {
         offset.y += cell_size.y + inner_padding;
         offset.x = 0;
         j = 0;
         i++;
         if (i == layout.rows) {
+          child = child.next();
           break;
         }
       }
     } else {
-      i++;
+      i += child.state().num_cells;
       offset.y += cell_size.y + inner_padding;
-      if (i == layout.rows) {
+      if (i >= layout.rows) {
         offset.x += cell_size.x + inner_padding;
         offset.y = 0;
         i = 0;
         j++;
         if (j == layout.cols) {
+          child = child.next();
           break;
         }
       }
