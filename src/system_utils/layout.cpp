@@ -200,6 +200,7 @@ void layout_set_dependent_state(
       child = child.next();
       continue;
     }
+    child.state().hidden = false;
 
     Vec2 cell_size;
     if (child.state().num_cells == 1) {

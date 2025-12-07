@@ -13,15 +13,13 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
   std::stack<ListState> list_stack;
 
   auto iter = schema.begin();
+  std::string next_label;
 
   while (iter != schema.end()) {
     while (iter != schema.end() && !stack.empty()) {
       auto parent = stack.top();
 
       if (parent.object_begin()) {
-        if (iter != parent.next()) {
-          gui.end();
-        }
         bool have_next = false;
         while (true) {
           if (iter.object_end()) {
@@ -34,10 +32,8 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
           if (!object_next) {
             throw datapack::SchemaError("Expected ObjectNext");
           }
-          if (!gui.collapsable(object_next->key)) {
-            iter = iter.next().skip();
-            continue;
-          }
+          next_label = object_next->key;
+          printf("Next label: %s\n", next_label.c_str());
           have_next = true;
           iter = iter.next();
           break;
@@ -131,17 +127,25 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       break;
     }
 
+    bool in_object = !stack.empty() && stack.top().object_begin();
+    std::size_t n_cells = in_object ? 2 : 1;
+    std::string label = next_label;
+    next_label.clear();
+
     if (auto object_begin = iter.object_begin()) {
       if (object_begin->constraint) {
         if (std::get_if<datapack::ConstraintObjectColor>(
                 &(*object_begin->constraint))) {
+          if (in_object) {
+            gui.text_box(label);
+          }
           gui.color_picker(Color::Black(), {});
           iter = iter.skip();
           continue;
         }
       }
-      gui.args().tight();
-      if (gui.group()) {
+      gui.args().grid(-1, 2).num_cells(n_cells).width_expand();
+      if (gui.collapsable(label)) {
         stack.push(iter);
         iter = iter.next();
         continue;
@@ -150,8 +154,8 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (iter.tuple_begin()) {
-      gui.args().tight();
-      if (gui.group()) {
+      gui.args().num_cells(n_cells).width_expand();
+      if (gui.collapsable(label)) {
         stack.push(iter);
         iter = iter.next();
         continue;
@@ -160,8 +164,8 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (iter.list()) {
-      gui.args().tight();
-      if (gui.group()) {
+      gui.args().num_cells(n_cells).width_expand();
+      if (gui.collapsable(label)) {
         auto keys = gui.variable<KeyList>();
         gui.args().tight();
         if (gui.group()) {
@@ -176,13 +180,14 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       iter = iter.next().skip();
     }
     if (iter.optional()) {
-      gui.args().tight();
-      if (gui.group()) {
+      gui.args().num_cells(n_cells).width_expand();
+      if (gui.collapsable(label)) {
         auto has_value = gui.variable<bool>(false);
         gui.checkbox(has_value);
         if (*has_value) {
           stack.push(iter);
           iter = iter.next();
+          next_label = "value";
           continue;
         }
         gui.end();
@@ -191,8 +196,8 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (auto variant_begin = iter.variant_begin()) {
-      gui.args().tight();
-      if (gui.group()) {
+      gui.args().num_cells(n_cells).width_expand();
+      if (gui.collapsable(label)) {
         auto choice = gui.variable<int>(0);
         gui.select(variant_begin->labels, choice);
 
@@ -217,10 +222,15 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
         stack.push(iter);
         iter = iter.next();
         gui.key(*choice);
+        next_label = "value";
         continue;
       }
       iter = iter.skip();
       continue;
+    }
+
+    if (in_object) {
+      gui.text_box(label);
     }
 
     if (auto number = iter.number()) {

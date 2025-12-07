@@ -899,6 +899,9 @@ void Gui::change_tree_focus(ElementPtr from, ElementPtr to) {
     }
   }
 
+  if (from) {
+    focus_leave(from, true);
+  }
   for (auto iter : removed) {
     if (!added.contains(iter)) {
       focus_tree_leave(iter);

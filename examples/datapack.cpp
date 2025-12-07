@@ -93,20 +93,19 @@ int main() {
 
       gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit");
-      if (gui.collapsable("Value")) {
-        gui.edit<Foo>([=](const Foo& new_value) {
-          std::cout << datapack::debug(new_value) << std::endl;
-          value.set(new_value);
-        });
-        gui.end();
-      }
+      gui.edit<Foo>([=](const Foo& new_value) {
+        std::cout << datapack::debug(new_value) << std::endl;
+        value.set(new_value);
+      });
 
+#if 0
       gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit + Overwritten by above");
       if (gui.collapsable("Value")) {
         gui.edit(value);
         gui.end();
       }
+#endif
 
       std::cout << "Revisit: " << revisit++ << std::endl;
       gui.end();
