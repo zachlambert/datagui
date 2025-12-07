@@ -24,6 +24,10 @@ void layout_set_input_state(
   std::size_t i = 0;
   std::size_t j = 0;
   while (child) {
+    if (child.state().hidden) {
+      child = child.next();
+      continue;
+    }
     if (j == 0 && row_major) {
       state.row_input_sizes.push_back({0, 0});
     } else if (i == 0 && !row_major) {
@@ -139,6 +143,10 @@ void layout_set_dependent_state(
   Vec2 offset;
 
   while (child) {
+    if (child.state().hidden) {
+      child = child.next();
+      continue;
+    }
     const Vec2 cell_size = Vec2(col_sizes[j], row_sizes[i]);
     const Vec2& fixed_size = child.state().fixed_size;
     const Vec2& dynamic_size = child.state().dynamic_size;

@@ -146,6 +146,11 @@ public:
     return *this;
   }
 
+  Args& dropdown_horizontal() {
+    *dropdown_direction_ = Direction::Horizontal;
+    return *this;
+  }
+
 private:
   void apply(ElementPtr element);
 
@@ -162,6 +167,7 @@ private:
   ArgOpt<float> slider_length_;
   Arg<bool> split_fixed_ = false;
   ArgOpt<Length> text_input_width_;
+  Arg<Direction> dropdown_direction_ = Direction::Vertical;
 
   friend class Gui;
 };

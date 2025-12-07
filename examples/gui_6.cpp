@@ -26,6 +26,7 @@ int main() {
         gui.args().tight();
         if (gui.dropdown("Third")) {
           gui.text_box("One");
+          gui.args().dropdown_horizontal().tight();
           if (gui.dropdown("Two - Click!")) {
             gui.text_box("Item 0");
             gui.text_box("Item 1");

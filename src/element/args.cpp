@@ -32,6 +32,7 @@ void Args::apply(ElementPtr element) {
   case Type::Dropdown: {
     auto& dropdown = element.dropdown();
     layout_.consume(dropdown.layout);
+    dropdown_direction_.consume(dropdown.direction);
     break;
   }
   case Type::Group: {

@@ -26,7 +26,12 @@ void DropdownSystem::set_input_state(ElementPtr element) {
 
   state.floating = dropdown.open;
   if (state.floating) {
-    Vec2 offset = Vec2(0, state.fixed_size.y);
+    Vec2 offset;
+    if (dropdown.direction == Direction::Horizontal) {
+      offset = Vec2(state.fixed_size.x, 0);
+    } else {
+      offset = Vec2(0, state.fixed_size.y);
+    }
     state.floating_type =
         FloatingTypeRelative(offset, dropdown.layout_state.content_fixed_size);
   }
