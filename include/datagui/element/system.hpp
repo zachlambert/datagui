@@ -27,10 +27,8 @@ public:
   virtual void focus_enter(ElementPtr element) {}
   // Node is unfocused via tab, escape or clicking on another node
   // success = should the changes be retained?
-  // Returns true if event needs external handling
-  virtual bool focus_leave(ElementPtr element, bool success) {
-    return false;
-  }
+  virtual void focus_leave(ElementPtr element, bool success) {}
+  virtual void focus_tree_leave(ElementPtr element) {}
 };
 
 } // namespace datagui

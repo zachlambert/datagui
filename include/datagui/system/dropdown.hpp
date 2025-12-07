@@ -17,7 +17,8 @@ public:
   void render(ConstElementPtr element, Renderer& renderer) override;
   void mouse_event(ElementPtr element, const MouseEvent& event) override;
   bool scroll_event(ElementPtr element, const ScrollEvent& event) override;
-  bool focus_leave(ElementPtr element, bool success) override;
+  void focus_enter(ElementPtr element) override;
+  void focus_tree_leave(ElementPtr element) override;
 
 private:
   std::string get_slider_text(const Slider& slider) const;

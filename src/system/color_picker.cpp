@@ -218,10 +218,9 @@ void ColorPickerSystem::mouse_event(
   }
 }
 
-bool ColorPickerSystem::focus_leave(ElementPtr element, bool success) {
+void ColorPickerSystem::focus_tree_leave(ElementPtr element) {
   auto& color_picker = element.color_picker();
   color_picker.open = false;
-  return true;
 }
 
 } // namespace datagui

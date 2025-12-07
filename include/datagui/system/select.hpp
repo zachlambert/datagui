@@ -16,7 +16,7 @@ public:
   void render(ConstElementPtr element, Renderer& renderer) override;
   void mouse_event(ElementPtr element, const MouseEvent& event) override;
   void focus_enter(ElementPtr element) override;
-  bool focus_leave(ElementPtr element, bool success) override;
+  void focus_leave(ElementPtr element, bool success) override;
 
 private:
   std::shared_ptr<FontManager> fm;

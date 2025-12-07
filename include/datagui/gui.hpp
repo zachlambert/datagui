@@ -259,7 +259,7 @@ private:
   void event_handling_hover(const Vec2& mouse_pos);
   void event_handling_scroll(const ScrollEvent& event);
 
-  void set_tree_focus(ElementPtr element, bool focused);
+  void change_tree_focus(ElementPtr from, ElementPtr to);
   void focus_next(bool reverse);
 
   Window window;
@@ -327,8 +327,11 @@ private:
   void focus_enter(ElementPtr element) {
     system(element).focus_enter(element);
   }
-  bool focus_leave(ElementPtr element, bool success) {
+  void focus_leave(ElementPtr element, bool success) {
     return system(element).focus_leave(element, success);
+  }
+  void focus_tree_leave(ElementPtr element) {
+    return system(element).focus_tree_leave(element);
   }
 };
 

@@ -155,20 +155,20 @@ void TextInputSystem::focus_enter(ElementPtr element) {
   active_text = props.text;
 }
 
-bool TextInputSystem::focus_leave(ElementPtr element, bool success) {
+void TextInputSystem::focus_leave(ElementPtr element, bool success) {
   auto& text_input = element.text_input();
   if (success && text_input.text != active_text) {
     if (text_input.number_type &&
         !valid_text_to_number(*text_input.number_type, active_text)) {
-      return false;
+      return;
     }
     text_input.text = active_text;
-    if (!text_input.callback) {
-      return true;
+    if (text_input.callback) {
+      text_input.callback(text_input.text);
+    } else {
+      element.set_dirty();
     }
-    text_input.callback(text_input.text);
   }
-  return false;
 }
 
 } // namespace datagui

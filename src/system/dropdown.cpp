@@ -96,13 +96,21 @@ bool DropdownSystem::scroll_event(
     const ScrollEvent& event) {
   const auto& state = element.state();
   auto& dropdown = element.dropdown();
+  if (!dropdown.open) {
+    return false;
+  }
   return layout_scroll_event(state.float_box, dropdown.layout_state, event);
 }
 
-bool DropdownSystem::focus_leave(ElementPtr element, bool success) {
+void DropdownSystem::focus_enter(ElementPtr element) {
   auto& dropdown = element.dropdown();
-  // dropdown.open = false;
-  return true;
+  dropdown.open = true;
+  element.set_dirty();
+}
+
+void DropdownSystem::focus_tree_leave(ElementPtr element) {
+  auto& dropdown = element.dropdown();
+  dropdown.open = false;
 }
 
 } // namespace datagui

@@ -747,13 +747,7 @@ void Gui::event_handling() {
         handled = true;
         break;
       case Key::Escape:
-        if (element_focus) {
-          if (focus_leave(element_focus, false)) {
-            element_focus.set_dirty(true);
-          }
-          set_tree_focus(element_focus, false);
-          element_focus = ElementPtr();
-        }
+        change_tree_focus(element_focus, ElementPtr());
         handled = true;
         break;
 #ifdef DATAGUI_DEBUG
@@ -844,19 +838,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   ElementPtr prev_element_focus = element_focus;
   element_focus = get_leaf_node(event.position);
 
-  if (element_focus != prev_element_focus) {
-    if (prev_element_focus) {
-      if (focus_leave(prev_element_focus, true)) {
-        prev_element_focus.set_dirty(true);
-      }
-      set_tree_focus(prev_element_focus, false);
-    }
-    if (element_focus) {
-      // Only use focus_enter() for non-click focus enter (ie: tab into the
-      // element)
-      set_tree_focus(element_focus, true);
-    }
-  }
+  change_tree_focus(prev_element_focus, element_focus);
   if (element_focus) {
     mouse_event(element_focus, event);
   }
@@ -885,24 +867,42 @@ void Gui::event_handling_scroll(const ScrollEvent& event) {
   }
 }
 
-void Gui::set_tree_focus(ElementPtr element, bool focused) {
-  element.state().focused = focused;
-  element.state().in_focus_tree = focused;
+void Gui::change_tree_focus(ElementPtr from, ElementPtr to) {
+  std::unordered_set<ElementPtr, ElementPtr::HashFunc> removed;
+  std::unordered_set<ElementPtr, ElementPtr::HashFunc> added;
 
-  bool found_floating = false;
-  if (focused && element.state().floating) {
-    found_floating = true;
-    element.state().float_priority = next_float_priority++;
+  if (from) {
+    from.state().focused = false;
+    auto iter = from;
+    while (iter) {
+      removed.insert(iter);
+      iter.state().in_focus_tree = false;
+      iter = iter.parent();
+    }
   }
 
-  element = element.parent();
-  while (element) {
-    element.state().in_focus_tree = focused;
-    if (focused && !found_floating && element.state().floating) {
-      found_floating = true;
-      element.state().float_priority = next_float_priority++;
+  if (to) {
+    bool found_floating = false;
+    to.state().focused = true;
+    auto iter = to;
+    while (iter) {
+      added.insert(iter);
+      iter.state().in_focus_tree = true;
+      if (!found_floating && iter.state().floating) {
+        found_floating = true;
+        iter.state().float_priority = next_float_priority++;
+      }
+      iter = iter.parent();
     }
-    element = element.parent();
+  }
+
+  for (auto iter : removed) {
+    if (!added.contains(iter)) {
+      focus_tree_leave(iter);
+    }
+  }
+  if (to) {
+    focus_enter(to);
   }
 }
 
@@ -949,20 +949,7 @@ void Gui::focus_next(bool reverse) {
     next = ElementPtr();
   }
 
-  if (element_focus) {
-    auto prev_element_focus = element_focus;
-    if (focus_leave(prev_element_focus, true)) {
-      prev_element_focus.set_dirty(true);
-    }
-    set_tree_focus(element_focus, false);
-  }
-
-  element_focus = next;
-
-  if (element_focus) {
-    set_tree_focus(element_focus, true);
-    focus_enter(element_focus);
-  }
+  change_tree_focus(element_focus, next);
 }
 
 } // namespace datagui

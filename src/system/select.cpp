@@ -141,10 +141,9 @@ void SelectSystem::focus_enter(ElementPtr element) {
   select.open = true;
 }
 
-bool SelectSystem::focus_leave(ElementPtr element, bool success) {
+void SelectSystem::focus_leave(ElementPtr element, bool success) {
   auto& select = element.select();
   select.open = false;
-  return false;
 }
 
 } // namespace datagui

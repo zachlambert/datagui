@@ -21,7 +21,7 @@ public:
   void text_event(ElementPtr element, const TextEvent& event) override;
 
   void focus_enter(ElementPtr element) override;
-  bool focus_leave(ElementPtr element, bool success) override;
+  void focus_leave(ElementPtr element, bool success) override;
 
 private:
   std::shared_ptr<FontManager> fm;
