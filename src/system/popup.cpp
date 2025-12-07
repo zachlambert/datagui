@@ -82,6 +82,8 @@ void PopupSystem::render(ConstElementPtr element, Renderer& renderer) {
       theme->text_size,
       theme->text_color,
       LengthWrap());
+
+  layout_render_scroll(popup.content_box, popup.layout_state, theme, renderer);
 }
 
 void PopupSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
@@ -95,6 +97,11 @@ void PopupSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     return;
   }
   popup.closed_callback();
+}
+
+bool PopupSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
+  auto& popup = element.popup();
+  return layout_scroll_event(popup.content_box, popup.layout_state, event);
 }
 
 } // namespace datagui

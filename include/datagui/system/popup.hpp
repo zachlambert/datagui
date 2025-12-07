@@ -14,6 +14,7 @@ public:
   void set_dependent_state(ElementPtr element) override;
   void render(ConstElementPtr element, Renderer& renderer) override;
   void mouse_event(ElementPtr element, const MouseEvent& event) override;
+  bool scroll_event(ElementPtr element, const ScrollEvent& event) override;
 
 private:
   std::shared_ptr<FontManager> fm;
