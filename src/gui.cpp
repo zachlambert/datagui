@@ -745,7 +745,7 @@ void Gui::event_handling() {
     if (event.action == KeyAction::Press) {
       switch (event.key) {
       case Key::Tab:
-        focus_next(event.mod_shift);
+        focus_next(event.mod.shift);
         handled = true;
         break;
       case Key::Escape:
@@ -754,7 +754,7 @@ void Gui::event_handling() {
         break;
 #ifdef DATAGUI_DEBUG
       case Key::D:
-        if (event.mod_ctrl) {
+        if (event.mod.ctrl) {
           handled = true;
           debug_mode_ = !debug_mode_;
         }

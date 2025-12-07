@@ -4,7 +4,10 @@
 
 namespace datagui {
 
-void datapack_edit(Gui& gui, const datapack::Schema& schema) {
+void datapack_edit(
+    Gui& gui,
+    const std::string& root_label,
+    const datapack::Schema& schema) {
   std::stack<datapack::Schema::Iterator> stack;
   struct ListState {
     Var<KeyList> keys;
@@ -13,7 +16,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
   std::stack<ListState> list_stack;
 
   auto iter = schema.begin();
-  std::string next_label;
+  std::string next_label = root_label;
 
   while (iter != schema.end()) {
     while (iter != schema.end() && !stack.empty()) {

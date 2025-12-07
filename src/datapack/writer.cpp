@@ -192,6 +192,7 @@ void GuiWriter::object_next(const char* key) {
     return;
   }
   next_label = key;
+  label_from_object = true;
 }
 
 void GuiWriter::object_end() {
@@ -269,21 +270,19 @@ void GuiWriter::list_end() {
 }
 
 void GuiWriter::make_label() {
-  if (!next_label.empty()) {
+  if (label_from_object) {
     gui.text_box(next_label);
     next_label.clear();
   }
 }
 
 void GuiWriter::make_collapsable() {
-  if (!next_label.empty()) {
+  if (label_from_object) {
     gui.args().num_cells(2);
-    gui.collapsable(next_label);
-    next_label.clear();
-  } else {
-    gui.args();
-    gui.collapsable("");
   }
+  gui.collapsable(next_label);
+  label_from_object = false;
+  next_label.clear();
 }
 
 } // namespace datagui

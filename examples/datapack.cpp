@@ -100,7 +100,7 @@ int main() {
 
       gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit + Overwritten by above");
-      gui.edit("Foo 2", value);
+      gui.edit<Foo>("Foo 2", value);
 
       std::cout << "Revisit: " << revisit++ << std::endl;
       gui.end();

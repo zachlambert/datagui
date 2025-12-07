@@ -148,8 +148,8 @@ void glfw_key_callback(
     break;
   }
 
-  event.mod_ctrl = mods & (1 << 1);
-  event.mod_shift = mods & (1 << 0);
+  event.mod.ctrl = mods & (1 << 1);
+  event.mod.shift = mods & (1 << 0);
 
   event.glfw_window = (void*)glfw_window;
 
@@ -278,17 +278,27 @@ void Window::poll_events() {
   text_events_.clear();
   glfwPollEvents();
 
+  Modifiers mod;
+  mod.ctrl = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
+  mod.shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+
   double mx, my;
   glfwGetCursorPos(window, &mx, &my);
   mouse_pos_ = Vec2(mx, my);
 
+  for (auto& event : mouse_events_) {
+    event.mod = mod;
+  }
+
   for (auto& event : scroll_events_) {
     event.position = mouse_pos_;
+    event.mod = mod;
   }
 
   MouseEvent hold_event;
   hold_event.action = MouseAction::Hold;
   hold_event.position = mouse_pos_;
+  hold_event.mod = mod;
 
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     if (!mouse_button_down_[i]) {

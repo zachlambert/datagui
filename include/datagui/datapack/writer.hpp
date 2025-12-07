@@ -10,7 +10,8 @@ namespace datagui {
 class Gui;
 class GuiWriter : public datapack::Writer {
 public:
-  GuiWriter(Gui& gui) : gui(gui) {}
+  GuiWriter(Gui& gui, const std::string& root_label) :
+      gui(gui), next_label(root_label) {}
 
   void number(datapack::NumberType type, const void* value) override;
   void boolean(bool value) override;
@@ -42,6 +43,7 @@ private:
   void make_label();
   void make_collapsable();
   std::string next_label;
+  bool label_from_object = false;
 
   struct ListState {
     Var<KeyList> keys;
@@ -55,8 +57,8 @@ private:
 };
 
 template <typename T>
-T datapack_write(Gui& gui, const T& value) {
-  GuiWriter(gui).value(value);
+T datapack_write(Gui& gui, const std::string& root_label, const T& value) {
+  GuiWriter(gui, root_label).value(value);
   return value;
 }
 

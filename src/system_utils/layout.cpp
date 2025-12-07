@@ -161,8 +161,6 @@ void layout_set_dependent_state(
       if (dynamic_size > 0) {
         col_sizes[j] +=
             available * state.col_input_sizes[j].dynamic / dynamic_size;
-      } else {
-        col_sizes[j] += available / col_sizes.size();
       }
     }
   }
@@ -298,6 +296,16 @@ void layout_set_dependent_state(
     child.state().hidden = true;
     child = child.next();
   }
+
+  // In case size has changed
+  state.scroll_pos.x = std::clamp(
+      state.scroll_pos.x,
+      0.f,
+      std::max(state.content_overrun.x, 0.f));
+  state.scroll_pos.y = std::clamp(
+      state.scroll_pos.y,
+      0.f,
+      std::max(state.content_overrun.y, 0.f));
 }
 
 void layout_render_scroll(
@@ -360,13 +368,13 @@ bool layout_scroll_event(
   }
 
   Vec2 new_pos = state.scroll_pos;
-  if (state.content_overrun.x > 0) {
+  if (state.content_overrun.x > 0 && event.mod.shift) {
     new_pos.x = std::clamp(
         state.scroll_pos.x + event.amount,
         0.f,
         state.content_overrun.x);
   }
-  if (state.content_overrun.y > 0) {
+  if (state.content_overrun.y > 0 && !event.mod.shift) {
     new_pos.y = std::clamp(
         state.scroll_pos.y + event.amount,
         0.f,
