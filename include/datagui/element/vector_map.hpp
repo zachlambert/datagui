@@ -72,6 +72,7 @@ public:
   }
 
   void pop(int index) {
+    assert(index < valid.size() && valid[index]);
     free.push_back(index);
     data[index].~T();
     valid[index] = false;
@@ -127,19 +128,23 @@ public:
   using Iterator = Iterator_<false>;
 
   Iterator begin() {
-    return Iterator(this, 0);
+    std::size_t index = 0;
+    while (index < valid.size() && !valid[index]) {
+      index++;
+    }
+    return Iterator(this, index);
   }
   Iterator end() {
     return Iterator(this, data_size);
   }
   Iterator begin() const {
-    return ConstIterator(this, 0);
+    return const_cast<VectorMap<T>*>(this)->begin();
   }
   Iterator end() const {
     return ConstIterator(this, data_size);
   }
   Iterator cbegin() {
-    return ConstIterator(this, 0);
+    return ConstIterator(begin());
   }
   Iterator cend() {
     return ConstIterator(this, data_size);

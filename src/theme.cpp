@@ -31,6 +31,7 @@ Theme theme_default() {
   theme.input_border_width = 2;
 
   theme.slider_default_length = 100;
+  theme.slider_default_text_size = 100;
   theme.slider_height = 20;
   theme.slider_width = 8;
   theme.slider_color = Color::Gray(0.7);
@@ -45,6 +46,14 @@ Theme theme_default() {
   theme.color_picker_value_scale_width = 20;
 
   theme.header_color = Color::Gray(0.6);
+
+  theme.split_divider_width = 8;
+  theme.split_divider_color = Color::Gray(0.85);
+  theme.split_divider_color_active = Color::Gray(0.5);
+
+  theme.select_min_width = 80;
+
+  theme.text_input_default_width = 160;
 
   return theme;
 }

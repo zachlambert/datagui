@@ -7,13 +7,14 @@
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/writer.hpp"
 #include "datagui/element/args.hpp"
+#include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
-#include "datagui/system/system.hpp"
 #include "datagui/theme.hpp"
 #include "datagui/visual/renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>
 #include <set>
+#include <unordered_set>
 #include <vector>
 
 namespace datagui {
@@ -51,6 +52,8 @@ public:
   }
   void checkbox(const Var<bool>& var);
 
+  bool collapsable(const std::string& label);
+
   void color_picker(
       const Color& initial_value,
       const std::function<void(const Color&)>& callback);
@@ -61,30 +64,24 @@ public:
     });
   }
 
-  void dropdown(
-      const std::vector<std::string>& choices,
-      int initial_choice,
-      const std::function<void(int)>& callback);
-  void dropdown(const std::vector<std::string>& choices, int& choice) {
-    dropdown(choices, choice, [&choice](int new_choice) {
-      choice = new_choice;
-    });
-  }
-  void dropdown(
-      const std::vector<std::string>& choices,
-      const Var<int>& choice);
+  bool dropdown(const std::string& label);
 
-  bool floating(
+  bool group();
+
+  bool popup(
       const Var<bool>& open,
       const std::string& title,
       float width,
       float height);
 
-  bool labelled(const std::string& label);
-
-  bool section(const std::string& label);
-
-  bool series();
+  void select(
+      const std::vector<std::string>& choices,
+      int initial_choice,
+      const std::function<void(int)>& callback);
+  void select(const std::vector<std::string>& choices, int& choice) {
+    select(choices, choice, [&choice](int new_choice) { choice = new_choice; });
+  }
+  void select(const std::vector<std::string>& choices, const Var<int>& choice);
 
   template <typename T>
   void slider(
@@ -98,6 +95,13 @@ public:
   void slider(T& value, T lower, T upper) {
     slider(value, lower, upper, [&value](T new_value) { value = new_value; });
   }
+
+  bool hsplit(float ratio);
+  bool vsplit(float ratio);
+
+  bool tabs(
+      const std::vector<std::string>& labels,
+      std::size_t initial_tab = 0);
 
   void text_input(
       const std::string& initial_value,
@@ -166,15 +170,17 @@ public:
   }
 
   template <typename T>
-  void edit(const std::function<void(const T&)>& callback) {
+  void edit(
+      const std::string& label,
+      const std::function<void(const T&)>& callback) {
     bool is_new = !current;
     args_.tight();
-    if (!series()) {
+    if (!group()) {
       return;
     }
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
-    datapack_edit(*this, *schema);
+    datapack_edit(*this, label, *schema);
     if (!is_new) {
       auto node_capture = current.prev();
       callback(datapack_read<T>(node_capture));
@@ -183,10 +189,10 @@ public:
   }
 
   template <typename T>
-  void edit(const Var<T>& var) {
+  void edit(const std::string& label, const Var<T>& var) {
     bool is_new = !current;
     args_.tight();
-    if (!series()) {
+    if (!group()) {
       return;
     }
 
@@ -194,13 +200,13 @@ public:
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
 
-    if (is_new || var.version() != var_version.mut_internal()) {
+    if (var.version() != var_version.mut_internal() || is_new) {
       var_version.mut_internal() = var.version();
       overwrite = true;
-      datapack_write(*this, *var);
+      datapack_write(*this, label, *var);
       overwrite = false;
     } else {
-      datapack_edit(*this, *schema);
+      datapack_edit(*this, label, *schema);
       if (!is_new) {
         auto node_capture = current.prev();
         var.set(datapack_read<T>(node_capture));
@@ -255,7 +261,7 @@ private:
   void event_handling_hover(const Vec2& mouse_pos);
   void event_handling_scroll(const ScrollEvent& event);
 
-  void set_tree_focus(ElementPtr element, bool focused);
+  void change_tree_focus(ElementPtr from, ElementPtr to);
   void focus_next(bool reverse);
 
   Window window;
@@ -287,12 +293,8 @@ private:
   std::size_t next_key = 0;
   bool overwrite = false; // Only used for datapack_write, special case
 
-  struct Compare {
-    bool operator()(const ElementPtr& lhs, const ElementPtr& rhs) const {
-      return lhs.state().float_priority >= rhs.state().float_priority;
-    }
-  };
-  std::set<ElementPtr, Compare> floating_elements;
+  std::unordered_set<ElementPtr, ElementPtr::HashFunc> floating_elements;
+  std::set<ElementPtr, ElementPtr::FloatCompare> ordered_floating_elements;
 
   Args args_;
 
@@ -309,26 +311,29 @@ private:
   void render(ConstElementPtr element) {
     system(element).render(element, renderer);
   }
-  bool mouse_event(ElementPtr element, const MouseEvent& event) {
-    return system(element).mouse_event(element, event);
+  void mouse_event(ElementPtr element, const MouseEvent& event) {
+    system(element).mouse_event(element, event);
   }
-  bool mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
-    return system(element).mouse_hover(element, mouse_pos);
+  void mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
+    system(element).mouse_hover(element, mouse_pos);
   }
   bool scroll_event(ElementPtr element, const ScrollEvent& event) {
     return system(element).scroll_event(element, event);
   }
-  bool key_event(ElementPtr element, const KeyEvent& event) {
-    return system(element).key_event(element, event);
+  void key_event(ElementPtr element, const KeyEvent& event) {
+    system(element).key_event(element, event);
   }
-  bool text_event(ElementPtr element, const TextEvent& event) {
-    return system(element).text_event(element, event);
+  void text_event(ElementPtr element, const TextEvent& event) {
+    system(element).text_event(element, event);
   }
   void focus_enter(ElementPtr element) {
     system(element).focus_enter(element);
   }
-  bool focus_leave(ElementPtr element, bool success) {
+  void focus_leave(ElementPtr element, bool success) {
     return system(element).focus_leave(element, success);
+  }
+  void focus_tree_leave(ElementPtr element) {
+    return system(element).focus_tree_leave(element);
   }
 };
 

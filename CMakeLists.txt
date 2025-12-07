@@ -40,15 +40,19 @@ add_library(datagui SHARED
   src/input/number_input.cpp
   src/input/text_selection.cpp
 
+  src/system_utils/layout.cpp
+
   src/system/button.cpp
   src/system/checkbox.cpp
+  src/system/collapsable.cpp
   src/system/color_picker.cpp
   src/system/dropdown.cpp
-  src/system/floating.cpp
-  src/system/labelled.cpp
-  src/system/section.cpp
-  src/system/series.cpp
+  src/system/group.cpp
+  src/system/popup.cpp
+  src/system/select.cpp
   src/system/slider.cpp
+  src/system/split.cpp
+  src/system/tabs.cpp
   src/system/text_box.cpp
   src/system/text_input.cpp
   src/system/viewport.cpp

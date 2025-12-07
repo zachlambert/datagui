@@ -61,12 +61,12 @@ void ButtonSystem::render(ConstElementPtr element, Renderer& renderer) {
       LengthWrap());
 }
 
-bool ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   auto& button = element.button();
 
   if (event.button != MouseButton::Left) {
-    return false;
+    return;
   }
   switch (event.action) {
   case MouseAction::Press:
@@ -75,23 +75,24 @@ bool ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   case MouseAction::Release:
     button.down = false;
     if (state.box().contains(event.position)) {
-      if (!button.callback) {
-        return true;
+      if (button.callback) {
+        button.callback();
+      } else {
+        element.set_dirty();
       }
-      button.callback();
     }
     break;
   default:
     break;
   }
-  return false;
 }
 
-bool ButtonSystem::key_event(ElementPtr element, const KeyEvent& event) {
+void ButtonSystem::key_event(ElementPtr element, const KeyEvent& event) {
   auto& button = element.button();
   if (event.key != Key::Enter) {
-    return false;
+    return;
   }
+
   switch (event.action) {
   case KeyAction::Press:
     button.down = true;
@@ -100,14 +101,13 @@ bool ButtonSystem::key_event(ElementPtr element, const KeyEvent& event) {
     button.down = false;
     if (button.callback) {
       button.callback();
-      return false;
     } else {
-      return true;
+      element.set_dirty();
     }
+    break;
   default:
     break;
   }
-  return false;
 }
 
 } // namespace datagui

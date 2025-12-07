@@ -2,11 +2,13 @@
 
 #include "datagui/geometry.hpp"
 #include <variant>
+#include <vector>
 
 namespace datagui {
 
-enum class Direction { Horizontal, Vertical };
-enum class Alignment { Min, Center, Max };
+enum class XAlignment { Left, Center, Right };
+enum class YAlignment { Top, Center, Bottom };
+enum class Direction { Vertical, Horizontal };
 
 struct LengthFixed {
   float value = 0;
@@ -23,6 +25,30 @@ struct LengthDynamic {
 struct LengthWrap {};
 
 using Length = std::variant<LengthFixed, LengthDynamic, LengthWrap>;
+
+struct Layout {
+  // Default to single columns
+  int rows = -1;
+  int cols = 1;
+  XAlignment x_alignment = XAlignment::Left;
+  YAlignment y_alignment = YAlignment::Top;
+  bool tight = false;
+};
+
+struct InputSizes {
+  float fixed;
+  float dynamic;
+};
+
+struct LayoutState {
+  std::vector<InputSizes> row_input_sizes;
+  std::vector<InputSizes> col_input_sizes;
+
+  Vec2 content_fixed_size;
+  Vec2 content_dynamic_size;
+  Vec2 content_overrun;
+  Vec2 scroll_pos;
+};
 
 class BoxDims {
 public:

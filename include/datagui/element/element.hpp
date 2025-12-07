@@ -14,18 +14,20 @@ namespace datagui {
 enum class Type {
   Button,
   Checkbox,
+  Collapsable,
   ColorPicker,
   Dropdown,
-  Floating,
-  Labelled,
-  Section,
-  Series,
+  Group,
+  Popup,
+  Select,
   Slider,
+  Split,
+  Tabs,
   TextBox,
   TextInput,
   ViewportPtr,
 };
-static constexpr std::size_t TypeCount = 12;
+static constexpr std::size_t TypeCount = 14;
 
 struct Button {
   // Definition
@@ -44,9 +46,32 @@ struct Checkbox {
   // Definition
   std::function<void(bool)> callback;
 
+  // Dependent
+  float checkbox_size;
+
   // State
   bool checked = false;
   int var_version = 0;
+};
+
+struct Collapsable {
+  // Args
+  Layout layout;
+  Length width;
+  Length height;
+  std::string label;
+  std::optional<Color> header_color;
+  std::optional<Color> bg_color;
+  bool border = false;
+  bool tight = false;
+
+  // Dependent
+  Vec2 header_size;
+  Box2 content_box;
+
+  // State
+  bool open = false;
+  LayoutState layout_state;
 };
 
 struct ColorPicker {
@@ -68,77 +93,71 @@ struct ColorPicker {
 
 struct Dropdown {
   // Definition
+  std::string label;
+  Direction direction;
+  Layout layout;
+
+  // Args
+  LayoutState layout_state;
+  bool retain = false; // Retain state after closing
+
+  // State
+  bool open = false;
+};
+
+struct Group {
+  // Args
+  Layout layout;
+  Length width;
+  Length height;
+  std::optional<Color> bg_color;
+  bool border = false;
+  bool tight = false;
+
+  // Dependent
+  Box2 content_box;
+
+  // State
+  LayoutState layout_state;
+};
+
+struct Popup {
+  // Definition
+  std::string title;
+  Vec2 popup_size;
+  std::function<void()> closed_callback;
+
+  // Args
+  Layout layout;
+  std::optional<Color> header_color;
+  std::optional<Color> bg_color;
+  bool retain = false; // Retain state after closing
+
+  // Dependent
+  float header_height;
+  Box2 header_box;
+  float header_text_width;
+  Box2 close_button_box;
+  Box2 content_box;
+
+  // State
+  bool open = false;
+  LayoutState layout_state;
+};
+
+struct Select {
+  // Definition
   std::vector<std::string> choices;
   std::function<void(int)> callback;
+
+  // Dependent
+  std::vector<Box2> choice_boxes;
 
   // State
   int choice = -1;
   bool var_version = 0;
   int choice_hovered = -1;
   bool open = false;
-  Length width = LengthWrap();
-};
-
-struct Floating {
-  // Definition
-  std::string title;
-  float width;
-  float height;
-  std::function<void()> closed_callback;
-
-  // Args
-  std::optional<Color> header_color;
-  std::optional<Color> bg_color;
-
-  // Dependent
-  Box2 title_bar_box;
-  float title_bar_text_width;
-  Box2 close_button_box;
-
-  // State
-  bool open = false;
-  int open_var_version = 0;
-  int content_id = 0;
-};
-
-struct Labelled {
-  // Definition
-  std::string label;
-};
-
-struct Section {
-  // Definition
-  std::string label;
-
-  // Args
-  std::optional<Color> header_color;
-  std::optional<Color> bg_color;
-  bool border = false;
-  bool tight = false;
-
-  // Dependent
-  Vec2 header_size;
-
-  // State
-  bool open = false;
-};
-
-struct Series {
-  // Args
-  Direction direction = Direction::Vertical;
-  Alignment alignment = Alignment::Center;
-  Length length = LengthWrap();
-  Length width = LengthDynamic(1);
-  std::optional<Color> bg_color;
-  bool border = false;
-  bool tight = false;
-
-  // Dependent
-  float content_length = 0;
-
-  // State
-  float overrun = 0;
-  float scroll_pos = 0;
 };
 
 struct Slider {
@@ -155,13 +174,33 @@ struct Slider {
   bool held = false;
 };
 
-struct TextBox {
+struct Split {
   // Definition
-  std::string text;
+  Direction direction = Direction::Vertical;
 
   // Args
-  std::optional<Color> text_color;
-  int text_size = 0;
+  bool fixed = true;
+  Length width;
+  Length height;
+
+  // Dependent
+  Box2 divider_box;
+
+  // State
+  float ratio = 0.5;
+  bool held = false;
+};
+
+struct Tabs {
+  // Definition
+  std::vector<std::string> labels;
+
+  // Dependent
+  float header_height;
+  std::vector<Box2> label_boxes;
+
+  // State
+  std::size_t tab = 0;
 };
 
 struct TextInput {
@@ -171,11 +210,20 @@ struct TextInput {
   std::optional<NumberType> number_type;
 
   // Args
-  Length width = LengthDynamic(1);
+  std::optional<Length> width;
 
   // State
   std::string text;
   int var_version = 0;
+};
+
+struct TextBox {
+  // Definition
+  std::string text;
+
+  // Args
+  std::optional<Color> text_color;
+  int text_size = 0;
 };
 
 struct ViewportPtr {

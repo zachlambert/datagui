@@ -1,0 +1,83 @@
+#include <datagui/gui.hpp>
+
+int main() {
+  datagui::Gui gui;
+  using datagui::Color;
+
+  while (gui.running()) {
+    if (gui.vsplit(0.3)) {
+      if (gui.group()) {
+        auto counter = gui.variable<int>(0);
+        if (gui.tabs({"Display", "Increment", "Decrement"})) {
+          gui.args().width_expand().height_expand();
+          if (gui.group()) {
+            gui.text_box(std::to_string(*counter));
+            gui.end();
+          }
+          gui.button("Increment", [counter]() { counter.mut()++; });
+          gui.button("Decrement", [counter]() { counter.mut()--; });
+          gui.end();
+        }
+        gui.args().grid(-1, 3);
+        if (gui.group()) {
+          gui.text_box("aaa");
+          gui.text_box("bbb");
+          gui.text_box("ccc");
+          gui.args().num_cells(2);
+          gui.text_box("ddddddddddddddd");
+          gui.text_box("ee");
+          gui.args().num_cells(3).text_input_wrap();
+          gui.text_input("fffffffffffff", {});
+          gui.end();
+        }
+        gui.end();
+      }
+      gui.args().width_expand();
+      if (gui.hsplit(0.5)) {
+
+        auto popup_open = gui.variable<bool>(false);
+        if (gui.popup(popup_open, "Popup", 200, 200)) {
+          auto counter = gui.variable<int>(0);
+          gui.text_box("Popup " + std::to_string(*counter));
+          gui.button("Increment", [=]() { counter.mut()++; });
+          gui.end();
+        }
+
+        gui.args().tight();
+        if (gui.dropdown("Third")) {
+          gui.text_box("One");
+
+          gui.args().dropdown_horizontal().tight();
+          if (gui.dropdown("Two - Click!")) {
+            gui.text_box("Item 0");
+            gui.text_box("Item 1");
+            gui.button("Spawn popup", [=]() { popup_open.set(true); });
+            gui.text_box("Item 3");
+            gui.end();
+          }
+          gui.text_box("Three");
+          gui.text_box("Four");
+          gui.end();
+        }
+
+        gui.args().split_fixed();
+        if (gui.vsplit(0.6)) {
+          gui.args().width_expand();
+          if (gui.group()) {
+            gui.text_box("Fourth");
+            for (std::size_t i = 0; i < 20; i++) {
+              gui.text_box("Fourth [" + std::to_string(i) + "]");
+            }
+            gui.end();
+          }
+          gui.text_box("Fifth");
+          gui.end();
+        }
+        gui.end();
+      }
+      gui.end();
+    }
+    gui.poll();
+  }
+  return 0;
+}

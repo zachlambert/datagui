@@ -12,12 +12,13 @@ class Args {
     Arg(T default_value = T()) :
         default_value(default_value), value(default_value) {}
 
-    void operator=(const T& value) {
-      this->value = value;
+    T& operator*() {
+      return value;
     }
-    void operator=(T&& value) {
-      this->value = std::move(value);
+    T* operator->() {
+      return &value;
     }
+
     void consume(T& output) {
       output = value;
       value = default_value;
@@ -34,84 +35,170 @@ class Args {
 public:
   // Common
 
+  Args& num_cells(int num_cells) {
+    *num_cells_ = num_cells;
+    return *this;
+  }
+
   Args& text_color(const Color& text_color) {
-    text_color_ = text_color;
+    *text_color_ = text_color;
     return *this;
   }
   Args& text_size(int text_size) {
-    text_size_ = text_size;
+    *text_size_ = text_size;
     return *this;
   }
   Args& bg_color(const Color& bg_color) {
-    bg_color_ = bg_color;
+    *bg_color_ = bg_color;
     return *this;
   }
   Args& header_color(const Color& header_color) {
-    header_color_ = header_color;
+    *header_color_ = header_color;
     return *this;
   }
   Args& border() {
-    border_ = true;
-    return *this;
-  }
-  Args& tight() {
-    tight_ = true;
+    *border_ = true;
     return *this;
   }
   Args& always() {
-    always_ = true;
+    *always_ = true;
+    return *this;
+  }
+  Args& label(const std::string& label) {
+    *label_ = label;
     return *this;
   }
 
-  // Series
+  // Layout
 
+  // Note: Shouldn't need to use this, is the default layout
+  Args& vertical() {
+    layout_->rows = -1;
+    layout_->cols = 1;
+    layout_->x_alignment = XAlignment::Left;
+    layout_->y_alignment = YAlignment::Top;
+    return *this;
+  }
   Args& horizontal() {
-    series_.direction = Direction::Horizontal;
-    series_.length = LengthDynamic();
-    series_.width = LengthWrap();
+    layout_->rows = 1;
+    layout_->cols = -1;
+    layout_->x_alignment = XAlignment::Left;
+    layout_->y_alignment = YAlignment::Center;
     return *this;
   }
-  Args& align_center() {
-    series_.alignment = Alignment::Center;
+  Args& grid(int rows, int cols) {
+    if (rows == -1 && cols == -1) {
+      cols = 1;
+    }
+    layout_->rows = rows;
+    layout_->cols = cols;
+    layout_->x_alignment = XAlignment::Left;
+    layout_->y_alignment = YAlignment::Center;
     return *this;
   }
-  Args& align_max() {
-    series_.alignment = Alignment::Max;
+  Args& align_left() {
+    layout_->x_alignment = XAlignment::Left;
     return *this;
   }
-  Args& length_fixed(float length) {
-    series_.length = LengthFixed(length);
+  Args& align_center_h() {
+    layout_->x_alignment = XAlignment::Center;
+    return *this;
+  }
+  Args& align_right() {
+    layout_->x_alignment = XAlignment::Right;
+    return *this;
+  }
+  Args& align_top() {
+    layout_->y_alignment = YAlignment::Top;
+    return *this;
+  }
+  Args& align_center_v() {
+    layout_->y_alignment = YAlignment::Center;
+    return *this;
+  }
+  Args& align_bottom() {
+    layout_->y_alignment = YAlignment::Bottom;
     return *this;
   }
 
-  // Slider
+  Args& width_fixed(float length) {
+    *width_ = LengthFixed(length);
+    return *this;
+  }
+  Args& height_fixed(float length) {
+    *height_ = LengthFixed(length);
+    return *this;
+  }
+  Args& width_expand(float weight = 1) {
+    *width_ = LengthDynamic(weight);
+    return *this;
+  }
+  Args& height_expand(float weight = 1) {
+    *height_ = LengthDynamic(weight);
+    return *this;
+  }
+
+  Args& tight() {
+    layout_->tight = true;
+    return *this;
+  }
+
+  Args& retain() {
+    *retain_ = true;
+    return *this;
+  }
+
+  // Other
 
   Args& slider_length(float length) {
-    slider_.length = length;
+    *slider_length_ = length;
+    return *this;
+  }
+
+  Args& split_fixed() {
+    *split_fixed_ = true;
+    return *this;
+  }
+
+  Args& text_input_expand(float weight = 1) {
+    *text_input_width_ = LengthDynamic(weight);
+    return *this;
+  }
+  Args& text_input_width(float width) {
+    *text_input_width_ = LengthFixed(width);
+    return *this;
+  }
+  Args& text_input_wrap() {
+    *text_input_width_ = LengthWrap();
+    return *this;
+  }
+
+  Args& dropdown_horizontal() {
+    *dropdown_direction_ = Direction::Horizontal;
     return *this;
   }
 
 private:
   void apply(ElementPtr element);
 
+  Arg<int> num_cells_ = 1;
   ArgOpt<Color> text_color_;
   Arg<int> text_size_ = 0;
   ArgOpt<Color> bg_color_;
   ArgOpt<Color> header_color_;
   Arg<bool> border_ = false;
-  Arg<bool> tight_ = false;
+  Arg<std::string> label_ = {};
+  Arg<Length> width_ = Length(LengthWrap());
+  Arg<Length> height_ = Length(LengthWrap());
+  Arg<Layout> layout_ = Layout();
+
   Arg<bool> always_ = false;
+  Arg<bool> retain_ = false;
 
-  struct {
-    Arg<Direction> direction = Direction::Vertical;
-    Arg<Alignment> alignment = Alignment::Min;
-    Arg<Length> length = Length(LengthWrap());
-    Arg<Length> width = Length(LengthDynamic(1));
-  } series_;
-
-  struct {
-    ArgOpt<float> length;
-  } slider_;
+  ArgOpt<float> slider_length_;
+  Arg<bool> split_fixed_ = false;
+  ArgOpt<Length> text_input_width_;
+  Arg<Direction> dropdown_direction_ = Direction::Vertical;
 
   friend class Gui;
 };

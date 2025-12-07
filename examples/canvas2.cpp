@@ -8,7 +8,7 @@ int main() {
   using datagui::Vec2;
 
   while (gui.running()) {
-    if (gui.series()) {
+    if (gui.group()) {
       gui.text_box("Canvas");
 
       auto color = gui.variable<Color>(Color::Red());
@@ -26,31 +26,24 @@ int main() {
       }
 
       gui.args().bg_color(Color::Hsl(220, 0.3, 0.8));
-      if (gui.section("Properties")) {
-        gui.args().tight();
-        if (gui.series()) {
-          if (gui.labelled("Bg color")) {
-            gui.args().always();
-            gui.color_picker(color);
-            gui.end();
-          }
-          if (gui.labelled("Width")) {
-            gui.args().always();
-            gui.slider<float>(10, 200, width);
-            gui.end();
-          }
-          if (gui.labelled("Border size")) {
-            gui.args().always();
-            gui.slider<float>(0, *width / 2, border_size);
-            gui.end();
-          }
-          if (gui.labelled("Radius")) {
-            gui.args().always();
-            gui.slider<float>(0, *width / 2, radius);
-            gui.end();
-          }
-          gui.end();
-        }
+      gui.args().grid(-1, 2);
+      if (gui.collapsable("Properties")) {
+        gui.text_box("Color");
+        gui.args().always();
+        gui.color_picker(color);
+
+        gui.text_box("Width");
+        gui.args().always();
+        gui.slider<float>(10, 200, width);
+
+        gui.text_box("Border size");
+        gui.args().always();
+        gui.slider<float>(0, *width / 2, border_size);
+
+        gui.text_box("Radius");
+        gui.args().always();
+        gui.slider<float>(0, *width / 2, radius);
+
         gui.end();
       }
 

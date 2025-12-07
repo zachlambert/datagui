@@ -1,7 +1,7 @@
 #pragma once
 
+#include "datagui/element/system.hpp"
 #include "datagui/input/text_selection.hpp"
-#include "datagui/system/system.hpp"
 #include "datagui/theme.hpp"
 
 namespace datagui {
@@ -16,12 +16,12 @@ public:
   void set_input_state(ElementPtr element) override;
   void render(ConstElementPtr element, Renderer& renderer) override;
 
-  bool mouse_event(ElementPtr element, const MouseEvent& event) override;
-  bool key_event(ElementPtr element, const KeyEvent& event) override;
-  bool text_event(ElementPtr element, const TextEvent& event) override;
+  void mouse_event(ElementPtr element, const MouseEvent& event) override;
+  void key_event(ElementPtr element, const KeyEvent& event) override;
+  void text_event(ElementPtr element, const TextEvent& event) override;
 
   void focus_enter(ElementPtr element) override;
-  bool focus_leave(ElementPtr element, bool success) override;
+  void focus_leave(ElementPtr element, bool success) override;
 
 private:
   std::shared_ptr<FontManager> fm;

@@ -27,9 +27,7 @@ void Canvas2::end() {
   render_content();
 }
 
-bool Canvas2::mouse_event(const MouseEvent& event) {
-  return false;
-}
+void Canvas2::mouse_event(const MouseEvent& event) {}
 
 void Canvas2::impl_init(const std::shared_ptr<FontManager>& fm) {
   shape_shader.init();

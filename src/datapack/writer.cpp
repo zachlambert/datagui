@@ -33,6 +33,9 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
     }
     return;
   }
+
+  make_label();
+
   if (auto constraint = get_constraint<datapack::ConstraintNumber>()) {
     if (auto range =
             std::get_if<datapack::ConstraintNumberRange>(&(*constraint))) {
@@ -80,6 +83,7 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
             {});
         break;
       }
+      return;
     }
   }
 
@@ -112,34 +116,38 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
 }
 
 void GuiWriter::boolean(bool value) {
+  make_label();
   gui.checkbox(value, {});
 }
 
 void GuiWriter::string(const char* value) {
+  make_label();
   gui.text_input(std::string(value), {});
 }
 
 void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
+  make_label();
   std::vector<std::string> labels_str;
   for (auto label : labels) {
     labels_str.emplace_back(label);
   }
-  gui.dropdown(labels_str, value, {});
+  gui.select(labels_str, value, {});
 }
 
 void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
+  make_label();
   std::string text = datapack::base64_encode(data);
   gui.text_input(text, {});
 }
 
 void GuiWriter::optional_begin(bool has_value) {
-  gui.args().tight();
-  gui.series();
+  make_collapsable();
   auto has_value_var = gui.variable<bool>(has_value);
   gui.checkbox(has_value_var);
   if (!*has_value_var) {
     gui.end();
   }
+  next_label = "value";
 }
 
 void GuiWriter::optional_end() {
@@ -152,11 +160,12 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
     labels_str.emplace_back(label);
   }
 
-  gui.args().tight();
-  gui.series();
+  make_collapsable();
   auto choice_var = gui.variable<int>(value);
-  gui.dropdown(labels_str, choice_var);
+  gui.select(labels_str, choice_var);
   gui.key(*choice_var);
+
+  next_label = "value";
 }
 
 void GuiWriter::variant_end() {
@@ -172,9 +181,8 @@ void GuiWriter::object_begin() {
       return;
     }
   }
-  gui.args().tight();
-  gui.series();
-  at_object_begin = true;
+  gui.args().grid(-1, 2);
+  make_collapsable();
 }
 
 void GuiWriter::object_next(const char* key) {
@@ -183,30 +191,23 @@ void GuiWriter::object_next(const char* key) {
     color_i++;
     return;
   }
-  if (!at_object_begin) {
-    gui.end();
-  }
-  at_object_begin = false;
-  gui.section(key);
+  next_label = key;
+  label_from_object = true;
 }
 
 void GuiWriter::object_end() {
   if (in_color) {
     assert(color_i == 4);
+    make_label();
     gui.color_picker(color, {});
     in_color = false;
     return;
   }
-  if (!at_object_begin) {
-    gui.end();
-  }
-  at_object_begin = false;
   gui.end();
 }
 
 void GuiWriter::tuple_begin() {
-  gui.args().tight();
-  gui.series();
+  make_collapsable();
 }
 
 void GuiWriter::tuple_next() {
@@ -218,15 +219,14 @@ void GuiWriter::tuple_end() {
 }
 
 void GuiWriter::list_begin() {
-  gui.args().tight();
-  gui.series();
+  make_collapsable();
 
   auto key_list = gui.variable<KeyList>();
   ListState state = {key_list, 0};
   list_stack.push(state);
 
   gui.args().tight();
-  gui.series();
+  gui.group();
 }
 
 void GuiWriter::list_next() {
@@ -235,8 +235,8 @@ void GuiWriter::list_next() {
 
   if (state.index != 0) {
     auto keys = state.keys;
-    std::size_t remove_i = state.index - 1;
-    gui.button("Remove", [=]() { keys.mut().remove(remove_i); });
+    std::size_t key = (*keys)[state.index - 1];
+    gui.button("Remove", [=]() { keys.mut().remove(key); });
     gui.end();
   }
 
@@ -245,7 +245,7 @@ void GuiWriter::list_next() {
 
   gui.key((*state.keys)[state.index]);
   gui.args().horizontal();
-  gui.series();
+  gui.group();
 
   state.index++;
 }
@@ -267,6 +267,22 @@ void GuiWriter::list_end() {
   gui.end();
 
   list_stack.pop();
+}
+
+void GuiWriter::make_label() {
+  if (label_from_object) {
+    gui.text_box(next_label);
+    next_label.clear();
+  }
+}
+
+void GuiWriter::make_collapsable() {
+  if (label_from_object) {
+    gui.args().num_cells(2);
+  }
+  gui.collapsable(next_label);
+  label_from_object = false;
+  next_label.clear();
 }
 
 } // namespace datagui

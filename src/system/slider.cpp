@@ -1,16 +1,17 @@
 #include "datagui/system/slider.hpp"
+#include <iomanip>
+#include <sstream>
 
 namespace datagui {
 
 void SliderSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& slider = element.slider();
+  auto& slider = element.slider();
 
   float slider_length =
       slider.length ? *slider.length : theme->slider_default_length;
 
-  state.fixed_size.x = slider_length;
-  state.fixed_size.y = theme->slider_height;
+  state.fixed_size = Vec2(slider_length, theme->slider_height);
   state.dynamic_size = Vec2();
   state.floating = false;
 
@@ -19,24 +20,28 @@ void SliderSystem::set_input_state(ElementPtr element) {
       theme->text_font,
       theme->text_size,
       LengthWrap());
-  state.fixed_size.x += theme->text_padding + text_size.x;
+  state.fixed_size.x += theme->text_padding +
+                        std::max(text_size.x, theme->slider_default_text_size);
 }
 
 void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& slider = element.slider();
 
+  Vec2 bg_position = state.position;
+  bg_position.y += (state.size.y - theme->slider_height) / 2;
+
   float slider_length =
       slider.length ? *slider.length : theme->slider_default_length;
   Vec2 bg_size(slider_length, theme->slider_height);
 
   renderer.queue_box(
-      Box2(state.position, state.position + bg_size),
+      Box2(bg_position, bg_position + bg_size),
       theme->slider_bg_color,
       theme->slider_border_width,
       theme->slider_border_color);
 
-  Vec2 slider_pos = state.position + Vec2::uniform(theme->slider_border_width);
+  Vec2 slider_pos = bg_position + Vec2::uniform(theme->slider_border_width);
   slider_pos.x += theme->slider_width / 2;
   float inner_width =
       slider_length - theme->slider_border_width * 2 - theme->slider_width;
@@ -59,7 +64,7 @@ void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
 
   renderer.queue_box(Box2(slider_pos, slider_pos + slider_size), slider_color);
 
-  Vec2 text_pos = state.position;
+  Vec2 text_pos = bg_position;
   text_pos.x += slider_length + theme->text_padding;
   text_pos.y += (theme->slider_height / 2) -
                 (fm->text_height(theme->text_font, theme->text_size) / 2);
@@ -72,13 +77,16 @@ void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
       theme->text_color);
 }
 
-bool SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
+void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   auto& slider = element.slider();
 
   if (!slider.held && event.action == MouseAction::Press) {
     float slider_length =
         slider.length ? *slider.length : theme->slider_default_length;
+
+    Vec2 bg_position = state.position;
+    bg_position.y += (state.size.y - theme->slider_height) / 2;
 
     Box2 slider_box;
     slider_box.lower =
@@ -93,21 +101,22 @@ bool SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
       active_value = slider.value;
       slider.held = true;
     }
-    return false;
+    return;
   }
   if (slider.held && event.action == MouseAction::Release) {
     slider.held = false;
     if (!slider.always && slider.value != active_value) {
       slider.value = active_value;
-      if (!slider.callback) {
-        return true;
+      if (slider.callback) {
+        slider.callback(slider.value);
+      } else {
+        element.set_dirty();
       }
-      slider.callback(slider.value);
     }
-    return false;
+    return;
   }
   if (!slider.held || event.action != MouseAction::Hold) {
-    return false;
+    return;
   }
 
   float slider_length =
@@ -148,12 +157,11 @@ bool SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     slider.value = active_value;
     slider.callback(active_value);
   }
-
-  return false;
 }
 
 std::string SliderSystem::get_slider_text(const Slider& slider) const {
   double slider_value = slider.held ? active_value : slider.value;
+  std::string result;
   switch (slider.type) {
   case NumberType::I32:
     return std::to_string(std::int32_t(slider_value));
@@ -163,13 +171,20 @@ std::string SliderSystem::get_slider_text(const Slider& slider) const {
     return std::to_string(std::uint32_t(slider_value));
   case NumberType::U64:
     return std::to_string(std::uint64_t(slider_value));
-  case NumberType::F32:
-    return std::to_string(float(slider_value));
-  case NumberType::F64:
-    return std::to_string(double(slider_value));
+  case NumberType::F32: {
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << float(slider_value);
+    return ss.str();
+  }
+  case NumberType::F64: {
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << slider_value;
+    return ss.str();
+  }
   case NumberType::U8:
     return std::to_string(std::uint8_t(slider_value));
   }
+  assert(false);
   return "";
 }
 

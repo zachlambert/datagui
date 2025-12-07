@@ -8,14 +8,14 @@ TEST(Tree, CreateElements) {
 
   auto node = tree.root();
   ASSERT_FALSE(node);
-  node.create(Type::Series);
+  node.create(Type::Group);
   ASSERT_TRUE(node);
-  ASSERT_EQ(node.type(), Type::Series);
+  ASSERT_EQ(node.type(), Type::Group);
   {
     auto& state = node.state();
     state.position = Vec2(1, 2);
-    auto& series = node.series();
-    series.bg_color = Color::Red();
+    auto& group = node.group();
+    group.bg_color = Color::Red();
   }
 
   node = node.child();

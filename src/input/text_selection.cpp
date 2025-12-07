@@ -102,7 +102,7 @@ void selection_key_event(
     if (event.action == KeyAction::Release) {
       break;
     }
-    if (event.mod_ctrl) {
+    if (event.mod.ctrl) {
       if (selection.end == 0) {
         return;
       }
@@ -113,14 +113,14 @@ void selection_key_event(
       while (selection.end != 0 && std::isalnum(text[selection.end - 1])) {
         selection.end--;
       }
-      if (!event.mod_shift) {
+      if (!event.mod.shift) {
         selection.begin = selection.end;
       }
-    } else if (selection.span() > 0 && !event.mod_shift) {
+    } else if (selection.span() > 0 && !event.mod.shift) {
       selection.reset(selection.from());
     } else if (selection.end != 0) {
       selection.end--;
-      if (!event.mod_shift) {
+      if (!event.mod.shift) {
         selection.begin = selection.end;
       }
     }
@@ -130,7 +130,7 @@ void selection_key_event(
     if (event.action == KeyAction::Release) {
       break;
     }
-    if (event.mod_ctrl) {
+    if (event.mod.ctrl) {
       if (selection.end == text.size()) {
         return;
       }
@@ -143,14 +143,14 @@ void selection_key_event(
              std::isalnum(text[selection.end])) {
         selection.end++;
       }
-      if (!event.mod_shift) {
+      if (!event.mod.shift) {
         selection.begin = selection.end;
       }
-    } else if (selection.span() > 0 && !event.mod_shift) {
+    } else if (selection.span() > 0 && !event.mod.shift) {
       selection.reset(selection.to());
     } else if (selection.end != text.size()) {
       selection.end++;
-      if (!event.mod_shift) {
+      if (!event.mod.shift) {
         selection.begin = selection.end;
       }
     }
@@ -167,7 +167,7 @@ void selection_key_event(
       selection.reset(selection.from());
 
     } else if (selection.begin > 0) {
-      if (event.mod_ctrl) {
+      if (event.mod.ctrl) {
         int pos = selection.begin - 1;
         while (pos != 0 && !std::isalnum(text[pos])) {
           pos--;
@@ -196,7 +196,7 @@ void selection_key_event(
       selection.reset(selection.from());
 
     } else if (selection.begin < text.size()) {
-      if (event.mod_ctrl) {
+      if (event.mod.ctrl) {
         int pos = selection.begin;
         while (pos != text.size() && !std::isalnum(text[pos])) {
           pos++;
@@ -215,7 +215,7 @@ void selection_key_event(
     if (event.action != KeyAction::Release) {
       break;
     }
-    if (!event.mod_ctrl || selection.span() == 0 || !event.glfw_window) {
+    if (!event.mod.ctrl || selection.span() == 0 || !event.glfw_window) {
       break;
     }
     std::string copied = text.substr(selection.from(), selection.span());
@@ -226,7 +226,7 @@ void selection_key_event(
     if (event.action != KeyAction::Release) {
       break;
     }
-    if (!editable || !event.mod_ctrl || !event.glfw_window) {
+    if (!editable || !event.mod.ctrl || !event.glfw_window) {
       break;
     }
     const char* pasted_cstr =
@@ -249,7 +249,7 @@ void selection_key_event(
     if (event.action != KeyAction::Release) {
       break;
     }
-    if (!event.mod_ctrl || selection.span() == 0 || !event.glfw_window) {
+    if (!event.mod.ctrl || selection.span() == 0 || !event.glfw_window) {
       break;
     }
     std::string copied = text.substr(selection.from(), selection.span());

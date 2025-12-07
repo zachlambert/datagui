@@ -9,15 +9,22 @@ static constexpr std::size_t MouseButtonSize = 3;
 
 enum class MouseAction { Press, Release, Hold };
 
+struct Modifiers {
+  bool ctrl = false;
+  bool shift = false;
+};
+
 struct MouseEvent {
   MouseButton button;
   MouseAction action;
   Vec2 position;
+  Modifiers mod;
 };
 
 struct ScrollEvent {
   Vec2 position;
   float amount;
+  Modifiers mod;
 };
 
 enum class Key {
@@ -64,8 +71,7 @@ enum class KeyAction { Press, Repeat, Release };
 struct KeyEvent {
   Key key;
   KeyAction action;
-  bool mod_ctrl;
-  bool mod_shift;
+  Modifiers mod;
   // Only need this for handling CtrlC/CtrlV behaviour
   // Pass GLFWWindow* as a void pointer to avoid including glfw here
   void* glfw_window;

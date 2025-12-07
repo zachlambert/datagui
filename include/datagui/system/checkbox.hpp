@@ -1,6 +1,6 @@
 #pragma once
 
-#include "datagui/system/system.hpp"
+#include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
 #include "datagui/visual/font_manager.hpp"
 
@@ -15,9 +15,8 @@ public:
 
   void set_input_state(ElementPtr element) override;
   void render(ConstElementPtr element, Renderer& renderer) override;
-
-  bool mouse_event(ElementPtr element, const MouseEvent& event) override;
-  bool key_event(ElementPtr element, const KeyEvent& event) override;
+  void mouse_event(ElementPtr element, const MouseEvent& event) override;
+  void key_event(ElementPtr element, const KeyEvent& event) override;
 
 private:
   std::shared_ptr<FontManager> fm;
