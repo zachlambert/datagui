@@ -99,7 +99,9 @@ public:
   bool hsplit(float ratio);
   bool vsplit(float ratio);
 
-  bool tabs(const std::vector<std::string>& labels);
+  bool tabs(
+      const std::vector<std::string>& labels,
+      std::size_t initial_tab = 0);
 
   void text_input(
       const std::string& initial_value,

@@ -365,6 +365,27 @@ bool Gui::vsplit(float ratio) {
   return false;
 }
 
+bool Gui::tabs(
+    const std::vector<std::string>& labels,
+    std::size_t initial_tab) {
+  check_begin();
+  bool is_new = current.expect(Type::Tabs, read_key());
+  args_.apply(current);
+  auto& tabs = current.tabs();
+
+  if (is_new) {
+    tabs.labels = labels;
+    tabs.tab = initial_tab;
+  }
+
+  if (current.dirty() || overwrite) {
+    move_down();
+    return true;
+  }
+  current = current.next();
+  return false;
+}
+
 void Gui::text_input(
     const std::string& initial_value,
     const std::function<void(const std::string&)>& callback) {
@@ -773,6 +794,9 @@ ElementPtr Gui::get_leaf_node(const Vec2& position) {
       auto element = stack.top();
       stack.pop();
 
+      if (element.state().hidden) {
+        continue;
+      }
       if (element.state().floating) {
         if (element != root) {
           continue;

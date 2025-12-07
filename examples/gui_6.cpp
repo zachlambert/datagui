@@ -7,7 +7,17 @@ int main() {
   while (gui.running()) {
     if (gui.vsplit(0.3)) {
       if (gui.group()) {
-        gui.text_box("First");
+        auto counter = gui.variable<int>(0);
+        if (gui.tabs({"Display", "Increment", "Decrement"})) {
+          gui.args().width_expand().height_expand();
+          if (gui.group()) {
+            gui.text_box(std::to_string(*counter));
+            gui.end();
+          }
+          gui.button("Increment", [counter]() { counter.mut()++; });
+          gui.button("Decrement", [counter]() { counter.mut()--; });
+          gui.end();
+        }
         gui.text_box("Second");
         gui.end();
       }

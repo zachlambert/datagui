@@ -116,7 +116,7 @@ public:
     return *this;
   }
   Args& height_expand(float weight = 1) {
-    *height_ = LengthFixed(weight);
+    *height_ = LengthDynamic(weight);
     return *this;
   }
 

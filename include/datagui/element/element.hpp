@@ -192,6 +192,10 @@ struct Tabs {
   // Definition
   std::vector<std::string> labels;
 
+  // Dependent
+  float header_height;
+  std::vector<Box2> label_boxes;
+
   // State
   std::size_t tab = 0;
 };
