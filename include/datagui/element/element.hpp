@@ -160,6 +160,7 @@ struct Select {
   // Dependent
   Vec2 label_size;
   Box2 select_box;
+  std::vector<Box2> choice_boxes;
 
   // State
   int choice = -1;
