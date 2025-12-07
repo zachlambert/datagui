@@ -143,7 +143,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
           continue;
         }
       }
-      gui.args().grid(-1, 2).num_cells(n_cells).width_expand();
+      gui.args().grid(-1, 2).num_cells(n_cells);
       if (gui.collapsable(label)) {
         stack.push(iter);
         iter = iter.next();
@@ -153,7 +153,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (iter.tuple_begin()) {
-      gui.args().num_cells(n_cells).width_expand();
+      gui.args().num_cells(n_cells);
       if (gui.collapsable(label)) {
         stack.push(iter);
         iter = iter.next();
@@ -163,7 +163,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (iter.list()) {
-      gui.args().num_cells(n_cells).width_expand();
+      gui.args().num_cells(n_cells);
       if (gui.collapsable(label)) {
         auto keys = gui.variable<KeyList>();
         gui.args().tight();
@@ -180,7 +180,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (iter.optional()) {
-      gui.args().num_cells(n_cells).width_expand();
+      gui.args().num_cells(n_cells);
       if (gui.collapsable(label)) {
         auto has_value = gui.variable<bool>(false);
         gui.checkbox(has_value);
@@ -196,7 +196,7 @@ void datapack_edit(Gui& gui, const datapack::Schema& schema) {
       continue;
     }
     if (auto variant_begin = iter.variant_begin()) {
-      gui.args().num_cells(n_cells).width_expand();
+      gui.args().num_cells(n_cells);
       if (gui.collapsable(label)) {
         auto choice = gui.variable<int>(0);
         gui.select(variant_begin->labels, choice);

@@ -234,6 +234,7 @@ void Tree::create_dependency(int element, int variable) {
 }
 
 void Tree::clear_dependencies(int element) {
+  assert(elements.contains(element));
   int dep = elements[element].first_dependency;
   while (dep != -1) {
     int next = dependencies[dep].next;

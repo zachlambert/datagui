@@ -161,6 +161,8 @@ void layout_set_dependent_state(
       if (dynamic_size > 0) {
         col_sizes[j] +=
             available * state.col_input_sizes[j].dynamic / dynamic_size;
+      } else {
+        col_sizes[j] += available / col_sizes.size();
       }
     }
   }

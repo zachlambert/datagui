@@ -147,6 +147,7 @@ void GuiWriter::optional_begin(bool has_value) {
   if (!*has_value_var) {
     gui.end();
   }
+  next_label = "value";
 }
 
 void GuiWriter::optional_end() {
@@ -163,6 +164,8 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   auto choice_var = gui.variable<int>(value);
   gui.select(labels_str, choice_var);
   gui.key(*choice_var);
+
+  next_label = "value";
 }
 
 void GuiWriter::variant_end() {
@@ -274,10 +277,11 @@ void GuiWriter::make_label() {
 
 void GuiWriter::make_collapsable() {
   if (!next_label.empty()) {
-    gui.args().num_cells(2).width_expand();
+    gui.args().num_cells(2);
     gui.collapsable(next_label);
     next_label.clear();
   } else {
+    gui.args();
     gui.collapsable("");
   }
 }
