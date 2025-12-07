@@ -61,7 +61,8 @@ struct Checkbox {
 struct Collapsable {
   // Args
   Layout layout;
-  Vec2 fixed_size;
+  Length width;
+  Length height;
   std::string label;
   std::optional<Color> header_color;
   std::optional<Color> bg_color;
@@ -112,7 +113,8 @@ struct Dropdown {
 struct Group {
   // Args
   Layout layout;
-  Vec2 fixed_size;
+  Length width;
+  Length height;
   std::optional<Color> bg_color;
   bool border = false;
   bool tight = false;
@@ -190,7 +192,8 @@ struct Split {
 
   // Args
   bool fixed = true;
-  Vec2 fixed_size;
+  Length width;
+  Length height;
 
   // Dependent
   Box2 divider_box;

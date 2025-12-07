@@ -52,7 +52,7 @@ Theme theme_default() {
 
   theme.select_min_width = 80;
 
-  theme.text_input_default_width = 100;
+  theme.text_input_default_width = 160;
 
   return theme;
 }

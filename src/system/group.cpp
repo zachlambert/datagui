@@ -16,17 +16,17 @@ void GroupSystem::set_input_state(ElementPtr element) {
     state.fixed_size += Vec2::uniform(2 * theme->layout_border_width);
   }
 
-  if (group.fixed_size.x > 0) {
-    state.fixed_size.x = group.fixed_size.x;
+  if (auto width = std::get_if<LengthFixed>(&group.width)) {
+    state.fixed_size.x = width->value;
     state.dynamic_size.x = 0;
-  } else {
-    state.dynamic_size.x = std::max(state.dynamic_size.x, 1.f);
+  } else if (auto width = std::get_if<LengthDynamic>(&group.width)) {
+    state.dynamic_size.x = std::max(state.dynamic_size.x, width->weight);
   }
-  if (group.fixed_size.y > 0) {
-    state.fixed_size.y = group.fixed_size.y;
+  if (auto height = std::get_if<LengthFixed>(&group.height)) {
+    state.fixed_size.y = height->value;
     state.dynamic_size.y = 0;
-  } else {
-    state.dynamic_size.y = std::max(state.dynamic_size.y, 1.f);
+  } else if (auto height = std::get_if<LengthDynamic>(&group.height)) {
+    state.dynamic_size.y = std::max(state.dynamic_size.y, height->weight);
   }
 }
 

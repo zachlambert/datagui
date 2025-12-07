@@ -22,7 +22,8 @@ void Args::apply(ElementPtr element) {
     bg_color_.consume(collapsable.bg_color);
     border_.consume(collapsable.border);
     layout_.consume(collapsable.layout);
-    fixed_size_.consume(collapsable.fixed_size);
+    width_.consume(collapsable.width);
+    height_.consume(collapsable.height);
     break;
   }
   case Type::ColorPicker: {
@@ -39,7 +40,8 @@ void Args::apply(ElementPtr element) {
     bg_color_.consume(group.bg_color);
     border_.consume(group.border);
     layout_.consume(group.layout);
-    fixed_size_.consume(group.fixed_size);
+    width_.consume(group.width);
+    height_.consume(group.height);
     break;
   }
   case Type::Popup: {
@@ -64,7 +66,8 @@ void Args::apply(ElementPtr element) {
   case Type::Split: {
     auto& split = element.split();
     split_fixed_.consume(split.fixed);
-    fixed_size_.consume(split.fixed_size);
+    width_.consume(split.width);
+    height_.consume(split.height);
     break;
   }
   case Type::Tabs: {

@@ -21,29 +21,32 @@ void CollapsableSystem::set_input_state(ElementPtr element) {
       collapsable.layout,
       collapsable.layout_state);
 
-  if (collapsable.fixed_size.x > 0) {
-    state.fixed_size.x = collapsable.fixed_size.x;
-  } else {
-    state.fixed_size.x = std::max(
-        collapsable.layout_state.content_fixed_size.x,
-        collapsable.header_size.x);
-  }
+  state.dynamic_size.x = collapsable.layout_state.content_dynamic_size.x;
+  state.fixed_size.x = std::max(
+      state.fixed_size.x,
+      collapsable.layout_state.content_fixed_size.x);
 
-  state.fixed_size.y = collapsable.header_size.y;
   if (collapsable.open) {
-    if (collapsable.fixed_size.y > 0) {
-      state.fixed_size.y += collapsable.fixed_size.y;
-    } else {
-      state.fixed_size.y += collapsable.layout_state.content_fixed_size.y;
-    }
+    state.fixed_size.y += collapsable.layout_state.content_fixed_size.y;
+    state.dynamic_size.y = collapsable.layout_state.content_dynamic_size.y;
   }
 
   if (collapsable.border) {
     state.fixed_size += Vec2::uniform(2 * theme->layout_border_width);
   }
 
-  state.dynamic_size.x = collapsable.layout_state.content_dynamic_size.x;
-  state.dynamic_size.y = 0;
+  if (auto width = std::get_if<LengthFixed>(&collapsable.width)) {
+    state.fixed_size.x = width->value;
+    state.dynamic_size.x = 0;
+  } else if (auto width = std::get_if<LengthDynamic>(&collapsable.width)) {
+    state.dynamic_size.x = std::max(state.dynamic_size.x, width->weight);
+  }
+  if (auto height = std::get_if<LengthFixed>(&collapsable.height)) {
+    state.fixed_size.y = height->value;
+    state.dynamic_size.y = 0;
+  } else if (auto height = std::get_if<LengthDynamic>(&collapsable.height)) {
+    state.dynamic_size.y = std::max(state.dynamic_size.y, height->weight);
+  }
 
   state.floating = false;
 }

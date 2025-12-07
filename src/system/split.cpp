@@ -29,27 +29,30 @@ void SplitSystem::set_input_state(ElementPtr element) {
   if (split.direction == Direction::Horizontal) {
     state.fixed_size.y =
         a_fixed_size.y + b_fixed_size.y + theme->split_divider_width;
-    state.dynamic_size.y = 1;
+    state.dynamic_size.y = std::max(a_dynamic_size.y + b_dynamic_size.y, 1.f);
 
     state.fixed_size.x = std::max(a_fixed_size.x, b_fixed_size.x);
-    if (split.fixed_size.x > 0) {
-      state.fixed_size.x = std::max(state.fixed_size.x, split.fixed_size.x);
-      state.dynamic_size.x = 0;
-    } else {
-      state.dynamic_size.x = 1;
-    }
+    state.dynamic_size.x = std::max(a_dynamic_size.x, b_dynamic_size.x);
   } else {
     state.fixed_size.x =
         a_fixed_size.x + b_fixed_size.x + theme->split_divider_width;
-    state.dynamic_size.x = 1;
+    state.dynamic_size.x = std::max(a_dynamic_size.x + b_dynamic_size.x, 1.f);
 
     state.fixed_size.y = std::max(a_fixed_size.y, b_fixed_size.y);
-    if (split.fixed_size.y > 0) {
-      state.fixed_size.y = std::max(state.fixed_size.y, split.fixed_size.y);
-      state.dynamic_size.y = 0;
-    } else {
-      state.dynamic_size.y = 1;
-    }
+    state.dynamic_size.y = std::max(a_dynamic_size.y, b_dynamic_size.y);
+  }
+
+  if (auto width = std::get_if<LengthFixed>(&split.width)) {
+    state.fixed_size.x = width->value;
+    state.dynamic_size.x = 0;
+  } else if (auto width = std::get_if<LengthDynamic>(&split.width)) {
+    state.dynamic_size.x = std::max(state.dynamic_size.x, width->weight);
+  }
+  if (auto height = std::get_if<LengthFixed>(&split.height)) {
+    state.fixed_size.y = height->value;
+    state.dynamic_size.y = 0;
+  } else if (auto height = std::get_if<LengthDynamic>(&split.height)) {
+    state.dynamic_size.y = std::max(state.dynamic_size.y, height->weight);
   }
 }
 

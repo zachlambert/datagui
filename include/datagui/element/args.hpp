@@ -104,11 +104,19 @@ public:
   }
 
   Args& width_fixed(float length) {
-    fixed_size_->x = length;
+    *width_ = LengthFixed(length);
     return *this;
   }
   Args& height_fixed(float length) {
-    fixed_size_->y = length;
+    *height_ = LengthFixed(length);
+    return *this;
+  }
+  Args& width_expand(float weight = 1) {
+    *width_ = LengthDynamic(weight);
+    return *this;
+  }
+  Args& height_expand(float weight = 1) {
+    *height_ = LengthFixed(weight);
     return *this;
   }
 
@@ -148,7 +156,8 @@ private:
   Arg<bool> border_ = false;
   Arg<bool> always_ = false;
   Arg<std::string> label_ = {};
-  Arg<Vec2> fixed_size_ = {};
+  Arg<Length> width_ = Length(LengthWrap());
+  Arg<Length> height_ = Length(LengthWrap());
   Arg<Layout> layout_ = {};
   ArgOpt<float> slider_length_;
   Arg<bool> split_fixed_ = false;
