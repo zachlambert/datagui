@@ -52,13 +52,19 @@ int main() {
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
       });
 
-      gui.args().label("Paused").tight();
-      gui.checkbox(timer_paused);
+      gui.args().horizontal();
+      if (gui.group()) {
+        gui.text_box("Paused");
+        gui.checkbox(timer_paused);
+      }
 
       if (gui.collapsable("Open me")) {
         gui.text_box("Hello :)");
-        gui.args().label("Input");
-        gui.text_input("", {});
+        gui.args().horizontal();
+        if (gui.group()) {
+          gui.text_box("Input");
+          gui.text_input("", {});
+        }
         gui.end();
       }
 

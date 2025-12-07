@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <datagui/element/key_list.hpp>
 #include <datagui/gui.hpp>
 
@@ -20,15 +21,26 @@ void edit_list_1(datagui::Gui& gui) {
       if (!gui.group()) {
         continue;
       }
+
       gui.text_box(person.name);
 
-      gui.args().label("Desc.");
-      gui.text_input(person.desc, [=](const std::string& value) {
-        persons.mut()[i].desc = value;
-      });
+      gui.args().horizontal();
+      if (gui.group()) {
+        gui.text_box("Desc.");
+        gui.text_input(person.desc, [=](const std::string& value) {
+          persons.mut()[i].desc = value;
+        });
+        gui.end();
+      }
 
+      std::string name = person.name;
       gui.button("Remove", [=]() {
-        persons.mut().erase(persons->begin() + i);
+        auto iter = std::find_if(
+            persons->begin(),
+            persons->end(),
+            [name](const auto& person) { return person.name == name; });
+        assert(iter != persons->end());
+        persons.mut().erase(iter);
       });
       gui.end();
     }
@@ -38,10 +50,16 @@ void edit_list_1(datagui::Gui& gui) {
   gui.args().border();
   if (gui.group()) {
     auto new_name = gui.variable<std::string>();
-    gui.text_input(new_name);
-
     auto new_desc = gui.variable<std::string>();
-    gui.text_input(new_desc);
+
+    gui.args().grid(-1, 2);
+    if (gui.group()) {
+      gui.text_box("Name");
+      gui.text_input(new_name);
+      gui.text_box("Description");
+      gui.text_input(new_desc);
+      gui.end();
+    }
 
     auto error = gui.variable<std::string>();
 
