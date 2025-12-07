@@ -97,7 +97,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
     auto& s_state = second.state();
     s_state.position = state.position;
     s_state.position.y += height_f + div_size;
-    f_state.size = minimum(s_state.fixed_size, Vec2(state.size.x, height_s));
+    s_state.size = minimum(s_state.fixed_size, Vec2(state.size.x, height_s));
     if (s_state.dynamic_size.x > 0) {
       s_state.size.x = state.size.x;
     }
