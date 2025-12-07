@@ -23,7 +23,21 @@ int main() {
       }
       gui.args().width_expand();
       if (gui.hsplit(0.5)) {
-        gui.text_box("Third");
+        gui.args().tight();
+        if (gui.dropdown("Third")) {
+          gui.text_box("One");
+          if (gui.dropdown("Two - Click!")) {
+            gui.text_box("Item 0");
+            gui.text_box("Item 1");
+            gui.text_box("Item 2");
+            gui.text_box("Item 3");
+            gui.end();
+          }
+          // gui.text_box("Three");
+          // gui.text_box("Four");
+          gui.end();
+        }
+
         gui.args().split_fixed();
         if (gui.vsplit(0.6)) {
           gui.args().width_expand();

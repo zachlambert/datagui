@@ -93,11 +93,12 @@ struct ColorPicker {
 
 struct Dropdown {
   // Definition
+  std::string label;
   Direction direction;
   Layout layout;
 
   // Args
-  std::optional<Color> bg_color;
+  LayoutState layout_state;
 
   // State
   bool open = false;

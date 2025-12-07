@@ -16,6 +16,7 @@ public:
   void set_dependent_state(ElementPtr element) override;
   void render(ConstElementPtr element, Renderer& renderer) override;
   void mouse_event(ElementPtr element, const MouseEvent& event) override;
+  bool scroll_event(ElementPtr element, const ScrollEvent& event) override;
   bool focus_leave(ElementPtr element, bool success) override;
 
 private:

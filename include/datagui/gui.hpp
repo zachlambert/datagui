@@ -64,7 +64,7 @@ public:
     });
   }
 
-  bool dropdown();
+  bool dropdown(const std::string& label);
 
   bool group();
 

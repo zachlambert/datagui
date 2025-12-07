@@ -171,11 +171,13 @@ void Gui::color_picker(const Var<Color>& var) {
   color_picker.value = *var;
 }
 
-bool Gui::dropdown() {
+bool Gui::dropdown(const std::string& label) {
   check_begin();
   current.expect(Type::Dropdown, read_key());
   args_.apply(current);
   auto& dropdown = current.dropdown();
+
+  dropdown.label = label;
 
   if (dropdown.open && (current.dirty() || overwrite)) {
     move_down();

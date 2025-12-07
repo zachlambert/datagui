@@ -30,6 +30,8 @@ void Args::apply(ElementPtr element) {
     break;
   }
   case Type::Dropdown: {
+    auto& dropdown = element.dropdown();
+    layout_.consume(dropdown.layout);
     break;
   }
   case Type::Group: {
