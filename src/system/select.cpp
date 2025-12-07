@@ -6,19 +6,7 @@ void SelectSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& select = element.select();
 
-  if (!select.label.empty()) {
-    select.label_size = fm->text_size(
-                            select.label,
-                            theme->text_font,
-                            theme->text_size,
-                            LengthWrap()) +
-                        Vec2::uniform(2 * theme->text_padding);
-  } else {
-    select.label_size = Vec2();
-  }
-
   float text_height = fm->text_height(theme->text_font, theme->text_size);
-
   float max_item_width = theme->select_min_width;
   for (const auto& choice : select.choices) {
     Vec2 choice_size =
@@ -27,7 +15,7 @@ void SelectSystem::set_input_state(ElementPtr element) {
   }
 
   float padding = theme->text_padding + theme->input_border_width;
-  state.fixed_size.x = select.label_size.x + max_item_width + 2 * padding;
+  state.fixed_size.x = max_item_width + 2 * padding;
   state.fixed_size.y = text_height + 2 * padding;
   state.dynamic_size = Vec2();
 
@@ -41,8 +29,8 @@ void SelectSystem::set_input_state(ElementPtr element) {
         (select.choices.size() + 1) * theme->input_border_width;
 
     Vec2 floating_offset;
-    floating_offset.x = select.label_size.x;
-    floating_offset.y = state.fixed_size.y;
+    floating_offset.x = 0;
+    floating_offset.y = state.fixed_size.y - theme->input_border_width;
 
     state.floating_type = FloatingTypeRelative(floating_offset, floating_size);
   } else {
@@ -54,15 +42,10 @@ void SelectSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& select = element.select();
 
-  select.select_box = state.box();
-  select.select_box.lower.x += select.label_size.x;
-
   select.choice_boxes.resize(select.choices.size());
 
-  Vec2 size = select.select_box.size();
-  float y_offset = 0;
-  Vec2 position = select.select_box.upper_left();
-  position.y -= theme->input_border_width;
+  Vec2 size = state.box().size();
+  Vec2 position = state.float_box.lower;
   for (std::size_t i = 0; i < select.choices.size(); i++) {
     auto& box = select.choice_boxes[i];
     box = Box2(position, position + size);
@@ -74,33 +57,19 @@ void SelectSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& select = element.select();
 
-  if (!select.label.empty()) {
-    Vec2 offset(
-        theme->text_padding,
-        theme->text_padding + theme->input_border_width);
-    renderer.queue_text(
-        state.position + offset,
-        select.label,
-        theme->text_font,
-        theme->text_size,
-        theme->text_color,
-        LengthWrap());
-  }
-
   const Color& select_color =
       select.open ? theme->input_color_bg_active : theme->input_color_bg;
   renderer.queue_box(
-      select.select_box,
+      state.box(),
       select_color,
       theme->input_border_width,
       theme->input_color_border);
 
   if (!select.choices.empty() && select.choice >= 0) {
     Vec2 offset =
-        Vec2(select.label_size.x, 0) +
         Vec2::uniform(theme->text_padding + theme->input_border_width);
     renderer.queue_text(
-        select.select_box.lower + offset,
+        state.position + offset,
         select.choices[select.choice],
         theme->text_font,
         theme->text_size,

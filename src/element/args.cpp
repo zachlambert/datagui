@@ -12,8 +12,6 @@ void Args::apply(ElementPtr element) {
     break;
   }
   case Type::Checkbox: {
-    auto& checkbox = element.checkbox();
-    label_.consume(checkbox.label);
     break;
   }
   case Type::Collapsable: {
@@ -28,7 +26,6 @@ void Args::apply(ElementPtr element) {
   }
   case Type::ColorPicker: {
     auto& color_picker = element.color_picker();
-    label_.consume(color_picker.label);
     always_.consume(color_picker.always);
     break;
   }
@@ -52,13 +49,10 @@ void Args::apply(ElementPtr element) {
     break;
   }
   case Type::Select: {
-    auto& select = element.select();
-    label_.consume(select.label);
     break;
   }
   case Type::Slider: {
     auto& slider = element.slider();
-    label_.consume(slider.label);
     always_.consume(slider.always);
     slider_length_.consume(slider.length);
     break;
@@ -81,7 +75,6 @@ void Args::apply(ElementPtr element) {
   }
   case Type::TextInput: {
     auto& text_input = element.text_input();
-    label_.consume(text_input.label);
     text_input_width_.consume(text_input.width);
     break;
   }

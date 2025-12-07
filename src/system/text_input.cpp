@@ -6,15 +6,6 @@ void TextInputSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& text_input = element.text_input();
 
-  if (!text_input.label.empty()) {
-    text_input.label_size = fm->text_size(
-                                text_input.label,
-                                theme->text_font,
-                                theme->text_size,
-                                LengthWrap()) +
-                            Vec2::uniform(2 * theme->text_padding);
-  }
-
   const std::string& text = state.focused ? active_text : text_input.text;
   Length text_length = text_input.width
                            ? *text_input.width
@@ -25,7 +16,6 @@ void TextInputSystem::set_input_state(ElementPtr element) {
   state.fixed_size =
       text_size +
       2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
-  state.fixed_size.x += text_input.label_size.x;
   state.dynamic_size = Vec2();
   state.floating = 0;
 
@@ -37,30 +27,9 @@ void TextInputSystem::set_input_state(ElementPtr element) {
   }
 }
 
-void TextInputSystem::set_dependent_state(ElementPtr element) {
-  const auto& state = element.state();
-  auto& text_input = element.text_input();
-
-  text_input.text_input_box = state.box();
-  text_input.text_input_box.lower.x += text_input.label_size.x;
-}
-
 void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& text_input = element.text_input();
-
-  if (!text_input.label.empty()) {
-    Vec2 offset;
-    offset.x = theme->text_padding;
-    offset.y = theme->text_padding + theme->input_border_width;
-    renderer.queue_text(
-        state.position + offset,
-        text_input.label,
-        theme->text_font,
-        theme->text_size,
-        theme->text_color,
-        LengthWrap());
-  }
 
   const std::string& text = state.focused ? active_text : text_input.text;
 
@@ -72,13 +41,13 @@ void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
   }
 
   renderer.queue_box(
-      text_input.text_input_box,
+      state.box(),
       theme->input_color_bg,
       theme->input_border_width,
       border_color);
 
   Vec2 text_position =
-      text_input.text_input_box.lower +
+      state.position +
       Vec2::uniform(theme->input_border_width + theme->text_padding);
 
   Length text_length = text_input.width
@@ -120,14 +89,11 @@ void TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& text_input = element.text_input();
 
   if (event.action == MouseAction::Press) {
-    if (!text_input.text_input_box.contains(event.position)) {
-      return;
-    }
     active_text = text_input.text;
   }
 
   Vec2 text_origin =
-      text_input.text_input_box.lower +
+      state.position +
       Vec2::uniform(theme->input_border_width + theme->text_padding);
 
   const auto& font = fm->font_structure(theme->text_font, theme->text_size);

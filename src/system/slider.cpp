@@ -6,22 +6,10 @@ void SliderSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& slider = element.slider();
 
-  if (!slider.label.empty()) {
-    slider.label_size = fm->text_size(
-                            slider.label,
-                            theme->text_font,
-                            theme->text_size,
-                            LengthWrap()) +
-                        Vec2::uniform(2 * theme->text_padding);
-  } else {
-    slider.label_size = Vec2();
-  }
-
   float slider_length =
       slider.length ? *slider.length : theme->slider_default_length;
 
-  state.fixed_size.x = slider_length + slider.label_size.x;
-  state.fixed_size.y = std::max(theme->slider_height, slider.label_size.y);
+  state.fixed_size = Vec2(slider_length, theme->slider_height);
   state.dynamic_size = Vec2();
   state.floating = false;
 
@@ -37,21 +25,7 @@ void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
   const auto& state = element.state();
   const auto& slider = element.slider();
 
-  if (!slider.label.empty()) {
-    Vec2 offset;
-    offset.x = theme->text_padding;
-    offset.y = (state.size.y - slider.label_size.y) / 2 + theme->text_padding;
-    renderer.queue_text(
-        state.position + offset,
-        slider.label,
-        theme->text_font,
-        theme->text_size,
-        theme->text_color,
-        LengthWrap());
-  }
-
   Vec2 bg_position = state.position;
-  bg_position.x += slider.label_size.x;
   bg_position.y += (state.size.y - theme->slider_height) / 2;
 
   float slider_length =
@@ -109,7 +83,6 @@ void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
         slider.length ? *slider.length : theme->slider_default_length;
 
     Vec2 bg_position = state.position;
-    bg_position.x += slider.label_size.x;
     bg_position.y += (state.size.y - theme->slider_height) / 2;
 
     Box2 slider_box;

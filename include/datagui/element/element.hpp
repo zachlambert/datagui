@@ -46,12 +46,8 @@ struct Checkbox {
   // Definition
   std::function<void(bool)> callback;
 
-  // Args
-  std::string label;
-
   // Dependent
   float checkbox_size;
-  Vec2 label_size;
 
   // State
   bool checked = false;
@@ -80,12 +76,10 @@ struct Collapsable {
 
 struct ColorPicker {
   // Args
-  std::string label;
   std::function<void(Color)> callback;
   bool always = false;
 
   // Dependent
-  Vec2 label_size;
   Box2 hue_wheel_box;
   Box2 lightness_box;
 
@@ -99,7 +93,6 @@ struct ColorPicker {
 
 struct Dropdown {
   // Definition
-  std::string label;
   Direction direction;
   Layout layout;
 
@@ -154,12 +147,7 @@ struct Select {
   std::vector<std::string> choices;
   std::function<void(int)> callback;
 
-  // Args
-  std::string label;
-
   // Dependent
-  Vec2 label_size;
-  Box2 select_box;
   std::vector<Box2> choice_boxes;
 
   // State
@@ -171,16 +159,12 @@ struct Select {
 
 struct Slider {
   // Args
-  std::string label;
   std::optional<float> length;
   NumberType type;
   double lower;
   double upper;
   std::function<void(double)> callback;
   bool always = false;
-
-  // Dependent
-  Vec2 label_size;
 
   // State
   double value;
@@ -219,12 +203,7 @@ struct TextInput {
   std::optional<NumberType> number_type;
 
   // Args
-  std::string label;
   std::optional<Length> width;
-
-  // Dependent
-  Vec2 label_size;
-  Box2 text_input_box;
 
   // State
   std::string text;

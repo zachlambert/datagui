@@ -26,17 +26,22 @@ int main() {
       }
 
       gui.args().bg_color(Color::Hsl(220, 0.3, 0.8));
+      gui.args().grid(-1, 2);
       if (gui.collapsable("Properties")) {
-        gui.args().label("Bg color").always();
+        gui.text_box("Color");
+        gui.args().always();
         gui.color_picker(color);
 
-        gui.args().label("Width").always();
+        gui.text_box("Width");
+        gui.args().always();
         gui.slider<float>(10, 200, width);
 
-        gui.args().label("Border size").always();
+        gui.text_box("Border size");
+        gui.args().always();
         gui.slider<float>(0, *width / 2, border_size);
 
-        gui.args().label("Radius").always();
+        gui.text_box("Radius");
+        gui.args().always();
         gui.slider<float>(0, *width / 2, radius);
 
         gui.end();
