@@ -40,7 +40,7 @@ void Renderer::queue_text(
   assert(!masks.empty());
   layers.back().text_command.queue_text(
       fm,
-      flip_text_origin(origin, font, font_size),
+      flip_position(origin, font, font_size),
       text,
       font,
       font_size,
@@ -109,15 +109,13 @@ void Renderer::pop_mask() {
 
 Box2 Renderer::flip_box(const Box2& box) {
   Box2 result = box;
-  result.lower.y = box.upper.y - result.lower.y;
-  result.upper.y = box.lower.y - result.lower.y;
+  result.lower.y = viewport_size.y - box.upper.y;
+  result.upper.y = viewport_size.y - box.lower.y;
   return result;
 }
 
-Vec2 Renderer::flip_text_origin(const Vec2& origin, Font font, int font_size) {
-  return Vec2(
-      origin.x,
-      viewport_size.y - origin.y + fm->text_height(font, font_size));
+Vec2 Renderer::flip_position(const Vec2& origin, Font font, int font_size) {
+  return Vec2(origin.x, viewport_size.y - origin.y);
 }
 
 } // namespace datagui

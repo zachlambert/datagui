@@ -44,7 +44,7 @@ public:
 
 private:
   Box2 flip_box(const Box2& box);
-  Vec2 flip_text_origin(const Vec2& origin, Font font, int font_size);
+  Vec2 flip_position(const Vec2& origin, Font font, int font_size);
 
   struct ImageCommand {
     Box2 box;

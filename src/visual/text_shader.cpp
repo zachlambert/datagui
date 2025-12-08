@@ -131,6 +131,7 @@ void TextShader::Command::queue_text(
 
     Vec2 pos = origin + offset;
     pos.x += c.offset.x;
+    pos.y += fs.descender + c.offset.y;
     offset.x += c.advance;
 
     Box2 box(pos, pos + c.size);
@@ -147,9 +148,9 @@ void TextShader::Command::queue_text(
       new_uv.lower.x = uv.lower.x + uv.size().x *
                                         (new_box.lower.x - box.lower.x) /
                                         box.size().x;
-      new_uv.lower.y = uv.lower.y + uv.size().x *
-                                        (new_box.lower.x - box.lower.x) /
-                                        box.size().x;
+      new_uv.lower.y = uv.lower.y + uv.size().y *
+                                        (new_box.lower.y - box.lower.y) /
+                                        box.size().y;
       new_uv.upper.x = uv.lower.x + uv.size().x *
                                         (new_box.upper.x - box.lower.x) /
                                         box.size().x;
