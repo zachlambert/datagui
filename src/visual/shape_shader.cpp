@@ -24,7 +24,6 @@ layout(location = 9) in vec4 border_color;
 layout(location = 10) in vec2 mask_lower;
 layout(location = 11) in vec2 mask_upper;
 
-uniform float y_dir;
 uniform vec2 viewport_size;
 
 out vec2 fs_offset;
@@ -43,7 +42,7 @@ void main(){
   vec2 fs_pos = position + rotation * fs_offset;
   gl_Position = vec4(
     (fs_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
-    y_dir * (fs_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
+    (fs_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
     0,
     1);
 
@@ -107,7 +106,6 @@ static const std::array<Vec2, 6> quad_vertices = {
 void ShapeShader::init() {
   program_id = create_program(rect_vs, rect_fs);
 
-  uniform_y_dir = glGetUniformLocation(program_id, "y_dir");
   uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
 
   // Generate ids
@@ -369,10 +367,7 @@ void ShapeShader::Command::queue_ellipse(
   elements.push_back(element);
 }
 
-void ShapeShader::draw(
-    const Command& command,
-    float y_dir,
-    const Vec2& viewport_size) {
+void ShapeShader::draw(const Command& command, const Vec2& viewport_size) {
   if (command.elements.empty()) {
     return;
   }
@@ -385,7 +380,6 @@ void ShapeShader::draw(
       GL_STATIC_DRAW);
 
   glUseProgram(program_id);
-  glUniform1f(uniform_y_dir, y_dir);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);
   glDrawArraysInstanced(

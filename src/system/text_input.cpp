@@ -27,7 +27,7 @@ void TextInputSystem::set_input_state(ElementPtr element) {
   }
 }
 
-void TextInputSystem::render(ConstElementPtr element, Renderer& renderer) {
+void TextInputSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& text_input = element.text_input();
 

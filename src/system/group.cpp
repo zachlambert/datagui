@@ -51,7 +51,7 @@ void GroupSystem::set_dependent_state(ElementPtr element) {
       group.layout_state);
 }
 
-void GroupSystem::render(ConstElementPtr element, Renderer& renderer) {
+void GroupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& group = element.group();
 

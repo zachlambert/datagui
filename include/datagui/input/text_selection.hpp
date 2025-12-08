@@ -2,7 +2,7 @@
 
 #include "datagui/input/event.hpp"
 #include "datagui/visual/font_manager.hpp"
-#include "datagui/visual/renderer.hpp"
+#include "datagui/visual/gui_renderer.hpp"
 
 namespace datagui {
 
@@ -88,6 +88,6 @@ void render_selection(
     Color highlight_color,
     int cursor_width,
     Length width,
-    Renderer& renderer);
+    GuiRenderer& renderer);
 
 } // namespace datagui

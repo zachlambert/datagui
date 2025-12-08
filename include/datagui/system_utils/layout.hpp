@@ -2,7 +2,7 @@
 
 #include "datagui/element/tree.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/visual/renderer.hpp"
+#include "datagui/visual/gui_renderer.hpp"
 
 namespace datagui {
 
@@ -23,7 +23,7 @@ void layout_render_scroll(
     const Box2& content_box,
     const LayoutState& state,
     const std::shared_ptr<Theme>& theme,
-    Renderer& renderer);
+    GuiRenderer& renderer);
 
 bool layout_scroll_event(
     const Box2& content_box,

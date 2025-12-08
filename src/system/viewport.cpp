@@ -11,7 +11,7 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
   state.floating = false;
 }
 
-void ViewportPtrSystem::render(ConstElementPtr element, Renderer& renderer) {
+void ViewportPtrSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& viewport = element.viewport();
   renderer.queue_image(state.box(), viewport.viewport->texture());

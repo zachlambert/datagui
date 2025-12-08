@@ -15,7 +15,7 @@ void CheckboxSystem::set_input_state(ElementPtr element) {
   state.floating = false;
 }
 
-void CheckboxSystem::render(ConstElementPtr element, Renderer& renderer) {
+void CheckboxSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& checkbox = element.checkbox();
 

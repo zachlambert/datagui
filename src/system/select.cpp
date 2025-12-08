@@ -53,7 +53,7 @@ void SelectSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void SelectSystem::render(ConstElementPtr element, Renderer& renderer) {
+void SelectSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& select = element.select();
 

@@ -10,7 +10,7 @@
 
 namespace datagui {
 
-class Renderer {
+class GuiRenderer {
 public:
   void init(std::shared_ptr<FontManager> fm);
 
@@ -43,6 +43,9 @@ public:
   void pop_mask();
 
 private:
+  Box2 flip_box(const Box2& box);
+  Vec2 flip_position(const Vec2& origin, Font font, int font_size);
+
   struct ImageCommand {
     Box2 box;
     // Use either the texture or image

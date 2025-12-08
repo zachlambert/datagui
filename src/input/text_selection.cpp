@@ -272,7 +272,7 @@ void render_selection(
     Color highlight_color,
     int cursor_width,
     Length width,
-    Renderer& renderer) {
+    GuiRenderer& renderer) {
 
   // Render cursor only
 

@@ -14,7 +14,7 @@ public:
       fm(fm), theme(theme) {}
 
   void set_input_state(ElementPtr element) override;
-  void render(ConstElementPtr element, Renderer& renderer) override;
+  void render(ConstElementPtr element, GuiRenderer& renderer) override;
   void mouse_event(ElementPtr element, const MouseEvent& event) override;
   void key_event(ElementPtr element, const KeyEvent& event) override;
 

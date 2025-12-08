@@ -15,7 +15,7 @@ void TextBoxSystem::set_input_state(ElementPtr element) {
   state.floating = false;
 }
 
-void TextBoxSystem::render(ConstElementPtr element, Renderer& renderer) {
+void TextBoxSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& text_box = element.text_box();
 

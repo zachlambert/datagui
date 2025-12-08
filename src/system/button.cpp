@@ -19,7 +19,7 @@ void ButtonSystem::set_input_state(ElementPtr element) {
   state.fixed_size += text_size;
 }
 
-void ButtonSystem::render(ConstElementPtr element, Renderer& renderer) {
+void ButtonSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& button = element.button();
 

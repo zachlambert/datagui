@@ -13,7 +13,6 @@ class TextShader {
   struct Vertex {
     Vec2 pos;
     Vec2 uv;
-    float v_center;
   };
 
   struct CharList {
@@ -48,7 +47,7 @@ public:
   };
 
   void init();
-  void draw(const Command& command, float y_dir, const Vec2& viewport_size);
+  void draw(const Command& command, const Vec2& viewport_size);
 
 private:
   // Shader

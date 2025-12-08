@@ -51,7 +51,7 @@ void ColorPickerSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void ColorPickerSystem::render(ConstElementPtr element, Renderer& renderer) {
+void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& color_picker = element.color_picker();
 
@@ -178,7 +178,7 @@ void ColorPickerSystem::mouse_event(
     }
   }
   if (color_picker.wheel_held) {
-    float angle = std::atan2(hue_wheel_offset.y, -hue_wheel_offset.x);
+    float angle = std::atan2(-hue_wheel_offset.y, -hue_wheel_offset.x);
     if (angle < 0) {
       angle += 2 * M_PI;
     }
@@ -202,7 +202,7 @@ void ColorPickerSystem::mouse_event(
     color_picker.scale_held = true;
   }
   if (color_picker.scale_held) {
-    float lightness = (color_picker.lightness_box.upper.y - event.position.y) /
+    float lightness = (event.position.y - color_picker.lightness_box.lower.y) /
                       color_picker.lightness_box.size().y;
     lightness = std::clamp(lightness, 0.f, 1.f);
 
@@ -211,6 +211,7 @@ void ColorPickerSystem::mouse_event(
         color_picker.value.saturation(),
         lightness);
     color_picker.value = new_color;
+
     if (color_picker.always) {
       color_picker.callback(new_color);
     } else {

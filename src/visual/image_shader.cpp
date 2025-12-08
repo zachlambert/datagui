@@ -151,6 +151,10 @@ void ImageShader::draw(
   Vec2 upper_left = position + R * Vec2(0, size.y);
   Vec2 upper_right = position + R * size;
 
+  // Image coordinate are:
+  // +X = right
+  // +Y = down
+  // Therefore, invert v cordinate
   std::vector<Vertex> vertices = {
       Vertex{lower_left, Vec2(0, 1)},
       Vertex{lower_right, Vec2(1, 1)},

@@ -312,7 +312,7 @@ void layout_render_scroll(
     const Box2& content_box,
     const LayoutState& state,
     const std::shared_ptr<Theme>& theme,
-    Renderer& renderer) {
+    GuiRenderer& renderer) {
 
   if (state.content_overrun.x > 0) {
     Vec2 origin = content_box.lower;

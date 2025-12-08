@@ -163,7 +163,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void SplitSystem::render(ConstElementPtr element, Renderer& renderer) {
+void SplitSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& split = element.split();
   const Color& color = split.held ? theme->split_divider_color_active
                                   : theme->split_divider_color;
