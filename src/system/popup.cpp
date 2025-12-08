@@ -61,7 +61,7 @@ void PopupSystem::set_dependent_state(ElementPtr element) {
       popup.layout_state);
 }
 
-void PopupSystem::render(ConstElementPtr element, Renderer& renderer) {
+void PopupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& popup = element.popup();
 

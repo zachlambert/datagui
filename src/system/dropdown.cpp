@@ -56,7 +56,7 @@ void DropdownSystem::set_dependent_state(ElementPtr element) {
       dropdown.layout_state);
 }
 
-void DropdownSystem::render(ConstElementPtr element, Renderer& renderer) {
+void DropdownSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& dropdown = element.dropdown();
 

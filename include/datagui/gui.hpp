@@ -10,7 +10,7 @@
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/visual/renderer.hpp"
+#include "datagui/visual/gui_renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>
 #include <set>
@@ -273,7 +273,7 @@ private:
 
   std::shared_ptr<FontManager> fm;
   std::shared_ptr<Theme> theme;
-  Renderer renderer;
+  GuiRenderer renderer;
   std::vector<std::unique_ptr<System>> systems;
 
   std::stack<std::pair<ElementPtr, VarPtr>> stack;

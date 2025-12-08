@@ -79,7 +79,7 @@ void CollapsableSystem::set_dependent_state(ElementPtr element) {
   state.child_mask = collapsable.content_box;
 }
 
-void CollapsableSystem::render(ConstElementPtr element, Renderer& renderer) {
+void CollapsableSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& collapsable = element.collapsable();
 

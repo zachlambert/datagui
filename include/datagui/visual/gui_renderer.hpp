@@ -10,7 +10,7 @@
 
 namespace datagui {
 
-class Renderer {
+class GuiRenderer {
 public:
   void init(std::shared_ptr<FontManager> fm);
 

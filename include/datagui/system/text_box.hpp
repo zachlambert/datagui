@@ -11,7 +11,7 @@ public:
   TextBoxSystem(std::shared_ptr<FontManager> fm, std::shared_ptr<Theme> theme) :
       fm(fm), theme(theme) {}
   void set_input_state(ElementPtr element) override;
-  void render(ConstElementPtr element, Renderer& renderer) override;
+  void render(ConstElementPtr element, GuiRenderer& renderer) override;
 
 private:
   std::shared_ptr<FontManager> fm;

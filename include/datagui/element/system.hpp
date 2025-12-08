@@ -3,7 +3,7 @@
 #include "datagui/element/tree.hpp"
 #include "datagui/geometry.hpp"
 #include "datagui/input/event.hpp"
-#include "datagui/visual/renderer.hpp"
+#include "datagui/visual/gui_renderer.hpp"
 
 namespace datagui {
 
@@ -12,7 +12,7 @@ public:
   virtual void set_input_state(ElementPtr element) = 0;
   virtual void set_dependent_state(ElementPtr element) {};
 
-  virtual void render(ConstElementPtr element, Renderer& renderer) = 0;
+  virtual void render(ConstElementPtr element, GuiRenderer& renderer) = 0;
 
   // Return true/false depending on if the event is handled
   virtual void mouse_event(ElementPtr element, const MouseEvent& event) {}

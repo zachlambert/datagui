@@ -24,7 +24,7 @@ void SliderSystem::set_input_state(ElementPtr element) {
                         std::max(text_size.x, theme->slider_default_text_size);
 }
 
-void SliderSystem::render(ConstElementPtr element, Renderer& renderer) {
+void SliderSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& slider = element.slider();
 

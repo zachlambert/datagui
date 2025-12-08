@@ -1,4 +1,4 @@
-#include "datagui/visual/renderer.hpp"
+#include "datagui/visual/gui_renderer.hpp"
 #include <GLFW/glfw3.h>
 #include <assert.h>
 #include <memory>
@@ -6,14 +6,14 @@
 
 namespace datagui {
 
-void Renderer::init(std::shared_ptr<FontManager> fm) {
+void GuiRenderer::init(std::shared_ptr<FontManager> fm) {
   shape_shader.init();
   text_shader.init();
   image_shader.init();
   this->fm = fm;
 }
 
-void Renderer::queue_box(
+void GuiRenderer::queue_box(
     const Box2& box,
     const Color& bg_color,
     float border_width,
@@ -29,7 +29,7 @@ void Renderer::queue_box(
       masks.top());
 }
 
-void Renderer::queue_text(
+void GuiRenderer::queue_text(
     const Vec2& origin,
     const std::string& text,
     Font font,
@@ -49,12 +49,12 @@ void Renderer::queue_text(
       masks.top());
 }
 
-void Renderer::queue_image(const Box2& box, unsigned int texture) {
+void GuiRenderer::queue_image(const Box2& box, unsigned int texture) {
   layers.back().image_commands.push_back(
       {flip_box(box), texture, OpenglRgbImage()});
 }
 
-void Renderer::queue_image(
+void GuiRenderer::queue_image(
     const Box2& box,
     std::size_t width,
     std::size_t height,
@@ -64,7 +64,7 @@ void Renderer::queue_image(
   layers.back().image_commands.push_back({flip_box(box), 0, std::move(image)});
 }
 
-void Renderer::render_begin(const Vec2& viewport_size) {
+void GuiRenderer::render_begin(const Vec2& viewport_size) {
   this->viewport_size = viewport_size;
   if (masks.size() == 1) {
     masks.pop();
@@ -73,7 +73,7 @@ void Renderer::render_begin(const Vec2& viewport_size) {
   layers.emplace_back();
 }
 
-void Renderer::render_end() {
+void GuiRenderer::render_end() {
   assert(masks.size() == 1);
   masks.pop();
 
@@ -91,11 +91,11 @@ void Renderer::render_end() {
   layers.clear();
 }
 
-void Renderer::new_layer() {
+void GuiRenderer::new_layer() {
   layers.emplace_back();
 }
 
-void Renderer::push_mask(const Box2& mask) {
+void GuiRenderer::push_mask(const Box2& mask) {
   if (masks.empty()) {
     masks.push(flip_box(mask));
   } else {
@@ -103,18 +103,18 @@ void Renderer::push_mask(const Box2& mask) {
   }
 }
 
-void Renderer::pop_mask() {
+void GuiRenderer::pop_mask() {
   masks.pop();
 }
 
-Box2 Renderer::flip_box(const Box2& box) {
+Box2 GuiRenderer::flip_box(const Box2& box) {
   Box2 result = box;
   result.lower.y = viewport_size.y - box.upper.y;
   result.upper.y = viewport_size.y - box.lower.y;
   return result;
 }
 
-Vec2 Renderer::flip_position(const Vec2& origin, Font font, int font_size) {
+Vec2 GuiRenderer::flip_position(const Vec2& origin, Font font, int font_size) {
   return Vec2(origin.x, viewport_size.y - origin.y);
 }
 

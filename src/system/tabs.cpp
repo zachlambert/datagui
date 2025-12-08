@@ -82,7 +82,7 @@ void TabsSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void TabsSystem::render(ConstElementPtr element, Renderer& renderer) {
+void TabsSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& tabs = element.tabs();
 
