@@ -56,6 +56,7 @@ int main() {
       if (gui.group()) {
         gui.text_box("Paused");
         gui.checkbox(timer_paused);
+        gui.end();
       }
 
       if (gui.collapsable("Open me")) {
@@ -64,6 +65,7 @@ int main() {
         if (gui.group()) {
           gui.text_box("Input");
           gui.text_input("", {});
+          gui.end();
         }
         gui.end();
       }

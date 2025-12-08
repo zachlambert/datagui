@@ -36,8 +36,8 @@ void Canvas2::impl_init(const std::shared_ptr<FontManager>& fm) {
 
 void Canvas2::impl_render() {
   for (const auto& [z_index, layer] : layers) {
-    shape_shader.draw(layer.shape_command, 1, framebuffer_size());
-    text_shader.draw(layer.text_command, 1, framebuffer_size());
+    shape_shader.draw(layer.shape_command, framebuffer_size());
+    text_shader.draw(layer.text_command, framebuffer_size());
   }
 }
 

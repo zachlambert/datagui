@@ -23,13 +23,9 @@ int main() {
   std::vector<Pixel> pixels(100 * 100);
   for (std::size_t i = 0; i < 100; i++) {
     for (std::size_t j = 0; j < 100; j++) {
-      float y = (float(i) - 50) / 50;
-      float x = (float(j) - 50) / 50;
-      float s = std::exp(-std::hypot(x, y) / 1);
-      std::uint8_t s_int = s * 255;
-      pixels[i * 100 + j].r = s_int;
+      pixels[i * 100 + j].r = (float(j) / 100) * 255;
       pixels[i * 100 + j].g = (float(i) / 100) * 255;
-      pixels[i * 100 + j].b = (float(j) / 100) * 255;
+      pixels[i * 100 + j].b = 0;
       pixels[i * 100 + j].a = 255;
     }
   }
@@ -49,7 +45,7 @@ int main() {
           Color::Blue(),
           LengthWrap(),
           mask);
-      text_shader.draw(command, -1, window.size());
+      text_shader.draw(command, window.size());
     }
 
     {
@@ -61,7 +57,7 @@ int main() {
           20,
           Color::Black(),
           mask);
-      shape_shader.draw(command, -1, window.size());
+      shape_shader.draw(command, window.size());
     }
 
     {
@@ -84,7 +80,7 @@ int main() {
           Color::Blue(),
           LengthWrap(),
           mask);
-      text_shader.draw(command, -1, window.size());
+      text_shader.draw(command, window.size());
     }
 
     {
@@ -110,7 +106,7 @@ int main() {
           10,
           Color::Green(0.5),
           mask);
-      shape_shader.draw(command, -1, window.size());
+      shape_shader.draw(command, window.size());
     }
 
     {
@@ -165,7 +161,7 @@ int main() {
           0,
           Color::Black(),
           mask);
-      shape_shader.draw(command, -1, window.size());
+      shape_shader.draw(command, window.size());
     }
 
     image_shader.draw(

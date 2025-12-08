@@ -12,20 +12,18 @@ const static std::string vertex_shader = R"(
 // Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 uv;
-layout(location = 2) in float v_center;
 
-uniform float y_dir;
 uniform vec2 viewport_size;
 out vec2 fs_uv;
 
 void main(){
   gl_Position = vec4(
     (vertex_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
-    y_dir * (vertex_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
+    (vertex_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
     0,
     1
   );
-  fs_uv = vec2(uv.x, v_center + y_dir * (uv.y - v_center));
+  fs_uv = uv;
 }
 )";
 
@@ -48,7 +46,6 @@ void TextShader::init() {
   // Configure shader program and buffers
 
   program_id = create_program(vertex_shader, fragment_shader);
-  uniform_y_dir = glGetUniformLocation(program_id, "y_dir");
   uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
   uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
@@ -80,16 +77,6 @@ void TextShader::init() {
   glEnableVertexAttribArray(index);
   index++;
 
-  glVertexAttribPointer(
-      index,
-      1,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)offsetof(Vertex, v_center));
-  glEnableVertexAttribArray(index);
-  index++;
-
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 }
@@ -103,6 +90,8 @@ void TextShader::Command::queue_text(
     Color text_color,
     Length width,
     const Box2& mask) {
+
+  // origin is at the top-left of the text box
 
   const auto& fs = fm->font_structure(font, font_size);
 
@@ -122,12 +111,12 @@ void TextShader::Command::queue_text(
 
   auto fixed_width = std::get_if<LengthFixed>(&width);
   Vec2 offset;
-  offset.y += fs.line_height;
+  offset.y -= fs.line_height;
 
   for (char c_char : text) {
     if (c_char == '\n') {
       offset.x = 0;
-      offset.y += fs.line_height;
+      offset.y -= fs.line_height;
       continue;
     }
     if (!fs.char_valid(c_char)) {
@@ -142,7 +131,6 @@ void TextShader::Command::queue_text(
 
     Vec2 pos = origin + offset;
     pos.x += c.offset.x;
-    pos.y += (-fs.descender - (c.offset.y + c.size.y));
     offset.x += c.advance;
 
     Box2 box(pos, pos + c.size);
@@ -172,27 +160,22 @@ void TextShader::Command::queue_text(
       uv = new_uv;
     }
 
-    float v_center = (uv.lower.y + uv.upper.y) / 2;
-    vertices.push_back(Vertex{box.lower_left(), uv.lower_left(), v_center});
-    vertices.push_back(Vertex{box.lower_right(), uv.lower_right(), v_center});
-    vertices.push_back(Vertex{box.upper_left(), uv.upper_left(), v_center});
-    vertices.push_back(Vertex{box.lower_right(), uv.lower_right(), v_center});
-    vertices.push_back(Vertex{box.upper_right(), uv.upper_right(), v_center});
-    vertices.push_back(Vertex{box.upper_left(), uv.upper_left(), v_center});
+    vertices.push_back(Vertex{box.lower_left(), uv.lower_left()});
+    vertices.push_back(Vertex{box.lower_right(), uv.lower_right()});
+    vertices.push_back(Vertex{box.upper_left(), uv.upper_left()});
+    vertices.push_back(Vertex{box.lower_right(), uv.lower_right()});
+    vertices.push_back(Vertex{box.upper_right(), uv.upper_right()});
+    vertices.push_back(Vertex{box.upper_left(), uv.upper_left()});
   }
 }
 
-void TextShader::draw(
-    const Command& command,
-    float y_dir,
-    const Vec2& viewport_size) {
+void TextShader::draw(const Command& command, const Vec2& viewport_size) {
   if (command.char_lists.empty()) {
     return;
   }
 
   glUseProgram(program_id);
   glBindVertexArray(VAO);
-  glUniform1f(uniform_y_dir, y_dir);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
 
   for (const auto& char_list : command.char_lists) {
