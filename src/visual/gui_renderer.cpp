@@ -49,19 +49,24 @@ void GuiRenderer::queue_text(
       masks.top());
 }
 
-void GuiRenderer::queue_image(const Box2& box, unsigned int texture) {
+void GuiRenderer::queue_image(
+    const Box2& box,
+    unsigned int texture,
+    bool y_down) {
   layers.back().image_commands.push_back(
-      {flip_box(box), texture, OpenglRgbImage()});
+      {flip_box(box), texture, OpenglRgbImage(), y_down});
 }
 
 void GuiRenderer::queue_image(
     const Box2& box,
     std::size_t width,
     std::size_t height,
-    void* pixels) {
+    void* pixels,
+    bool y_down) {
   OpenglRgbImage image;
   image.write(width, height, pixels);
-  layers.back().image_commands.push_back({flip_box(box), 0, std::move(image)});
+  layers.back().image_commands.push_back(
+      {flip_box(box), 0, std::move(image), y_down});
 }
 
 void GuiRenderer::render_begin(const Vec2& viewport_size) {
@@ -82,9 +87,14 @@ void GuiRenderer::render_end() {
     text_shader.draw(layer.text_command, viewport_size);
     for (const auto& image : layer.image_commands) {
       if (image.texture > 0) {
-        image_shader.draw(image.texture, image.box, viewport_size);
+        image_shader
+            .draw(image.texture, image.box, image.y_down, viewport_size);
       } else if (image.image.texture() > 0) {
-        image_shader.draw(image.image.texture(), image.box, viewport_size);
+        image_shader.draw(
+            image.image.texture(),
+            image.box,
+            image.y_down,
+            viewport_size);
       }
     }
   }

@@ -28,12 +28,13 @@ public:
       Color text_color,
       Length width = LengthWrap());
 
-  void queue_image(const Box2& box, unsigned int texture);
+  void queue_image(const Box2& box, unsigned int texture, bool y_down);
   void queue_image(
       const Box2& box,
       std::size_t width,
       std::size_t height,
-      void* pixels);
+      void* pixels,
+      bool y_down);
 
   void render_begin(const Vec2& viewport_size);
   void render_end();
@@ -51,6 +52,7 @@ private:
     // Use either the texture or image
     unsigned int texture;
     OpenglRgbImage image;
+    bool y_down;
   };
   struct Layer {
     ShapeShader::Command shape_command;

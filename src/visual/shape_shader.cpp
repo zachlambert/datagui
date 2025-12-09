@@ -375,7 +375,7 @@ void ShapeShader::Command::queue_line(
     const Box2& mask) {
   float angle = std::atan2(b.y - a.y, b.x - a.x);
   Element element;
-  element.position = a - Rot2(angle) * Vec2::uniform(width);
+  element.position = a - Rot2(angle).mat() * Vec2::uniform(width);
   element.rotation = Rot2(angle);
   element.size = Vec2((b - a).length(), width);
   element.radius = width / 2;

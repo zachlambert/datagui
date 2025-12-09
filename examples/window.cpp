@@ -171,6 +171,7 @@ int main() {
         Vec2(750, 200),
         M_PI / 4,
         Vec2::uniform(200),
+        true,
         window.size());
 
     window.render_end();

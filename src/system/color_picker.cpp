@@ -5,9 +5,7 @@ namespace datagui {
 ColorPickerSystem::ColorPickerSystem(
     std::shared_ptr<FontManager> fm,
     std::shared_ptr<Theme> theme) :
-    fm(fm), theme(theme) {
-  //
-}
+    fm(fm), theme(theme) {}
 
 void ColorPickerSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -113,7 +111,7 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
         pixel.b = color.b * 255;
       }
     }
-    renderer.queue_image(color_picker.hue_wheel_box, n, n, pixels.data());
+    renderer.queue_image(color_picker.hue_wheel_box, n, n, pixels.data(), true);
   }
   {
     const std::size_t h = 100;
@@ -139,7 +137,7 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
         pixel.a = 255;
       }
     }
-    renderer.queue_image(color_picker.lightness_box, w, h, pixels.data());
+    renderer.queue_image(color_picker.lightness_box, w, h, pixels.data(), true);
   }
 }
 

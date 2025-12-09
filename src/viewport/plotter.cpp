@@ -50,6 +50,7 @@ void Plotter::begin() {
 
 void Plotter::end() {
   render_content();
+  printf("Render content\n");
 }
 
 void Plotter::mouse_event(const MouseEvent& event) {
@@ -84,7 +85,7 @@ void Plotter::impl_render() {
   for (const auto& item : plot_items) {
     for (const auto& point : item.points) {
       bounds.lower = minimum(point, bounds.lower);
-      bounds.upper = minimum(point, bounds.upper);
+      bounds.upper = maximum(point, bounds.upper);
     }
   }
 
@@ -101,6 +102,34 @@ void Plotter::impl_render() {
   Box2 plot_area =
       Box2(Vec2::uniform(lower_padding), size - Vec2::uniform(upper_padding));
 
+#if 0
+  auto plot_marker = [&](const Vec2& point, const PlotArgs& args) {
+    switch (args.marker_style) {
+    case datagui::PlotMarkerStyle::Circle:
+      shapes.queue_circle(
+          point,
+          args.marker_width / 2,
+          args.color,
+          0,
+          Color::Black(),
+          plot_area);
+      break;
+    default:
+      break;
+    }
+  };
+
+  for (const auto& item : plot_items) {
+    for (std::size_t i = 0; i < item.points.size() - 1; i++) {
+      const Vec2& a = item.points[i];
+      const Vec2& b = item.points[i + 1];
+      shapes.queue_line(a, b, item.args.line_width, item.args.color, plot_area);
+      plot_marker(a, item.args);
+    }
+    plot_marker(item.points.back(), item.args);
+  }
+#endif
+
   shapes.queue_line(
       plot_area.lower,
       plot_area.lower_right(),
@@ -114,9 +143,18 @@ void Plotter::impl_render() {
       args.tick_color,
       mask);
 
+  shapes.queue_box(
+      Box2(Vec2(), Vec2::uniform(20)),
+      Color::Red(),
+      0,
+      0,
+      Color::Black(),
+      mask);
+
   auto xticks = get_ticks(bounds.lower.x, bounds.upper.x);
   auto yticks = get_ticks(bounds.lower.y, bounds.upper.y);
 
+#if 0
   for (const auto& tick : xticks) {
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x * tick.position;
@@ -157,6 +195,7 @@ void Plotter::impl_render() {
         LengthWrap(),
         mask);
   }
+#endif
 #if 0
   if (!ylabel_.empty()) {
     Vec2 text_size = fm->text_size(
@@ -178,18 +217,25 @@ void Plotter::impl_render() {
         mask);
   }
 #endif
+
+  shape_shader.draw(shapes, framebuffer_size());
+  text_shader.draw(texts, framebuffer_size());
 }
 
 std::vector<Plotter::Tick> Plotter::get_ticks(float min, float max) {
-  float diff = max - min;
+  float diff = std::max(max - min, 0.1f);
   float power = 1;
+  printf("%f -> %f\n", min, max);
+  printf("Original: %f\n", diff);
   while (diff > 1) {
     diff /= 10;
     power++;
+    printf("Up: %f, %f\n", diff, power);
   }
   while (diff < 0.1) {
     diff *= 10;
     power--;
+    printf("Down: %f, %f\n", diff, power);
   }
 
   float resolution;

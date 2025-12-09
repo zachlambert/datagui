@@ -227,7 +227,7 @@ public:
     auto& viewport = current.viewport();
     if (!viewport.viewport) {
       viewport.viewport = std::make_unique<T>();
-      viewport.viewport->init(width, height, fm);
+      viewport.viewport->init(width, height, theme, fm);
     }
     // Renderered width/height can differ to the initial width/height
     // above - this defines the size used for the framebuffer

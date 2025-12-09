@@ -17,6 +17,8 @@ struct PlotArgs {
   Color color;
   PlotLineStyle line_style = PlotLineStyle::Solid;
   PlotMarkerStyle marker_style = PlotMarkerStyle::None;
+  float line_width = 2;
+  float marker_width = 5;
 };
 
 class PlotHandle {
