@@ -367,6 +367,25 @@ void ShapeShader::Command::queue_ellipse(
   elements.push_back(element);
 }
 
+void ShapeShader::Command::queue_line(
+    const Vec2& a,
+    const Vec2& b,
+    float width,
+    const Color& color,
+    const Box2& mask) {
+  float angle = std::atan2(b.y - a.y, b.x - a.x);
+  Element element;
+  element.position = a - Rot2(angle) * Vec2::uniform(width);
+  element.rotation = Rot2(angle);
+  element.size = Vec2((b - a).length(), width);
+  element.radius = width / 2;
+  element.radius_scale = Vec2::ones();
+  element.color = color;
+  element.border_width = 0;
+  element.mask = mask;
+  elements.push_back(element);
+}
+
 void ShapeShader::draw(const Command& command, const Vec2& viewport_size) {
   if (command.elements.empty()) {
     return;

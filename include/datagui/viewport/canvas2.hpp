@@ -30,7 +30,9 @@ private:
   void end() override;
   void mouse_event(const MouseEvent& event) override;
 
-  void impl_init(const std::shared_ptr<FontManager>& fm) override;
+  void impl_init(
+      const std::shared_ptr<Theme>& theme,
+      const std::shared_ptr<FontManager>& fm) override;
   void impl_render() override;
 
   struct Layer {
@@ -44,4 +46,4 @@ private:
   TextShader text_shader;
 };
 
-}; // namespace datagui
+} // namespace datagui

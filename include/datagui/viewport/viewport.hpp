@@ -1,6 +1,8 @@
 #pragma once
 
+#include "datagui/color.hpp"
 #include "datagui/input/event.hpp"
+#include "datagui/theme.hpp"
 #include <cstddef>
 #include <memory>
 
@@ -21,6 +23,7 @@ public:
   void init(
       std::size_t width,
       std::size_t height,
+      const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm);
 
   Vec2 framebuffer_size() const {
@@ -35,10 +38,12 @@ public:
   }
 
 protected:
-  void render_content();
+  void render_content(const Color& fill_color = Color::White());
 
 private:
-  virtual void impl_init(const std::shared_ptr<FontManager>& fm) = 0;
+  virtual void impl_init(
+      const std::shared_ptr<Theme>& theme,
+      const std::shared_ptr<FontManager>& fm) = 0;
   virtual void impl_render() = 0;
 
   std::size_t width;
