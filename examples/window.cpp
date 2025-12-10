@@ -39,6 +39,7 @@ int main() {
       command.queue_text(
           font_manager,
           Vec2(200, 220),
+          0,
           "Hello",
           Font::DejaVuSerif,
           60,
@@ -65,6 +66,7 @@ int main() {
       command.queue_text(
           font_manager,
           Vec2(200, 100),
+          0,
           "Hello",
           Font::DejaVuSans,
           20,
@@ -74,6 +76,7 @@ int main() {
       command.queue_text(
           font_manager,
           Vec2(200, 150),
+          0,
           "Hello",
           Font::DejaVuSansMono,
           40,

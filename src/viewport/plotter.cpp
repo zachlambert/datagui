@@ -108,8 +108,10 @@ void Plotter::impl_render() {
   shapes.queue_box(mask, Color::Clear(), 0, 2, Color::Gray(0.5), mask);
 
   float text_height = fm->text_height(theme->text_font, theme->text_size);
-  float padding = args.tick_length + 2 * text_height + 3 * args.padding;
-  Box2 plot_area = Box2(Vec2::uniform(padding), size - Vec2::uniform(padding));
+  float total_padding = args.tick_length + 2 * text_height +
+                        2 * args.inner_padding + args.outer_padding;
+  Box2 plot_area =
+      Box2(Vec2::uniform(total_padding), size - Vec2::uniform(total_padding));
 
   if (!plot_items.empty()) {
     bounds.lower.x = std::numeric_limits<float>::max();
@@ -209,10 +211,11 @@ void Plotter::impl_render() {
         LengthWrap());
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x / 2 - text_size.x / 2;
-    pos.y -= text_height + 2 * args.padding;
+    pos.y -= (args.tick_length + text_height + 2 * args.inner_padding);
     texts.queue_text(
         fm,
         pos,
+        0,
         xlabel_,
         theme->text_font,
         theme->text_size,
@@ -220,7 +223,6 @@ void Plotter::impl_render() {
         LengthWrap(),
         mask);
   }
-#if 0
   if (!ylabel_.empty()) {
     Vec2 text_size = fm->text_size(
         ylabel_,
@@ -228,19 +230,19 @@ void Plotter::impl_render() {
         theme->text_size,
         LengthWrap());
     Vec2 pos = plot_area.lower;
-    pos.x -= text_height + 2 * args.padding;
+    pos.x -= (args.tick_length + 2 * text_height + 2 * args.inner_padding);
     pos.y += plot_area.size().y / 2 - text_size.x / 2;
     texts.queue_text(
         fm,
         pos,
-        xlabel_,
+        M_PI / 2,
+        ylabel_,
         theme->text_font,
         theme->text_size,
         theme->text_color,
         LengthWrap(),
         mask);
   }
-#endif
 
   shape_shader.draw(shapes, framebuffer_size());
   text_shader.draw(texts, framebuffer_size());

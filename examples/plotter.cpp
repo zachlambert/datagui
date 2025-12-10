@@ -31,6 +31,7 @@ int main() {
         }
 
         plotter->xlabel("Time");
+        plotter->ylabel("Value");
         plotter->plot(a);
         plotter->plot(b);
         plotter->plot(c);

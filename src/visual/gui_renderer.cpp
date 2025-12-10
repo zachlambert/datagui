@@ -41,6 +41,7 @@ void GuiRenderer::queue_text(
   layers.back().text_command.queue_text(
       fm,
       flip_position(origin, font, font_size),
+      0,
       text,
       font,
       font_size,

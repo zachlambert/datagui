@@ -30,6 +30,7 @@ public:
     void queue_text(
         const std::shared_ptr<FontManager>& fm,
         const Vec2& origin,
+        float angle,
         const std::string& text,
         Font font,
         int font_size,

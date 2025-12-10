@@ -50,7 +50,8 @@ private:
 
 struct PlotterArgs {
   float tick_length = 5;
-  float padding = 5;
+  float inner_padding = 5;
+  float outer_padding = 10;
   float line_width = 2;
   Color tick_color = Color::Gray(0.2);
 };

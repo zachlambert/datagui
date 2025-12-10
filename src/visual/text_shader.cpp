@@ -84,6 +84,7 @@ void TextShader::init() {
 void TextShader::Command::queue_text(
     const std::shared_ptr<FontManager>& fm,
     const Vec2& origin,
+    float angle,
     const std::string& text,
     Font font,
     int font_size,
@@ -129,44 +130,60 @@ void TextShader::Command::queue_text(
       offset.y += fs.line_height;
     }
 
-    Vec2 pos = origin + offset;
-    pos.x += c.offset.x;
-    pos.y += fs.descender + c.offset.y;
+    Vec2 char_offset = offset + c.offset + Vec2(0, fs.descender);
     offset.x += c.advance;
-
-    Box2 box(pos, pos + c.size);
     Box2 uv = c.uv;
 
-    if (!intersects(mask, box)) {
-      // Not visible
-      continue;
-    }
-    if (!contains(mask, box)) {
-      // Partially obscured -> alter box and uv
-      Box2 new_box = intersection(mask, box);
-      Box2 new_uv;
-      new_uv.lower.x = uv.lower.x + uv.size().x *
-                                        (new_box.lower.x - box.lower.x) /
-                                        box.size().x;
-      new_uv.lower.y = uv.lower.y + uv.size().y *
-                                        (new_box.lower.y - box.lower.y) /
-                                        box.size().y;
-      new_uv.upper.x = uv.lower.x + uv.size().x *
-                                        (new_box.upper.x - box.lower.x) /
-                                        box.size().x;
-      new_uv.upper.y = uv.lower.y + uv.size().y *
-                                        (new_box.upper.y - box.lower.y) /
-                                        box.size().y;
-      box = new_box;
-      uv = new_uv;
-    }
+    // Currently only support masks for non-rotated boxes, since only the
+    // GuiRenderer requires this, and this only ever uses angle = 0
+    if (angle == 0) {
+      Vec2 pos = origin + char_offset;
 
-    vertices.push_back(Vertex{box.lower_left(), uv.lower_left()});
-    vertices.push_back(Vertex{box.lower_right(), uv.lower_right()});
-    vertices.push_back(Vertex{box.upper_left(), uv.upper_left()});
-    vertices.push_back(Vertex{box.lower_right(), uv.lower_right()});
-    vertices.push_back(Vertex{box.upper_right(), uv.upper_right()});
-    vertices.push_back(Vertex{box.upper_left(), uv.upper_left()});
+      Box2 box(pos, pos + c.size);
+      if (!intersects(mask, box)) {
+        // Not visible
+        continue;
+      }
+      if (!contains(mask, box)) {
+        // Partially obscured -> alter box and uv
+        Box2 new_box = intersection(mask, box);
+        Box2 new_uv;
+        new_uv.lower.x = uv.lower.x + uv.size().x *
+                                          (new_box.lower.x - box.lower.x) /
+                                          box.size().x;
+        new_uv.lower.y = uv.lower.y + uv.size().y *
+                                          (new_box.lower.y - box.lower.y) /
+                                          box.size().y;
+        new_uv.upper.x = uv.lower.x + uv.size().x *
+                                          (new_box.upper.x - box.lower.x) /
+                                          box.size().x;
+        new_uv.upper.y = uv.lower.y + uv.size().y *
+                                          (new_box.upper.y - box.lower.y) /
+                                          box.size().y;
+        box = new_box;
+        uv = new_uv;
+      }
+      vertices.push_back(Vertex{box.lower_left(), uv.lower_left()});
+      vertices.push_back(Vertex{box.lower_right(), uv.lower_right()});
+      vertices.push_back(Vertex{box.upper_left(), uv.upper_left()});
+      vertices.push_back(Vertex{box.lower_right(), uv.lower_right()});
+      vertices.push_back(Vertex{box.upper_right(), uv.upper_right()});
+      vertices.push_back(Vertex{box.upper_left(), uv.upper_left()});
+
+    } else {
+      Mat2 rot = Rot2(angle).mat();
+      Vec2 lower_left = origin + rot * char_offset;
+      Vec2 lower_right = origin + rot * (char_offset + Vec2(c.size.x, 0));
+      Vec2 upper_left = origin + rot * (char_offset + Vec2(0, c.size.y));
+      Vec2 upper_right = origin + rot * (char_offset + c.size);
+
+      vertices.push_back(Vertex{lower_left, uv.lower_left()});
+      vertices.push_back(Vertex{lower_right, uv.lower_right()});
+      vertices.push_back(Vertex{upper_left, uv.upper_left()});
+      vertices.push_back(Vertex{lower_right, uv.lower_right()});
+      vertices.push_back(Vertex{upper_right, uv.upper_right()});
+      vertices.push_back(Vertex{upper_left, uv.upper_left()});
+    }
   }
 }
 
