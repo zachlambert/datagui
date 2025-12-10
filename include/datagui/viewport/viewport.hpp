@@ -32,7 +32,11 @@ public:
 
   virtual void begin() = 0;
   virtual void end() = 0;
-  virtual void mouse_event(const MouseEvent& event) {}
+  virtual void mouse_event(const Box2& box, const MouseEvent& event) {}
+  virtual bool scroll_event(const Box2& box, const ScrollEvent& event) {
+    return false;
+  }
+
   unsigned int texture() const {
     return texture_;
   }

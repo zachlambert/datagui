@@ -36,8 +36,14 @@ public:
     args.marker_width = width;
     return *this;
   }
-  PlotHandle& line_dashed() {
+  PlotHandle& line_solid(float width) {
+    args.line_style = PlotLineStyle::Solid;
+    args.line_width = width;
+    return *this;
+  }
+  PlotHandle& line_dashed(float width) {
     args.line_style = PlotLineStyle::Dashed;
+    args.line_width = width;
     return *this;
   }
 
@@ -90,7 +96,8 @@ public:
 private:
   void begin() override;
   void end() override;
-  void mouse_event(const MouseEvent& event) override;
+  void mouse_event(const Box2& box, const MouseEvent& event) override;
+  bool scroll_event(const Box2& box, const ScrollEvent& event) override;
 
   void impl_init(
       const std::shared_ptr<Theme>& theme,
@@ -106,7 +113,8 @@ private:
   PlotterArgs args;
 
   Vec2 mouse_down_pos;
-  Vec2 offset;
+  Box2 mouse_down_subview;
+  Box2 subview = Box2(Vec2(), Vec2::ones());
 
   struct PlotItem {
     PlotArgs args;

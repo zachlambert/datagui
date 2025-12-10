@@ -32,7 +32,7 @@ int main() {
 
         plotter->xlabel("Time");
         plotter->ylabel("Value");
-        plotter->plot(a);
+        plotter->plot(a).line_solid(4);
         plotter->plot(b);
         plotter->plot(c);
         gui.end();

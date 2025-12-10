@@ -75,17 +75,35 @@ void Plotter::end() {
   render_content();
 }
 
-void Plotter::mouse_event(const MouseEvent& event) {
+void Plotter::mouse_event(const Box2& box, const MouseEvent& event) {
   if (event.action == MouseAction::Press) {
-    mouse_down_pos = event.position - offset;
+    mouse_down_pos = event.position;
+    mouse_down_subview = subview;
     return;
   }
   if (event.action != MouseAction::Hold || event.button != MouseButton::Left) {
     return;
   }
 
-  offset = event.position - mouse_down_pos;
+  Vec2 delta = (mouse_down_pos - event.position) / box.size();
+  subview =
+      Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
   render_content();
+}
+
+bool Plotter::scroll_event(const Box2& box, const ScrollEvent& event) {
+  float ratio = std::exp(event.amount / 1000.f);
+  Vec2 size_ratio = Vec2::ones();
+  if (!event.mod.shift) {
+    size_ratio.x = ratio;
+  }
+  if (!event.mod.ctrl) {
+    size_ratio.y = ratio;
+  }
+  Vec2 centre = subview.center();
+  Vec2 size = subview.size() * size_ratio;
+  subview = Box2(centre - size / 2, centre + size / 2);
+  return true;
 }
 
 void Plotter::impl_init(
@@ -128,14 +146,18 @@ void Plotter::impl_render() {
     bounds = Box2(Vec2(), Vec2(1, 1));
   }
 
+  auto to_plot_position = [&](const Vec2& point) {
+    Vec2 normalized = ((point - bounds.lower) / bounds.size());
+    Vec2 to_subview = (normalized - subview.lower) / subview.size();
+    Vec2 to_plot_area = plot_area.lower + to_subview * plot_area.size();
+    return to_plot_area;
+  };
+
   auto plot_marker = [&](const Vec2& point, const PlotArgs& args) {
-    Vec2 position =
-        plot_area.lower +
-        ((point - bounds.lower) / bounds.size()) * plot_area.size() + offset;
     switch (args.marker_style) {
     case datagui::PlotMarkerStyle::Circle:
       shapes.queue_circle(
-          position,
+          to_plot_position(point),
           args.marker_width / 2,
           args.color,
           0,
@@ -152,10 +174,8 @@ void Plotter::impl_render() {
       const Vec2& a = item.points[i];
       const Vec2& b = item.points[i + 1];
       shapes.queue_line(
-          plot_area.lower +
-              ((a - bounds.lower) / bounds.size()) * plot_area.size() + offset,
-          plot_area.lower +
-              ((b - bounds.lower) / bounds.size()) * plot_area.size() + offset,
+          to_plot_position(a),
+          to_plot_position(b),
           item.args.line_width,
           item.args.color,
           plot_area);

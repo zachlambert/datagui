@@ -27,7 +27,7 @@ void Canvas2::end() {
   render_content();
 }
 
-void Canvas2::mouse_event(const MouseEvent& event) {}
+void Canvas2::mouse_event(const Box2& box, const MouseEvent& event) {}
 
 void Canvas2::impl_init(
     const std::shared_ptr<Theme>& theme,
