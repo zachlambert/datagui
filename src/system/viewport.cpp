@@ -24,7 +24,9 @@ void ViewportPtrSystem::mouse_event(
   const auto& viewport = element.viewport();
 
   MouseEvent event_viewport = event;
-  event_viewport.position = event.position - element.state().position;
+  event_viewport.position.x = event.position.x - state.position.x;
+  event_viewport.position.y =
+      state.position.y + state.size.y - event.position.y;
   viewport.viewport->mouse_event(event_viewport);
 }
 

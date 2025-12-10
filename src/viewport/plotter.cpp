@@ -2,15 +2,33 @@
 
 namespace datagui {
 
+// Matplotlib colors
+std::vector<Color> default_plot_colors = {
+    Color(0.122, 0.467, 0.706),
+    Color(1.000, 0.498, 0.055),
+    Color(0.173, 0.627, 0.173),
+    Color(0.839, 0.153, 0.157),
+    Color(0.580, 0.404, 0.741),
+    Color(0.549, 0.337, 0.294),
+    Color(0.890, 0.467, 0.761),
+    Color(0.498, 0.498, 0.498),
+    Color(0.737, 0.741, 0.133),
+    Color(0.090, 0.745, 0.812),
+};
+
 PlotHandle Plotter::plot(const std::vector<Vec2>& points) {
   PlotItem& item = plot_items.emplace_back();
   item.points = points;
+  item.args.color = default_plot_colors[default_color_i];
+  default_color_i = (default_color_i + 1) % default_plot_colors.size();
   return PlotHandle(item.args);
 }
 
 PlotHandle Plotter::plot(std::vector<Vec2>&& points) {
   PlotItem& item = plot_items.emplace_back();
   item.points = std::move(points);
+  item.args.color = default_plot_colors[default_color_i];
+  default_color_i = (default_color_i + 1) % default_plot_colors.size();
   return PlotHandle(item.args);
 }
 
@@ -25,6 +43,8 @@ PlotHandle Plotter::plot(
     item.points[i].x = x[i * stride];
     item.points[i].y = y[i * stride];
   }
+  item.args.color = default_plot_colors[default_color_i];
+  default_color_i = (default_color_i + 1) % default_plot_colors.size();
   return PlotHandle(item.args);
 }
 
@@ -39,6 +59,8 @@ PlotHandle Plotter::plot(
     item.points[i].x = x[i * stride];
     item.points[i].y = y[i * stride];
   }
+  item.args.color = default_plot_colors[default_color_i];
+  default_color_i = (default_color_i + 1) % default_plot_colors.size();
   return PlotHandle(item.args);
 }
 
@@ -46,16 +68,16 @@ void Plotter::begin() {
   plot_items.clear();
   xlabel_.clear();
   ylabel_.clear();
+  default_color_i = 0;
 }
 
 void Plotter::end() {
   render_content();
-  printf("Render content\n");
 }
 
 void Plotter::mouse_event(const MouseEvent& event) {
   if (event.action == MouseAction::Press) {
-    mouse_down_pos = event.position;
+    mouse_down_pos = event.position - offset;
     return;
   }
   if (event.action != MouseAction::Hold || event.button != MouseButton::Left) {
@@ -76,38 +98,42 @@ void Plotter::impl_init(
 }
 
 void Plotter::impl_render() {
-  Box2 bounds;
-  bounds.lower.x = std::numeric_limits<float>::max();
-  bounds.lower.y = std::numeric_limits<float>::max();
-  bounds.upper.x = -std::numeric_limits<float>::max();
-  bounds.upper.y = -std::numeric_limits<float>::max();
-
-  for (const auto& item : plot_items) {
-    for (const auto& point : item.points) {
-      bounds.lower = minimum(point, bounds.lower);
-      bounds.upper = maximum(point, bounds.upper);
-    }
-  }
-
   ShapeShader::Command shapes;
   TextShader::Command texts;
+  Box2 bounds;
 
   Vec2 size = framebuffer_size();
   Box2 mask(Vec2(), size);
 
+  shapes.queue_box(mask, Color::Clear(), 0, 2, Color::Gray(0.5), mask);
+
   float text_height = fm->text_height(theme->text_font, theme->text_size);
-  float lower_padding = args.tick_length + 2 * text_height + 3 * args.padding;
-  float upper_padding = args.padding;
+  float padding = args.tick_length + 2 * text_height + 3 * args.padding;
+  Box2 plot_area = Box2(Vec2::uniform(padding), size - Vec2::uniform(padding));
 
-  Box2 plot_area =
-      Box2(Vec2::uniform(lower_padding), size - Vec2::uniform(upper_padding));
+  if (!plot_items.empty()) {
+    bounds.lower.x = std::numeric_limits<float>::max();
+    bounds.lower.y = std::numeric_limits<float>::max();
+    bounds.upper.x = -std::numeric_limits<float>::max();
+    bounds.upper.y = -std::numeric_limits<float>::max();
+    for (const auto& item : plot_items) {
+      for (const auto& point : item.points) {
+        bounds.lower = minimum(point, bounds.lower);
+        bounds.upper = maximum(point, bounds.upper);
+      }
+    }
+  } else {
+    bounds = Box2(Vec2(), Vec2(1, 1));
+  }
 
-#if 0
   auto plot_marker = [&](const Vec2& point, const PlotArgs& args) {
+    Vec2 position =
+        plot_area.lower +
+        ((point - bounds.lower) / bounds.size()) * plot_area.size() + offset;
     switch (args.marker_style) {
     case datagui::PlotMarkerStyle::Circle:
       shapes.queue_circle(
-          point,
+          position,
           args.marker_width / 2,
           args.color,
           0,
@@ -120,15 +146,23 @@ void Plotter::impl_render() {
   };
 
   for (const auto& item : plot_items) {
-    for (std::size_t i = 0; i < item.points.size() - 1; i++) {
+    for (std::size_t i = 0; i + 1 < item.points.size(); i++) {
       const Vec2& a = item.points[i];
       const Vec2& b = item.points[i + 1];
-      shapes.queue_line(a, b, item.args.line_width, item.args.color, plot_area);
+      shapes.queue_line(
+          plot_area.lower +
+              ((a - bounds.lower) / bounds.size()) * plot_area.size() + offset,
+          plot_area.lower +
+              ((b - bounds.lower) / bounds.size()) * plot_area.size() + offset,
+          item.args.line_width,
+          item.args.color,
+          plot_area);
       plot_marker(a, item.args);
     }
-    plot_marker(item.points.back(), item.args);
+    if (!item.points.empty()) {
+      plot_marker(item.points.back(), item.args);
+    }
   }
-#endif
 
   shapes.queue_line(
       plot_area.lower,
@@ -143,18 +177,9 @@ void Plotter::impl_render() {
       args.tick_color,
       mask);
 
-  shapes.queue_box(
-      Box2(Vec2(), Vec2::uniform(20)),
-      Color::Red(),
-      0,
-      0,
-      Color::Black(),
-      mask);
-
   auto xticks = get_ticks(bounds.lower.x, bounds.upper.x);
   auto yticks = get_ticks(bounds.lower.y, bounds.upper.y);
 
-#if 0
   for (const auto& tick : xticks) {
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x * tick.position;
@@ -195,7 +220,6 @@ void Plotter::impl_render() {
         LengthWrap(),
         mask);
   }
-#endif
 #if 0
   if (!ylabel_.empty()) {
     Vec2 text_size = fm->text_size(
@@ -225,26 +249,22 @@ void Plotter::impl_render() {
 std::vector<Plotter::Tick> Plotter::get_ticks(float min, float max) {
   float diff = std::max(max - min, 0.1f);
   float power = 1;
-  printf("%f -> %f\n", min, max);
-  printf("Original: %f\n", diff);
-  while (diff > 1) {
+  while (diff > 10) {
     diff /= 10;
     power++;
-    printf("Up: %f, %f\n", diff, power);
   }
-  while (diff < 0.1) {
+  while (diff < 1) {
     diff *= 10;
     power--;
-    printf("Down: %f, %f\n", diff, power);
   }
 
   float resolution;
-  if (diff < 0.2) {
-    resolution = 0.02;
-  } else if (diff < 0.5) {
-    resolution = 0.05;
+  if (diff < 2) {
+    resolution = 0.2;
+  } else if (diff < 5) {
+    resolution = 0.5;
   } else {
-    resolution = 0.1;
+    resolution = 1;
   }
 
   std::vector<Plotter::Tick> ticks;

@@ -14,7 +14,7 @@ enum class PlotMarkerStyle { None, Circle };
 
 struct PlotArgs {
   std::string label;
-  Color color;
+  Color color = Color::Black();
   PlotLineStyle line_style = PlotLineStyle::Solid;
   PlotMarkerStyle marker_style = PlotMarkerStyle::None;
   float line_width = 2;
@@ -51,7 +51,7 @@ struct PlotterArgs {
   float tick_length = 5;
   float padding = 5;
   float line_width = 2;
-  Color tick_color = Color::Gray(0.8);
+  Color tick_color = Color::Gray(0.2);
 };
 
 class Plotter : public Viewport {
@@ -115,6 +115,7 @@ private:
   std::string xlabel_;
   std::string ylabel_;
 
+  std::size_t default_color_i = 0;
   std::shared_ptr<Theme> theme;
   std::shared_ptr<FontManager> fm;
   ShapeShader shape_shader;
