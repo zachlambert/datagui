@@ -18,6 +18,16 @@ void Tree::poll() {
       set_dirty(dep.element);
     }
   }
+  auto iter = retrigger_elements.begin();
+  while (iter != retrigger_elements.end()) {
+    auto next = std::next(iter);
+    if (*iter) {
+      iter->set_dirty();
+    } else {
+      retrigger_elements.erase(iter);
+    }
+    iter = next;
+  }
 }
 
 void Tree::clear_dirty() {

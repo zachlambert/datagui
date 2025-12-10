@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <chrono>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace datagui {
 
@@ -222,7 +223,8 @@ public:
     friend struct FloatCompare;
     struct HashFunc {
       std::size_t operator()(const ElementPtr_& element) const {
-        return std::hash<int>{}(element.index);
+        return std::hash<int>{}(element.index) ^
+               (((std::size_t)(element.tree)) << 1);
       }
     };
     friend struct HashFunc;
@@ -361,7 +363,8 @@ public:
       assert(tree && index != -1);
       return tree->elements[index].dirty;
     }
-    void set_dirty(bool dirty = true) {
+    void set_dirty(bool dirty = true) const {
+      static_assert(!IsConst);
       assert(tree && index != -1);
       if (dirty) {
         tree->set_dirty(index);
@@ -434,6 +437,10 @@ public:
     active_node_ = ptr;
   }
 
+  void set_retrigger(ElementPtr element) {
+    retrigger_elements.insert(element);
+  }
+
 private:
   int create_element(int parent, int prev, std::size_t id, Type type);
   void reset_element(int element, std::size_t id, Type type);
@@ -457,6 +464,8 @@ private:
   int external_var_ = -1;
 
   ConstElementPtr active_node_ = ConstElementPtr();
+  std::unordered_set<Tree::ElementPtr, Tree::ElementPtr::HashFunc>
+      retrigger_elements;
 
   VectorMap<Button> button;
   VectorMap<Checkbox> checkbox;
@@ -472,6 +481,26 @@ private:
   VectorMap<TextBox> text_box;
   VectorMap<TextInput> text_input;
   VectorMap<ViewportPtr> viewport;
+};
+
+class Trigger {
+public:
+  void trigger() {
+    auto iter = elements.begin();
+    while (iter != elements.end()) {
+      auto next = std::next(iter);
+      if (*iter) {
+        iter->set_dirty();
+      } else {
+        elements.erase(iter);
+      }
+      iter = next;
+    }
+  }
+
+private:
+  std::unordered_set<Tree::ElementPtr, Tree::ElementPtr::HashFunc> elements;
+  friend class Gui;
 };
 
 using ElementPtr = Tree::ElementPtr;

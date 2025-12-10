@@ -958,4 +958,14 @@ void Gui::focus_next(bool reverse) {
   change_tree_focus(element_focus, next);
 }
 
+void Gui::trigger(Trigger& trigger) {
+  assert(!stack.empty());
+  trigger.elements.insert(stack.top().first);
+}
+
+void Gui::retrigger() {
+  assert(!stack.empty());
+  tree.set_retrigger(stack.top().first);
+}
+
 } // namespace datagui

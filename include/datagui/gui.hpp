@@ -169,6 +169,9 @@ public:
     }
   }
 
+  void trigger(Trigger& trigger);
+  void retrigger();
+
   template <typename T>
   void edit(
       const std::string& label,

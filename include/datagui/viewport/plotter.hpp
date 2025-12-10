@@ -31,8 +31,9 @@ public:
     args.color = color;
     return *this;
   }
-  PlotHandle& marker_circle() {
+  PlotHandle& marker_circle(float width = 5) {
     args.marker_style = PlotMarkerStyle::Circle;
+    args.marker_width = width;
     return *this;
   }
   PlotHandle& line_dashed() {
