@@ -19,6 +19,7 @@ struct MouseEvent {
   MouseAction action;
   Vec2 position;
   Modifiers mod;
+  bool is_double_click = false;
 };
 
 struct ScrollEvent {

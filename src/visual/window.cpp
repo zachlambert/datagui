@@ -289,7 +289,6 @@ void Window::poll_events() {
   for (auto& event : mouse_events_) {
     event.mod = mod;
   }
-
   for (auto& event : scroll_events_) {
     event.position = mouse_pos_;
     event.mod = mod;
@@ -306,6 +305,26 @@ void Window::poll_events() {
     }
     hold_event.button = (MouseButton)i;
     mouse_events_.push_back(hold_event);
+  }
+
+  for (auto& event : mouse_events_) {
+    if (event.action != MouseAction::Press) {
+      continue;
+    }
+    auto& prev = last_mouse_press_time_[(std::size_t)event.button];
+    auto now = std::chrono::high_resolution_clock::now();
+    double dt = std::chrono::duration_cast<std::chrono::nanoseconds>(now - prev)
+                    .count() *
+                1e-9;
+    prev = now;
+
+    if (dt < double_click_time) {
+      event.is_double_click = true;
+      // Reset prev to avoid a second double click for a third rapid click
+      prev = std::chrono::high_resolution_clock::time_point();
+    } else {
+      prev = now;
+    }
   }
 }
 

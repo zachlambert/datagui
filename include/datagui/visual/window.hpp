@@ -5,6 +5,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <array>
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -69,6 +70,10 @@ private:
   std::vector<TextEvent> text_events_;
   std::array<bool, MouseButtonSize> mouse_button_down_;
   Vec2 mouse_pos_;
+
+  static constexpr double double_click_time = 0.3;
+  std::array<std::chrono::high_resolution_clock::time_point, 3>
+      last_mouse_press_time_;
 
   friend void glfw_mouse_button_callback(GLFWwindow*, int, int, int);
   friend void glfw_scroll_callback(GLFWwindow*, double, double);

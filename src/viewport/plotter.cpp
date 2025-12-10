@@ -76,7 +76,15 @@ void Plotter::end() {
 }
 
 void Plotter::mouse_event(const Box2& box, const MouseEvent& event) {
+  if (event.button != MouseButton::Left) {
+    return;
+  }
   if (event.action == MouseAction::Press) {
+    if (event.is_double_click) {
+      subview = Box2(Vec2(), Vec2::ones());
+      mouse_down_subview = subview;
+      return;
+    }
     mouse_down_pos = event.position;
     mouse_down_subview = subview;
     return;
@@ -86,6 +94,8 @@ void Plotter::mouse_event(const Box2& box, const MouseEvent& event) {
   }
 
   Vec2 delta = (mouse_down_pos - event.position) / box.size();
+  delta = maximum(delta, -subview.lower);
+  delta = minimum(delta, Vec2::ones() - subview.upper);
   subview =
       Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
   render_content();
@@ -102,6 +112,10 @@ bool Plotter::scroll_event(const Box2& box, const ScrollEvent& event) {
   }
   Vec2 centre = subview.center();
   Vec2 size = subview.size() * size_ratio;
+  size.x = std::min(size.x, 2 * centre.x);
+  size.x = std::min(size.x, 2 * (1.f - centre.x));
+  size.y = std::min(size.y, 2 * centre.y);
+  size.y = std::min(size.y, 2 * (1.f - centre.y));
   subview = Box2(centre - size / 2, centre + size / 2);
   return true;
 }
