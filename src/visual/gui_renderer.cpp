@@ -9,7 +9,7 @@ namespace datagui {
 void GuiRenderer::init(std::shared_ptr<FontManager> fm) {
   shape_shader.init();
   text_shader.init(fm);
-  text_shader.init();
+  texture_shader.init();
   this->fm = fm;
 }
 
