@@ -7,11 +7,13 @@
 
 namespace datagui {
 
+// All matrices are column-major to be compatible with glsl
+
 struct Mat2 {
   float data[4];
 
   Mat2() : data{} {}
-  Mat2(float a, float b, float c, float d) : data{a, b, c, d} {}
+  Mat2(float a, float b, float c, float d) : data{a, c, b, d} {}
   Mat2(float* data) {
     for (std::size_t i = 0; i < 4; i++) {
       this->data[i] = data[i];
@@ -43,11 +45,11 @@ struct Mat2 {
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 2 && j < 2);
-    return data[i * 2 + j];
+    return data[j * 2 + i];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 2 && j < 2);
-    return data[i * 2 + j];
+    return data[j * 2 + i];
   }
 
   static Mat2 identity() {
@@ -113,11 +115,11 @@ struct Mat3 {
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 3 && j < 3);
-    return data[i * 3 + j];
+    return data[j * 3 + i];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 3 && j < 3);
-    return data[i * 3 + j];
+    return data[j * 3 + i];
   }
 
   static Mat3 identity() {
@@ -180,11 +182,11 @@ struct Mat4 {
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 4 && j < 4);
-    return data[i * 4 + j];
+    return data[j * 4 + i];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 4 && j < 4);
-    return data[i * 4 + j];
+    return data[j * 4 + i];
   }
 
   static Mat4 identity() {

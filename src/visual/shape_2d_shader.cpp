@@ -37,7 +37,7 @@ out vec4 fs_border_color;
 
 void main(){
   fs_offset = vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
-  mat2 rotation = transpose(mat2(rotation_row1, rotation_row2));
+  mat2 rotation = mat2(rotation_row1, rotation_row2);
   vec2 fs_pos = position + rotation * fs_offset;
   gl_Position = vec4(
     (fs_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),

@@ -30,7 +30,8 @@ TEST(Mat, VectorMultiply) {
   using namespace datagui;
 
   {
-    Mat2 A = {1, 2, 3, 4};
+    // Column-major
+    Mat2 A = {1, 3, 2, 4};
     Vec2 b = {5, 10};
     Vec2 c = A * b;
     EXPECT_EQ(c.x, 25);
@@ -38,7 +39,8 @@ TEST(Mat, VectorMultiply) {
   }
 
   {
-    Mat3 A = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    // Column-major
+    Mat3 A = {1, 4, 7, 2, 5, 8, 3, 6, 9};
     Vec3 b = {1, 2, 3};
     Vec3 c = A * b;
     EXPECT_EQ(c.x, 14);
