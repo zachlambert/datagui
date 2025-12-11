@@ -37,7 +37,7 @@ void GuiRenderer::queue_text(
     Length width) {
   assert(!masks.empty());
   text_shader.queue_text(
-      flip_position(origin, font, font_size),
+      flip_position(origin),
       text,
       font,
       font_size,
@@ -47,11 +47,12 @@ void GuiRenderer::queue_text(
 }
 
 void GuiRenderer::queue_image(const Box2& box, const Image& image) {
-  image_shader.queue_image(image, box.lower, 0, box.size());
+  image_shader
+      .queue_image(image, flip_position(box.upper_left()), 0, box.size());
 }
 
 void GuiRenderer::queue_texture(const Box2& box, int texture) {
-  image_shader.queue_texture(box, texture);
+  image_shader.queue_texture(flip_box(box), texture);
 }
 
 void GuiRenderer::begin(const Vec2& viewport_size) {
@@ -92,7 +93,7 @@ Box2 GuiRenderer::flip_box(const Box2& box) {
   return result;
 }
 
-Vec2 GuiRenderer::flip_position(const Vec2& origin, Font font, int font_size) {
+Vec2 GuiRenderer::flip_position(const Vec2& origin) {
   return Vec2(origin.x, viewport_size.y - origin.y);
 }
 

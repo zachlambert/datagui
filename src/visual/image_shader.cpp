@@ -189,6 +189,8 @@ void ImageShader::draw(const Vec2& viewport_size) {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
   glUseProgram(0);
+
+  commands.clear();
 }
 
 } // namespace datagui

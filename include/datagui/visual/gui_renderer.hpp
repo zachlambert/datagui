@@ -40,7 +40,7 @@ public:
 
 private:
   Box2 flip_box(const Box2& box);
-  Vec2 flip_position(const Vec2& origin, Font font, int font_size);
+  Vec2 flip_position(const Vec2& origin);
 
   ShapeShader shape_shader;
   TextShader text_shader;
