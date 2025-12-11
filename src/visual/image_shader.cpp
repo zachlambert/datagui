@@ -6,21 +6,18 @@
 
 namespace datagui {
 
-OpenglRgbImage::~OpenglRgbImage() {
+Image::~Image() {
   if (texture_ > 0) {
     glDeleteTextures(1, &texture_);
   }
 }
 
-OpenglRgbImage::OpenglRgbImage(OpenglRgbImage&& other) {
+Image::Image(Image&& other) {
   texture_ = other.texture_;
   other.texture_ = 0;
 }
 
-void OpenglRgbImage::write(
-    std::size_t width,
-    std::size_t height,
-    void* pixels) {
+void Image::load(std::size_t width, std::size_t height, void* pixels) {
   if (texture_ == 0) {
     glGenTextures(1, &texture_);
   }
@@ -131,21 +128,11 @@ void ImageShader::init() {
   glBindVertexArray(0);
 }
 
-void ImageShader::draw(
-    int texture,
-    const Box2& box,
-    bool y_down,
-    const Vec2& viewport_size) {
-  draw(texture, box.lower, 0, box.size(), y_down, viewport_size);
-}
-
-void ImageShader::draw(
-    int texture,
+void ImageShader::queue_image(
+    const Image& image,
     const Vec2& position,
-    double angle,
-    const Vec2& size,
-    bool y_down,
-    const Vec2& viewport_size) {
+    float angle,
+    const Vec2& size) {
 
   Mat2 R = Rot2(angle).mat();
   Vec2 lower_left = position;
@@ -153,65 +140,55 @@ void ImageShader::draw(
   Vec2 upper_left = position + R * Vec2(0, size.y);
   Vec2 upper_right = position + R * size;
 
-  std::vector<Vertex> vertices = {
-      Vertex{lower_left, Vec2(0, 0)},
-      Vertex{lower_right, Vec2(1, 0)},
-      Vertex{upper_left, Vec2(0, 1)},
-      Vertex{lower_right, Vec2(1, 0)},
-      Vertex{upper_right, Vec2(1, 1)},
-      Vertex{upper_left, Vec2(0, 1)}};
-  if (y_down) {
-    for (auto& vertex : vertices) {
-      vertex.uv.y = 1 - vertex.uv.y;
-    }
-  }
+  commands.emplace_back();
+  auto& command = commands.back();
 
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(
-      GL_ARRAY_BUFFER,
-      vertices.size() * sizeof(Vertex),
-      vertices.data(),
-      GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  command.vertices = {
+      Vertex{lower_left, Vec2(0, 1)},
+      Vertex{lower_right, Vec2(1, 1)},
+      Vertex{upper_left, Vec2(0, 0)},
+      Vertex{lower_right, Vec2(1, 1)},
+      Vertex{upper_right, Vec2(1, 0)},
+      Vertex{upper_left, Vec2(0, 0)}};
+  command.texture = image.texture();
+}
 
+void ImageShader::queue_texture(const Box2& box, int texture) {
+
+  commands.emplace_back();
+  auto& command = commands.back();
+
+  command.vertices = {
+      Vertex{box.lower_left(), Vec2(0, 0)},
+      Vertex{box.lower_right(), Vec2(1, 0)},
+      Vertex{box.upper_left(), Vec2(0, 1)},
+      Vertex{box.lower_right(), Vec2(1, 0)},
+      Vertex{box.upper_right(), Vec2(1, 1)},
+      Vertex{box.upper_left(), Vec2(0, 1)}};
+  command.texture = texture;
+}
+
+void ImageShader::draw(const Vec2& viewport_size) {
   glUseProgram(program_id);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-  glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+  for (const auto& command : commands) {
+    glBindTexture(GL_TEXTURE_2D, command.texture);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        command.vertices.size() * sizeof(Vertex),
+        command.vertices.data(),
+        GL_STATIC_DRAW);
+
+    glDrawArrays(GL_TRIANGLES, 0, command.vertices.size());
+  }
 
   glBindTexture(GL_TEXTURE_2D, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
   glUseProgram(0);
-}
-
-void ImageShader::draw(
-    std::size_t width,
-    std::size_t height,
-    void* pixels,
-    const Box2& box,
-    bool y_down,
-    const Vec2& viewport_size) {
-
-  OpenglRgbImage image;
-  image.write(width, height, pixels);
-  draw(image.texture(), box, y_down, viewport_size);
-}
-
-void ImageShader::draw(
-    std::size_t width,
-    std::size_t height,
-    void* pixels,
-    const Vec2& position,
-    double angle,
-    const Vec2& size,
-    bool y_down,
-    const Vec2& viewport_size) {
-
-  OpenglRgbImage image;
-  image.write(width, height, pixels);
-  draw(image.texture(), position, angle, size, y_down, viewport_size);
 }
 
 } // namespace datagui

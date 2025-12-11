@@ -9,7 +9,7 @@ namespace datagui {
 void GuiRenderer::init(std::shared_ptr<FontManager> fm) {
   shape_shader.init();
   text_shader.init(fm);
-  texture_shader.init();
+  image_shader.init();
   this->fm = fm;
 }
 
@@ -41,8 +41,12 @@ void GuiRenderer::queue_text(
       masks.top());
 }
 
+void GuiRenderer::queue_image(const Box2& box, const Image& image) {
+  image_shader.queue_image(image, box.lower, 0, box.size());
+}
+
 void GuiRenderer::queue_texture(const Box2& box, int texture) {
-  texture_shader.queue_texture(box, texture);
+  image_shader.queue_texture(box, texture);
 }
 
 void GuiRenderer::begin(const Vec2& viewport_size) {
@@ -61,7 +65,7 @@ void GuiRenderer::end() {
 void GuiRenderer::render() {
   shape_shader.draw(viewport_size);
   text_shader.draw(viewport_size);
-  texture_shader.draw(viewport_size);
+  image_shader.draw(viewport_size);
 }
 
 void GuiRenderer::push_mask(const Box2& mask) {

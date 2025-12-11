@@ -14,7 +14,7 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
 void ViewportPtrSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& viewport = element.viewport();
-  renderer.queue_image(state.box(), viewport.viewport->texture(), false);
+  renderer.queue_texture(state.box(), viewport.viewport->texture());
 }
 
 void ViewportPtrSystem::mouse_event(

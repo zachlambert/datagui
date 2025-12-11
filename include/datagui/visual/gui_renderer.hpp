@@ -1,9 +1,9 @@
 #pragma once
 
 #include "datagui/visual/font_manager.hpp"
+#include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_shader.hpp"
 #include "datagui/visual/text_shader.hpp"
-#include "datagui/visual/texture_shader.hpp"
 #include <assert.h>
 #include <memory>
 #include <stack>
@@ -28,6 +28,7 @@ public:
       Color text_color,
       Length width = LengthWrap());
 
+  void queue_image(const Box2& box, const Image& image);
   void queue_texture(const Box2& box, int texture);
 
   void begin(const Vec2& viewport_size);
@@ -43,7 +44,7 @@ private:
 
   ShapeShader shape_shader;
   TextShader text_shader;
-  TextureShader texture_shader;
+  ImageShader image_shader;
 
   std::shared_ptr<FontManager> fm;
   Vec2 viewport_size;

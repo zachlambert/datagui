@@ -1,29 +1,32 @@
 #pragma once
 
 #include "datagui/geometry/box.hpp"
-#include <cstddef>
+#include <vector>
 
 namespace datagui {
 
-class OpenglRgbImage {
+class Image {
 public:
-  OpenglRgbImage() : width(0), height(0), texture_(0) {}
-  ~OpenglRgbImage();
-  OpenglRgbImage(OpenglRgbImage&&);
+  Image() : width(0), height(0), texture_(0) {}
+  ~Image();
+  Image(Image&&);
 
-  OpenglRgbImage(const OpenglRgbImage&) = delete;
-  OpenglRgbImage& operator=(const OpenglRgbImage&) = delete;
-  OpenglRgbImage& operator=(OpenglRgbImage&&) = delete;
+  Image(const Image&) = delete;
+  Image& operator=(const Image&) = delete;
+  Image& operator=(Image&&) = delete;
 
-  void write(std::size_t width, std::size_t height, void* pixels);
+  void load(std::size_t width, std::size_t height, void* pixels);
+
+private:
   unsigned int texture() const {
     return texture_;
   }
 
-private:
   std::size_t width;
   std::size_t height;
   unsigned int texture_;
+
+  friend class ImageShader;
 };
 
 class ImageShader {
@@ -37,41 +40,30 @@ public:
   ImageShader& operator=(ImageShader&&) = delete;
 
   void init();
-  void draw(
-      int texture,
-      const Box2& box,
-      bool y_down,
-      const Vec2& viewport_size);
-  void draw(
-      int texture,
-      const Vec2& position,
-      double angle,
-      const Vec2& size,
-      bool y_down,
-      const Vec2& viewport_size);
 
-  void draw(
-      std::size_t width,
-      std::size_t height,
-      void* pixels,
-      const Box2& box,
-      bool y_down,
-      const Vec2& viewport_size);
-  void draw(
-      std::size_t width,
-      std::size_t height,
-      void* pixels,
+  // Y down
+  void queue_image(
+      const Image& image,
       const Vec2& position,
-      double angle,
-      const Vec2& size,
-      bool y_down,
-      const Vec2& viewport_size);
+      float angle,
+      const Vec2& size);
+
+  // Y up
+  void queue_texture(const Box2& box, int texture);
+
+  void draw(const Vec2& viewport_size);
 
 private:
   struct Vertex {
     Vec2 pos;
     Vec2 uv;
   };
+  struct Command {
+    std::vector<Vertex> vertices;
+    int texture;
+  };
+  std::vector<Command> commands;
+
   unsigned int program_id;
   unsigned int uniform_viewport_size;
   unsigned int VAO;

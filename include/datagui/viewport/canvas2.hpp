@@ -1,6 +1,7 @@
 #pragma once
 
 #include "datagui/viewport/viewport.hpp"
+#include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_shader.hpp"
 #include "datagui/visual/text_shader.hpp"
 #include <map>

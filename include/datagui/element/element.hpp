@@ -5,6 +5,7 @@
 #include "datagui/input/number_input.hpp"
 #include "datagui/layout.hpp"
 #include "datagui/viewport/viewport.hpp"
+#include "datagui/visual/image_shader.hpp"
 #include <functional>
 #include <optional>
 #include <vector>
@@ -82,6 +83,8 @@ struct ColorPicker {
   // Dependent
   Box2 hue_wheel_box;
   Box2 lightness_box;
+  mutable Image hue_wheel_image;
+  mutable Image lightness_image;
 
   // State
   Color value;
