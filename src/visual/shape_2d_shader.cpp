@@ -1,4 +1,4 @@
-#include "datagui/visual/shape_shader.hpp"
+#include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <array>
@@ -103,7 +103,7 @@ static const std::array<Vec2, 6> quad_vertices = {
     Vec2(0.5f, -0.5f),
     Vec2(0.5f, 0.5f)};
 
-void ShapeShader::init() {
+void Shape2dShader::init() {
   program_id = create_program(rect_vs, rect_fs);
 
   uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
@@ -261,7 +261,7 @@ void ShapeShader::init() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ShapeShader::queue_box(
+void Shape2dShader::queue_box(
     const Box2& box,
     const Color& color,
     float radius,
@@ -282,7 +282,7 @@ void ShapeShader::queue_box(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_rect(
+void Shape2dShader::queue_rect(
     const Vec2& position,
     float angle,
     const Vec2& size,
@@ -304,7 +304,7 @@ void ShapeShader::queue_rect(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_capsule(
+void Shape2dShader::queue_capsule(
     const Vec2& start,
     const Vec2& end,
     float radius,
@@ -325,7 +325,7 @@ void ShapeShader::queue_capsule(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_circle(
+void Shape2dShader::queue_circle(
     const Vec2& position,
     float radius,
     const Color& color,
@@ -345,7 +345,7 @@ void ShapeShader::queue_circle(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_ellipse(
+void Shape2dShader::queue_ellipse(
     const Vec2& position,
     float angle,
     float x_radius,
@@ -367,7 +367,7 @@ void ShapeShader::queue_ellipse(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_line(
+void Shape2dShader::queue_line(
     const Vec2& a,
     const Vec2& b,
     float width,
@@ -386,7 +386,7 @@ void ShapeShader::queue_line(
   elements.push_back(element);
 }
 
-void ShapeShader::draw(const Vec2& viewport_size) {
+void Shape2dShader::draw(const Vec2& viewport_size) {
   if (elements.empty()) {
     return;
   }
