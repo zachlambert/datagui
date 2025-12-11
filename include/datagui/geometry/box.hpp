@@ -5,8 +5,8 @@
 namespace datagui {
 
 struct Box2 {
-  Vec2 lower; // inclusive
-  Vec2 upper; // exclusive
+  Vec2 lower;
+  Vec2 upper;
 
   Box2() {}
   Box2(const Vec2& lower, const Vec2& upper) : lower(lower), upper(upper) {}

@@ -31,6 +31,15 @@ struct Mat2 {
       (*this)(k, 1) = u2(k);
     }
   }
+  Mat2 transpose() const {
+    Mat2 result;
+    for (std::size_t i = 0; i < 2; i++) {
+      for (std::size_t j = 0; j < 2; j++) {
+        result(i, j) = (*this)(j, i);
+      }
+    }
+    return result;
+  }
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 2 && j < 2);
@@ -92,6 +101,15 @@ struct Mat3 {
       (*this)(k, 2) = u3(k);
     }
   }
+  Mat3 transpose() const {
+    Mat3 result;
+    for (std::size_t i = 0; i < 3; i++) {
+      for (std::size_t j = 0; j < 3; j++) {
+        result(i, j) = (*this)(j, i);
+      }
+    }
+    return result;
+  }
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 3 && j < 3);
@@ -149,6 +167,15 @@ struct Mat4 {
       data[i] = value;
       i++;
     }
+  }
+  Mat4 transpose() const {
+    Mat4 result;
+    for (std::size_t i = 0; i < 4; i++) {
+      for (std::size_t j = 0; j < 4; j++) {
+        result(i, j) = (*this)(j, i);
+      }
+    }
+    return result;
   }
 
   float& operator()(std::size_t i, std::size_t j) {

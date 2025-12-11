@@ -82,10 +82,10 @@ struct Vec2 {
     return Vec2(std::abs(x), std::abs(y));
   }
 
-  float dot(const Vec2& other) {
+  float dot(const Vec2& other) const {
     return x * other.x + y * other.y;
   }
-  float cross(const Vec2& other) {
+  float cross(const Vec2& other) const {
     return x * other.y - y * other.x;
   }
 };
@@ -220,10 +220,10 @@ struct Vec3 {
     return Vec3(std::abs(x), std::abs(y), std::abs(z));
   }
 
-  float dot(const Vec3& other) {
+  float dot(const Vec3& other) const {
     return x * other.x + y * other.y + z * other.z;
   }
-  Vec3 cross(const Vec3& other) {
+  Vec3 cross(const Vec3& other) const {
     Vec3 result;
     result.x = y * other.z - z * other.y;
     result.y = z * other.x - x * other.z;
