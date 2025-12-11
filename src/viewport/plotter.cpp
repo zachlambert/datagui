@@ -142,10 +142,13 @@ void Plotter::impl_render() {
   shapes.queue_box(mask, Color::Clear(), 0, 2, Color::Gray(0.5), mask);
 
   float text_height = fm->text_height(theme->text_font, theme->text_size);
-  float total_padding = args.tick_length + 2 * text_height +
-                        2 * args.inner_padding + args.outer_padding;
-  Box2 plot_area =
-      Box2(Vec2::uniform(total_padding), size - Vec2::uniform(total_padding));
+  float left_padding = args.tick_length + 3 * text_height +
+                       2 * args.inner_padding + args.outer_padding;
+  float bottom_padding = args.tick_length + 2 * text_height +
+                         2 * args.inner_padding + args.outer_padding;
+  Box2 plot_area = Box2(
+      Vec2(left_padding, bottom_padding),
+      size - Vec2::uniform(bottom_padding));
 
   if (!plot_items.empty()) {
     bounds.lower.x = std::numeric_limits<float>::max();
@@ -215,8 +218,11 @@ void Plotter::impl_render() {
       args.tick_color,
       mask);
 
-  auto [xticks_power, xticks] = get_ticks(bounds.lower.x, bounds.upper.x);
-  auto [yticks_power, yticks] = get_ticks(bounds.lower.y, bounds.upper.y);
+  Vec2 subview_lower = bounds.lower + subview.lower * bounds.size();
+  Vec2 subview_upper = bounds.upper + subview.upper * bounds.size();
+
+  auto [xticks_power, xticks] = get_ticks(subview_lower.x, subview_upper.x);
+  auto [yticks_power, yticks] = get_ticks(subview_lower.y, subview_upper.y);
 
   for (const auto& tick : xticks) {
     Vec2 pos = plot_area.lower;
@@ -273,6 +279,47 @@ void Plotter::impl_render() {
         args.line_width,
         args.tick_color,
         mask);
+
+    Vec2 label_size = fm->text_size(
+        tick.label,
+        theme->text_font,
+        theme->text_size,
+        LengthWrap());
+    pos.x -= args.tick_length + label_size.x + args.inner_padding;
+    pos.y += label_size.y / 2;
+
+    texts.queue_text(
+        fm,
+        pos,
+        0,
+        tick.label,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthWrap(),
+        mask);
+  }
+  if (!yticks_power.empty()) {
+    Vec2 label_size = fm->text_size(
+        yticks_power,
+        theme->text_font,
+        theme->text_size,
+        LengthWrap());
+
+    Vec2 pos = plot_area.lower;
+    pos.y += plot_area.size().y + args.inner_padding + text_height;
+    pos.x -= args.tick_length + 2 * args.inner_padding + label_size.x;
+
+    texts.queue_text(
+        fm,
+        pos,
+        0,
+        xticks_power,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthWrap(),
+        mask);
   }
 
   if (!xlabel_.empty()) {
@@ -302,7 +349,7 @@ void Plotter::impl_render() {
         theme->text_size,
         LengthWrap());
     Vec2 pos = plot_area.lower;
-    pos.x -= (args.tick_length + 2 * text_height + 2 * args.inner_padding);
+    pos.x -= (args.tick_length + 3 * text_height + 2 * args.inner_padding);
     pos.y += plot_area.size().y / 2 - text_size.x / 2;
     texts.queue_text(
         fm,
@@ -369,7 +416,7 @@ std::tuple<std::string, std::vector<Plotter::Tick>> Plotter::get_ticks(
   if (display_power != 0) {
     std::stringstream ss;
     ss << int(display_power);
-    power_label = "10e" + ss.str();
+    power_label = "1e" + ss.str();
   }
 
   return std::make_tuple(power_label, ticks);
