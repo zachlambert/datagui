@@ -439,7 +439,6 @@ bool Plotter::scroll_event(const Vec2& element_size, const ScrollEvent& event) {
 std::tuple<std::string, std::vector<Plotter::Tick>> Plotter::get_ticks(
     float min,
     float max) {
-
   float power = 0;
   float resolution;
   {
@@ -475,7 +474,6 @@ std::tuple<std::string, std::vector<Plotter::Tick>> Plotter::get_ticks(
 
     std::stringstream ss;
 
-    render_content();
     ss << std::fixed << std::setprecision(1) << value / display_value_scale;
     std::string label = ss.str();
 
