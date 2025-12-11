@@ -33,7 +33,8 @@ add_library(datagui SHARED
   src/visual/image_shader.cpp
   src/visual/gui_renderer.cpp
   src/visual/shader_utils.cpp
-  src/visual/shape_shader.cpp
+  src/visual/shape_2d_shader.cpp
+  src/visual/shape_3d_shader.cpp
   src/visual/text_shader.cpp
   src/visual/window.cpp
 
