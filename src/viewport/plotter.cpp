@@ -135,20 +135,104 @@ void Plotter::impl_render() {
   ShapeShader::Command shapes;
   TextShader::Command texts;
   Box2 bounds;
-
+  float text_height = fm->text_height(theme->text_font, theme->text_size);
   Vec2 size = framebuffer_size();
   Box2 mask(Vec2(), size);
 
+  float header_size = 0;
+  float title_width = 0;
+  if (!title_.empty()) {
+    Vec2 title_size =
+        fm->text_size(title_, theme->text_font, theme->text_size, LengthWrap());
+    title_width = std::min(title_size.x + theme->text_padding, size.x / 2);
+    header_size = title_size.y;
+    texts.queue_text(
+        fm,
+        Vec2(args.outer_padding, size.y - args.outer_padding),
+        0,
+        title_,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthFixed(title_width),
+        mask);
+  }
+  std::size_t plot_label_count = 0;
+  for (const auto& item : plot_items) {
+    if (!item.args.label.empty()) {
+      plot_label_count++;
+    }
+  }
+  if (plot_label_count > 0) {
+    const float item_width = 80 + theme->text_padding;
+    const float item_height = text_height + theme->text_padding;
+
+    std::size_t max_cols = std::floor(
+        (size.x - 2 * args.outer_padding - title_width) / item_width);
+    std::size_t cols = std::min(max_cols, plot_label_count);
+    std::size_t rows = plot_label_count / cols;
+    if (plot_label_count % cols != 0) {
+      rows++;
+    }
+    header_size = std::max(header_size, rows * item_height);
+
+    Vec2 origin =
+        size - Vec2::uniform(args.outer_padding) - Vec2(item_width * cols, 0);
+
+    std::size_t i = 0;
+    std::size_t j = 0;
+    for (const auto& item : plot_items) {
+      if (item.args.label.empty()) {
+        continue;
+      }
+
+      Vec2 pos = origin;
+      pos.x += j * item_width;
+      pos.y -= i * item_height;
+
+      shapes.queue_box(
+          Box2(
+              Vec2(pos.x, pos.y - text_height),
+              Vec2(pos.x + text_height, pos.y)),
+          item.args.color,
+          0,
+          0,
+          Color::Black(),
+          mask);
+
+      texts.queue_text(
+          fm,
+          pos + Vec2(text_height + theme->text_padding, 0),
+          0,
+          item.args.label,
+          theme->text_font,
+          theme->text_size,
+          theme->text_color,
+          LengthFixed(item_width - text_height + theme->text_padding),
+          mask);
+
+      j++;
+      if (j == cols) {
+        j = 0;
+        i++;
+      }
+    }
+  }
+
   shapes.queue_box(mask, Color::Clear(), 0, 2, Color::Gray(0.5), mask);
 
-  float text_height = fm->text_height(theme->text_font, theme->text_size);
   float left_padding = args.tick_length + 3 * text_height +
                        2 * args.inner_padding + args.outer_padding;
   float bottom_padding = args.tick_length + 2 * text_height +
                          2 * args.inner_padding + args.outer_padding;
+  float right_padding = bottom_padding;
+  float top_padding = std::max(
+      bottom_padding,
+      header_size + args.inner_padding + args.outer_padding);
+
   Box2 plot_area = Box2(
       Vec2(left_padding, bottom_padding),
-      size - Vec2::uniform(bottom_padding));
+      size - Vec2(right_padding, top_padding));
 
   if (!plot_items.empty()) {
     bounds.lower.x = std::numeric_limits<float>::max();

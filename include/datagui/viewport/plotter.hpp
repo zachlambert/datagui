@@ -85,10 +85,12 @@ public:
     return plot(x.data(), y.data(), 1);
   }
 
+  void title(const std::string& title) {
+    title_ = title;
+  }
   void xlabel(const std::string& xlabel) {
     xlabel_ = xlabel;
   }
-
   void ylabel(const std::string& ylabel) {
     ylabel_ = ylabel;
   }
@@ -122,6 +124,7 @@ private:
   };
   std::vector<PlotItem> plot_items;
 
+  std::string title_;
   std::string xlabel_;
   std::string ylabel_;
 
