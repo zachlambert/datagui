@@ -26,6 +26,7 @@ add_library(datagui SHARED
   src/element/tree.cpp
 
   src/geometry/box.cpp
+  src/geometry/camera.cpp
   src/geometry/rot.cpp
   src/geometry/vec.cpp
 

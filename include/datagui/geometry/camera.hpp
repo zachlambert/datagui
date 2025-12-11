@@ -13,7 +13,7 @@ struct Camera3d {
   float fov_vertical_degrees;
 
   Mat4 view_mat() const;
-  Mat4 projection_mat() const;
+  Mat4 projection_mat(float aspect_ratio) const;
 };
 
 } // namespace datagui

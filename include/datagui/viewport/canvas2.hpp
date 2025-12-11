@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/shape_shader.hpp"
+#include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/text_shader.hpp"
 
 namespace datagui {
@@ -32,7 +32,7 @@ private:
       const std::shared_ptr<FontManager>& fm) override;
   void mouse_event(const Vec2& size, const MouseEvent& event) override;
 
-  ShapeShader shape_shader;
+  Shape2dShader shape_shader;
   TextShader text_shader;
 };
 

@@ -16,3 +16,5 @@ create_example(datapack)
 
 create_example(canvas2)
 create_example(plotter)
+
+create_example(shape_3d_shader)

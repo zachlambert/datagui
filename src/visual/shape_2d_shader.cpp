@@ -10,7 +10,6 @@ namespace datagui {
 const static std::string rect_vs = R"(
 #version 330 core
 
-// Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 position;
 layout(location = 2) in vec2 rotation_row1;
@@ -397,6 +396,7 @@ void Shape2dShader::draw(const Vec2& viewport_size) {
       elements.size() * sizeof(Element),
       elements.data(),
       GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUseProgram(program_id);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);

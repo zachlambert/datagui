@@ -30,88 +30,42 @@ static Mat4 make_transform(
 const static std::string shape_3d_vs = R"(
 #version 330 core
 
-// Input vertex data: position and normal
-layout(location = 0) in vec2 vertex_pos;
-layout(location = 1) in vec2 position;
-layout(location = 2) in vec2 rotation_row1;
-layout(location = 3) in vec2 rotation_row2;
-layout(location = 4) in vec2 size;
-layout(location = 5) in float radius;
-layout(location = 6) in vec2 radius_scale;
-layout(location = 7) in vec4 color;
-layout(location = 8) in float border_width;
-layout(location = 9) in vec4 border_color;
-layout(location = 10) in vec2 mask_lower;
-layout(location = 11) in vec2 mask_upper;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+// layout(location = 2) in vec4 transform_row1;
+// layout(location = 3) in vec4 transform_row2;
+// layout(location = 4) in vec4 transform_row3;
+// layout(location = 5) in vec4 transform_row4;
+// layout(location = 6) in vec4 color;
 
-uniform vec2 viewport_size;
-
-out vec2 fs_offset;
-out vec2 fs_size;
-out float fs_radius;
-out vec2 fs_radius_scale;
-out vec2 fs_mask_offset;
-out vec2 fs_mask_size;
+out vec3 fs_position_cs;
+out vec3 fs_normal_cs;
 out vec4 fs_color;
-out float fs_border_width;
-out vec4 fs_border_color;
+
+uniform mat4 P;
+uniform mat4 V;
 
 void main(){
-  fs_offset = vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
-  mat2 rotation = transpose(mat2(rotation_row1, rotation_row2));
-  vec2 fs_pos = position + rotation * fs_offset;
-  gl_Position = vec4(
-    (fs_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
-    (fs_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
-    0,
-    1);
-
-  fs_size = size / 2;
-  fs_radius = radius;
-  fs_radius_scale = radius_scale;
-  fs_border_width = border_width;
-  fs_border_color = border_color;
-
-  fs_mask_offset = fs_pos - (mask_lower + mask_upper) / 2;
-  fs_mask_size = (mask_upper - mask_lower) / 2;
-
-  fs_color = color;
+  // mat4 M = mat4(1.f); // transpose(mat4(transform_row1, transform_row2, transform_row3, transform_row4));
+  mat4 VM = transpose(V); //  * transpose(M);
+  mat4 PVM = transpose(P) * VM;
+  gl_Position = PVM * vec4(position, 1);
+  fs_normal_cs = normalize((VM * vec4(normal, 0)).xyz);
+  fs_color = vec4(1, 0, 0, 1); // color;
 }
 )";
 
 const static std::string shape_3d_fs = R"(
 #version 330 core
 
-in vec2 fs_offset;
-in vec2 fs_size;
-in float fs_radius;
-in vec2 fs_radius_scale;
-in vec2 fs_mask_offset;
-in vec2 fs_mask_size;
+in vec3 fs_normal_cs;
 in vec4 fs_color;
-in float fs_border_width;
-in vec4 fs_border_color;
-
-uniform vec2 viewport_size;
-
 out vec4 color;
 
 void main(){
-  vec2 d_outer = (abs(fs_offset) - fs_size) / fs_radius_scale + fs_radius;
-  vec2 d_inner = (abs(fs_offset) - max(fs_size-fs_border_width, 0)) /
-    fs_radius_scale + max(fs_radius - fs_border_width, 0);
-
-  float s_outer = length(max(d_outer, 0)) + min(max(d_outer.x, d_outer.y), 0);
-  float s_inner = length(max(d_inner, 0)) + min(max(d_inner.x, d_inner.y), 0);
-
-  float in_outer = float(s_outer <= fs_radius);
-  float in_inner = float(s_inner <= max(fs_radius - fs_border_width, 0));
-
-  vec2 mask_d = abs(fs_mask_offset) - fs_mask_size;
-  float mask_s = length(max(mask_d, 0.0)) + min(max(mask_d.x, mask_d.y), 0.0);
-  float in_mask = float(mask_s < 0);
-
-  color = in_mask * (in_inner * fs_color + in_outer * (1-in_inner) * fs_border_color);
+  // Light as if the light comes from the camera view
+  float cos_theta = clamp(dot(fs_normal_cs, vec3(0, 0, -1)), 0, 1);
+  color = fs_color * cos_theta;
 }
 )";
 
@@ -151,7 +105,7 @@ static std::size_t create_box(
     }
 
     for (int ind = 0; ind < 3; ind++) {
-      indices.push_back(vertices_offset + (i + 1) * 4 - 1 - ind);
+      indices.push_back(vertices_offset + i * 4 + ind);
     }
     for (int ind = 0; ind < 3; ind++) {
       indices.push_back(vertices_offset + (i + 1) * 4 - 1 - ind);
@@ -173,10 +127,11 @@ void Shape3dShader::init() {
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &static_VBO);
   glGenBuffers(1, &static_EBO);
-  glGenBuffers(1, &instance_VBO);
+  // glGenBuffers(1, &instance_VBO);
 
   // Bind vertex array
   glBindVertexArray(VAO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, static_EBO);
 
   // Bind and configure buffer for vertex attributes
   glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
@@ -188,7 +143,7 @@ void Shape3dShader::init() {
       3,
       GL_FLOAT,
       GL_FALSE,
-      sizeof(Vec3),
+      sizeof(Vertex),
       (void*)(offsetof(Vertex, position)));
   glEnableVertexAttribArray(index);
   index++;
@@ -198,11 +153,12 @@ void Shape3dShader::init() {
       3,
       GL_FLOAT,
       GL_FALSE,
-      sizeof(Vec3),
+      sizeof(Vertex),
       (void*)(offsetof(Vertex, normal)));
   glEnableVertexAttribArray(index);
   index++;
 
+#if 0
   // Bind and configure buffer for instance attributes
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
 
@@ -230,8 +186,8 @@ void Shape3dShader::init() {
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
+#endif
 
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
   // =============================================================
@@ -246,6 +202,12 @@ void Shape3dShader::init() {
     auto& shape = shapes[(std::size_t)ShapeType::Box];
     shape.indices_offset = indices.size();
     shape.index_count = create_box(vertices, indices);
+  }
+  std::cout << "----------\n";
+  for (const auto& vertex : vertices) {
+    std::cout << "--\n";
+    std::cout << vertex.position << std::endl;
+    std::cout << vertex.normal << std::endl;
   }
 
   glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
@@ -274,9 +236,14 @@ void Shape3dShader::queue_box(
       {make_transform(position, orientation, scale), color});
 }
 
-void Shape3dShader::draw(const Camera3d& camera) {
+void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
   Mat4 V = camera.view_mat();
-  Mat4 P = camera.projection_mat();
+  Mat4 P = camera.projection_mat(viewport_size.x / viewport_size.y);
+
+  glDisable(GL_BLEND);
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH);
+  glDepthFunc(GL_LESS);
 
   glUseProgram(program_id);
   glUniformMatrix4fv(uniform_V, 1, GL_FALSE, V.data);
@@ -299,12 +266,22 @@ void Shape3dShader::draw(const Camera3d& camera) {
         GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+#if 0
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+#elif 1
+    glDrawElements(
+        GL_TRIANGLES,
+        shape.index_count,
+        GL_UNSIGNED_INT,
+        (void*)(sizeof(unsigned int) * shape.indices_offset));
+#else
     glDrawElementsInstanced(
         GL_TRIANGLES,
         shape.index_count,
         GL_UNSIGNED_INT,
-        (void*)shape.indices_offset,
+        (void*)(sizeof(unsigned int) * shape.indices_offset),
         shape_elements.size());
+#endif
 
     shape_elements.clear();
   }

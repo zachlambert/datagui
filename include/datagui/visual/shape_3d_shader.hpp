@@ -17,7 +17,7 @@ public:
       const Vec3& size,
       const Color& color);
 
-  void draw(const Camera3d& camera);
+  void draw(const Vec2& viewport_size, const Camera3d& camera);
 
 private:
   enum class ShapeType {
