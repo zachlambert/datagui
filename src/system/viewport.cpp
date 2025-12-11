@@ -14,7 +14,7 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
 void ViewportPtrSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& viewport = element.viewport();
-  renderer.queue_image(state.box(), viewport.viewport->texture(), false);
+  renderer.queue_texture(state.box(), viewport.viewport->texture());
 }
 
 void ViewportPtrSystem::mouse_event(
@@ -27,7 +27,7 @@ void ViewportPtrSystem::mouse_event(
   event_viewport.position.x = event.position.x - state.position.x;
   event_viewport.position.y =
       state.position.y + state.size.y - event.position.y;
-  viewport.viewport->mouse_event(state.box(), event_viewport);
+  viewport.viewport->mouse_event(state.size, event_viewport);
 }
 
 bool ViewportPtrSystem::scroll_event(
@@ -40,7 +40,7 @@ bool ViewportPtrSystem::scroll_event(
   event_viewport.position.x = event.position.x - state.position.x;
   event_viewport.position.y =
       state.position.y + state.size.y - event.position.y;
-  return viewport.viewport->scroll_event(state.box(), event_viewport);
+  return viewport.viewport->scroll_event(state.size, event_viewport);
 }
 
 } // namespace datagui

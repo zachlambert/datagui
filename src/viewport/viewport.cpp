@@ -62,17 +62,18 @@ void Viewport::init(
   impl_init(theme, fm);
 }
 
-void Viewport::render_content(const Color& fill_color) {
+void Viewport::bind_framebuffer() {
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
   glViewport(0, 0, width, height);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glClearColor(fill_color.r, fill_color.g, fill_color.b, 1.f);
+  glClearColor(1.f, 1.f, 1.f, 1.f);
   glClearDepth(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  impl_render();
+}
 
+void Viewport::unbind_framebuffer() {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

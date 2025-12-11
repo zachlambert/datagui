@@ -10,6 +10,7 @@
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
 #include "datagui/theme.hpp"
+#include "datagui/viewport/viewport.hpp"
 #include "datagui/visual/gui_renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>

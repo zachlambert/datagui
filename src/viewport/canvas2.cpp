@@ -7,48 +7,47 @@ void Canvas2::box(
     const Color& color,
     float radius,
     float border_width,
-    const Color& border_color,
-    int z_index) {
-  auto& layer = get_layer(z_index);
-  layer.shape_command.queue_box(
+    const Color& border_color) {
+  shape_shader.queue_box(
       box,
       color,
       radius,
       border_width,
       border_color,
       Box2(Vec2(), framebuffer_size()));
+  shape_shader.draw(framebuffer_size());
+}
+
+void Canvas2::queue_text(
+    const Vec2& origin,
+    float angle,
+    const std::string& text,
+    Font font,
+    int font_size,
+    Color text_color,
+    Length width) {
+  text_shader
+      .queue_text(origin, angle, text, font, font_size, text_color, width);
+  text_shader.draw(framebuffer_size());
 }
 
 void Canvas2::begin() {
-  layers.clear();
+  bind_framebuffer();
 }
 
 void Canvas2::end() {
-  render_content();
+  unbind_framebuffer();
 }
-
-void Canvas2::mouse_event(const Box2& box, const MouseEvent& event) {}
 
 void Canvas2::impl_init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
   shape_shader.init();
-  text_shader.init();
+  text_shader.init(fm);
 }
 
-void Canvas2::impl_render() {
-  for (const auto& [z_index, layer] : layers) {
-    shape_shader.draw(layer.shape_command, framebuffer_size());
-    text_shader.draw(layer.text_command, framebuffer_size());
-  }
-}
-
-Canvas2::Layer& Canvas2::get_layer(int z_index) {
-  auto iter = layers.find(z_index);
-  if (iter != layers.end()) {
-    return iter->second;
-  }
-  return layers.emplace(z_index, Layer()).first->second;
+void Canvas2::mouse_event(const Vec2& size, const MouseEvent& event) {
+  // TODO
 }
 
 }; // namespace datagui

@@ -51,7 +51,7 @@ void ColorPickerSystem::set_dependent_state(ElementPtr element) {
 
 void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
-  const auto& color_picker = element.color_picker();
+  auto& color_picker = element.color_picker();
 
   renderer
       .queue_box(state.box(), color_picker.value, 2, theme->input_color_border);
@@ -111,7 +111,10 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
         pixel.b = color.b * 255;
       }
     }
-    renderer.queue_image(color_picker.hue_wheel_box, n, n, pixels.data(), true);
+    color_picker.hue_wheel_image.load(n, n, pixels.data());
+    renderer.queue_image(
+        color_picker.hue_wheel_box,
+        color_picker.hue_wheel_image);
   }
   {
     const std::size_t h = 100;
@@ -137,7 +140,10 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
         pixel.a = 255;
       }
     }
-    renderer.queue_image(color_picker.lightness_box, w, h, pixels.data(), true);
+    color_picker.lightness_image.load(w, h, pixels.data());
+    renderer.queue_image(
+        color_picker.lightness_box,
+        color_picker.lightness_image);
   }
 }
 

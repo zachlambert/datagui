@@ -1,6 +1,5 @@
 #pragma once
 
-#include "datagui/color.hpp"
 #include "datagui/input/event.hpp"
 #include "datagui/theme.hpp"
 #include <cstddef>
@@ -32,8 +31,8 @@ public:
 
   virtual void begin() = 0;
   virtual void end() = 0;
-  virtual void mouse_event(const Box2& box, const MouseEvent& event) {}
-  virtual bool scroll_event(const Box2& box, const ScrollEvent& event) {
+  virtual void mouse_event(const Vec2& size, const MouseEvent& event) {}
+  virtual bool scroll_event(const Vec2& size, const ScrollEvent& event) {
     return false;
   }
 
@@ -42,13 +41,13 @@ public:
   }
 
 protected:
-  void render_content(const Color& fill_color = Color::White());
+  void bind_framebuffer();
+  void unbind_framebuffer();
 
 private:
   virtual void impl_init(
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm) = 0;
-  virtual void impl_render() = 0;
 
   std::size_t width;
   std::size_t height;

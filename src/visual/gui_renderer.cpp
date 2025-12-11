@@ -8,7 +8,7 @@ namespace datagui {
 
 void GuiRenderer::init(std::shared_ptr<FontManager> fm) {
   shape_shader.init();
-  text_shader.init();
+  text_shader.init(fm);
   image_shader.init();
   this->fm = fm;
 }
@@ -18,9 +18,8 @@ void GuiRenderer::queue_box(
     const Color& bg_color,
     float border_width,
     Color border_color) {
-  assert(!layers.empty());
   assert(!masks.empty());
-  layers.back().shape_command.queue_box(
+  shape_shader.queue_box(
       flip_box(box),
       bg_color,
       0,
@@ -36,12 +35,9 @@ void GuiRenderer::queue_text(
     int font_size,
     Color text_color,
     Length width) {
-  assert(!layers.empty());
   assert(!masks.empty());
-  layers.back().text_command.queue_text(
-      fm,
-      flip_position(origin, font, font_size),
-      0,
+  text_shader.queue_text(
+      flip_position(origin),
       text,
       font,
       font_size,
@@ -50,60 +46,32 @@ void GuiRenderer::queue_text(
       masks.top());
 }
 
-void GuiRenderer::queue_image(
-    const Box2& box,
-    unsigned int texture,
-    bool y_down) {
-  layers.back().image_commands.push_back(
-      {flip_box(box), texture, OpenglRgbImage(), y_down});
+void GuiRenderer::queue_image(const Box2& box, const Image& image) {
+  image_shader
+      .queue_image(image, flip_position(box.upper_left()), 0, box.size());
 }
 
-void GuiRenderer::queue_image(
-    const Box2& box,
-    std::size_t width,
-    std::size_t height,
-    void* pixels,
-    bool y_down) {
-  OpenglRgbImage image;
-  image.write(width, height, pixels);
-  layers.back().image_commands.push_back(
-      {flip_box(box), 0, std::move(image), y_down});
+void GuiRenderer::queue_texture(const Box2& box, int texture) {
+  image_shader.queue_texture(flip_box(box), texture);
 }
 
-void GuiRenderer::render_begin(const Vec2& viewport_size) {
+void GuiRenderer::begin(const Vec2& viewport_size) {
   this->viewport_size = viewport_size;
   if (masks.size() == 1) {
     masks.pop();
   }
   masks.push(Box2(Vec2(), viewport_size));
-  layers.emplace_back();
 }
 
-void GuiRenderer::render_end() {
+void GuiRenderer::end() {
   assert(masks.size() == 1);
   masks.pop();
-
-  for (const auto& layer : layers) {
-    shape_shader.draw(layer.shape_command, viewport_size);
-    text_shader.draw(layer.text_command, viewport_size);
-    for (const auto& image : layer.image_commands) {
-      if (image.texture > 0) {
-        image_shader
-            .draw(image.texture, image.box, image.y_down, viewport_size);
-      } else if (image.image.texture() > 0) {
-        image_shader.draw(
-            image.image.texture(),
-            image.box,
-            image.y_down,
-            viewport_size);
-      }
-    }
-  }
-  layers.clear();
 }
 
-void GuiRenderer::new_layer() {
-  layers.emplace_back();
+void GuiRenderer::render() {
+  shape_shader.draw(viewport_size);
+  text_shader.draw(viewport_size);
+  image_shader.draw(viewport_size);
 }
 
 void GuiRenderer::push_mask(const Box2& mask) {
@@ -125,7 +93,7 @@ Box2 GuiRenderer::flip_box(const Box2& box) {
   return result;
 }
 
-Vec2 GuiRenderer::flip_position(const Vec2& origin, Font font, int font_size) {
+Vec2 GuiRenderer::flip_position(const Vec2& origin) {
   return Vec2(origin.x, viewport_size.y - origin.y);
 }
 
