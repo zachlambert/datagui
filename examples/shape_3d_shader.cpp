@@ -22,7 +22,10 @@ int main() {
   while (window.running()) {
     window.render_begin();
 
-    shape_shader.queue_box(Vec3(), Rot3(), Vec3(), Color::Red());
+    shape_shader.queue_box(Vec3(), Rot3(), Vec3::ones(), Color::Red());
+    shape_shader.queue_box(Vec3(2, 0, 0), Rot3(), Vec3::ones(), Color::Red());
+    shape_shader.queue_box(Vec3(0, 2, 0), Rot3(), Vec3::ones(), Color::Red());
+    shape_shader.queue_box(Vec3(0, -2, 0), Rot3(), Vec3::ones(), Color::Red());
     shape_shader.draw(window.size(), camera);
 
     window.render_end();

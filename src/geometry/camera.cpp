@@ -3,8 +3,8 @@
 namespace datagui {
 
 Mat4 Camera3d::view_mat() const {
-  const Vec3& n3 = direction;
-  Vec3 n1 = n3.cross(Vec3(0, 0, 1));
+  const Vec3& n3 = -direction;
+  Vec3 n1 = Vec3(0, 0, 1).cross(n3);
   n1 /= n1.length();
   Vec3 n2 = n3.cross(n1);
 
@@ -30,11 +30,12 @@ Mat4 Camera3d::projection_mat(float aspect_ratio) const {
 
   projection(0, 0) = std::tan(0.5f * fov_horizontal_degrees * M_PI / 180.f);
   projection(1, 1) =
-      -aspect_ratio * std::tan(0.5f * fov_vertical_degrees * M_PI / 180.f);
+      aspect_ratio * std::tan(0.5f * fov_vertical_degrees * M_PI / 180.f);
   projection(2, 2) =
-      (clipping_min + clipping_max) / (clipping_max - clipping_min);
-  projection(2, 3) = -2 / (clipping_max - clipping_min);
-  projection(3, 2) = 1;
+      -(clipping_min + clipping_max) / (clipping_max - clipping_min);
+  projection(2, 3) =
+      -2 * clipping_min * clipping_max / (clipping_max - clipping_min);
+  projection(3, 2) = -1;
 
   return projection;
 }

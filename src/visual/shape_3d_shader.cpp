@@ -32,11 +32,11 @@ const static std::string shape_3d_vs = R"(
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
-// layout(location = 2) in vec4 transform_row1;
-// layout(location = 3) in vec4 transform_row2;
-// layout(location = 4) in vec4 transform_row3;
-// layout(location = 5) in vec4 transform_row4;
-// layout(location = 6) in vec4 color;
+layout(location = 2) in vec4 transform_row1;
+layout(location = 3) in vec4 transform_row2;
+layout(location = 4) in vec4 transform_row3;
+layout(location = 5) in vec4 transform_row4;
+layout(location = 6) in vec4 color;
 
 out vec3 fs_position_cs;
 out vec3 fs_normal_cs;
@@ -46,8 +46,8 @@ uniform mat4 P;
 uniform mat4 V;
 
 void main(){
-  // mat4 M = mat4(1.f); // transpose(mat4(transform_row1, transform_row2, transform_row3, transform_row4));
-  mat4 VM = transpose(V); //  * transpose(M);
+  mat4 M = transpose(mat4(transform_row1, transform_row2, transform_row3, transform_row4));
+  mat4 VM = transpose(V) * M;
   mat4 PVM = transpose(P) * VM;
   gl_Position = PVM * vec4(position, 1);
   fs_normal_cs = normalize((VM * vec4(normal, 0)).xyz);
@@ -62,10 +62,12 @@ in vec3 fs_normal_cs;
 in vec4 fs_color;
 out vec4 color;
 
+uniform float ambient;
+
 void main(){
   // Light as if the light comes from the camera view
-  float cos_theta = clamp(dot(fs_normal_cs, vec3(0, 0, -1)), 0, 1);
-  color = fs_color * cos_theta;
+  float cos_theta = clamp(dot(fs_normal_cs, vec3(0, 0, 1)), 0, 1);
+  color = fs_color * (ambient + (1 - ambient) * cos_theta);
 }
 )";
 
@@ -122,12 +124,13 @@ void Shape3dShader::init() {
 
   uniform_P = glGetUniformLocation(program_id, "P");
   uniform_V = glGetUniformLocation(program_id, "V");
+  uniform_ambient = glGetUniformLocation(program_id, "ambient");
 
   // Generate ids
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &static_VBO);
   glGenBuffers(1, &static_EBO);
-  // glGenBuffers(1, &instance_VBO);
+  glGenBuffers(1, &instance_VBO);
 
   // Bind vertex array
   glBindVertexArray(VAO);
@@ -158,7 +161,6 @@ void Shape3dShader::init() {
   glEnableVertexAttribArray(index);
   index++;
 
-#if 0
   // Bind and configure buffer for instance attributes
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
 
@@ -186,7 +188,6 @@ void Shape3dShader::init() {
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
-#endif
 
   glBindVertexArray(0);
 
@@ -202,12 +203,6 @@ void Shape3dShader::init() {
     auto& shape = shapes[(std::size_t)ShapeType::Box];
     shape.indices_offset = indices.size();
     shape.index_count = create_box(vertices, indices);
-  }
-  std::cout << "----------\n";
-  for (const auto& vertex : vertices) {
-    std::cout << "--\n";
-    std::cout << vertex.position << std::endl;
-    std::cout << vertex.normal << std::endl;
   }
 
   glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
@@ -242,12 +237,13 @@ void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
 
   glDisable(GL_BLEND);
   glEnable(GL_CULL_FACE);
-  glEnable(GL_DEPTH);
+  glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
   glUseProgram(program_id);
   glUniformMatrix4fv(uniform_V, 1, GL_FALSE, V.data);
   glUniformMatrix4fv(uniform_P, 1, GL_FALSE, P.data);
+  glUniform1f(uniform_ambient, args.ambient);
 
   glBindVertexArray(VAO);
 
@@ -266,22 +262,12 @@ void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
         GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-#if 0
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-#elif 1
-    glDrawElements(
-        GL_TRIANGLES,
-        shape.index_count,
-        GL_UNSIGNED_INT,
-        (void*)(sizeof(unsigned int) * shape.indices_offset));
-#else
     glDrawElementsInstanced(
         GL_TRIANGLES,
         shape.index_count,
         GL_UNSIGNED_INT,
         (void*)(sizeof(unsigned int) * shape.indices_offset),
         shape_elements.size());
-#endif
 
     shape_elements.clear();
   }
