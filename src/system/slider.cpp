@@ -82,6 +82,16 @@ void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   auto& slider = element.slider();
 
   if (!slider.held && event.action == MouseAction::Press) {
+    if (event.is_double_click) {
+      slider.value = slider.initial_value;
+      if (slider.callback) {
+        slider.callback(slider.value);
+      } else {
+        element.set_dirty();
+      }
+      return;
+    }
+
     float slider_length =
         slider.length ? *slider.length : theme->slider_default_length;
 

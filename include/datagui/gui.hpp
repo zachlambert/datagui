@@ -93,7 +93,10 @@ public:
   void slider(T lower, T upper, const Var<T>& var);
   template <typename T>
   void slider(T& value, T lower, T upper) {
-    slider(value, lower, upper, [&value](T new_value) { value = new_value; });
+    std::function<void(T)> callback = [&value](T new_value) {
+      value = new_value;
+    };
+    slider(value, lower, upper, std::move(callback));
   }
 
   bool hsplit(float ratio);

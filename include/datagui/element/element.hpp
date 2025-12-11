@@ -168,6 +168,7 @@ struct Slider {
   double upper;
   std::function<void(double)> callback;
   bool always = false;
+  double initial_value = 0;
 
   // State
   double value;
