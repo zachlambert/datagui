@@ -15,3 +15,4 @@ create_example(gui_6)
 create_example(datapack)
 
 create_example(canvas2)
+create_example(plotter)

@@ -67,6 +67,13 @@ public:
         Color border_color,
         const Box2& mask);
 
+    void queue_line(
+        const Vec2& a,
+        const Vec2& b,
+        float width,
+        const Color& color,
+        const Box2& mask);
+
     void clear() {
       elements.clear();
     }

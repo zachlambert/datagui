@@ -134,8 +134,9 @@ void ImageShader::init() {
 void ImageShader::draw(
     int texture,
     const Box2& box,
+    bool y_down,
     const Vec2& viewport_size) {
-  draw(texture, box.lower, 0, box.size(), viewport_size);
+  draw(texture, box.lower, 0, box.size(), y_down, viewport_size);
 }
 
 void ImageShader::draw(
@@ -143,6 +144,7 @@ void ImageShader::draw(
     const Vec2& position,
     double angle,
     const Vec2& size,
+    bool y_down,
     const Vec2& viewport_size) {
 
   Mat2 R = Rot2(angle).mat();
@@ -151,17 +153,18 @@ void ImageShader::draw(
   Vec2 upper_left = position + R * Vec2(0, size.y);
   Vec2 upper_right = position + R * size;
 
-  // Image coordinate are:
-  // +X = right
-  // +Y = down
-  // Therefore, invert v cordinate
   std::vector<Vertex> vertices = {
-      Vertex{lower_left, Vec2(0, 1)},
-      Vertex{lower_right, Vec2(1, 1)},
-      Vertex{upper_left, Vec2(0, 0)},
-      Vertex{lower_right, Vec2(1, 1)},
-      Vertex{upper_right, Vec2(1, 0)},
-      Vertex{upper_left, Vec2(0, 0)}};
+      Vertex{lower_left, Vec2(0, 0)},
+      Vertex{lower_right, Vec2(1, 0)},
+      Vertex{upper_left, Vec2(0, 1)},
+      Vertex{lower_right, Vec2(1, 0)},
+      Vertex{upper_right, Vec2(1, 1)},
+      Vertex{upper_left, Vec2(0, 1)}};
+  if (y_down) {
+    for (auto& vertex : vertices) {
+      vertex.uv.y = 1 - vertex.uv.y;
+    }
+  }
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(
@@ -188,11 +191,12 @@ void ImageShader::draw(
     std::size_t height,
     void* pixels,
     const Box2& box,
+    bool y_down,
     const Vec2& viewport_size) {
 
   OpenglRgbImage image;
   image.write(width, height, pixels);
-  draw(image.texture(), box, viewport_size);
+  draw(image.texture(), box, y_down, viewport_size);
 }
 
 void ImageShader::draw(
@@ -202,11 +206,12 @@ void ImageShader::draw(
     const Vec2& position,
     double angle,
     const Vec2& size,
+    bool y_down,
     const Vec2& viewport_size) {
 
   OpenglRgbImage image;
   image.write(width, height, pixels);
-  draw(image.texture(), position, angle, size, viewport_size);
+  draw(image.texture(), position, angle, size, y_down, viewport_size);
 }
 
 } // namespace datagui

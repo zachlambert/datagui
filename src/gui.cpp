@@ -285,6 +285,7 @@ void Gui::slider(
 
   if (is_new || overwrite) {
     slider.value = initial_value;
+    slider.initial_value = initial_value;
   }
   if constexpr (std::is_same_v<T, double>) {
     slider.callback = callback;
@@ -302,7 +303,7 @@ void Gui::slider(
 
 template <typename T>
 void Gui::slider(T lower, T upper, const Var<T>& var) {
-  current.expect(Type::Slider, read_key());
+  bool is_new = current.expect(Type::Slider, read_key());
   auto& slider = current.slider();
   args_.apply(current);
   current = current.next();
@@ -310,6 +311,9 @@ void Gui::slider(T lower, T upper, const Var<T>& var) {
   slider.type = number_type<T>();
   slider.lower = lower;
   slider.upper = upper;
+  if (is_new) {
+    slider.initial_value = *var;
+  }
 
   slider.callback = [var](double value) { var.set(value); };
   slider.value = *var;
@@ -956,6 +960,16 @@ void Gui::focus_next(bool reverse) {
   }
 
   change_tree_focus(element_focus, next);
+}
+
+void Gui::trigger(Trigger& trigger) {
+  assert(!stack.empty());
+  trigger.elements.insert(stack.top().first);
+}
+
+void Gui::retrigger() {
+  assert(!stack.empty());
+  tree.set_retrigger(stack.top().first);
 }
 
 } // namespace datagui

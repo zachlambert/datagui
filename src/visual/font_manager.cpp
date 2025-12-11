@@ -2,6 +2,7 @@
 
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <filesystem>
 #include <string>
@@ -92,6 +93,18 @@ std::string find_font_path(Font font) {
 FontStructure load_font(Font font, int font_size) {
   FontStructure structure;
   structure.resize(' ', '~');
+
+  // Keep track of these values to restore afterwards
+
+  int original_fb;
+  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &original_fb);
+
+  int original_fb_w, original_fb_h;
+  int original_viewport[4];
+  glGetIntegerv(GL_VIEWPORT, original_viewport);
+
+  unsigned char original_blend;
+  glGetBooleanv(GL_BLEND, &original_blend);
 
   // Initialise ft_library
 
@@ -304,11 +317,20 @@ FontStructure load_font(Font font, int font_size) {
     glDeleteTextures(1, &char_texture);
   }
 
+  // Restore initial state
+
+  glBindFramebuffer(GL_FRAMEBUFFER, original_fb);
+  glViewport(
+      original_viewport[0],
+      original_viewport[1],
+      original_viewport[2],
+      original_viewport[3]);
+  if (!original_blend) {
+    glDisable(GL_BLEND);
+  }
+
   // Cleanup
 
-  glDisable(GL_BLEND);
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glDeleteFramebuffers(1, &framebuffer);
   glDeleteProgram(shader_program);
   glDeleteVertexArrays(1, &VAO);

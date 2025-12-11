@@ -62,6 +62,18 @@ struct Vec2 {
     return *this;
   }
 
+  Vec2& operator*=(const Vec2& rhs) {
+    x *= rhs.x;
+    y *= rhs.y;
+    return *this;
+  }
+
+  Vec2& operator/=(const Vec2& rhs) {
+    x /= rhs.x;
+    y /= rhs.y;
+    return *this;
+  }
+
   float length() const {
     return std::hypot(x, y);
   }
@@ -85,6 +97,16 @@ inline Vec2 operator+(Vec2 lhs, const Vec2& rhs) {
 
 inline Vec2 operator-(Vec2 lhs, const Vec2& rhs) {
   lhs -= rhs;
+  return lhs;
+}
+
+inline Vec2 operator*(Vec2 lhs, const Vec2& rhs) {
+  lhs *= rhs;
+  return lhs;
+}
+
+inline Vec2 operator/(Vec2 lhs, const Vec2& rhs) {
+  lhs /= rhs;
   return lhs;
 }
 

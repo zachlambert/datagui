@@ -37,12 +37,17 @@ public:
   ImageShader& operator=(ImageShader&&) = delete;
 
   void init();
-  void draw(int texture, const Box2& box, const Vec2& viewport_size);
+  void draw(
+      int texture,
+      const Box2& box,
+      bool y_down,
+      const Vec2& viewport_size);
   void draw(
       int texture,
       const Vec2& position,
       double angle,
       const Vec2& size,
+      bool y_down,
       const Vec2& viewport_size);
 
   void draw(
@@ -50,6 +55,7 @@ public:
       std::size_t height,
       void* pixels,
       const Box2& box,
+      bool y_down,
       const Vec2& viewport_size);
   void draw(
       std::size_t width,
@@ -58,6 +64,7 @@ public:
       const Vec2& position,
       double angle,
       const Vec2& size,
+      bool y_down,
       const Vec2& viewport_size);
 
 private:

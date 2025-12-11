@@ -27,6 +27,7 @@ Viewport::Viewport(Viewport&& other) {
 void Viewport::init(
     std::size_t width,
     std::size_t height,
+    const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
   this->width = width;
   this->height = height;
@@ -58,16 +59,16 @@ void Viewport::init(
 
   // Initialise child class
 
-  impl_init(fm);
+  impl_init(theme, fm);
 }
 
-void Viewport::render_content() {
+void Viewport::render_content(const Color& fill_color) {
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
   glViewport(0, 0, width, height);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClearColor(fill_color.r, fill_color.g, fill_color.b, 1.f);
   glClearDepth(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   impl_render();
