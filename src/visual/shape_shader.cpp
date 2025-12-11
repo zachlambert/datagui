@@ -261,7 +261,7 @@ void ShapeShader::init() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ShapeShader::Command::queue_box(
+void ShapeShader::queue_box(
     const Box2& box,
     const Color& color,
     float radius,
@@ -282,7 +282,7 @@ void ShapeShader::Command::queue_box(
   elements.push_back(element);
 }
 
-void ShapeShader::Command::queue_rect(
+void ShapeShader::queue_rect(
     const Vec2& position,
     float angle,
     const Vec2& size,
@@ -304,7 +304,7 @@ void ShapeShader::Command::queue_rect(
   elements.push_back(element);
 }
 
-void ShapeShader::Command::queue_capsule(
+void ShapeShader::queue_capsule(
     const Vec2& start,
     const Vec2& end,
     float radius,
@@ -325,7 +325,7 @@ void ShapeShader::Command::queue_capsule(
   elements.push_back(element);
 }
 
-void ShapeShader::Command::queue_circle(
+void ShapeShader::queue_circle(
     const Vec2& position,
     float radius,
     const Color& color,
@@ -345,7 +345,7 @@ void ShapeShader::Command::queue_circle(
   elements.push_back(element);
 }
 
-void ShapeShader::Command::queue_ellipse(
+void ShapeShader::queue_ellipse(
     const Vec2& position,
     float angle,
     float x_radius,
@@ -367,7 +367,7 @@ void ShapeShader::Command::queue_ellipse(
   elements.push_back(element);
 }
 
-void ShapeShader::Command::queue_line(
+void ShapeShader::queue_line(
     const Vec2& a,
     const Vec2& b,
     float width,
@@ -386,26 +386,24 @@ void ShapeShader::Command::queue_line(
   elements.push_back(element);
 }
 
-void ShapeShader::draw(const Command& command, const Vec2& viewport_size) {
-  if (command.elements.empty()) {
+void ShapeShader::draw(const Vec2& viewport_size) {
+  if (elements.empty()) {
     return;
   }
 
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
-      command.elements.size() * sizeof(Element),
-      command.elements.data(),
+      elements.size() * sizeof(Element),
+      elements.data(),
       GL_STATIC_DRAW);
 
   glUseProgram(program_id);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);
-  glDrawArraysInstanced(
-      GL_TRIANGLES,
-      0,
-      quad_vertices.size(),
-      command.elements.size());
+  glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertices.size(), elements.size());
+
+  elements.clear();
 }
 
 } // namespace datagui

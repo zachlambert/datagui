@@ -25,32 +25,42 @@ class TextShader {
   };
 
 public:
-  class Command {
-  public:
-    void queue_text(
-        const std::shared_ptr<FontManager>& fm,
-        const Vec2& origin,
-        float angle,
-        const std::string& text,
-        Font font,
-        int font_size,
-        Color text_color,
-        Length width,
-        const Box2& mask);
+  void init(const std::shared_ptr<FontManager>& fm);
 
-    void clear() {
-      char_lists.clear();
-    }
+  void queue_text(
+      const Vec2& origin,
+      const std::string& text,
+      Font font,
+      int font_size,
+      Color text_color,
+      Length width,
+      const Box2& mask);
 
-  private:
-    std::vector<CharList> char_lists;
-    friend class TextShader;
-  };
+  void queue_text(
+      const Vec2& origin,
+      float angle,
+      const std::string& text,
+      Font font,
+      int font_size,
+      Color text_color,
+      Length width);
 
-  void init();
-  void draw(const Command& command, const Vec2& viewport_size);
+  void draw(const Vec2& viewport_size);
 
 private:
+  void queue_text(
+      const Vec2& origin,
+      float angle,
+      const std::string& text,
+      Font font,
+      int font_size,
+      Color text_color,
+      Length width,
+      const std::optional<Box2>& mask);
+
+  std::shared_ptr<FontManager> fm;
+  std::vector<CharList> char_lists;
+
   // Shader
   unsigned int program_id;
 

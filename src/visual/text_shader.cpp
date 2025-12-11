@@ -42,7 +42,9 @@ void main(){
 }
 )";
 
-void TextShader::init() {
+void TextShader::init(const std::shared_ptr<FontManager>& fm) {
+  this->fm = fm;
+
   // Configure shader program and buffers
 
   program_id = create_program(vertex_shader, fragment_shader);
@@ -81,8 +83,37 @@ void TextShader::init() {
   glBindVertexArray(0);
 }
 
-void TextShader::Command::queue_text(
-    const std::shared_ptr<FontManager>& fm,
+void TextShader::queue_text(
+    const Vec2& origin,
+    const std::string& text,
+    Font font,
+    int font_size,
+    Color text_color,
+    Length width,
+    const Box2& mask) {
+  queue_text(origin, 0.f, text, font, font_size, text_color, width, mask);
+}
+
+void TextShader::queue_text(
+    const Vec2& origin,
+    float angle,
+    const std::string& text,
+    Font font,
+    int font_size,
+    Color text_color,
+    Length width) {
+  queue_text(
+      origin,
+      angle,
+      text,
+      font,
+      font_size,
+      text_color,
+      width,
+      std::nullopt);
+}
+
+void TextShader::queue_text(
     const Vec2& origin,
     float angle,
     const std::string& text,
@@ -90,7 +121,7 @@ void TextShader::Command::queue_text(
     int font_size,
     Color text_color,
     Length width,
-    const Box2& mask) {
+    const std::optional<Box2>& mask) {
 
   // origin is at the top-left of the text box
 
@@ -134,19 +165,18 @@ void TextShader::Command::queue_text(
     offset.x += c.advance;
     Box2 uv = c.uv;
 
-    // Currently only support masks for non-rotated boxes, since only the
-    // GuiRenderer requires this, and this only ever uses angle = 0
-    if (angle == 0) {
+    if (mask) {
+      assert(angle == 0);
       Vec2 pos = origin + char_offset;
 
       Box2 box(pos, pos + c.size);
-      if (!intersects(mask, box)) {
+      if (!intersects(*mask, box)) {
         // Not visible
         continue;
       }
-      if (!contains(mask, box)) {
+      if (!contains(*mask, box)) {
         // Partially obscured -> alter box and uv
-        Box2 new_box = intersection(mask, box);
+        Box2 new_box = intersection(*mask, box);
         Box2 new_uv;
         new_uv.lower.x = uv.lower.x + uv.size().x *
                                           (new_box.lower.x - box.lower.x) /
@@ -187,8 +217,8 @@ void TextShader::Command::queue_text(
   }
 }
 
-void TextShader::draw(const Command& command, const Vec2& viewport_size) {
-  if (command.char_lists.empty()) {
+void TextShader::draw(const Vec2& viewport_size) {
+  if (char_lists.empty()) {
     return;
   }
 
@@ -196,7 +226,7 @@ void TextShader::draw(const Command& command, const Vec2& viewport_size) {
   glBindVertexArray(VAO);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
 
-  for (const auto& char_list : command.char_lists) {
+  for (const auto& char_list : char_lists) {
     if (char_list.vertices.empty()) {
       continue;
     }
