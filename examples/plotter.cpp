@@ -25,9 +25,9 @@ int main() {
 
         std::vector<Vec2> a, b, c;
         for (float x = 0; x < 2 * M_PI; x += 0.1) {
-          a.push_back({x, std::sin(5 * t + x)});
-          b.push_back({x, std::sin(5 * t + x + 2 * M_PIf / 3)});
-          c.push_back({x, std::sin(5 * t + x + 4 * M_PIf / 3)});
+          a.push_back({1e-4f * (t + x), std::sin(5 * t + x)});
+          b.push_back({1e-4f * (t + x), std::sin(5 * t + x + 2 * M_PIf / 3)});
+          c.push_back({1e-4f * (t + x), std::sin(5 * t + x + 4 * M_PIf / 3)});
         }
 
         plotter->xlabel("Time");

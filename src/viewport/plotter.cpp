@@ -1,4 +1,6 @@
 #include "datagui/viewport/plotter.hpp"
+#include <iomanip>
+#include <sstream>
 
 namespace datagui {
 
@@ -213,8 +215,8 @@ void Plotter::impl_render() {
       args.tick_color,
       mask);
 
-  auto xticks = get_ticks(bounds.lower.x, bounds.upper.x);
-  auto yticks = get_ticks(bounds.lower.y, bounds.upper.y);
+  auto [xticks_power, xticks] = get_ticks(bounds.lower.x, bounds.upper.x);
+  auto [yticks_power, yticks] = get_ticks(bounds.lower.y, bounds.upper.y);
 
   for (const auto& tick : xticks) {
     Vec2 pos = plot_area.lower;
@@ -225,7 +227,43 @@ void Plotter::impl_render() {
         args.line_width,
         args.tick_color,
         mask);
+
+    Vec2 label_size = fm->text_size(
+        tick.label,
+        theme->text_font,
+        theme->text_size,
+        LengthWrap());
+    pos.x -= label_size.x / 2;
+    pos.y -= args.tick_length + args.inner_padding;
+
+    texts.queue_text(
+        fm,
+        pos,
+        0,
+        tick.label,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthWrap(),
+        mask);
   }
+  if (!xticks_power.empty()) {
+    Vec2 pos = plot_area.lower;
+    pos.x += plot_area.size().x + args.inner_padding;
+    pos.y -= args.tick_length + 2 * args.inner_padding + text_height;
+
+    texts.queue_text(
+        fm,
+        pos,
+        0,
+        xticks_power,
+        theme->text_font,
+        theme->text_size,
+        theme->text_color,
+        LengthWrap(),
+        mask);
+  }
+
   for (const auto& tick : yticks) {
     Vec2 pos = plot_area.lower;
     pos.y += plot_area.size().y * tick.position;
@@ -282,35 +320,59 @@ void Plotter::impl_render() {
   text_shader.draw(texts, framebuffer_size());
 }
 
-std::vector<Plotter::Tick> Plotter::get_ticks(float min, float max) {
-  float diff = std::max(max - min, 0.1f);
-  float power = 1;
-  while (diff > 10) {
-    diff /= 10;
-    power++;
-  }
-  while (diff < 1) {
-    diff *= 10;
-    power--;
+std::tuple<std::string, std::vector<Plotter::Tick>> Plotter::get_ticks(
+    float min,
+    float max) {
+
+  float power = 0;
+  float resolution;
+  {
+    float diff = std::max(max - min, 1e-12f);
+    while (diff > 10) {
+      diff /= 10;
+      power++;
+    }
+    while (diff < 1) {
+      diff *= 10;
+      power--;
+    }
+    if (diff < 2) {
+      resolution = 0.2;
+    } else if (diff < 5) {
+      resolution = 0.5;
+    } else {
+      resolution = 1;
+    }
+    resolution *= std::pow(10, power);
   }
 
-  float resolution;
-  if (diff < 2) {
-    resolution = 0.2;
-  } else if (diff < 5) {
-    resolution = 0.5;
-  } else {
-    resolution = 1;
+  float display_power = 0;
+  if (power < -1 || power > 2) {
+    display_power = power;
   }
+  float display_value_scale = std::pow(10, display_power);
 
   std::vector<Plotter::Tick> ticks;
   float value = ceil(min / resolution) * resolution;
   while (value < max) {
     float position = (value - min) / (max - min);
-    ticks.push_back({position, value});
+
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(1) << value / display_value_scale;
+    std::string label = ss.str();
+
+    ticks.push_back({position, label});
     value += resolution;
   }
-  return ticks;
+
+  std::string power_label;
+  if (display_power != 0) {
+    std::stringstream ss;
+    ss << int(display_power);
+    power_label = "10e" + ss.str();
+  }
+
+  return std::make_tuple(power_label, ticks);
 }
 
 } // namespace datagui

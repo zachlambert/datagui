@@ -106,9 +106,9 @@ private:
 
   struct Tick {
     float position;
-    float value;
+    std::string label;
   };
-  std::vector<Tick> get_ticks(float min, float max);
+  std::tuple<std::string, std::vector<Tick>> get_ticks(float min, float max);
 
   PlotterArgs args;
 
