@@ -96,15 +96,14 @@ public:
   }
 
 private:
-  void begin() override;
-  void end() override;
-  void mouse_event(const Box2& box, const MouseEvent& event) override;
-  bool scroll_event(const Box2& box, const ScrollEvent& event) override;
-
   void impl_init(
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm) override;
-  void impl_render() override;
+  void begin() override;
+  void end() override;
+  void mouse_event(const Vec2& size, const MouseEvent& event) override;
+  bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
+  void render_content();
 
   struct Tick {
     float position;

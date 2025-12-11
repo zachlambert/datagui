@@ -66,6 +66,15 @@ PlotHandle Plotter::plot(
   return PlotHandle(item.args);
 }
 
+void Plotter::impl_init(
+    const std::shared_ptr<Theme>& theme,
+    const std::shared_ptr<FontManager>& fm) {
+  this->theme = theme;
+  this->fm = fm;
+  shape_shader.init();
+  text_shader.init(fm);
+}
+
 void Plotter::begin() {
   plot_items.clear();
   xlabel_.clear();
@@ -77,63 +86,7 @@ void Plotter::end() {
   render_content();
 }
 
-void Plotter::mouse_event(const Box2& box, const MouseEvent& event) {
-  if (event.button != MouseButton::Left) {
-    return;
-  }
-  if (event.action == MouseAction::Press) {
-    if (event.is_double_click) {
-      subview = Box2(Vec2(), Vec2::ones());
-      mouse_down_subview = subview;
-      return;
-    }
-    mouse_down_pos = event.position;
-    mouse_down_subview = subview;
-    return;
-  }
-  if (event.action != MouseAction::Hold || event.button != MouseButton::Left) {
-    return;
-  }
-
-  Vec2 delta = (mouse_down_pos - event.position) / box.size();
-  delta = maximum(delta, -subview.lower);
-  delta = minimum(delta, Vec2::ones() - subview.upper);
-  subview =
-      Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
-  render_content();
-}
-
-bool Plotter::scroll_event(const Box2& box, const ScrollEvent& event) {
-  float ratio = std::exp(event.amount / 1000.f);
-  Vec2 size_ratio = Vec2::ones();
-  if (!event.mod.shift) {
-    size_ratio.x = ratio;
-  }
-  if (!event.mod.ctrl) {
-    size_ratio.y = ratio;
-  }
-  Vec2 centre = subview.center();
-  Vec2 size = subview.size() * size_ratio;
-  size.x = std::min(size.x, 2 * centre.x);
-  size.x = std::min(size.x, 2 * (1.f - centre.x));
-  size.y = std::min(size.y, 2 * centre.y);
-  size.y = std::min(size.y, 2 * (1.f - centre.y));
-  subview = Box2(centre - size / 2, centre + size / 2);
-  return true;
-}
-
-void Plotter::impl_init(
-    const std::shared_ptr<Theme>& theme,
-    const std::shared_ptr<FontManager>& fm) {
-  this->theme = theme;
-  this->fm = fm;
-  shape_shader.init();
-  text_shader.init();
-}
-
-void Plotter::impl_render() {
-  ShapeShader::Command shapes;
-  TextShader::Command texts;
+void Plotter::render_content() {
   Box2 bounds;
   float text_height = fm->text_height(theme->text_font, theme->text_size);
   Vec2 size = framebuffer_size();
@@ -146,16 +99,14 @@ void Plotter::impl_render() {
         fm->text_size(title_, theme->text_font, theme->text_size, LengthWrap());
     title_width = std::min(title_size.x + theme->text_padding, size.x / 2);
     header_size = title_size.y;
-    texts.queue_text(
-        fm,
+    text_shader.queue_text(
         Vec2(args.outer_padding, size.y - args.outer_padding),
         0,
         title_,
         theme->text_font,
         theme->text_size,
         theme->text_color,
-        LengthFixed(title_width),
-        mask);
+        LengthFixed(title_width));
   }
   std::size_t plot_label_count = 0;
   for (const auto& item : plot_items) {
@@ -190,7 +141,7 @@ void Plotter::impl_render() {
       pos.x += j * item_width;
       pos.y -= i * item_height;
 
-      shapes.queue_box(
+      shape_shader.queue_box(
           Box2(
               Vec2(pos.x, pos.y - text_height),
               Vec2(pos.x + text_height, pos.y)),
@@ -200,16 +151,14 @@ void Plotter::impl_render() {
           Color::Black(),
           mask);
 
-      texts.queue_text(
-          fm,
+      text_shader.queue_text(
           pos + Vec2(text_height + theme->text_padding, 0),
           0,
           item.args.label,
           theme->text_font,
           theme->text_size,
           theme->text_color,
-          LengthFixed(item_width - text_height + theme->text_padding),
-          mask);
+          LengthFixed(item_width - text_height + theme->text_padding));
 
       j++;
       if (j == cols) {
@@ -219,7 +168,7 @@ void Plotter::impl_render() {
     }
   }
 
-  shapes.queue_box(mask, Color::Clear(), 0, 2, Color::Gray(0.5), mask);
+  shape_shader.queue_box(mask, Color::Clear(), 0, 2, Color::Gray(0.5), mask);
 
   float left_padding = args.tick_length + 3 * text_height +
                        2 * args.inner_padding + args.outer_padding;
@@ -259,7 +208,7 @@ void Plotter::impl_render() {
   auto plot_marker = [&](const Vec2& point, const PlotArgs& args) {
     switch (args.marker_style) {
     case datagui::PlotMarkerStyle::Circle:
-      shapes.queue_circle(
+      shape_shader.queue_circle(
           to_plot_position(point),
           args.marker_width / 2,
           args.color,
@@ -276,7 +225,7 @@ void Plotter::impl_render() {
     for (std::size_t i = 0; i + 1 < item.points.size(); i++) {
       const Vec2& a = item.points[i];
       const Vec2& b = item.points[i + 1];
-      shapes.queue_line(
+      shape_shader.queue_line(
           to_plot_position(a),
           to_plot_position(b),
           item.args.line_width,
@@ -289,13 +238,13 @@ void Plotter::impl_render() {
     }
   }
 
-  shapes.queue_line(
+  shape_shader.queue_line(
       plot_area.lower,
       plot_area.lower_right(),
       args.line_width,
       args.tick_color,
       mask);
-  shapes.queue_line(
+  shape_shader.queue_line(
       plot_area.lower,
       plot_area.upper_left(),
       args.line_width,
@@ -311,7 +260,7 @@ void Plotter::impl_render() {
   for (const auto& tick : xticks) {
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x * tick.position;
-    shapes.queue_line(
+    shape_shader.queue_line(
         pos,
         pos + Vec2(0, -args.tick_length),
         args.line_width,
@@ -326,38 +275,34 @@ void Plotter::impl_render() {
     pos.x -= label_size.x / 2;
     pos.y -= args.tick_length + args.inner_padding;
 
-    texts.queue_text(
-        fm,
+    text_shader.queue_text(
         pos,
         0,
         tick.label,
         theme->text_font,
         theme->text_size,
         theme->text_color,
-        LengthWrap(),
-        mask);
+        LengthWrap());
   }
   if (!xticks_power.empty()) {
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x + args.inner_padding;
     pos.y -= args.tick_length + 2 * args.inner_padding + text_height;
 
-    texts.queue_text(
-        fm,
+    text_shader.queue_text(
         pos,
         0,
         xticks_power,
         theme->text_font,
         theme->text_size,
         theme->text_color,
-        LengthWrap(),
-        mask);
+        LengthWrap());
   }
 
   for (const auto& tick : yticks) {
     Vec2 pos = plot_area.lower;
     pos.y += plot_area.size().y * tick.position;
-    shapes.queue_line(
+    shape_shader.queue_line(
         pos,
         pos + Vec2(-args.tick_length, 0),
         args.line_width,
@@ -372,16 +317,14 @@ void Plotter::impl_render() {
     pos.x -= args.tick_length + label_size.x + args.inner_padding;
     pos.y += label_size.y / 2;
 
-    texts.queue_text(
-        fm,
+    text_shader.queue_text(
         pos,
         0,
         tick.label,
         theme->text_font,
         theme->text_size,
         theme->text_color,
-        LengthWrap(),
-        mask);
+        LengthWrap());
   }
   if (!yticks_power.empty()) {
     Vec2 label_size = fm->text_size(
@@ -394,16 +337,14 @@ void Plotter::impl_render() {
     pos.y += plot_area.size().y + args.inner_padding + text_height;
     pos.x -= args.tick_length + 2 * args.inner_padding + label_size.x;
 
-    texts.queue_text(
-        fm,
+    text_shader.queue_text(
         pos,
         0,
         xticks_power,
         theme->text_font,
         theme->text_size,
         theme->text_color,
-        LengthWrap(),
-        mask);
+        LengthWrap());
   }
 
   if (!xlabel_.empty()) {
@@ -415,16 +356,14 @@ void Plotter::impl_render() {
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x / 2 - text_size.x / 2;
     pos.y -= (args.tick_length + text_height + 2 * args.inner_padding);
-    texts.queue_text(
-        fm,
+    text_shader.queue_text(
         pos,
         0,
         xlabel_,
         theme->text_font,
         theme->text_size,
         theme->text_color,
-        LengthWrap(),
-        mask);
+        LengthWrap());
   }
   if (!ylabel_.empty()) {
     Vec2 text_size = fm->text_size(
@@ -435,20 +374,66 @@ void Plotter::impl_render() {
     Vec2 pos = plot_area.lower;
     pos.x -= (args.tick_length + 3 * text_height + 2 * args.inner_padding);
     pos.y += plot_area.size().y / 2 - text_size.x / 2;
-    texts.queue_text(
-        fm,
+    text_shader.queue_text(
         pos,
         M_PI / 2,
         ylabel_,
         theme->text_font,
         theme->text_size,
         theme->text_color,
-        LengthWrap(),
-        mask);
+        LengthWrap());
   }
 
-  shape_shader.draw(shapes, framebuffer_size());
-  text_shader.draw(texts, framebuffer_size());
+  bind_framebuffer();
+  shape_shader.draw(framebuffer_size());
+  text_shader.draw(framebuffer_size());
+  unbind_framebuffer();
+}
+
+void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
+  if (event.button != MouseButton::Left) {
+    return;
+  }
+  if (event.action == MouseAction::Press) {
+    if (event.is_double_click) {
+      subview = Box2(Vec2(), Vec2::ones());
+      mouse_down_subview = subview;
+      return;
+    }
+    mouse_down_pos = event.position;
+    mouse_down_subview = subview;
+    return;
+  }
+  if (event.action != MouseAction::Hold || event.button != MouseButton::Left) {
+    return;
+  }
+
+  Vec2 delta = (mouse_down_pos - event.position) / size;
+  delta = maximum(delta, -subview.lower);
+  delta = minimum(delta, Vec2::ones() - subview.upper);
+  subview =
+      Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
+
+  render_content();
+}
+
+bool Plotter::scroll_event(const Vec2& element_size, const ScrollEvent& event) {
+  float ratio = std::exp(event.amount / 1000.f);
+  Vec2 size_ratio = Vec2::ones();
+  if (!event.mod.shift) {
+    size_ratio.x = ratio;
+  }
+  if (!event.mod.ctrl) {
+    size_ratio.y = ratio;
+  }
+  Vec2 centre = subview.center();
+  Vec2 size = subview.size() * size_ratio;
+  size.x = std::min(size.x, 2 * centre.x);
+  size.x = std::min(size.x, 2 * (1.f - centre.x));
+  size.y = std::min(size.y, 2 * centre.y);
+  size.y = std::min(size.y, 2 * (1.f - centre.y));
+  subview = Box2(centre - size / 2, centre + size / 2);
+  return true;
 }
 
 std::tuple<std::string, std::vector<Plotter::Tick>> Plotter::get_ticks(
@@ -489,6 +474,8 @@ std::tuple<std::string, std::vector<Plotter::Tick>> Plotter::get_ticks(
     float position = (value - min) / (max - min);
 
     std::stringstream ss;
+
+    render_content();
     ss << std::fixed << std::setprecision(1) << value / display_value_scale;
     std::string label = ss.str();
 

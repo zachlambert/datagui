@@ -522,22 +522,23 @@ void Gui::render() {
   };
 
   window.render_begin();
-  renderer.render_begin(window.size());
+  renderer.begin(window.size());
 
   render_tree(tree.root());
+  renderer.render();
 
   for (auto element : ordered_floating_elements) {
-    renderer.new_layer();
     render_tree(element);
+    renderer.render();
   }
 #ifdef DATAGUI_DEBUG
   if (debug_mode_) {
-    renderer.new_layer();
     debug_render();
+    renderer.render();
   }
 #endif
 
-  renderer.render_end();
+  renderer.end();
   window.render_end();
 }
 

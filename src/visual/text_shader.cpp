@@ -253,6 +253,8 @@ void TextShader::draw(const Vec2& viewport_size) {
 
   glBindVertexArray(0);
   glUseProgram(0);
+
+  char_lists.clear();
 }
 
 } // namespace datagui

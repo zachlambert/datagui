@@ -29,6 +29,8 @@ int main() {
       pixels[i * 100 + j].a = 255;
     }
   }
+  Image image;
+  image.load(100, 100, pixels.data());
 
   while (window.running()) {
     window.render_begin();
@@ -146,15 +148,9 @@ int main() {
         mask);
     shape_shader.draw(window.size());
 
-    image_shader.draw(
-        100,
-        100,
-        pixels.data(),
-        Vec2(750, 200),
-        M_PI / 4,
-        Vec2::uniform(200),
-        true,
-        window.size());
+    image_shader
+        .queue_image(image, Vec2(750, 200), M_PI / 4, Vec2::uniform(200));
+    image_shader.draw(window.size());
 
     window.render_end();
 

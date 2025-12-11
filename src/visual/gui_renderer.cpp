@@ -19,8 +19,13 @@ void GuiRenderer::queue_box(
     float border_width,
     Color border_color) {
   assert(!masks.empty());
-  shape_shader
-      .queue_box(box, bg_color, 0, border_width, border_color, masks.top());
+  shape_shader.queue_box(
+      flip_box(box),
+      bg_color,
+      0,
+      border_width,
+      border_color,
+      masks.top());
 }
 
 void GuiRenderer::queue_text(

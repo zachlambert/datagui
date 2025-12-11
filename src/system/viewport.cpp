@@ -27,7 +27,7 @@ void ViewportPtrSystem::mouse_event(
   event_viewport.position.x = event.position.x - state.position.x;
   event_viewport.position.y =
       state.position.y + state.size.y - event.position.y;
-  viewport.viewport->mouse_event(state.box(), event_viewport);
+  viewport.viewport->mouse_event(state.size, event_viewport);
 }
 
 bool ViewportPtrSystem::scroll_event(
@@ -40,7 +40,7 @@ bool ViewportPtrSystem::scroll_event(
   event_viewport.position.x = event.position.x - state.position.x;
   event_viewport.position.y =
       state.position.y + state.size.y - event.position.y;
-  return viewport.viewport->scroll_event(state.box(), event_viewport);
+  return viewport.viewport->scroll_event(state.size, event_viewport);
 }
 
 } // namespace datagui
