@@ -1,4 +1,4 @@
-#include "datagui/viewport/canvas2.hpp"
+#include "datagui/viewport/canvas2d.hpp"
 #include "datagui/gui.hpp"
 
 int main() {
@@ -16,7 +16,7 @@ int main() {
       auto width = gui.variable<float>(100);
       auto radius = gui.variable<float>(10);
 
-      if (auto canvas = gui.viewport<datagui::Canvas2>(200, 200)) {
+      if (auto canvas = gui.viewport<datagui::Canvas2d>(200, 200)) {
         Vec2 center = Vec2(100, 100);
         Vec2 lower = center - Vec2::uniform(*width / 2);
         Vec2 upper = center + Vec2::uniform(*width / 2);

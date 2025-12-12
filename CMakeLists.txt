@@ -59,7 +59,7 @@ add_library(datagui SHARED
   src/system/text_input.cpp
   src/system/viewport.cpp
 
-  src/viewport/canvas2.cpp
+  src/viewport/canvas2d.cpp
   src/viewport/plotter.cpp
   src/viewport/viewport.cpp
 
