@@ -734,6 +734,9 @@ void Gui::event_handling() {
     case MouseButton::Left:
       event_handling_left_click(event);
       break;
+    case MouseButton::Right:
+      event_handling_right_click(event);
+      break;
     default:
       break;
     }
@@ -849,6 +852,24 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
   change_tree_focus(prev_element_focus, element_focus);
   if (element_focus) {
     mouse_event(element_focus, event);
+  }
+}
+
+void Gui::event_handling_right_click(const MouseEvent& event) {
+  if (event.action == MouseAction::Press) {
+    element_left_held = get_leaf_node(event.position);
+    if (element_left_held) {
+      mouse_event(element_left_held, event);
+    }
+    return;
+  }
+  if (!element_left_held) {
+    return;
+  }
+  mouse_event(element_left_held, event);
+
+  if (event.action == MouseAction::Release) {
+    element_left_held = ElementPtr();
   }
 }
 
