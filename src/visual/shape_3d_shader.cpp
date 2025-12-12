@@ -33,17 +33,15 @@ const static std::string shape_3d_vs = R"(
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
-layout(location = 2) in vec2 uv;
-layout(location = 3) in vec4 transform_col1;
-layout(location = 4) in vec4 transform_col2;
-layout(location = 5) in vec4 transform_col3;
-layout(location = 6) in vec4 transform_col4;
-layout(location = 7) in vec4 color;
+layout(location = 2) in vec4 transform_col1;
+layout(location = 3) in vec4 transform_col2;
+layout(location = 4) in vec4 transform_col3;
+layout(location = 5) in vec4 transform_col4;
+layout(location = 6) in vec4 color;
 
-out vec3 fs_position_cs;
 out vec3 fs_normal_cs;
 out vec4 fs_color;
-out vec2 fs_uv;
+flat out int fs_instance_id;
 
 uniform mat4 P;
 uniform mat4 V;
@@ -55,25 +53,31 @@ void main(){
   gl_Position = PVM * vec4(position, 1);
   fs_normal_cs = normalize((VM * vec4(normal, 0)).xyz);
   fs_color = color;
-  fs_uv = uv;
+  fs_instance_id = gl_InstanceID;
 }
 )";
 
 const static std::string shape_3d_fs = R"(
 #version 330 core
 
+in vec3 fs_position_cs;
+in vec4 fs_position_ns;
 in vec3 fs_normal_cs;
 in vec4 fs_color;
-in vec2 fs_uv;
+flat in int fs_instance_id;
 out vec4 color;
 
 uniform float ambient;
-uniform sampler2D tex;
 
 void main(){
-  if (texture(tex, fs_uv).r > fs_color.a) {
-    discard;
-  }
+  const vec3 magic = vec3(0.06711056f, 0.00583715f, 52.9829189f);
+  // https://godotshaders.com/shader/transparency-dither/
+  // + Offset by fs_instance_id x some magic number
+	if (fs_color.a < 0.001 ||
+      fs_color.a < fract(magic.z * (0.05f * fs_instance_id + fract(dot(gl_FragCoord.xy, magic.xy))))) {
+		discard;
+	}
+
   // Light as if the light comes from the camera view
   float cos_theta = clamp(dot(fs_normal_cs, vec3(0, 0, 1)), 0, 1);
   color = fs_color * (ambient + (1 - ambient) * cos_theta);
@@ -83,7 +87,6 @@ void main(){
 struct Vertex {
   Vec3 position;
   Vec3 normal;
-  Vec2 uv;
 };
 
 static std::size_t create_box(
@@ -112,9 +115,6 @@ static std::size_t create_box(
       float dir3 = (j_ / 2 == 0 ? -1 : 1) * dir;
       vertex.position(dim2) = dir2 / 2;
       vertex.position(dim3) = dir3 / 2;
-
-      vertex.uv.x = 0.5f + 0.5f * dir2;
-      vertex.uv.y = 0.5f + 0.5f * dir3;
 
       vertices.push_back(vertex);
     }
@@ -171,16 +171,6 @@ void Shape3dShader::init() {
       GL_FALSE,
       sizeof(Vertex),
       (void*)(offsetof(Vertex, normal)));
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)(offsetof(Vertex, uv)));
   glEnableVertexAttribArray(index);
   index++;
 
@@ -243,44 +233,6 @@ void Shape3dShader::init() {
       indices.data(),
       GL_STATIC_DRAW);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-  // Create a texture for dithering
-  {
-    std::uniform_int_distribution dist(0, 255);
-    std::default_random_engine rng;
-
-    std::size_t width = 1024;
-    struct Pixel {
-      std::uint8_t r, g, b, a;
-    };
-    std::vector<Pixel> pixels(width * width);
-    for (std::size_t i = 0; i < width; i++) {
-      for (std::size_t j = 0; j < width; j++) {
-        auto& pixel = pixels[j * width + i];
-        std::uint8_t value = dist(rng) % 255;
-        pixel.r = value;
-        pixel.g = value;
-        pixel.b = value;
-        pixel.a = 255;
-      }
-    }
-
-    glGenTextures(1, &dithering_texture);
-    glBindTexture(GL_TEXTURE_2D, dithering_texture);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RGBA,
-        width,
-        width,
-        0,
-        GL_RGBA,
-        GL_UNSIGNED_BYTE,
-        pixels.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
-  }
 }
 
 void Shape3dShader::queue_box(
@@ -297,7 +249,7 @@ void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
   Mat4 P = camera.projection_mat(viewport_size.x / viewport_size.y);
 
   glDisable(GL_BLEND);
-  // glEnable(GL_CULL_FACE);
+  glEnable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
@@ -305,7 +257,6 @@ void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
   glUniformMatrix4fv(uniform_V, 1, GL_FALSE, V.data);
   glUniformMatrix4fv(uniform_P, 1, GL_FALSE, P.data);
   glUniform1f(uniform_ambient, args.ambient);
-  glBindTexture(GL_TEXTURE_2D, dithering_texture);
 
   glBindVertexArray(VAO);
 

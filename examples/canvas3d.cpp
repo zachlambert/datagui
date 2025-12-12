@@ -10,7 +10,7 @@ int main() {
 
   while (gui.running()) {
     if (gui.group()) {
-      if (auto canvas = gui.viewport<datagui::Canvas3d>(500, 500)) {
+      if (auto canvas = gui.viewport<datagui::Canvas3d>(512, 512)) {
         canvas->grid(10, 10);
         canvas
             ->box(Vec3(0, 0, 1), Rot3(), Vec3::uniform(2), Color(1, 0, 0, 0.8));

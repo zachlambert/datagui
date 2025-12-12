@@ -51,14 +51,13 @@ private:
   unsigned int uniform_P;
   unsigned int uniform_V;
   unsigned int uniform_ambient;
+  unsigned int uniform_dither_offset;
 
   // Array/buffer objects
   unsigned int VAO;
   unsigned int static_VBO;
   unsigned int static_EBO;
   unsigned int instance_VBO;
-
-  unsigned int dithering_texture;
 };
 
 } // namespace datagui
