@@ -3,6 +3,7 @@
 #include "datagui/color.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
+#include "datagui/visual/image_shader.hpp"
 #include <vector>
 
 namespace datagui {
@@ -56,6 +57,8 @@ private:
   unsigned int static_VBO;
   unsigned int static_EBO;
   unsigned int instance_VBO;
+
+  unsigned int dithering_texture;
 };
 
 } // namespace datagui

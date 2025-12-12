@@ -12,17 +12,18 @@ int main() {
     if (gui.group()) {
       if (auto canvas = gui.viewport<datagui::Canvas3d>(500, 500)) {
         canvas->grid(10, 10);
-        canvas->box(Vec3(0, 0, 1), Rot3(), Vec3::uniform(2), Color::Red());
+        canvas
+            ->box(Vec3(0, 0, 1), Rot3(), Vec3::uniform(2), Color(1, 0, 0, 0.8));
         canvas->box(
             Vec3(3, 0, 1),
             Rot3(Euler(M_PI / 4, 0, 0)),
             Vec3::uniform(2),
-            Color::Green());
+            Color(0, 1, 0, 0.5));
         canvas->box(
             Vec3(0, 3, 1),
             Rot3(Euler(0, M_PI / 4, 0)),
             Vec3::uniform(2),
-            Color::Blue());
+            Color(0, 0, 1, 0.2));
         gui.end();
       }
       gui.end();
