@@ -24,9 +24,15 @@ private:
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm) override;
   void mouse_event(const Vec2& size, const MouseEvent& event) override;
+  bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
 
   Camera3d camera;
   Shape3dShader shape_shader;
+
+  Vec3 click_point;
+  Vec3 click_point_direction;
+  Vec3 click_camera_direction;
+  float click_distance_z;
 };
 
 } // namespace datagui

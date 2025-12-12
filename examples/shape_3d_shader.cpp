@@ -35,6 +35,7 @@ int main() {
       }
     }
     shape_shader.draw(window.size(), camera);
+    shape_shader.clear();
 
     window.render_end();
 

@@ -2,13 +2,16 @@
 
 namespace datagui {
 
-Mat4 Camera3d::view_mat() const {
+Rot3 Camera3d::rotation() const {
   const Vec3& n3 = -direction;
   Vec3 n1 = Vec3(0, 0, 1).cross(n3);
   n1 /= n1.length();
   Vec3 n2 = n3.cross(n1);
+  return Rot3(Mat3(n1, n2, n3));
+}
 
-  Mat3 R_T = Mat3(n1, n2, n3).transpose();
+Mat4 Camera3d::view_mat() const {
+  Mat3 R_T = rotation().mat().transpose();
   Vec3 minus_R_T_pos = R_T * (-position);
 
   Mat4 view;

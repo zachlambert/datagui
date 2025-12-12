@@ -737,6 +737,9 @@ void Gui::event_handling() {
     case MouseButton::Right:
       event_handling_right_click(event);
       break;
+    case MouseButton::Middle:
+      event_handling_middle_click(event);
+      break;
     default:
       break;
     }
@@ -870,6 +873,24 @@ void Gui::event_handling_right_click(const MouseEvent& event) {
 
   if (event.action == MouseAction::Release) {
     element_left_held = ElementPtr();
+  }
+}
+
+void Gui::event_handling_middle_click(const MouseEvent& event) {
+  if (event.action == MouseAction::Press) {
+    element_middle_held = get_leaf_node(event.position);
+    if (element_middle_held) {
+      mouse_event(element_middle_held, event);
+    }
+    return;
+  }
+  if (!element_middle_held) {
+    return;
+  }
+  mouse_event(element_middle_held, event);
+
+  if (event.action == MouseAction::Release) {
+    element_middle_held = ElementPtr();
   }
 }
 

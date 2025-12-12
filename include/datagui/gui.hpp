@@ -266,6 +266,7 @@ private:
   ElementPtr get_leaf_node(const Vec2& position);
   void event_handling_left_click(const MouseEvent& event);
   void event_handling_right_click(const MouseEvent& event);
+  void event_handling_middle_click(const MouseEvent& event);
   void event_handling_hover(const Vec2& mouse_pos);
   void event_handling_scroll(const ScrollEvent& event);
 
@@ -291,6 +292,7 @@ private:
   ElementPtr element_focus;
   ElementPtr element_hover;
   ElementPtr element_left_held;
+  ElementPtr element_middle_held;
   int next_float_priority = 0;
   std::vector<std::function<void()>> misc_events;
 

@@ -29,7 +29,7 @@ void Canvas3d::grid(std::size_t size, float width) {
 }
 
 void Canvas3d::begin() {
-  //
+  shape_shader.clear();
 }
 
 void Canvas3d::end() {
@@ -45,7 +45,65 @@ void Canvas3d::impl_init(
 }
 
 void Canvas3d::mouse_event(const Vec2& size, const MouseEvent& event) {
-  // TODO
+  Vec3 direction;
+  direction.x = (event.position.x - size.x / 2) / (size.x / 2);
+  direction.y = (event.position.y - size.y / 2) / (size.y / 2);
+  direction.z = -1;
+  // Not normalized
+  Vec3 direction_world = camera.rotation().mat() * direction;
+
+  if (event.action == MouseAction::Press) {
+    float distance = camera.position.z / (-direction_world.z);
+    click_point = camera.position + distance * direction_world;
+    click_distance_z = distance * std::abs(direction.z);
+    click_point_direction = direction;
+    click_camera_direction = camera.direction;
+    return;
+  }
+  if (event.action != MouseAction::Hold) {
+    return;
+  }
+
+  if (event.button == MouseButton::Left) {
+    float pitch = std::asin(-click_camera_direction.z) +
+                  std::atan(direction.y) - std::atan(click_point_direction.y);
+    pitch = std::clamp(pitch, -0.4f * M_PIf, 0.4f * M_PIf);
+    float yaw =
+        std::atan2(click_camera_direction.y, click_camera_direction.x) +
+        std::atan2(std::sin(pitch) + std::cos(pitch), -direction.x) -
+        std::atan2(std::sin(pitch) + std::cos(pitch), -click_point_direction.x);
+
+    camera.direction = {
+        std::cos(yaw) * std::cos(pitch),
+        std::sin(yaw) * std::cos(pitch),
+        -std::sin(pitch),
+    };
+  } else if (event.button == MouseButton::Middle) {
+    Vec3 direction_world = camera.rotation().mat() * direction;
+    camera.position = click_point - direction_world * click_distance_z;
+  }
+
+  bind_framebuffer();
+  shape_shader.draw(framebuffer_size(), camera);
+  unbind_framebuffer();
+}
+
+bool Canvas3d::scroll_event(const Vec2& size, const ScrollEvent& event) {
+  Vec3 direction;
+  direction.x = (event.position.x - size.x / 2) / (size.x / 2);
+  direction.y = (event.position.y - size.y / 2) / (size.y / 2);
+  direction.z = -1;
+  // Not normalized
+  Vec3 direction_world = camera.rotation().mat() * direction;
+
+  float distance = camera.position.z / (-direction_world.z);
+  float new_distance = std::exp(-event.amount / 1000) * distance;
+  camera.position += direction_world * (new_distance - distance);
+
+  bind_framebuffer();
+  shape_shader.draw(framebuffer_size(), camera);
+  unbind_framebuffer();
+  return true;
 }
 
 }; // namespace datagui

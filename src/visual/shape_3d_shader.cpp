@@ -268,7 +268,11 @@ void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
         GL_UNSIGNED_INT,
         (void*)(sizeof(unsigned int) * shape.indices_offset),
         shape_elements.size());
+  }
+}
 
+void Shape3dShader::clear() {
+  for (auto& shape_elements : elements) {
     shape_elements.clear();
   }
 }

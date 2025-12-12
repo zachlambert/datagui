@@ -18,6 +18,7 @@ public:
       const Color& color);
 
   void draw(const Vec2& viewport_size, const Camera3d& camera);
+  void clear();
 
 private:
   enum class ShapeType {
