@@ -222,6 +222,11 @@ void TextShader::draw(const Vec2& viewport_size) {
     return;
   }
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
+
   glUseProgram(program_id);
   glBindVertexArray(VAO);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);

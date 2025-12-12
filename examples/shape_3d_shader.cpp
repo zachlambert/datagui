@@ -30,7 +30,8 @@ int main() {
             Color::Hsl(
                 180.f * std::atan2(y / 5, x / 5) / M_PIf,
                 std::hypot(x / 10, y / 10),
-                0.5));
+                0.5,
+                1));
       }
     }
     shape_shader.draw(window.size(), camera);

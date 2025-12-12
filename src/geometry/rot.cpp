@@ -17,6 +17,7 @@ Rot3::Rot3(const Euler& euler) {
 	  c2*s3, s1*s2*s3 + c1*c3, c1*s2*s3 - s1*c3,
 	    -s2,            s1*c2,            c1*c2
   };
+  mat_ = mat_.transpose(); // Defined in column-major order
   // clang-format on
 }
 

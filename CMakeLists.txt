@@ -60,6 +60,7 @@ add_library(datagui SHARED
   src/system/viewport.cpp
 
   src/viewport/canvas2d.cpp
+  src/viewport/canvas3d.cpp
   src/viewport/plotter.cpp
   src/viewport/viewport.cpp
 
