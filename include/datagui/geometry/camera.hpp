@@ -9,8 +9,7 @@ struct Camera3d {
   Vec3 direction;
   float clipping_min;
   float clipping_max;
-  float fov_horizontal_degrees;
-  float fov_vertical_degrees;
+  float fov_degrees; // Horizontal field of view for configured viewport width
 
   Mat4 view_mat() const;
   Mat4 projection_mat(float aspect_ratio) const;

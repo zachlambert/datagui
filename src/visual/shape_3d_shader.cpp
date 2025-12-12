@@ -51,7 +51,7 @@ void main(){
   mat4 PVM = P * VM;
   gl_Position = PVM * vec4(position, 1);
   fs_normal_cs = normalize((VM * vec4(normal, 0)).xyz);
-  fs_color = vec4(1, 0, 0, 1); // color;
+  fs_color = color;
 }
 )";
 
