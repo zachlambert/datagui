@@ -47,7 +47,8 @@ public:
   void queue_point_cloud(
       const PointCloud& point_cloud,
       const Vec3& position,
-      const Rot3& orientation);
+      const Rot3& orientation,
+      float point_size);
 
   void draw(const Vec2& viewport_size, const Camera3d& camera);
   void clear();
@@ -57,6 +58,7 @@ private:
     unsigned int VAO;
     std::size_t vertex_count;
     Mat4 model_mat;
+    float point_size;
   };
   std::vector<Command> commands;
 
@@ -67,6 +69,7 @@ private:
   unsigned int uniform_P;
   unsigned int uniform_V;
   unsigned int uniform_M;
+  unsigned int uniform_point_size;
 };
 
 } // namespace datagui
