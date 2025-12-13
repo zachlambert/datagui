@@ -1,4 +1,4 @@
-#include "datagui/visual/shape_shader.hpp"
+#include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <array>
@@ -10,7 +10,6 @@ namespace datagui {
 const static std::string rect_vs = R"(
 #version 330 core
 
-// Input vertex data: position and normal
 layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec2 position;
 layout(location = 2) in vec2 rotation_row1;
@@ -38,7 +37,7 @@ out vec4 fs_border_color;
 
 void main(){
   fs_offset = vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
-  mat2 rotation = transpose(mat2(rotation_row1, rotation_row2));
+  mat2 rotation = mat2(rotation_row1, rotation_row2);
   vec2 fs_pos = position + rotation * fs_offset;
   gl_Position = vec4(
     (fs_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
@@ -103,7 +102,7 @@ static const std::array<Vec2, 6> quad_vertices = {
     Vec2(0.5f, -0.5f),
     Vec2(0.5f, 0.5f)};
 
-void ShapeShader::init() {
+void Shape2dShader::init() {
   program_id = create_program(rect_vs, rect_fs);
 
   uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
@@ -261,7 +260,7 @@ void ShapeShader::init() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ShapeShader::queue_box(
+void Shape2dShader::queue_box(
     const Box2& box,
     const Color& color,
     float radius,
@@ -282,7 +281,7 @@ void ShapeShader::queue_box(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_rect(
+void Shape2dShader::queue_rect(
     const Vec2& position,
     float angle,
     const Vec2& size,
@@ -304,7 +303,7 @@ void ShapeShader::queue_rect(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_capsule(
+void Shape2dShader::queue_capsule(
     const Vec2& start,
     const Vec2& end,
     float radius,
@@ -325,7 +324,7 @@ void ShapeShader::queue_capsule(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_circle(
+void Shape2dShader::queue_circle(
     const Vec2& position,
     float radius,
     const Color& color,
@@ -345,7 +344,7 @@ void ShapeShader::queue_circle(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_ellipse(
+void Shape2dShader::queue_ellipse(
     const Vec2& position,
     float angle,
     float x_radius,
@@ -367,7 +366,7 @@ void ShapeShader::queue_ellipse(
   elements.push_back(element);
 }
 
-void ShapeShader::queue_line(
+void Shape2dShader::queue_line(
     const Vec2& a,
     const Vec2& b,
     float width,
@@ -386,10 +385,15 @@ void ShapeShader::queue_line(
   elements.push_back(element);
 }
 
-void ShapeShader::draw(const Vec2& viewport_size) {
+void Shape2dShader::draw(const Vec2& viewport_size) {
   if (elements.empty()) {
     return;
   }
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
 
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
   glBufferData(
@@ -397,6 +401,7 @@ void ShapeShader::draw(const Vec2& viewport_size) {
       elements.size() * sizeof(Element),
       elements.data(),
       GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUseProgram(program_id);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);

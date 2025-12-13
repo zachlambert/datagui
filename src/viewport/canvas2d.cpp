@@ -1,8 +1,8 @@
-#include "datagui/viewport/canvas2.hpp"
+#include "datagui/viewport/canvas2d.hpp"
 
 namespace datagui {
 
-void Canvas2::box(
+void Canvas2d::box(
     const Box2& box,
     const Color& color,
     float radius,
@@ -18,7 +18,7 @@ void Canvas2::box(
   shape_shader.draw(framebuffer_size());
 }
 
-void Canvas2::queue_text(
+void Canvas2d::queue_text(
     const Vec2& origin,
     float angle,
     const std::string& text,
@@ -31,22 +31,22 @@ void Canvas2::queue_text(
   text_shader.draw(framebuffer_size());
 }
 
-void Canvas2::begin() {
+void Canvas2d::begin() {
   bind_framebuffer();
 }
 
-void Canvas2::end() {
+void Canvas2d::end() {
   unbind_framebuffer();
 }
 
-void Canvas2::impl_init(
+void Canvas2d::impl_init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
   shape_shader.init();
   text_shader.init(fm);
 }
 
-void Canvas2::mouse_event(const Vec2& size, const MouseEvent& event) {
+void Canvas2d::mouse_event(const Vec2& size, const MouseEvent& event) {
   // TODO
 }
 

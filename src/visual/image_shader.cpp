@@ -169,6 +169,11 @@ void ImageShader::queue_texture(const Box2& box, int texture) {
 }
 
 void ImageShader::draw(const Vec2& viewport_size) {
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
+
   glUseProgram(program_id);
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);

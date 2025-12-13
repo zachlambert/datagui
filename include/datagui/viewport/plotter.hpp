@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/shape_shader.hpp"
+#include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/text_shader.hpp"
 #include <vector>
 
@@ -130,7 +130,7 @@ private:
   std::size_t default_color_i = 0;
   std::shared_ptr<Theme> theme;
   std::shared_ptr<FontManager> fm;
-  ShapeShader shape_shader;
+  Shape2dShader shape_shader;
   TextShader text_shader;
 };
 

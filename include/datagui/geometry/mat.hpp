@@ -7,11 +7,13 @@
 
 namespace datagui {
 
+// All matrices are column-major to be compatible with glsl
+
 struct Mat2 {
   float data[4];
 
   Mat2() : data{} {}
-  Mat2(float a, float b, float c, float d) : data{a, b, c, d} {}
+  Mat2(float a, float b, float c, float d) : data{a, c, b, d} {}
   Mat2(float* data) {
     for (std::size_t i = 0; i < 4; i++) {
       this->data[i] = data[i];
@@ -31,14 +33,23 @@ struct Mat2 {
       (*this)(k, 1) = u2(k);
     }
   }
+  Mat2 transpose() const {
+    Mat2 result;
+    for (std::size_t i = 0; i < 2; i++) {
+      for (std::size_t j = 0; j < 2; j++) {
+        result(i, j) = (*this)(j, i);
+      }
+    }
+    return result;
+  }
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 2 && j < 2);
-    return data[i * 2 + j];
+    return data[j * 2 + i];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 2 && j < 2);
-    return data[i * 2 + j];
+    return data[j * 2 + i];
   }
 
   static Mat2 identity() {
@@ -92,14 +103,23 @@ struct Mat3 {
       (*this)(k, 2) = u3(k);
     }
   }
+  Mat3 transpose() const {
+    Mat3 result;
+    for (std::size_t i = 0; i < 3; i++) {
+      for (std::size_t j = 0; j < 3; j++) {
+        result(i, j) = (*this)(j, i);
+      }
+    }
+    return result;
+  }
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 3 && j < 3);
-    return data[i * 3 + j];
+    return data[j * 3 + i];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 3 && j < 3);
-    return data[i * 3 + j];
+    return data[j * 3 + i];
   }
 
   static Mat3 identity() {
@@ -150,14 +170,23 @@ struct Mat4 {
       i++;
     }
   }
+  Mat4 transpose() const {
+    Mat4 result;
+    for (std::size_t i = 0; i < 4; i++) {
+      for (std::size_t j = 0; j < 4; j++) {
+        result(i, j) = (*this)(j, i);
+      }
+    }
+    return result;
+  }
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 4 && j < 4);
-    return data[i * 4 + j];
+    return data[j * 4 + i];
   }
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 4 && j < 4);
-    return data[i * 4 + j];
+    return data[j * 4 + i];
   }
 
   static Mat4 identity() {

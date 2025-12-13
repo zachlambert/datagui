@@ -6,7 +6,7 @@
 
 namespace datagui {
 
-class ShapeShader {
+class Shape2dShader {
 public:
   void init();
 

@@ -55,7 +55,21 @@ void Viewport::init(
   glGenFramebuffers(1, &framebuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_, 0);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  // Create render buffer
+  glGenRenderbuffers(1, &render_buffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+
+  // Bind render buffer to frame buffer
+  glFramebufferRenderbuffer(
+      GL_FRAMEBUFFER,
+      GL_DEPTH_STENCIL_ATTACHMENT,
+      GL_RENDERBUFFER,
+      render_buffer);
+  assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+  glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
   // Initialise child class
 
@@ -65,16 +79,13 @@ void Viewport::init(
 void Viewport::bind_framebuffer() {
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
   glViewport(0, 0, width, height);
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glClearColor(1.f, 1.f, 1.f, 1.f);
-  glClearDepth(0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Viewport::unbind_framebuffer() {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_DEPTH_BUFFER, 0);
 }
 
 } // namespace datagui

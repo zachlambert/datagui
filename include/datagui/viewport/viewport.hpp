@@ -53,6 +53,7 @@ private:
   std::size_t height;
   unsigned int texture_;
   unsigned int framebuffer;
+  unsigned int render_buffer;
 };
 
 } // namespace datagui

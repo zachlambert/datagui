@@ -17,6 +17,7 @@ Rot3::Rot3(const Euler& euler) {
 	  c2*s3, s1*s2*s3 + c1*c3, c1*s2*s3 - s1*c3,
 	    -s2,            s1*c2,            c1*c2
   };
+  mat_ = mat_.transpose(); // Defined in column-major order
   // clang-format on
 }
 
@@ -53,6 +54,11 @@ Rot3 Rot3::line_rot(const Vec3& start, const Vec3& end) {
     return Rot3();
   }
   Vec3 u1 = disp / length;
+  return line_rot(disp / length);
+}
+
+Rot3 Rot3::line_rot(const Vec3& direction) {
+  const Vec3& u1 = direction;
 
   std::size_t min_axis = 0;
   for (std::size_t i = 1; i < 3; i++) {

@@ -81,17 +81,22 @@ void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   const auto& state = element.state();
   auto& slider = element.slider();
 
-  if (!slider.held && event.action == MouseAction::Press) {
-    if (event.is_double_click) {
+  if (event.button == MouseButton::Right) {
+    if (event.action == MouseAction::Release) {
       slider.value = slider.initial_value;
       if (slider.callback) {
         slider.callback(slider.value);
       } else {
         element.set_dirty();
       }
-      return;
     }
+    return;
+  }
+  if (event.button != MouseButton::Left) {
+    return;
+  }
 
+  if (!slider.held && event.action == MouseAction::Press) {
     float slider_length =
         slider.length ? *slider.length : theme->slider_default_length;
 

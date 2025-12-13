@@ -26,6 +26,7 @@ add_library(datagui SHARED
   src/element/tree.cpp
 
   src/geometry/box.cpp
+  src/geometry/camera.cpp
   src/geometry/rot.cpp
   src/geometry/vec.cpp
 
@@ -33,7 +34,8 @@ add_library(datagui SHARED
   src/visual/image_shader.cpp
   src/visual/gui_renderer.cpp
   src/visual/shader_utils.cpp
-  src/visual/shape_shader.cpp
+  src/visual/shape_2d_shader.cpp
+  src/visual/shape_3d_shader.cpp
   src/visual/text_shader.cpp
   src/visual/window.cpp
 
@@ -57,7 +59,8 @@ add_library(datagui SHARED
   src/system/text_input.cpp
   src/system/viewport.cpp
 
-  src/viewport/canvas2.cpp
+  src/viewport/canvas2d.cpp
+  src/viewport/canvas3d.cpp
   src/viewport/plotter.cpp
   src/viewport/viewport.cpp
 

@@ -2,7 +2,7 @@
 
 #include "datagui/visual/font_manager.hpp"
 #include "datagui/visual/image_shader.hpp"
-#include "datagui/visual/shape_shader.hpp"
+#include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/text_shader.hpp"
 #include <assert.h>
 #include <memory>
@@ -42,7 +42,7 @@ private:
   Box2 flip_box(const Box2& box);
   Vec2 flip_position(const Vec2& origin);
 
-  ShapeShader shape_shader;
+  Shape2dShader shape_shader;
   TextShader text_shader;
   ImageShader image_shader;
 

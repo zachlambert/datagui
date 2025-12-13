@@ -82,11 +82,18 @@ struct Vec2 {
     return Vec2(std::abs(x), std::abs(y));
   }
 
-  float dot(const Vec2& other) {
+  float dot(const Vec2& other) const {
     return x * other.x + y * other.y;
   }
-  float cross(const Vec2& other) {
+  float cross(const Vec2& other) const {
     return x * other.y - y * other.x;
+  }
+
+  static Vec2 unit_x() {
+    return Vec2(1, 0);
+  }
+  static Vec2 unit_y() {
+    return Vec2(0, 1);
   }
 };
 
@@ -220,15 +227,25 @@ struct Vec3 {
     return Vec3(std::abs(x), std::abs(y), std::abs(z));
   }
 
-  float dot(const Vec3& other) {
+  float dot(const Vec3& other) const {
     return x * other.x + y * other.y + z * other.z;
   }
-  Vec3 cross(const Vec3& other) {
+  Vec3 cross(const Vec3& other) const {
     Vec3 result;
     result.x = y * other.z - z * other.y;
     result.y = z * other.x - x * other.z;
     result.z = x * other.y - y * other.x;
     return result;
+  }
+
+  static Vec3 unit_x() {
+    return Vec3(1, 0, 0);
+  }
+  static Vec3 unit_y() {
+    return Vec3(0, 1, 0);
+  }
+  static Vec3 unit_z() {
+    return Vec3(0, 0, 1);
   }
 };
 

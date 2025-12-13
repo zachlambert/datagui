@@ -1,5 +1,5 @@
 #include <datagui/visual/image_shader.hpp>
-#include <datagui/visual/shape_shader.hpp>
+#include <datagui/visual/shape_2d_shader.hpp>
 #include <datagui/visual/text_shader.hpp>
 #include <datagui/visual/window.hpp>
 #include <iostream>
@@ -8,7 +8,7 @@ int main() {
   using namespace datagui;
 
   Window window;
-  ShapeShader shape_shader;
+  Shape2dShader shape_shader;
   TextShader text_shader;
   ImageShader image_shader;
   auto font_manager = std::make_shared<FontManager>();
