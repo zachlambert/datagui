@@ -38,6 +38,12 @@ int main() {
         5,
         Color::Hsl(180, 1, 0.5));
 
+    shape_shader.queue_half_sphere(
+        Vec3(-3, -3, 0),
+        Vec3(0, 0, 1),
+        1,
+        Color::Hsl(300, 1, 0.5));
+
     shape_shader.draw(window.size(), camera);
     shape_shader.clear();
 
