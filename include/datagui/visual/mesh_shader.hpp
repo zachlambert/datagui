@@ -27,6 +27,11 @@ public:
   void load_indices(unsigned int* const indices, std::size_t num_indices);
 
 private:
+  struct Vertex {
+    Vec3 position;
+    Vec3 normal;
+  };
+
   void init();
   bool initialized;
 

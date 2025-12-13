@@ -38,6 +38,7 @@ add_library(datagui SHARED
   src/visual/shape_2d_shader.cpp
   src/visual/shape_3d_shader.cpp
   src/visual/text_shader.cpp
+  src/visual/uv_mesh_shader.cpp
   src/visual/window.cpp
 
   src/input/number_input.cpp
