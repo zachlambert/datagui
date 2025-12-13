@@ -39,6 +39,20 @@ public:
       float length,
       const Color& color);
 
+  void queue_capsule(
+      const Vec3& start,
+      const Vec3& end,
+      float radius,
+      const Color& color);
+
+  void queue_arrow(
+      const Vec3& start,
+      const Vec3& end,
+      float radius,
+      const Color& color,
+      float head_length_scale = 2,
+      float head_radius_scale = 2);
+
   void draw(const Vec2& viewport_size, const Camera3d& camera);
   void clear();
 

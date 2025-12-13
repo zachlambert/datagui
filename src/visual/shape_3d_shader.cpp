@@ -588,6 +588,51 @@ void Shape3dShader::queue_cone(
   element.color = color;
 }
 
+void Shape3dShader::queue_capsule(
+    const Vec3& start,
+    const Vec3& end,
+    float radius,
+    const Color& color) {
+  float length = std::max((end - start).length(), 0.f);
+  if (length != 0.f) {
+    Vec3 direction = (end - start) / length;
+    queue_cylinder(start, direction, radius, length, color);
+    queue_half_sphere(start, -direction, radius, color);
+    queue_half_sphere(end, direction, radius, color);
+  } else {
+    queue_sphere(start, radius, color);
+  }
+}
+
+void Shape3dShader::queue_arrow(
+    const Vec3& start,
+    const Vec3& end,
+    float radius,
+    const Color& color,
+    float head_length_scale,
+    float head_radius_scale) {
+  head_length_scale = std::max(head_length_scale, 1.f);
+  head_radius_scale = std::max(head_radius_scale, 1.f);
+  float length = std::max((end - start).length(), 0.f);
+  float head_length = std::min(length, head_length_scale * 2 * radius);
+
+  if (length == 0.f) {
+    return;
+  }
+
+  Vec3 direction = (end - start) / length;
+  float line_length = std::max(length - head_length, 0.f);
+  if (line_length != 0.f) {
+    queue_cylinder(start, direction, radius, line_length, color);
+  }
+  queue_cone(
+      start + direction * line_length,
+      direction,
+      head_radius_scale * radius,
+      head_length,
+      color);
+}
+
 void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
   Mat4 V = camera.view_mat();
   Mat4 P = camera.projection_mat(viewport_size.x / viewport_size.y);

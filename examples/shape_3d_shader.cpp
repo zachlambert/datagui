@@ -44,6 +44,21 @@ int main() {
         1,
         Color::Hsl(300, 1, 0.5));
 
+    shape_shader
+        .queue_capsule(Vec3(-2, -4, 2), Vec3(-1, -4, 3), 0.5, Color::Gray(0.5));
+    shape_shader.queue_capsule(
+        Vec3(-7, -3, 2),
+        Vec3(-1, -5, 3),
+        0.05,
+        Color::Gray(0.5));
+
+    shape_shader
+        .queue_arrow(Vec3(-4, -2, 0), Vec3(-2, 2, 0), 0.4, Color::Gray(0.8));
+    shape_shader
+        .queue_arrow(Vec3(-6, -2, 0), Vec3(-4, 2, 0), 0.1, Color::Gray(0.8));
+    shape_shader
+        .queue_arrow(Vec3(-6, 0, 0), Vec3(-5, 2, 0), 0.1, Color::Gray(0.8));
+
     shape_shader.draw(window.size(), camera);
     shape_shader.clear();
 
