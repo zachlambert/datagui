@@ -31,6 +31,34 @@ public:
       float length,
       const Color& color);
 
+  void capsule(
+      const Vec3& start,
+      const Vec3& end,
+      float radius,
+      const Color& color);
+
+  void arrow(
+      const Vec3& start,
+      const Vec3& end,
+      float radius,
+      const Color& color,
+      float head_length_scale = 2,
+      float head_radius_scale = 2);
+
+  void plane(
+      const Vec3& position,
+      const Rot3& orientation,
+      const Vec2& scale,
+      const Color& color);
+
+  void axes(
+      const Vec3& position,
+      const Rot3& orientation,
+      float scale = 1,
+      float line_radius = 0.05,
+      float head_length_scale = 2,
+      float head_radius_scale = 2);
+
   void grid(std::size_t size, float width);
 
 private:

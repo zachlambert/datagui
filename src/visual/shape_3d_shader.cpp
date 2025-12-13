@@ -398,6 +398,40 @@ static void create_cone(
   }
 }
 
+static void create_plane(
+    std::vector<Vertex>& vertices,
+    std::vector<unsigned int>& indices) {
+
+  std::vector<Vec3> positions = {
+      {-0.5, -0.5, 0},
+      {0.5, -0.5, 0},
+      {-0.5, 0.5, 0},
+      {0.5, 0.5, 0},
+  };
+
+  std::size_t start = vertices.size();
+  for (const auto& position : positions) {
+    vertices.push_back(Vertex{position, Vec3::unit_z()});
+  }
+  for (const auto& position : positions) {
+    vertices.push_back(Vertex{position, -Vec3::unit_z()});
+  }
+
+  indices.push_back(start);
+  indices.push_back(start + 1);
+  indices.push_back(start + 2);
+  indices.push_back(start + 1);
+  indices.push_back(start + 3);
+  indices.push_back(start + 2);
+
+  indices.push_back(start + 4);
+  indices.push_back(start + 4 + 2);
+  indices.push_back(start + 4 + 1);
+  indices.push_back(start + 4 + 1);
+  indices.push_back(start + 4 + 2);
+  indices.push_back(start + 4 + 3);
+}
+
 void Shape3dShader::init() {
   // =============================================================
   // Initialise shader
@@ -508,6 +542,12 @@ void Shape3dShader::init() {
     auto& shape = shapes[(std::size_t)ShapeType::Cone];
     shape.indices_begin = indices.size();
     create_cone(vertices, indices);
+    shape.indices_end = indices.size();
+  }
+  {
+    auto& shape = shapes[(std::size_t)ShapeType::Plane];
+    shape.indices_begin = indices.size();
+    create_plane(vertices, indices);
     shape.indices_end = indices.size();
   }
 
@@ -631,6 +671,17 @@ void Shape3dShader::queue_arrow(
       head_radius_scale * radius,
       head_length,
       color);
+}
+
+void Shape3dShader::queue_plane(
+    const Vec3& position,
+    const Rot3& orientation,
+    const Vec2& scale,
+    const Color& color) {
+  auto& element = elements[(std::size_t)ShapeType::Plane].emplace_back();
+  element.transform =
+      make_transform(position, orientation, Vec3(scale.x, scale.y, 1));
+  element.color = color;
 }
 
 void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {

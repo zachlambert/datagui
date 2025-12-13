@@ -53,6 +53,12 @@ public:
       float head_length_scale = 2,
       float head_radius_scale = 2);
 
+  void queue_plane(
+      const Vec3& position,
+      const Rot3& orientation,
+      const Vec2& scale,
+      const Color& color);
+
   void draw(const Vec2& viewport_size, const Camera3d& camera);
   void clear();
 
@@ -63,8 +69,9 @@ private:
     Sphere,
     HalfSphere,
     Cone,
+    Plane,
   };
-  static constexpr std::size_t ShapeTypeCount = 5;
+  static constexpr std::size_t ShapeTypeCount = 6;
 
   struct Shape {
     std::size_t indices_begin;

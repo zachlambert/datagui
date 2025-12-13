@@ -41,6 +41,8 @@ int main() {
             2,
             Color::Hsl(200, 1, 0.5));
 
+        canvas->axes(Vec3(0, 0, 4), Rot3());
+
         gui.end();
       }
       gui.end();

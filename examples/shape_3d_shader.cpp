@@ -59,6 +59,17 @@ int main() {
     shape_shader
         .queue_arrow(Vec3(-6, 0, 0), Vec3(-5, 2, 0), 0.1, Color::Gray(0.8));
 
+    shape_shader.queue_plane(
+        Vec3(0, 0, -1),
+        Rot3(),
+        Vec2(10, 10),
+        Color::Hsl(150, 0.3, 0.8));
+    shape_shader.queue_plane(
+        Vec3(0, 0, 4),
+        Euler(M_PI / 2, 0, M_PI / 4),
+        Vec2(std::sqrt(2) * 10, 10),
+        Color::Hsl(150, 0.3, 0.8, 0.2));
+
     shape_shader.draw(window.size(), camera);
     shape_shader.clear();
 

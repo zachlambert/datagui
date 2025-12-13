@@ -42,6 +42,72 @@ void Canvas3d::cone(
   shape_shader.queue_cone(base_position, direction, radius, length, color);
 }
 
+void Canvas3d::capsule(
+    const Vec3& start,
+    const Vec3& end,
+    float radius,
+    const Color& color) {
+  shape_shader.queue_capsule(start, end, radius, color);
+}
+
+void Canvas3d::arrow(
+    const Vec3& start,
+    const Vec3& end,
+    float radius,
+    const Color& color,
+    float head_length_scale,
+    float head_radius_scale) {
+  shape_shader.queue_arrow(
+      start,
+      end,
+      radius,
+      color,
+      head_length_scale,
+      head_radius_scale);
+}
+
+void Canvas3d::plane(
+    const Vec3& position,
+    const Rot3& orientation,
+    const Vec2& scale,
+    const Color& color) {
+  shape_shader.queue_plane(position, orientation, scale, color);
+}
+
+void Canvas3d::axes(
+    const Vec3& position,
+    const Rot3& orientation,
+    float scale,
+    float line_radius,
+    float head_length_scale,
+    float head_radius_scale) {
+  shape_shader.queue_arrow(
+      position,
+      position + orientation.mat() * (scale * Vec3::unit_x()),
+      line_radius,
+      Color::Red(),
+      head_length_scale,
+      head_radius_scale);
+
+  shape_shader.queue_arrow(
+      position,
+      position + orientation.mat() * (scale * Vec3::unit_y()),
+      line_radius,
+      Color::Green(),
+      head_length_scale,
+      head_radius_scale);
+
+  shape_shader.queue_arrow(
+      position,
+      position + orientation.mat() * (scale * Vec3::unit_z()),
+      line_radius,
+      Color::Blue(),
+      head_length_scale,
+      head_radius_scale);
+
+  shape_shader.queue_sphere(position, line_radius, Color::Gray(0.5));
+}
+
 void Canvas3d::grid(std::size_t size, float width) {
   shape_shader.queue_box(
       Vec3(0, 0, -0.05),
