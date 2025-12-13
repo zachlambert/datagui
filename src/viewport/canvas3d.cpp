@@ -109,11 +109,24 @@ void Canvas3d::axes(
 }
 
 void Canvas3d::grid(std::size_t size, float width) {
-  shape_shader.queue_box(
-      Vec3(0, 0, -0.05),
-      Rot3(),
-      Vec3(width, width, 0.1),
-      Color::Gray(0.8));
+  Color color = Color::Gray(0.8);
+  float line_width = 0.05;
+  for (std::size_t i = 0; i <= size; i++) {
+    float x = -width / 2 + i * width / size;
+    shape_shader.queue_plane(
+        Vec3(x, 0, 0),
+        Rot3(),
+        Vec2(line_width, width + line_width),
+        color);
+  }
+  for (std::size_t i = 0; i <= size; i++) {
+    float y = -width / 2 + i * width / size;
+    shape_shader.queue_plane(
+        Vec3(0, y, 0),
+        Rot3(),
+        Vec2(width + line_width, line_width),
+        color);
+  }
 }
 
 void Canvas3d::begin() {
