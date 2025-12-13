@@ -14,7 +14,7 @@ int main() {
   float t = 0;
   float freq = 5;
   float T = 1;
-  std::size_t N = 100;
+  std::size_t N = 20;
 
   while (gui.running()) {
     if (gui.group()) {
@@ -61,11 +61,11 @@ int main() {
         plotter->ylabel("Value");
 
         plotter->plot(a).line_solid(6).label("a");
-        plotter->plot(b).label("b");
-        plotter->plot(c).label("c");
-        plotter->plot(d).label("d");
-        plotter->plot(e).label("e");
-        plotter->plot(f).label("f");
+        plotter->plot(b).label("b").marker_circle();
+        plotter->plot(c).label("c").marker_cross();
+        plotter->plot(d).label("d").line_dashed();
+        plotter->plot(e).label("e").line_dashed();
+        plotter->plot(f).label("f").no_line().marker_cross();
         gui.end();
       }
       gui.end();

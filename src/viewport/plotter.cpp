@@ -197,6 +197,9 @@ void Plotter::render_content() {
   } else {
     bounds = Box2(Vec2(), Vec2(1, 1));
   }
+  Vec2 extra_bounds = bounds.size() * 0.02;
+  bounds.lower -= extra_bounds;
+  bounds.upper += extra_bounds;
 
   auto to_plot_position = [&](const Vec2& point) {
     Vec2 normalized = ((point - bounds.lower) / bounds.size());
@@ -206,32 +209,86 @@ void Plotter::render_content() {
   };
 
   auto plot_marker = [&](const Vec2& point, const PlotArgs& args) {
+    Vec2 position = to_plot_position(point);
     switch (args.marker_style) {
     case datagui::PlotMarkerStyle::Circle:
       shape_shader.queue_circle(
-          to_plot_position(point),
+          position,
           args.marker_width / 2,
           args.color,
           0,
           Color::Black(),
           plot_area);
       break;
+    case datagui::PlotMarkerStyle::Cross: {
+      Vec2 delta_up(args.marker_width / 2, args.marker_width / 2);
+      Vec2 delta_down(args.marker_width / 2, -args.marker_width / 2);
+      shape_shader.queue_line(
+          position - delta_up,
+          position + delta_up,
+          args.marker_width * 0.3,
+          args.color,
+          plot_area);
+      shape_shader.queue_line(
+          position - delta_down,
+          position + delta_down,
+          args.marker_width * 0.3,
+          args.color,
+          plot_area);
+    } break;
     default:
       break;
     }
   };
 
+  auto plot_line =
+      [&](const Vec2& a, const Vec2& b, const PlotArgs& args, float length) {
+        Vec2 position_a = to_plot_position(a);
+        Vec2 position_b = to_plot_position(b);
+        float ab_length = (position_b - position_a).length();
+        Vec2 dir = (position_b - position_a) / ab_length;
+        switch (args.line_style) {
+        case datagui::PlotLineStyle::Solid:
+          shape_shader.queue_line(
+              position_a,
+              position_b,
+              args.line_width,
+              args.color,
+              plot_area);
+          break;
+        case datagui::PlotLineStyle::Dashed: {
+          const float resolution = 20;
+          float s1 = -std::fmod(length, resolution);
+          while (s1 < ab_length) {
+            float s2 = s1 + resolution;
+            int i = (length + s1) / resolution;
+            if (i % 2 == 0) {
+              shape_shader.queue_line(
+                  position_a + std::max(s1, 0.f) * dir,
+                  position_a + std::min(s2, ab_length) * dir,
+                  args.line_width,
+                  args.color,
+                  plot_area,
+                  false);
+            }
+            s1 = s2;
+          }
+          break;
+        }
+        default:
+          break;
+        }
+        return ab_length;
+      };
+
   for (const auto& item : plot_items) {
+    float length = 0;
     for (std::size_t i = 0; i + 1 < item.points.size(); i++) {
       const Vec2& a = item.points[i];
       const Vec2& b = item.points[i + 1];
-      shape_shader.queue_line(
-          to_plot_position(a),
-          to_plot_position(b),
-          item.args.line_width,
-          item.args.color,
-          plot_area);
+      float line_length = plot_line(a, b, item.args, length);
       plot_marker(a, item.args);
+      length += line_length;
     }
     if (!item.points.empty()) {
       plot_marker(item.points.back(), item.args);

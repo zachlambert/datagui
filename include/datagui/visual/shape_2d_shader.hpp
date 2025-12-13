@@ -60,7 +60,8 @@ public:
       const Vec2& b,
       float width,
       const Color& color,
-      const Box2& mask);
+      const Box2& mask,
+      bool rounded_ends = true);
 
   void draw(const Vec2& viewport_size);
 

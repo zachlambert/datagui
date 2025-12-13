@@ -9,8 +9,8 @@ namespace datagui {
 
 extern std::vector<Color> default_plot_colors;
 
-enum class PlotLineStyle { Solid, Dashed };
-enum class PlotMarkerStyle { None, Circle };
+enum class PlotLineStyle { None, Solid, Dashed };
+enum class PlotMarkerStyle { None, Circle, Cross };
 
 struct PlotArgs {
   std::string label;
@@ -18,7 +18,7 @@ struct PlotArgs {
   PlotLineStyle line_style = PlotLineStyle::Solid;
   PlotMarkerStyle marker_style = PlotMarkerStyle::None;
   float line_width = 2;
-  float marker_width = 5;
+  float marker_width = 8;
 };
 
 class PlotHandle {
@@ -31,17 +31,26 @@ public:
     args.color = color;
     return *this;
   }
-  PlotHandle& marker_circle(float width = 5) {
+  PlotHandle& marker_circle(float width = 8) {
     args.marker_style = PlotMarkerStyle::Circle;
     args.marker_width = width;
     return *this;
   }
-  PlotHandle& line_solid(float width) {
+  PlotHandle& marker_cross(float width = 8) {
+    args.marker_style = PlotMarkerStyle::Cross;
+    args.marker_width = width;
+    return *this;
+  }
+  PlotHandle& no_line() {
+    args.line_style = PlotLineStyle::None;
+    return *this;
+  }
+  PlotHandle& line_solid(float width = 2) {
     args.line_style = PlotLineStyle::Solid;
     args.line_width = width;
     return *this;
   }
-  PlotHandle& line_dashed(float width) {
+  PlotHandle& line_dashed(float width = 2) {
     args.line_style = PlotLineStyle::Dashed;
     args.line_width = width;
     return *this;
