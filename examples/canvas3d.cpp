@@ -24,6 +24,14 @@ int main() {
             Rot3(Euler(0, M_PI / 4, 0)),
             Vec3::uniform(2),
             Color(0, 0, 1, 0.2));
+
+        canvas->cylinder(
+            Vec3(0, -3, 0),
+            Vec3(std::sin(M_PI / 4), 0, std::cos(M_PI / 4)),
+            0.5,
+            5,
+            Color::Hsl(50, 1, 0.5));
+
         gui.end();
       }
       gui.end();

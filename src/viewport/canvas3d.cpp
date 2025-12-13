@@ -20,6 +20,15 @@ void Canvas3d::box(
   shape_shader.queue_box(position, orientation, size, color);
 }
 
+void Canvas3d::cylinder(
+    const Vec3& base_position,
+    const Vec3& direction,
+    float radius,
+    float length,
+    const Color& color) {
+  shape_shader.queue_cylinder(base_position, direction, radius, length, color);
+}
+
 void Canvas3d::grid(std::size_t size, float width) {
   shape_shader.queue_box(
       Vec3(0, 0, -0.05),

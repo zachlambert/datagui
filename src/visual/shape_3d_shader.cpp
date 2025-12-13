@@ -329,7 +329,7 @@ void Shape3dShader::queue_cylinder(
     const Color& color) {
   auto& element = elements[(std::size_t)ShapeType::Cylinder].emplace_back();
   element.transform = make_transform(
-      base_position + direction * length / 2,
+      base_position,
       Rot3::line_rot(direction),
       Vec3(length, radius, radius));
   element.color = color;
