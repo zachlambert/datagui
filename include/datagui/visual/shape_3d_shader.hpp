@@ -49,19 +49,12 @@ private:
   };
   std::vector<std::vector<Element>> elements;
 
-  struct Args {
-    float ambient = 0.4;
-  };
-  Args args;
-
   // Shader
   unsigned int program_id;
 
   // Uniforms
   unsigned int uniform_P;
   unsigned int uniform_V;
-  unsigned int uniform_ambient;
-  unsigned int uniform_dither_offset;
 
   // Array/buffer objects
   unsigned int VAO;

@@ -39,7 +39,7 @@ layout(location = 4) in vec4 transform_col3;
 layout(location = 5) in vec4 transform_col4;
 layout(location = 6) in vec4 color;
 
-out vec3 fs_normal_cs;
+out vec3 fs_normal_ws;
 out vec4 fs_color;
 flat out int fs_instance_id;
 
@@ -51,7 +51,7 @@ void main(){
   mat4 VM = V * M;
   mat4 PVM = P * VM;
   gl_Position = PVM * vec4(position, 1);
-  fs_normal_cs = normalize((VM * vec4(normal, 0)).xyz);
+  fs_normal_ws = normalize((M * vec4(normal, 0)).xyz);
   fs_color = color;
   fs_instance_id = gl_InstanceID;
 }
@@ -62,12 +62,10 @@ const static std::string shape_3d_fs = R"(
 
 in vec3 fs_position_cs;
 in vec4 fs_position_ns;
-in vec3 fs_normal_cs;
+in vec3 fs_normal_ws;
 in vec4 fs_color;
 flat in int fs_instance_id;
 out vec4 color;
-
-uniform float ambient;
 
 void main(){
   const vec3 magic = vec3(0.06711056f, 0.00583715f, 52.9829189f);
@@ -78,9 +76,9 @@ void main(){
 		discard;
 	}
 
-  // Light as if the light comes from the camera view
-  float cos_theta = clamp(dot(fs_normal_cs, vec3(0, 0, 1)), 0, 1);
-  color = fs_color * (ambient + (1 - ambient) * cos_theta);
+  float ambient_light = 0.5;
+  float direct_light = clamp(dot(fs_normal_ws, vec3(0, 0, 1)), 0, 1);
+  color = fs_color * (ambient_light + (1 - ambient_light) * direct_light);
 }
 )";
 
@@ -283,7 +281,6 @@ void Shape3dShader::init() {
 
   uniform_P = glGetUniformLocation(program_id, "P");
   uniform_V = glGetUniformLocation(program_id, "V");
-  uniform_ambient = glGetUniformLocation(program_id, "ambient");
 
   // Generate ids
   glGenVertexArrays(1, &VAO);
@@ -439,7 +436,6 @@ void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
   glUseProgram(program_id);
   glUniformMatrix4fv(uniform_V, 1, GL_FALSE, V.data);
   glUniformMatrix4fv(uniform_P, 1, GL_FALSE, P.data);
-  glUniform1f(uniform_ambient, args.ambient);
 
   glBindVertexArray(VAO);
 
