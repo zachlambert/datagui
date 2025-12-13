@@ -1,29 +1,14 @@
 #include "datagui/visual/shader_utils.hpp"
 
 #include <GL/glew.h>
-#include <fstream>
 #include <iostream>
-#include <sstream>
+#include <vector>
 
 namespace datagui {
 
-bool load_file_into_string(const std::string& file_path, std::string& string) {
-  std::ifstream file_stream(file_path, std::ios::in);
-  if (file_stream.is_open()) {
-    std::stringstream sstream;
-    sstream << file_stream.rdbuf();
-    string = sstream.str();
-    file_stream.close();
-    return true;
-  } else {
-    std::cerr << "Failed to open file " << file_path << std::endl;
-    return false;
-  }
-}
+unsigned int load_shader(const std::string& code, unsigned int shader_type) {
+  unsigned int shader_id = glCreateShader(shader_type);
 
-void compile_and_check_shader(
-    const std::string& code,
-    const unsigned int shader_id) {
   GLint result = GL_FALSE;
   int info_log_length;
 
@@ -42,25 +27,19 @@ void compile_and_check_shader(
         info_log_length,
         NULL,
         vertex_shader_error_message);
+    std::cerr << "================\n" << code << "\n--------------\n";
     std::cerr << vertex_shader_error_message << std::endl;
   }
+  return shader_id;
 }
 
-unsigned int create_program(
-    const std::string& vs_code,
-    const std::string& fs_code) {
-  // Create shaders
-  unsigned int vertex_program_id = glCreateShader(GL_VERTEX_SHADER);
-  unsigned int fragment_program_id = glCreateShader(GL_FRAGMENT_SHADER);
+static unsigned int create_program(
+    const std::vector<unsigned int>& shader_ids) {
 
-  compile_and_check_shader(vs_code, vertex_program_id);
-
-  compile_and_check_shader(fs_code, fragment_program_id);
-
-  // Link the program
   GLuint program_id = glCreateProgram();
-  glAttachShader(program_id, vertex_program_id);
-  glAttachShader(program_id, fragment_program_id);
+  for (unsigned int shader_id : shader_ids) {
+    glAttachShader(program_id, shader_id);
+  }
   glLinkProgram(program_id);
 
   // Check the program
@@ -79,13 +58,30 @@ unsigned int create_program(
     std::cerr << program_error_message << std::endl;
   }
 
-  glDetachShader(program_id, vertex_program_id);
-  glDetachShader(program_id, fragment_program_id);
-
-  glDeleteShader(vertex_program_id);
-  glDeleteShader(fragment_program_id);
+  for (unsigned int shader_id : shader_ids) {
+    glDetachShader(program_id, shader_id);
+    glDeleteShader(shader_id);
+  }
 
   return program_id;
+}
+
+unsigned int create_program(
+    const std::string& vs_code,
+    const std::string& fs_code) {
+  return create_program(
+      {load_shader(vs_code, GL_VERTEX_SHADER),
+       load_shader(fs_code, GL_FRAGMENT_SHADER)});
+}
+
+unsigned int create_program_gs(
+    const std::string& vs_code,
+    const std::string& fs_code,
+    const std::string& gs_code) {
+  return create_program(
+      {load_shader(vs_code, GL_VERTEX_SHADER),
+       load_shader(fs_code, GL_FRAGMENT_SHADER),
+       load_shader(gs_code, GL_GEOMETRY_SHADER)});
 }
 
 } // namespace datagui

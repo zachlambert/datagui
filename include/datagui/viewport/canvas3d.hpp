@@ -1,7 +1,10 @@
 #pragma once
 
 #include "datagui/viewport/viewport.hpp"
+#include "datagui/visual/mesh_shader.hpp"
+#include "datagui/visual/point_cloud_shader.hpp"
 #include "datagui/visual/shape_3d_shader.hpp"
+#include "datagui/visual/uv_mesh_shader.hpp"
 
 namespace datagui {
 
@@ -61,9 +64,29 @@ public:
 
   void grid(std::size_t size, float width);
 
+  void mesh(
+      const Mesh& mesh,
+      const Vec3& position,
+      const Rot3& orientation,
+      const Color& color);
+
+  void uv_mesh(
+      const UvMesh& uv_mesh,
+      const Vec3& position,
+      const Rot3& orientation,
+      float opacity = 1);
+
+  void point_cloud(
+      const PointCloud& point_cloud,
+      const Vec3& position,
+      const Rot3& orientation,
+      float point_size);
+
 private:
   void begin() override;
   void end() override;
+  void redraw();
+
   void impl_init(
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm) override;
@@ -72,6 +95,9 @@ private:
 
   Camera3d camera;
   Shape3dShader shape_shader;
+  MeshShader mesh_shader;
+  UvMeshShader uv_mesh_shader;
+  PointCloudShader point_cloud_shader;
 
   Vec3 click_point;
   Vec3 click_point_direction;

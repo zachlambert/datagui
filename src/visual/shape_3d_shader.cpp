@@ -61,8 +61,6 @@ void main(){
 const static std::string shape_3d_fs = R"(
 #version 330 core
 
-in vec3 fs_position_cs;
-in vec4 fs_position_ns;
 in vec3 fs_normal_cs;
 in vec3 fs_normal_ws;
 in vec4 fs_color;

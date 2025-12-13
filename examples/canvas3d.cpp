@@ -8,6 +8,31 @@ int main() {
   using datagui::Rot3;
   using datagui::Vec3;
 
+  datagui::PointCloud point_cloud;
+  {
+    struct Point {
+      Vec3 position;
+      Vec3 color;
+    };
+    std::vector<Point> points;
+    for (float theta = -M_PI / 2; theta <= M_PI / 2; theta += 0.1 / 8) {
+      for (float z = 0; z <= 5; z += 0.1) {
+        Point point;
+        point.position.x = 8 * std::cos(theta);
+        point.position.y = 8 * std::sin(theta);
+        point.position.z = z + std::sin(theta * 10);
+        point.color = Vec3(0.2 * z, 1 - 0.2 * z, 0);
+        points.push_back(point);
+      }
+    }
+    point_cloud.load_points(
+        points.data(),
+        points.size(),
+        offsetof(Point, position),
+        offsetof(Point, color),
+        sizeof(Point));
+  }
+
   while (gui.running()) {
     if (gui.group()) {
       if (auto canvas = gui.viewport<datagui::Canvas3d>(512, 512)) {
@@ -42,6 +67,8 @@ int main() {
             Color::Hsl(200, 1, 0.5));
 
         canvas->axes(Vec3(-5, -5, 0), Rot3(), 2);
+
+        canvas->point_cloud(point_cloud, Vec3(), Rot3(), 0.08);
 
         gui.end();
       }
