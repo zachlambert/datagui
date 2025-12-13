@@ -72,6 +72,9 @@ void GuiRenderer::render() {
   shape_shader.draw(viewport_size);
   text_shader.draw(viewport_size);
   image_shader.draw(viewport_size);
+  shape_shader.clear();
+  text_shader.clear();
+  image_shader.clear();
 }
 
 void GuiRenderer::push_mask(const Box2& mask) {

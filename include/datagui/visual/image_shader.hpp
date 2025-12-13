@@ -51,10 +51,17 @@ public:
       float angle,
       const Vec2& size);
 
+  void queue_image(
+      const Image& image,
+      const Vec2& position,
+      const Vec2& size,
+      const Box2& mask);
+
   // Y up
   void queue_texture(const Box2& box, int texture);
 
   void draw(const Vec2& viewport_size);
+  void clear();
 
 private:
   struct Vertex {

@@ -159,7 +159,8 @@ private:
   void end() override;
   void mouse_event(const Vec2& size, const MouseEvent& event) override;
   bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
-  void render_content();
+  void queue_commands();
+  void redraw();
 
   struct Tick {
     float position;

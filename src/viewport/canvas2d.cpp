@@ -16,6 +16,7 @@ void Canvas2d::box(
       border_color,
       Box2(Vec2(), framebuffer_size()));
   shape_shader.draw(framebuffer_size());
+  shape_shader.clear();
 }
 
 void Canvas2d::queue_text(
@@ -29,6 +30,7 @@ void Canvas2d::queue_text(
   text_shader
       .queue_text(origin, angle, text, font, font_size, text_color, width);
   text_shader.draw(framebuffer_size());
+  text_shader.clear();
 }
 
 void Canvas2d::begin() {

@@ -64,6 +64,7 @@ public:
       bool rounded_ends = true);
 
   void draw(const Vec2& viewport_size);
+  void clear();
 
 private:
   struct Element {

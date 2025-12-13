@@ -413,7 +413,9 @@ void Shape2dShader::draw(const Vec2& viewport_size) {
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);
   glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertices.size(), elements.size());
+}
 
+void Shape2dShader::clear() {
   elements.clear();
 }
 

@@ -93,16 +93,29 @@ void Plotter::impl_init(
 
 void Plotter::begin() {
   plot_items.clear();
+  heatmap_items.clear();
   xlabel_.clear();
   ylabel_.clear();
   default_color_i = 0;
 }
 
 void Plotter::end() {
-  render_content();
+  redraw();
 }
 
-void Plotter::render_content() {
+void Plotter::redraw() {
+  queue_commands();
+  bind_framebuffer();
+  shape_shader.draw(framebuffer_size());
+  text_shader.draw(framebuffer_size());
+  image_shader.draw(framebuffer_size());
+  unbind_framebuffer();
+  shape_shader.clear();
+  text_shader.clear();
+  image_shader.clear();
+}
+
+void Plotter::queue_commands() {
   Box2 bounds;
   float text_height = fm->text_height(theme->text_font, theme->text_size);
   Vec2 size = framebuffer_size();
@@ -323,14 +336,17 @@ void Plotter::render_content() {
     Vec2 plot_lower = to_plot_position(item.bounds.lower);
     Vec2 plot_upper = to_plot_position(item.bounds.upper);
     if (item.image.is_loaded()) {
-      image_shader
-          .queue_image(item.image, plot_lower, 0, plot_upper - plot_lower);
+      image_shader.queue_image(
+          item.image,
+          plot_lower,
+          plot_upper - plot_lower,
+          plot_area);
       continue;
     }
 
     auto to_coords = [&](std::size_t i, std::size_t j) {
-      Vec2 normalized =
-          Vec2(float(j) + 0.5, float(i) + 0.5) / Vec2(item.width, item.height);
+      Vec2 normalized = Vec2(float(j) + 0.5, item.height - (float(i) + 0.5)) /
+                        Vec2(item.width, item.height);
       return item.bounds.lower + item.bounds.size() * normalized;
     };
     float min_value = item.args.min_value ? *item.args.min_value
@@ -356,12 +372,8 @@ void Plotter::render_content() {
     std::vector<Pixel> pixels(item.width * item.height);
     for (std::size_t i = 0; i < item.height; i++) {
       for (std::size_t j = 0; j < item.width; j++) {
-        Vec2 coords =
-            item.bounds.lower + item.bounds.size() *
-                                    Vec2(float(j) + 0.5, float(i) + 0.5) /
-                                    Vec2(item.width, item.height);
         auto& pixel = pixels[i * item.width + j];
-        float value = item.function(coords);
+        float value = item.function(to_coords(i, j));
         float s = (value - min_value) / (max_value - min_value);
         s = std::clamp(s, 0.f, 1.f);
 
@@ -386,8 +398,11 @@ void Plotter::render_content() {
       }
     }
     item.image.load(item.width, item.height, pixels.data());
-    image_shader
-        .queue_image(item.image, plot_lower, 0, plot_upper - plot_lower);
+    image_shader.queue_image(
+        item.image,
+        plot_lower,
+        plot_upper - plot_lower,
+        plot_area);
   }
 
   shape_shader.queue_line(
@@ -535,12 +550,6 @@ void Plotter::render_content() {
         theme->text_color,
         LengthWrap());
   }
-
-  bind_framebuffer();
-  shape_shader.draw(framebuffer_size());
-  text_shader.draw(framebuffer_size());
-  image_shader.draw(framebuffer_size());
-  unbind_framebuffer();
 }
 
 void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
@@ -567,7 +576,7 @@ void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
   subview =
       Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
 
-  render_content();
+  redraw();
 }
 
 bool Plotter::scroll_event(const Vec2& element_size, const ScrollEvent& event) {
@@ -586,6 +595,8 @@ bool Plotter::scroll_event(const Vec2& element_size, const ScrollEvent& event) {
   size.y = std::min(size.y, 2 * centre.y);
   size.y = std::min(size.y, 2 * (1.f - centre.y));
   subview = Box2(centre - size / 2, centre + size / 2);
+
+  redraw();
   return true;
 }
 
