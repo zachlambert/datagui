@@ -20,19 +20,15 @@ int main() {
   while (window.running()) {
     window.render_begin();
 
-    for (float x = -5; x <= 5; x += 1) {
-      for (float y = -5; y <= 5; y += 1) {
-        shape_shader.queue_box(
-            Vec3(x, y, -5 * std::exp(-std::hypot(x / 5, y / 5))),
-            Rot3(),
-            Vec3::uniform(0.8),
-            Color::Hsl(
-                180.f * std::atan2(y / 5, x / 5) / M_PIf,
-                std::hypot(x / 10, y / 10),
-                0.5,
-                0.5));
-      }
-    }
+    shape_shader.queue_box(
+        Vec3(),
+        Euler(M_PI / 4, 0, 0),
+        Vec3::uniform(1),
+        Color::Red());
+
+    shape_shader
+        .queue_cylinder(Vec3(0, 2, 0), Vec3(0, 0, 1), 0.5, 2, Color::Green());
+
     shape_shader.draw(window.size(), camera);
     shape_shader.clear();
 

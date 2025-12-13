@@ -3,7 +3,6 @@
 #include "datagui/color.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
-#include "datagui/visual/image_shader.hpp"
 #include <vector>
 
 namespace datagui {
@@ -18,18 +17,26 @@ public:
       const Vec3& size,
       const Color& color);
 
+  void queue_cylinder(
+      const Vec3& base_position,
+      const Vec3& direction,
+      float radius,
+      float length,
+      const Color& color);
+
   void draw(const Vec2& viewport_size, const Camera3d& camera);
   void clear();
 
 private:
   enum class ShapeType {
     Box,
+    Cylinder,
   };
-  static constexpr std::size_t ShapeTypeCount = 1;
+  static constexpr std::size_t ShapeTypeCount = 2;
 
   struct Shape {
-    std::size_t indices_offset;
-    std::size_t index_count;
+    std::size_t indices_begin;
+    std::size_t indices_end;
   };
   std::vector<Shape> shapes;
 

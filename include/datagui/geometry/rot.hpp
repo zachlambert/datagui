@@ -91,6 +91,7 @@ public:
   }
 
   static Rot3 line_rot(const Vec3& start, const Vec3& end);
+  static Rot3 line_rot(const Vec3& direction);
 
 private:
   Mat3 mat_;

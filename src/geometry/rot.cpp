@@ -54,6 +54,11 @@ Rot3 Rot3::line_rot(const Vec3& start, const Vec3& end) {
     return Rot3();
   }
   Vec3 u1 = disp / length;
+  return line_rot(disp / length);
+}
+
+Rot3 Rot3::line_rot(const Vec3& direction) {
+  const Vec3& u1 = direction;
 
   std::size_t min_axis = 0;
   for (std::size_t i = 1; i < 3; i++) {

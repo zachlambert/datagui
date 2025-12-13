@@ -88,6 +88,13 @@ struct Vec2 {
   float cross(const Vec2& other) const {
     return x * other.y - y * other.x;
   }
+
+  static Vec2 unit_x() {
+    return Vec2(1, 0);
+  }
+  static Vec2 unit_y() {
+    return Vec2(0, 1);
+  }
 };
 
 inline Vec2 operator+(Vec2 lhs, const Vec2& rhs) {
@@ -229,6 +236,16 @@ struct Vec3 {
     result.y = z * other.x - x * other.z;
     result.z = x * other.y - y * other.x;
     return result;
+  }
+
+  static Vec3 unit_x() {
+    return Vec3(1, 0, 0);
+  }
+  static Vec3 unit_y() {
+    return Vec3(0, 1, 0);
+  }
+  static Vec3 unit_z() {
+    return Vec3(0, 0, 1);
   }
 };
 

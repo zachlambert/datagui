@@ -89,12 +89,11 @@ struct Vertex {
   Vec3 normal;
 };
 
-static std::size_t create_box(
+static void create_box(
     std::vector<Vertex>& vertices,
     std::vector<unsigned int>& indices) {
 
-  std::size_t vertices_offset = vertices.size();
-  std::size_t indices_offset = indices.size();
+  std::size_t start = vertices.size();
   Vertex vertex;
 
   for (int i = 0; i < 6; i++) {
@@ -120,13 +119,83 @@ static std::size_t create_box(
     }
 
     for (int ind = 0; ind < 3; ind++) {
-      indices.push_back(vertices_offset + i * 4 + ind);
+      indices.push_back(start + i * 4 + ind);
     }
     for (int ind = 0; ind < 3; ind++) {
-      indices.push_back(vertices_offset + (i + 1) * 4 - 1 - ind);
+      indices.push_back(start + (i + 1) * 4 - 1 - ind);
     }
   }
-  return indices.size() - indices_offset;
+}
+
+static void create_cylinder(
+    std::vector<Vertex>& vertices,
+    std::vector<unsigned int>& indices) {
+
+  float resolution = 0.1;
+  const std::size_t N = std::max((size_t)std::ceil(2 * M_PI / resolution), 2lu);
+
+  Vertex vertex;
+
+  // Cylinder dimensions:
+  // - Unit length, Unit radius
+  // - Axis direction = +X
+  // - Base is at origin, "Top" is at +X
+
+  // End face
+
+  std::size_t start = vertices.size();
+  vertex.position = Vec3(1, 0, 0);
+  vertex.normal = Vec3(1, 0, 0);
+  vertices.push_back(vertex);
+  for (std::size_t i = 0; i < N; i++) {
+    float theta = i * 2 * M_PIf / N;
+    vertex.position = Vec3(1, std::cos(theta), std::sin(theta));
+    vertices.push_back(vertex);
+  }
+  for (std::size_t i = 0; i < N; i++) {
+    indices.push_back(start);
+    indices.push_back(start + 1 + i);
+    indices.push_back(start + 1 + (i + 1) % N);
+  }
+
+  // Curved surface
+
+  start = vertices.size();
+  for (std::size_t i = 0; i < N; i++) {
+    float theta = i * 2 * M_PIf / N;
+    vertex.normal = Vec3(0, std::cos(theta), std::sin(theta));
+    // End
+    vertex.position = Vec3(1, std::cos(theta), std::sin(theta));
+    vertices.push_back(vertex);
+    // Base
+    vertex.position = Vec3(0, std::cos(theta), std::sin(theta));
+    vertices.push_back(vertex);
+  }
+  for (std::size_t i = 0; i < 2 * N; i += 2) {
+    indices.push_back(start + i);
+    indices.push_back(start + i + 1);
+    indices.push_back(start + (i + 2) % (2 * N));
+    indices.push_back(start + i + 1);
+    indices.push_back(start + (i + 3) % (2 * N));
+    indices.push_back(start + (i + 2) % (2 * N));
+  }
+
+  // Base face
+
+  start = vertices.size();
+  vertex.position = Vec3(0, 0, 0);
+  vertex.normal = Vec3(-1, 0, 0);
+  vertices.push_back(vertex);
+  for (std::size_t i = 0; i < N; i++) {
+    float theta = i * 2 * M_PIf / N;
+    vertex.position = Vec3(0, std::cos(-theta), std::sin(-theta));
+    vertices.push_back(vertex);
+  }
+  for (std::size_t i = 0; i < N; i++) {
+    indices.push_back(start);
+    indices.push_back(start + 1 + i);
+    indices.push_back(start + 1 + (i + 1) % N);
+  }
 }
 
 void Shape3dShader::init() {
@@ -214,8 +283,15 @@ void Shape3dShader::init() {
   std::vector<unsigned int> indices;
   {
     auto& shape = shapes[(std::size_t)ShapeType::Box];
-    shape.indices_offset = indices.size();
-    shape.index_count = create_box(vertices, indices);
+    shape.indices_begin = indices.size();
+    create_box(vertices, indices);
+    shape.indices_end = indices.size();
+  }
+  {
+    auto& shape = shapes[(std::size_t)ShapeType::Cylinder];
+    shape.indices_begin = indices.size();
+    create_cylinder(vertices, indices);
+    shape.indices_end = indices.size();
   }
 
   glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
@@ -240,8 +316,23 @@ void Shape3dShader::queue_box(
     const Rot3& orientation,
     const Vec3& scale,
     const Color& color) {
-  elements[(std::size_t)ShapeType::Box].push_back(
-      {make_transform(position, orientation, scale), color});
+  auto& element = elements[(std::size_t)ShapeType::Box].emplace_back();
+  element.transform = make_transform(position, orientation, scale);
+  element.color = color;
+}
+
+void Shape3dShader::queue_cylinder(
+    const Vec3& base_position,
+    const Vec3& direction,
+    float radius,
+    float length,
+    const Color& color) {
+  auto& element = elements[(std::size_t)ShapeType::Cylinder].emplace_back();
+  element.transform = make_transform(
+      base_position + direction * length / 2,
+      Rot3::line_rot(direction),
+      Vec3(length, radius, radius));
+  element.color = color;
 }
 
 void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
@@ -277,9 +368,9 @@ void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
 
     glDrawElementsInstanced(
         GL_TRIANGLES,
-        shape.index_count,
+        (shape.indices_end - shape.indices_begin),
         GL_UNSIGNED_INT,
-        (void*)(sizeof(unsigned int) * shape.indices_offset),
+        (void*)(sizeof(unsigned int) * shape.indices_begin),
         shape_elements.size());
   }
 }
