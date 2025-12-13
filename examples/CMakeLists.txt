@@ -18,4 +18,5 @@ create_example(canvas2d)
 create_example(plotter)
 
 create_example(shape_3d_shader)
+create_example(mesh_shader)
 create_example(canvas3d)
