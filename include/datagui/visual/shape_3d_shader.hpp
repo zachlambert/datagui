@@ -24,6 +24,8 @@ public:
       float length,
       const Color& color);
 
+  void queue_sphere(const Vec3& position, float radius, const Color& color);
+
   void draw(const Vec2& viewport_size, const Camera3d& camera);
   void clear();
 
@@ -31,8 +33,9 @@ private:
   enum class ShapeType {
     Box,
     Cylinder,
+    Sphere,
   };
-  static constexpr std::size_t ShapeTypeCount = 2;
+  static constexpr std::size_t ShapeTypeCount = 3;
 
   struct Shape {
     std::size_t indices_begin;

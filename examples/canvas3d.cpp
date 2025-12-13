@@ -32,6 +32,8 @@ int main() {
             5,
             Color::Hsl(50, 1, 0.5));
 
+        canvas->sphere(Vec3(-3, 0, 1), 1, Color::Hsl(300, 1, 0.5));
+
         gui.end();
       }
       gui.end();

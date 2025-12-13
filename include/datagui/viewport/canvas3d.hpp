@@ -22,6 +22,8 @@ public:
       float length,
       const Color& color);
 
+  void sphere(const Vec3& position, float radius, const Color& color);
+
   void grid(std::size_t size, float width);
 
 private:

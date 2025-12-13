@@ -198,6 +198,83 @@ static void create_cylinder(
   }
 }
 
+static void create_sphere(
+    std::vector<Vertex>& vertices,
+    std::vector<unsigned int>& indices) {
+
+  float resolution = 0.1;
+  const size_t N = std::max((size_t)std::ceil(2 * M_PI / resolution), 2lu);
+  std::size_t start = vertices.size();
+
+  Vertex vertex;
+  Vec3 direction;
+
+  vertex.position = Vec3(0, 0, 1);
+  vertex.normal = Vec3(0, 0, 1);
+  vertices.push_back(vertex);
+  for (std::size_t i = 1; i < N; i++) {
+    float phi = (M_PIf * i) / N;
+    direction.z = std::cos(phi);
+    for (std::size_t j = 0; j < 2 * N; j++) {
+      float theta = (2 * M_PIf * j) / (2 * N);
+      direction.x = std::sin(phi) * std::cos(theta);
+      direction.y = std::sin(phi) * std::sin(theta);
+      vertex.position = direction;
+      vertex.normal = direction;
+      vertices.push_back(vertex);
+    }
+  }
+  vertex.position = Vec3(0, 0, -1);
+  vertex.normal = Vec3(0, 0, -1);
+  vertices.push_back(vertex);
+
+  // Top strip, common vertex = top
+  for (std::size_t j = 0; j < 2 * N; j++) {
+    indices.push_back(start);
+    indices.push_back(start + 1 + j);
+    if (j < 2 * N - 1) {
+      indices.push_back(start + 2 + j);
+    } else {
+      indices.push_back(start);
+    }
+  }
+  // Bottom strip, common vertex = bottom
+  std::size_t bot = vertices.size() - 1;
+  for (std::size_t j = 0; j < 2 * N; j++) {
+    indices.push_back(bot);
+    indices.push_back(bot - 1 - j);
+    if (j < 2 * N - 1) {
+      indices.push_back(bot - 2 - j);
+    } else {
+      indices.push_back(bot - 1);
+    }
+  }
+  // Remaining strips, made up of rectangles between
+  for (std::size_t i = 0; i < N - 2; i++) {
+    std::size_t strip_1_start = start + 1 + 2 * N * i;
+    std::size_t strip_2_start = start + 1 + 2 * N * (i + 1);
+    for (std::size_t j = 0; j < 2 * N; j++) {
+      // First triangle of rectangle
+      indices.push_back(strip_1_start + j);
+      indices.push_back(strip_2_start + j);
+      if (j < 2 * N - 1) {
+        indices.push_back(strip_2_start + j + 1);
+      } else {
+        indices.push_back(strip_2_start);
+      }
+      // Second triangle of rectangle
+      if (j < 2 * N - 1) {
+        indices.push_back(strip_2_start + j + 1);
+        indices.push_back(strip_1_start + j + 1);
+      } else {
+        indices.push_back(strip_2_start);
+        indices.push_back(strip_1_start);
+      }
+      indices.push_back(strip_1_start + j);
+    }
+  }
+}
+
 void Shape3dShader::init() {
   // =============================================================
   // Initialise shader
@@ -293,6 +370,12 @@ void Shape3dShader::init() {
     create_cylinder(vertices, indices);
     shape.indices_end = indices.size();
   }
+  {
+    auto& shape = shapes[(std::size_t)ShapeType::Sphere];
+    shape.indices_begin = indices.size();
+    create_sphere(vertices, indices);
+    shape.indices_end = indices.size();
+  }
 
   glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
   glBufferData(
@@ -332,6 +415,15 @@ void Shape3dShader::queue_cylinder(
       base_position,
       Rot3::line_rot(direction),
       Vec3(length, radius, radius));
+  element.color = color;
+}
+
+void Shape3dShader::queue_sphere(
+    const Vec3& position,
+    float radius,
+    const Color& color) {
+  auto& element = elements[(std::size_t)ShapeType::Sphere].emplace_back();
+  element.transform = make_transform(position, Rot3(), Vec3::uniform(radius));
   element.color = color;
 }
 

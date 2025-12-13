@@ -29,6 +29,8 @@ int main() {
     shape_shader
         .queue_cylinder(Vec3(0, 2, 0), Vec3(0, 0, 1), 0.5, 2, Color::Green());
 
+    shape_shader.queue_sphere(Vec3(0, -2, 0), 1.5, Color::Blue());
+
     shape_shader.draw(window.size(), camera);
     shape_shader.clear();
 
