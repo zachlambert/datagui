@@ -1,4 +1,5 @@
 #include "datagui/viewport/plotter.hpp"
+#include "datagui/visual/color_map.hpp"
 #include <iomanip>
 #include <sstream>
 
@@ -66,6 +67,20 @@ PlotHandle Plotter::plot(
   return PlotHandle(item.args);
 }
 
+HeatmapHandle Plotter::heatmap(
+    const Vec2& lower,
+    const Vec2& upper,
+    const std::function<float(const Vec2&)>& function,
+    std::size_t width,
+    std::size_t height) {
+  HeatmapItem& item = heatmap_items.emplace_back();
+  item.bounds = Box2(lower, upper);
+  item.function = function;
+  item.width = width;
+  item.height = height;
+  return HeatmapHandle(item.args);
+}
+
 void Plotter::impl_init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
@@ -73,20 +88,34 @@ void Plotter::impl_init(
   this->fm = fm;
   shape_shader.init();
   text_shader.init(fm);
+  image_shader.init();
 }
 
 void Plotter::begin() {
   plot_items.clear();
+  heatmap_items.clear();
   xlabel_.clear();
   ylabel_.clear();
   default_color_i = 0;
 }
 
 void Plotter::end() {
-  render_content();
+  redraw();
 }
 
-void Plotter::render_content() {
+void Plotter::redraw() {
+  queue_commands();
+  bind_framebuffer();
+  shape_shader.draw(framebuffer_size());
+  text_shader.draw(framebuffer_size());
+  image_shader.draw(framebuffer_size());
+  unbind_framebuffer();
+  shape_shader.clear();
+  text_shader.clear();
+  image_shader.clear();
+}
+
+void Plotter::queue_commands() {
   Box2 bounds;
   float text_height = fm->text_height(theme->text_font, theme->text_size);
   Vec2 size = framebuffer_size();
@@ -182,20 +211,32 @@ void Plotter::render_content() {
   Box2 plot_area = Box2(
       Vec2(left_padding, bottom_padding),
       size - Vec2(right_padding, top_padding));
+  prev_plot_area = plot_area;
 
-  if (!plot_items.empty()) {
+  if (plot_items.empty() && heatmap_items.empty()) {
+    bounds = Box2(Vec2(), Vec2(1, 1));
+  } else {
     bounds.lower.x = std::numeric_limits<float>::max();
     bounds.lower.y = std::numeric_limits<float>::max();
     bounds.upper.x = -std::numeric_limits<float>::max();
     bounds.upper.y = -std::numeric_limits<float>::max();
+  }
+  if (!plot_items.empty()) {
     for (const auto& item : plot_items) {
       for (const auto& point : item.points) {
         bounds.lower = minimum(point, bounds.lower);
         bounds.upper = maximum(point, bounds.upper);
       }
     }
-  } else {
-    bounds = Box2(Vec2(), Vec2(1, 1));
+    // To account for line width
+    Vec2 extra_bounds = bounds.size() * 0.02;
+    bounds.lower -= extra_bounds;
+    bounds.upper += extra_bounds;
+  }
+  if (!heatmap_items.empty()) {
+    for (const auto& item : heatmap_items) {
+      bounds = bounding(item.bounds, bounds);
+    }
   }
 
   auto to_plot_position = [&](const Vec2& point) {
@@ -206,36 +247,163 @@ void Plotter::render_content() {
   };
 
   auto plot_marker = [&](const Vec2& point, const PlotArgs& args) {
+    Vec2 position = to_plot_position(point);
     switch (args.marker_style) {
     case datagui::PlotMarkerStyle::Circle:
       shape_shader.queue_circle(
-          to_plot_position(point),
+          position,
           args.marker_width / 2,
           args.color,
           0,
           Color::Black(),
           plot_area);
       break;
+    case datagui::PlotMarkerStyle::Cross: {
+      Vec2 delta_up(args.marker_width / 2, args.marker_width / 2);
+      Vec2 delta_down(args.marker_width / 2, -args.marker_width / 2);
+      shape_shader.queue_line(
+          position - delta_up,
+          position + delta_up,
+          args.marker_width * 0.3,
+          args.color,
+          plot_area);
+      shape_shader.queue_line(
+          position - delta_down,
+          position + delta_down,
+          args.marker_width * 0.3,
+          args.color,
+          plot_area);
+    } break;
     default:
       break;
     }
   };
 
+  auto plot_line =
+      [&](const Vec2& a, const Vec2& b, const PlotArgs& args, float length) {
+        Vec2 position_a = to_plot_position(a);
+        Vec2 position_b = to_plot_position(b);
+        float ab_length = (position_b - position_a).length();
+        Vec2 dir = (position_b - position_a) / ab_length;
+        switch (args.line_style) {
+        case datagui::PlotLineStyle::Solid:
+          shape_shader.queue_line(
+              position_a,
+              position_b,
+              args.line_width,
+              args.color,
+              plot_area);
+          break;
+        case datagui::PlotLineStyle::Dashed: {
+          const float resolution = 20;
+          float s1 = -std::fmod(length, resolution);
+          while (s1 < ab_length) {
+            float s2 = s1 + resolution;
+            int i = (length + s1) / resolution;
+            if (i % 2 == 0) {
+              shape_shader.queue_line(
+                  position_a + std::max(s1, 0.f) * dir,
+                  position_a + std::min(s2, ab_length) * dir,
+                  args.line_width,
+                  args.color,
+                  plot_area,
+                  false);
+            }
+            s1 = s2;
+          }
+          break;
+        }
+        default:
+          break;
+        }
+        return ab_length;
+      };
+
   for (const auto& item : plot_items) {
+    float length = 0;
     for (std::size_t i = 0; i + 1 < item.points.size(); i++) {
       const Vec2& a = item.points[i];
       const Vec2& b = item.points[i + 1];
-      shape_shader.queue_line(
-          to_plot_position(a),
-          to_plot_position(b),
-          item.args.line_width,
-          item.args.color,
-          plot_area);
+      float line_length = plot_line(a, b, item.args, length);
       plot_marker(a, item.args);
+      length += line_length;
     }
     if (!item.points.empty()) {
       plot_marker(item.points.back(), item.args);
     }
+  }
+
+  for (const auto& item : heatmap_items) {
+    Vec2 plot_lower = to_plot_position(item.bounds.lower);
+    Vec2 plot_upper = to_plot_position(item.bounds.upper);
+    if (item.image.is_loaded()) {
+      image_shader.queue_image(
+          item.image,
+          plot_lower,
+          plot_upper - plot_lower,
+          plot_area);
+      continue;
+    }
+
+    auto to_coords = [&](std::size_t i, std::size_t j) {
+      Vec2 normalized = Vec2(float(j) + 0.5, item.height - (float(i) + 0.5)) /
+                        Vec2(item.width, item.height);
+      return item.bounds.lower + item.bounds.size() * normalized;
+    };
+    float min_value = item.args.min_value ? *item.args.min_value
+                                          : std::numeric_limits<float>::max();
+    float max_value = item.args.max_value ? *item.args.max_value
+                                          : -std::numeric_limits<float>::max();
+    for (std::size_t i = 0; i < item.height; i++) {
+      for (std::size_t j = 0; j < item.width; j++) {
+        Vec2 coords = to_coords(i, j);
+        float value = item.function(to_coords(i, j));
+        if (!item.args.min_value) {
+          min_value = std::min(min_value, value);
+        }
+        if (!item.args.max_value) {
+          max_value = std::max(max_value, value);
+        }
+      }
+    }
+
+    struct Pixel {
+      std::uint8_t r, g, b, a;
+    };
+    std::vector<Pixel> pixels(item.width * item.height);
+    for (std::size_t i = 0; i < item.height; i++) {
+      for (std::size_t j = 0; j < item.width; j++) {
+        auto& pixel = pixels[i * item.width + j];
+        float value = item.function(to_coords(i, j));
+        float s = (value - min_value) / (max_value - min_value);
+        s = std::clamp(s, 0.f, 1.f);
+
+        switch (item.args.type) {
+        case HeatmapType::Viridis: {
+          Vec3 color = color_map_viridis(s);
+          pixel.r = color.x * 255;
+          pixel.g = color.y * 255;
+          pixel.b = color.z * 255;
+          break;
+        }
+        case HeatmapType::Linear: {
+          Vec3 color =
+              (1 - s) * item.args.linear_min + s * item.args.linear_max;
+          pixel.r = color.x * 255;
+          pixel.g = color.y * 255;
+          pixel.b = color.z * 255;
+          break;
+        }
+        }
+        pixel.a = 255;
+      }
+    }
+    item.image.load(item.width, item.height, pixels.data());
+    image_shader.queue_image(
+        item.image,
+        plot_lower,
+        plot_upper - plot_lower,
+        plot_area);
   }
 
   shape_shader.queue_line(
@@ -252,7 +420,7 @@ void Plotter::render_content() {
       mask);
 
   Vec2 subview_lower = bounds.lower + subview.lower * bounds.size();
-  Vec2 subview_upper = bounds.upper + subview.upper * bounds.size();
+  Vec2 subview_upper = bounds.lower + subview.upper * bounds.size();
 
   auto [xticks_power, xticks] = get_ticks(subview_lower.x, subview_upper.x);
   auto [yticks_power, yticks] = get_ticks(subview_lower.y, subview_upper.y);
@@ -383,11 +551,6 @@ void Plotter::render_content() {
         theme->text_color,
         LengthWrap());
   }
-
-  bind_framebuffer();
-  shape_shader.draw(framebuffer_size());
-  text_shader.draw(framebuffer_size());
-  unbind_framebuffer();
 }
 
 void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
@@ -408,13 +571,12 @@ void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
     return;
   }
 
-  Vec2 delta = (mouse_down_pos - event.position) / size;
-  delta = maximum(delta, -subview.lower);
-  delta = minimum(delta, Vec2::ones() - subview.upper);
+  Vec2 delta = mouse_down_subview.size() * (mouse_down_pos - event.position) /
+               prev_plot_area.size();
   subview =
       Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
 
-  render_content();
+  redraw();
 }
 
 bool Plotter::scroll_event(const Vec2& element_size, const ScrollEvent& event) {
@@ -428,11 +590,9 @@ bool Plotter::scroll_event(const Vec2& element_size, const ScrollEvent& event) {
   }
   Vec2 centre = subview.center();
   Vec2 size = subview.size() * size_ratio;
-  size.x = std::min(size.x, 2 * centre.x);
-  size.x = std::min(size.x, 2 * (1.f - centre.x));
-  size.y = std::min(size.y, 2 * centre.y);
-  size.y = std::min(size.y, 2 * (1.f - centre.y));
   subview = Box2(centre - size / 2, centre + size / 2);
+
+  redraw();
   return true;
 }
 

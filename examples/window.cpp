@@ -45,6 +45,7 @@ int main() {
         Color::Blue(),
         LengthWrap());
     text_shader.draw(window.size());
+    text_shader.clear();
 
     shape_shader.queue_box(
         Box2(Vec2(50, 50), Vec2(300, 300)),
@@ -54,6 +55,7 @@ int main() {
         Color::Black(),
         mask);
     shape_shader.draw(window.size());
+    shape_shader.clear();
 
     text_shader.queue_text(
         Vec2(200, 100),
@@ -72,6 +74,7 @@ int main() {
         Color::Blue(),
         LengthWrap());
     text_shader.draw(window.size());
+    text_shader.clear();
 
     shape_shader.queue_box(
         Box2(Vec2(50, 350), Vec2(150, 450)),
@@ -95,6 +98,7 @@ int main() {
         Color::Green(0.5),
         mask);
     shape_shader.draw(window.size());
+    shape_shader.clear();
 
     shape_shader.queue_rect(
         Vec2(500, 100),
@@ -147,10 +151,12 @@ int main() {
         Color::Black(),
         mask);
     shape_shader.draw(window.size());
+    shape_shader.clear();
 
     image_shader
         .queue_image(image, Vec2(750, 200), M_PI / 4, Vec2::uniform(200));
     image_shader.draw(window.size());
+    image_shader.clear();
 
     window.render_end();
 

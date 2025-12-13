@@ -258,7 +258,9 @@ void TextShader::draw(const Vec2& viewport_size) {
 
   glBindVertexArray(0);
   glUseProgram(0);
+}
 
+void TextShader::clear() {
   char_lists.clear();
 }
 

@@ -143,6 +143,7 @@ void ImageShader::queue_image(
   commands.emplace_back();
   auto& command = commands.back();
 
+  // Y flipped
   command.vertices = {
       Vertex{lower_left, Vec2(0, 1)},
       Vertex{lower_right, Vec2(1, 1)},
@@ -150,6 +151,33 @@ void ImageShader::queue_image(
       Vertex{lower_right, Vec2(1, 1)},
       Vertex{upper_right, Vec2(1, 0)},
       Vertex{upper_left, Vec2(0, 0)}};
+  command.texture = image.texture();
+}
+
+void ImageShader::queue_image(
+    const Image& image,
+    const Vec2& position,
+    const Vec2& size,
+    const Box2& mask) {
+  auto& command = commands.emplace_back();
+
+  Box2 region = intersection(mask, Box2(position, position + size));
+  Vec2 uv_lower = (region.lower - position) / size;
+  Vec2 uv_upper = (region.upper - position) / size;
+
+  // Y flipped
+  float left_x = uv_lower.x;
+  float right_x = uv_upper.x;
+  float lower_y = 1 - uv_lower.y;
+  float upper_y = 1 - uv_upper.y;
+
+  command.vertices = {
+      Vertex{region.lower_left(), Vec2(left_x, lower_y)},
+      Vertex{region.lower_right(), Vec2(right_x, lower_y)},
+      Vertex{region.upper_left(), Vec2(left_x, upper_y)},
+      Vertex{region.lower_right(), Vec2(right_x, lower_y)},
+      Vertex{region.upper_right(), Vec2(right_x, upper_y)},
+      Vertex{region.upper_left(), Vec2(left_x, upper_y)}};
   command.texture = image.texture();
 }
 
@@ -194,7 +222,9 @@ void ImageShader::draw(const Vec2& viewport_size) {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
   glUseProgram(0);
+}
 
+void ImageShader::clear() {
   commands.clear();
 }
 

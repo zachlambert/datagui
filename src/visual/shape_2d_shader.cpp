@@ -371,13 +371,19 @@ void Shape2dShader::queue_line(
     const Vec2& b,
     float width,
     const Color& color,
-    const Box2& mask) {
+    const Box2& mask,
+    bool rounded_ends) {
   float angle = std::atan2(b.y - a.y, b.x - a.x);
   Element element;
   element.position = (a + b) / 2;
   element.rotation = Rot2(angle);
-  element.size = Vec2((b - a).length() + width, width);
-  element.radius = width / 2;
+  if (rounded_ends) {
+    element.size = Vec2((b - a).length() + width, width);
+    element.radius = width / 2;
+  } else {
+    element.size = Vec2((b - a).length(), width);
+    element.radius = 0;
+  }
   element.radius_scale = Vec2::ones();
   element.color = color;
   element.border_width = 0;
@@ -407,7 +413,9 @@ void Shape2dShader::draw(const Vec2& viewport_size) {
   glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);
   glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertices.size(), elements.size());
+}
 
+void Shape2dShader::clear() {
   elements.clear();
 }
 

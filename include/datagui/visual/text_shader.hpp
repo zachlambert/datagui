@@ -46,6 +46,7 @@ public:
       Length width);
 
   void draw(const Vec2& viewport_size);
+  void clear();
 
 private:
   void queue_text(

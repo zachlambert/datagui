@@ -30,6 +30,7 @@ add_library(datagui SHARED
   src/geometry/rot.cpp
   src/geometry/vec.cpp
 
+  src/visual/color_map.cpp
   src/visual/font_manager.cpp
   src/visual/image_shader.cpp
   src/visual/mesh_shader.cpp

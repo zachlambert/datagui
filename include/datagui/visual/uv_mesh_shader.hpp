@@ -1,6 +1,5 @@
 #pragma once
 
-#include "datagui/color.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
 #include <vector>
