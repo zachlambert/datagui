@@ -211,6 +211,7 @@ void Plotter::queue_commands() {
   Box2 plot_area = Box2(
       Vec2(left_padding, bottom_padding),
       size - Vec2(right_padding, top_padding));
+  prev_plot_area = plot_area;
 
   if (plot_items.empty() && heatmap_items.empty()) {
     bounds = Box2(Vec2(), Vec2(1, 1));
@@ -419,7 +420,7 @@ void Plotter::queue_commands() {
       mask);
 
   Vec2 subview_lower = bounds.lower + subview.lower * bounds.size();
-  Vec2 subview_upper = bounds.upper + subview.upper * bounds.size();
+  Vec2 subview_upper = bounds.lower + subview.upper * bounds.size();
 
   auto [xticks_power, xticks] = get_ticks(subview_lower.x, subview_upper.x);
   auto [yticks_power, yticks] = get_ticks(subview_lower.y, subview_upper.y);
@@ -570,9 +571,8 @@ void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
     return;
   }
 
-  Vec2 delta = (mouse_down_pos - event.position) / size;
-  delta = maximum(delta, -subview.lower);
-  delta = minimum(delta, Vec2::ones() - subview.upper);
+  Vec2 delta = mouse_down_subview.size() * (mouse_down_pos - event.position) /
+               prev_plot_area.size();
   subview =
       Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
 
@@ -590,10 +590,6 @@ bool Plotter::scroll_event(const Vec2& element_size, const ScrollEvent& event) {
   }
   Vec2 centre = subview.center();
   Vec2 size = subview.size() * size_ratio;
-  size.x = std::min(size.x, 2 * centre.x);
-  size.x = std::min(size.x, 2 * (1.f - centre.x));
-  size.y = std::min(size.y, 2 * centre.y);
-  size.y = std::min(size.y, 2 * (1.f - centre.y));
   subview = Box2(centre - size / 2, centre + size / 2);
 
   redraw();

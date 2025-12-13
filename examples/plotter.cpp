@@ -34,7 +34,6 @@ int main() {
         gui.end();
       }
       if (gui.vsplit(0.5)) {
-#if 1
         if (auto plotter = gui.viewport<datagui::Plotter>(400, 400)) {
           gui.retrigger();
 
@@ -70,15 +69,9 @@ int main() {
           plotter->plot(f).label("f").no_line().marker_cross();
           gui.end();
         }
-#else
-        gui.text_box("Placeholder");
-#endif
         if (auto plotter = gui.viewport<datagui::Plotter>(400, 400)) {
           auto f = [](const Vec2& pos) {
-            if (pos.x > 0 && pos.y > 0) {
-              return 1.f;
-            }
-            return 0.f;
+            return std::exp(-pos.x) * std::sin(2 * M_PIf * pos.y);
           };
           plotter->heatmap(Vec2(-1, -1), Vec2(1, 1), f, 100, 100);
           gui.end();
