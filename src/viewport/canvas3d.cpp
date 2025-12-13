@@ -129,13 +129,48 @@ void Canvas3d::grid(std::size_t size, float width) {
   }
 }
 
+void Canvas3d::mesh(
+    const Mesh& mesh,
+    const Vec3& position,
+    const Rot3& orientation,
+    const Color& color) {
+  mesh_shader.queue_mesh(mesh, position, orientation, color);
+}
+
+void Canvas3d::uv_mesh(
+    const UvMesh& uv_mesh,
+    const Vec3& position,
+    const Rot3& orientation,
+    float opacity) {
+  uv_mesh_shader.queue_mesh(uv_mesh, position, orientation, opacity);
+}
+
+void Canvas3d::point_cloud(
+    const PointCloud& point_cloud,
+    const Vec3& position,
+    const Rot3& orientation,
+    float point_size) {
+  point_cloud_shader
+      .queue_point_cloud(point_cloud, position, orientation, point_size);
+}
+
 void Canvas3d::begin() {
   shape_shader.clear();
+  mesh_shader.clear();
+  uv_mesh_shader.clear();
+  point_cloud_shader.clear();
 }
 
 void Canvas3d::end() {
+  redraw();
+}
+
+void Canvas3d::redraw() {
   bind_framebuffer();
   shape_shader.draw(framebuffer_size(), camera);
+  mesh_shader.draw(framebuffer_size(), camera);
+  uv_mesh_shader.draw(framebuffer_size(), camera);
+  point_cloud_shader.draw(framebuffer_size(), camera);
   unbind_framebuffer();
 }
 
@@ -143,6 +178,9 @@ void Canvas3d::impl_init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
   shape_shader.init();
+  mesh_shader.init();
+  uv_mesh_shader.init();
+  point_cloud_shader.init();
 }
 
 void Canvas3d::mouse_event(const Vec2& size, const MouseEvent& event) {
@@ -184,9 +222,7 @@ void Canvas3d::mouse_event(const Vec2& size, const MouseEvent& event) {
     camera.position = click_point - direction_world * click_distance_z;
   }
 
-  bind_framebuffer();
-  shape_shader.draw(framebuffer_size(), camera);
-  unbind_framebuffer();
+  redraw();
 }
 
 bool Canvas3d::scroll_event(const Vec2& size, const ScrollEvent& event) {
@@ -201,9 +237,7 @@ bool Canvas3d::scroll_event(const Vec2& size, const ScrollEvent& event) {
   float new_distance = std::exp(-event.amount / 1000) * distance;
   camera.position += direction_world * (new_distance - distance);
 
-  bind_framebuffer();
-  shape_shader.draw(framebuffer_size(), camera);
-  unbind_framebuffer();
+  redraw();
   return true;
 }
 
