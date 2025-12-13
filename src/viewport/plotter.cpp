@@ -1,4 +1,5 @@
 #include "datagui/viewport/plotter.hpp"
+#include "datagui/visual/color_map.hpp"
 #include <iomanip>
 #include <sstream>
 
@@ -66,6 +67,20 @@ PlotHandle Plotter::plot(
   return PlotHandle(item.args);
 }
 
+HeatmapHandle Plotter::heatmap(
+    const Vec2& lower,
+    const Vec2& upper,
+    const std::function<float(const Vec2&)>& function,
+    std::size_t width,
+    std::size_t height) {
+  HeatmapItem& item = heatmap_items.emplace_back();
+  item.bounds = Box2(lower, upper);
+  item.function = function;
+  item.width = width;
+  item.height = height;
+  return HeatmapHandle(item.args);
+}
+
 void Plotter::impl_init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
@@ -73,6 +88,7 @@ void Plotter::impl_init(
   this->fm = fm;
   shape_shader.init();
   text_shader.init(fm);
+  image_shader.init();
 }
 
 void Plotter::begin() {
@@ -183,23 +199,31 @@ void Plotter::render_content() {
       Vec2(left_padding, bottom_padding),
       size - Vec2(right_padding, top_padding));
 
-  if (!plot_items.empty()) {
+  if (plot_items.empty() && heatmap_items.empty()) {
+    bounds = Box2(Vec2(), Vec2(1, 1));
+  } else {
     bounds.lower.x = std::numeric_limits<float>::max();
     bounds.lower.y = std::numeric_limits<float>::max();
     bounds.upper.x = -std::numeric_limits<float>::max();
     bounds.upper.y = -std::numeric_limits<float>::max();
+  }
+  if (!plot_items.empty()) {
     for (const auto& item : plot_items) {
       for (const auto& point : item.points) {
         bounds.lower = minimum(point, bounds.lower);
         bounds.upper = maximum(point, bounds.upper);
       }
     }
-  } else {
-    bounds = Box2(Vec2(), Vec2(1, 1));
+    // To account for line width
+    Vec2 extra_bounds = bounds.size() * 0.02;
+    bounds.lower -= extra_bounds;
+    bounds.upper += extra_bounds;
   }
-  Vec2 extra_bounds = bounds.size() * 0.02;
-  bounds.lower -= extra_bounds;
-  bounds.upper += extra_bounds;
+  if (!heatmap_items.empty()) {
+    for (const auto& item : heatmap_items) {
+      bounds = bounding(item.bounds, bounds);
+    }
+  }
 
   auto to_plot_position = [&](const Vec2& point) {
     Vec2 normalized = ((point - bounds.lower) / bounds.size());
@@ -293,6 +317,77 @@ void Plotter::render_content() {
     if (!item.points.empty()) {
       plot_marker(item.points.back(), item.args);
     }
+  }
+
+  for (const auto& item : heatmap_items) {
+    Vec2 plot_lower = to_plot_position(item.bounds.lower);
+    Vec2 plot_upper = to_plot_position(item.bounds.upper);
+    if (item.image.is_loaded()) {
+      image_shader
+          .queue_image(item.image, plot_lower, 0, plot_upper - plot_lower);
+      continue;
+    }
+
+    auto to_coords = [&](std::size_t i, std::size_t j) {
+      Vec2 normalized =
+          Vec2(float(j) + 0.5, float(i) + 0.5) / Vec2(item.width, item.height);
+      return item.bounds.lower + item.bounds.size() * normalized;
+    };
+    float min_value = item.args.min_value ? *item.args.min_value
+                                          : std::numeric_limits<float>::max();
+    float max_value = item.args.max_value ? *item.args.max_value
+                                          : -std::numeric_limits<float>::max();
+    for (std::size_t i = 0; i < item.height; i++) {
+      for (std::size_t j = 0; j < item.width; j++) {
+        Vec2 coords = to_coords(i, j);
+        float value = item.function(to_coords(i, j));
+        if (!item.args.min_value) {
+          min_value = std::min(min_value, value);
+        }
+        if (!item.args.max_value) {
+          max_value = std::max(max_value, value);
+        }
+      }
+    }
+
+    struct Pixel {
+      std::uint8_t r, g, b, a;
+    };
+    std::vector<Pixel> pixels(item.width * item.height);
+    for (std::size_t i = 0; i < item.height; i++) {
+      for (std::size_t j = 0; j < item.width; j++) {
+        Vec2 coords =
+            item.bounds.lower + item.bounds.size() *
+                                    Vec2(float(j) + 0.5, float(i) + 0.5) /
+                                    Vec2(item.width, item.height);
+        auto& pixel = pixels[i * item.width + j];
+        float value = item.function(coords);
+        float s = (value - min_value) / (max_value - min_value);
+        s = std::clamp(s, 0.f, 1.f);
+
+        switch (item.args.type) {
+        case HeatmapType::Viridis: {
+          Vec3 color = color_map_viridis(s);
+          pixel.r = color.x * 255;
+          pixel.g = color.y * 255;
+          pixel.b = color.z * 255;
+          break;
+        }
+        case HeatmapType::Linear: {
+          Vec3 color =
+              (1 - s) * item.args.linear_min + s * item.args.linear_max;
+          pixel.r = color.x * 255;
+          pixel.g = color.y * 255;
+          pixel.b = color.z * 255;
+          break;
+        }
+        }
+        pixel.a = 255;
+      }
+    }
+    item.image.load(item.width, item.height, pixels.data());
+    image_shader
+        .queue_image(item.image, plot_lower, 0, plot_upper - plot_lower);
   }
 
   shape_shader.queue_line(
@@ -444,6 +539,7 @@ void Plotter::render_content() {
   bind_framebuffer();
   shape_shader.draw(framebuffer_size());
   text_shader.draw(framebuffer_size());
+  image_shader.draw(framebuffer_size());
   unbind_framebuffer();
 }
 

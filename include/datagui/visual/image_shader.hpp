@@ -16,6 +16,9 @@ public:
   Image& operator=(Image&&) = delete;
 
   void load(std::size_t width, std::size_t height, void* pixels);
+  bool is_loaded() const {
+    return texture_ != 0;
+  }
 
 private:
   unsigned int texture() const {
