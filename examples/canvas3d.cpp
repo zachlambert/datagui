@@ -34,6 +34,13 @@ int main() {
 
         canvas->sphere(Vec3(-3, 0, 1), 1, Color::Hsl(300, 1, 0.5));
 
+        canvas->cone(
+            Vec3(-3, -3, 0),
+            Vec3(0, 0, 1),
+            1,
+            2,
+            Color::Hsl(200, 1, 0.5));
+
         gui.end();
       }
       gui.end();

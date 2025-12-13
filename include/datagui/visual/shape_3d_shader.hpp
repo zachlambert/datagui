@@ -26,6 +26,13 @@ public:
 
   void queue_sphere(const Vec3& position, float radius, const Color& color);
 
+  void queue_cone(
+      const Vec3& base_position,
+      const Vec3& direction,
+      float radius,
+      float length,
+      const Color& color);
+
   void draw(const Vec2& viewport_size, const Camera3d& camera);
   void clear();
 
@@ -34,8 +41,9 @@ private:
     Box,
     Cylinder,
     Sphere,
+    Cone,
   };
-  static constexpr std::size_t ShapeTypeCount = 3;
+  static constexpr std::size_t ShapeTypeCount = 4;
 
   struct Shape {
     std::size_t indices_begin;

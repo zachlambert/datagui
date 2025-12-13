@@ -39,6 +39,7 @@ layout(location = 4) in vec4 transform_col3;
 layout(location = 5) in vec4 transform_col4;
 layout(location = 6) in vec4 color;
 
+out vec3 fs_normal_cs;
 out vec3 fs_normal_ws;
 out vec4 fs_color;
 flat out int fs_instance_id;
@@ -51,6 +52,7 @@ void main(){
   mat4 VM = V * M;
   mat4 PVM = P * VM;
   gl_Position = PVM * vec4(position, 1);
+  fs_normal_cs = normalize((VM * vec4(normal, 0)).xyz);
   fs_normal_ws = normalize((M * vec4(normal, 0)).xyz);
   fs_color = color;
   fs_instance_id = gl_InstanceID;
@@ -62,6 +64,7 @@ const static std::string shape_3d_fs = R"(
 
 in vec3 fs_position_cs;
 in vec4 fs_position_ns;
+in vec3 fs_normal_cs;
 in vec3 fs_normal_ws;
 in vec4 fs_color;
 flat in int fs_instance_id;
@@ -76,9 +79,12 @@ void main(){
 		discard;
 	}
 
-  float ambient_light = 0.5;
-  float direct_light = clamp(dot(fs_normal_ws, vec3(0, 0, 1)), 0, 1);
-  color = fs_color * (ambient_light + (1 - ambient_light) * direct_light);
+  float Ka = 0.2;
+  float Kc = 0.5;
+  float Kw = 0.3;
+  float camera_light = clamp(dot(fs_normal_cs, vec3(0, 0, 1)), 0, 1);
+  float world_light = clamp(dot(fs_normal_ws, vec3(0, 0, 1)), 0, 1);
+  color = fs_color * min(Ka + Kc * camera_light + Kw * world_light, 1);
 }
 )";
 
@@ -273,6 +279,60 @@ static void create_sphere(
   }
 }
 
+static void create_cone(
+    std::vector<Vertex>& vertices,
+    std::vector<unsigned int>& indices) {
+
+  float resolution = 0.1;
+  const std::size_t N =
+      std::max((size_t)std::ceil(2 * M_PIf / resolution), 2lu);
+
+  Vertex vertex;
+
+  // Base face
+
+  std::size_t start = vertices.size();
+  vertex.position = Vec3();
+  vertex.normal = Vec3(-1, 0, 0);
+  vertices.push_back(vertex);
+  for (std::size_t i = 0; i < N; i++) {
+    float theta = 2 * M_PIf * i / N;
+    vertex.position = Vec3(0, std::cos(-theta), std::sin(-theta));
+    vertices.push_back(vertex);
+  }
+  for (size_t i = 0; i < N; i++) {
+    indices.push_back(start);
+    indices.push_back(start + 1 + i);
+    indices.push_back(start + 1 + (i + 1) % N);
+  }
+
+  // Curved surface
+
+  start = vertices.size();
+  for (std::size_t i = 0; i < N; i++) {
+    float theta = 2 * M_PIf * i / N;
+    float theta_plus_half = 2 * M_PI * (i + 0.5f) / N;
+    vertex.position = Vec3(0, std::cos(theta), std::sin(theta));
+    vertex.normal = Vec3(
+        std::cos(M_PIf / 4),
+        std::cos(theta) * std::sin(M_PIf / 4),
+        std::sin(theta) * std::sin(M_PIf / 4));
+
+    vertices.push_back(vertex);
+    vertex.position = Vec3(1, 0, 0);
+    vertex.normal = Vec3(
+        std::cos(M_PIf / 4),
+        std::cos(theta_plus_half) * std::sin(M_PIf / 4),
+        std::sin(theta_plus_half) * std::sin(M_PIf / 4));
+    vertices.push_back(vertex);
+  }
+  for (std::size_t i = 0; i < (2 * N); i += 2) {
+    indices.push_back(start + i);
+    indices.push_back(start + (i + 2) % (2 * N));
+    indices.push_back(start + i + 1);
+  }
+}
+
 void Shape3dShader::init() {
   // =============================================================
   // Initialise shader
@@ -373,6 +433,12 @@ void Shape3dShader::init() {
     create_sphere(vertices, indices);
     shape.indices_end = indices.size();
   }
+  {
+    auto& shape = shapes[(std::size_t)ShapeType::Cone];
+    shape.indices_begin = indices.size();
+    create_cone(vertices, indices);
+    shape.indices_end = indices.size();
+  }
 
   glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
   glBufferData(
@@ -421,6 +487,20 @@ void Shape3dShader::queue_sphere(
     const Color& color) {
   auto& element = elements[(std::size_t)ShapeType::Sphere].emplace_back();
   element.transform = make_transform(position, Rot3(), Vec3::uniform(radius));
+  element.color = color;
+}
+
+void Shape3dShader::queue_cone(
+    const Vec3& base_position,
+    const Vec3& direction,
+    float radius,
+    float length,
+    const Color& color) {
+  auto& element = elements[(std::size_t)ShapeType::Cone].emplace_back();
+  element.transform = make_transform(
+      base_position,
+      Rot3::line_rot(direction),
+      Vec3(length, radius, radius));
   element.color = color;
 }
 

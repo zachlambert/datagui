@@ -33,6 +33,15 @@ void Canvas3d::sphere(const Vec3& position, float radius, const Color& color) {
   shape_shader.queue_sphere(position, radius, color);
 }
 
+void Canvas3d::cone(
+    const Vec3& base_position,
+    const Vec3& direction,
+    float radius,
+    float length,
+    const Color& color) {
+  shape_shader.queue_cone(base_position, direction, radius, length, color);
+}
+
 void Canvas3d::grid(std::size_t size, float width) {
   shape_shader.queue_box(
       Vec3(0, 0, -0.05),

@@ -24,6 +24,13 @@ public:
 
   void sphere(const Vec3& position, float radius, const Color& color);
 
+  void cone(
+      const Vec3& base_position,
+      const Vec3& direction,
+      float radius,
+      float length,
+      const Color& color);
+
   void grid(std::size_t size, float width);
 
 private:
