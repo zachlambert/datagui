@@ -303,27 +303,6 @@ void Shape2dShader::queue_rect(
   elements.push_back(element);
 }
 
-void Shape2dShader::queue_capsule(
-    const Vec2& start,
-    const Vec2& end,
-    float radius,
-    const Color& color,
-    float border_width,
-    Color border_color,
-    const Box2& mask) {
-  Element element;
-  element.position = (start + end) / 2;
-  element.rotation = Rot2::line_rot(start, end);
-  element.size = Vec2((start - end).length() + 2 * radius, 2 * radius);
-  element.radius = radius;
-  element.radius_scale = Vec2::ones();
-  element.color = color;
-  element.border_width = border_width;
-  element.border_color = border_color;
-  element.mask = mask;
-  elements.push_back(element);
-}
-
 void Shape2dShader::queue_circle(
     const Vec2& position,
     float radius,
@@ -387,6 +366,27 @@ void Shape2dShader::queue_line(
   element.radius_scale = Vec2::ones();
   element.color = color;
   element.border_width = 0;
+  element.mask = mask;
+  elements.push_back(element);
+}
+
+void Shape2dShader::queue_capsule(
+    const Vec2& start,
+    const Vec2& end,
+    float radius,
+    const Color& color,
+    float border_width,
+    Color border_color,
+    const Box2& mask) {
+  Element element;
+  element.position = (start + end) / 2;
+  element.rotation = Rot2::line_rot(start, end);
+  element.size = Vec2((start - end).length() + 2 * radius, 2 * radius);
+  element.radius = radius;
+  element.radius_scale = Vec2::ones();
+  element.color = color;
+  element.border_width = border_width;
+  element.border_color = border_color;
   element.mask = mask;
   elements.push_back(element);
 }

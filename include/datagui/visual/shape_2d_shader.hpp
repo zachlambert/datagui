@@ -28,15 +28,6 @@ public:
       Color border_color,
       const Box2& mask);
 
-  void queue_capsule(
-      const Vec2& start,
-      const Vec2& end,
-      float radius,
-      const Color& color,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
-
   void queue_circle(
       const Vec2& position,
       float radius,
@@ -62,6 +53,15 @@ public:
       const Color& color,
       const Box2& mask,
       bool rounded_ends = true);
+
+  void queue_capsule(
+      const Vec2& start,
+      const Vec2& end,
+      float radius,
+      const Color& color,
+      float border_width,
+      Color border_color,
+      const Box2& mask);
 
   void draw(const Vec2& viewport_size);
   void clear();
