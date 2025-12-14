@@ -63,7 +63,7 @@ public:
       Color border_color,
       const Box2& mask);
 
-  void draw(const Vec2& viewport_size);
+  void draw(const Box2& viewport, const Camera2d& camera);
   void clear();
 
 private:
@@ -84,7 +84,7 @@ private:
   unsigned int program_id;
 
   // Uniforms
-  unsigned int uniform_viewport_size;
+  unsigned int uniform_PV;
 
   // Array/buffer objects
   unsigned int VAO;

@@ -682,9 +682,15 @@ void Shape3dShader::queue_plane(
   element.color = color;
 }
 
-void Shape3dShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
+void Shape3dShader::draw(const Box2& viewport, const Camera3d& camera) {
+  glViewport(
+      viewport.lower.x,
+      viewport.lower.y,
+      viewport.upper.x,
+      viewport.upper.y);
+
   Mat4 V = camera.view_mat();
-  Mat4 P = camera.projection_mat(viewport_size.x / viewport_size.y);
+  Mat4 P = camera.projection_mat(viewport.size());
 
   glDisable(GL_BLEND);
   glEnable(GL_CULL_FACE);

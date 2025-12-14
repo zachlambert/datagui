@@ -191,9 +191,18 @@ void MeshShader::queue_mesh(
   command.color = color;
 }
 
-void MeshShader::draw(const Vec2& viewport_size, const Camera3d& camera) {
+void MeshShader::draw(const Box2& viewport, const Camera3d& camera) {
+  if (commands.empty()) {
+    return;
+  }
+  glViewport(
+      viewport.lower.x,
+      viewport.lower.y,
+      viewport.upper.x,
+      viewport.upper.y);
+
   Mat4 V = camera.view_mat();
-  Mat4 P = camera.projection_mat(viewport_size.x / viewport_size.y);
+  Mat4 P = camera.projection_mat(viewport.size());
 
   glDisable(GL_BLEND);
   glEnable(GL_CULL_FACE);

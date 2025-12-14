@@ -10,19 +10,14 @@ const static std::string vertex_shader = R"(
 #version 330 core
 
 // Input vertex data: position and normal
-layout(location = 0) in vec2 vertex_pos;
+layout(location = 0) in vec2 position;
 layout(location = 1) in vec2 uv;
 
-uniform vec2 viewport_size;
+uniform vec2 PV;
 out vec2 fs_uv;
 
 void main(){
-  gl_Position = vec4(
-    (vertex_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
-    (vertex_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
-    0,
-    1
-  );
+  gl_Position = vec4((PV * position).xy, 0, 1);
   fs_uv = uv;
 }
 )";
@@ -48,7 +43,7 @@ void TextShader::init(const std::shared_ptr<FontManager>& fm) {
   // Configure shader program and buffers
 
   program_id = create_program(vertex_shader, fragment_shader);
-  uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
+  uniform_PV = glGetUniformLocation(program_id, "PV");
   uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
   glGenVertexArrays(1, &VAO);
@@ -217,19 +212,28 @@ void TextShader::queue_text(
   }
 }
 
-void TextShader::draw(const Vec2& viewport_size) {
+void TextShader::draw(const Box2& viewport, const Camera2d& camera) {
   if (char_lists.empty()) {
     return;
   }
+  glViewport(
+      viewport.lower.x,
+      viewport.lower.y,
+      viewport.upper.x,
+      viewport.upper.y);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
 
+  Mat3 V = camera.view_mat();
+  Mat3 P = camera.projection_mat(viewport.size());
+  Mat3 PV = P * V;
+
   glUseProgram(program_id);
   glBindVertexArray(VAO);
-  glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
+  glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
 
   for (const auto& char_list : char_lists) {
     if (char_list.vertices.empty()) {

@@ -45,7 +45,7 @@ public:
       Color text_color,
       Length width);
 
-  void draw(const Vec2& viewport_size);
+  void draw(const Box2& viewport, const Camera2d& camera);
   void clear();
 
 private:
@@ -66,8 +66,7 @@ private:
   unsigned int program_id;
 
   // Uniforms
-  unsigned int uniform_y_dir;
-  unsigned int uniform_viewport_size;
+  unsigned int uniform_PV;
   unsigned int uniform_text_color;
 
   // Array/buffer objects

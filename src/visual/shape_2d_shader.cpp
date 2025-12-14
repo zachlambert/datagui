@@ -391,15 +391,24 @@ void Shape2dShader::queue_capsule(
   elements.push_back(element);
 }
 
-void Shape2dShader::draw(const Vec2& viewport_size) {
+void Shape2dShader::draw(const Box2& viewport, const Camera2d& camera) {
   if (elements.empty()) {
     return;
   }
+  glViewport(
+      viewport.lower.x,
+      viewport.lower.y,
+      viewport.upper.x,
+      viewport.upper.y);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
+
+  Mat3 V = camera.view_mat();
+  Mat3 P = camera.projection_mat(viewport.size());
+  Mat3 PV = P * V;
 
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
   glBufferData(
@@ -410,7 +419,7 @@ void Shape2dShader::draw(const Vec2& viewport_size) {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUseProgram(program_id);
-  glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
+  glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
   glBindVertexArray(VAO);
   glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertices.size(), elements.size());
 }

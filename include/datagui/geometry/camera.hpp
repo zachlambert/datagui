@@ -5,6 +5,15 @@
 
 namespace datagui {
 
+struct Camera2d {
+  Vec2 position;
+  float angle;
+  float width;
+
+  Mat3 view_mat() const;
+  Mat3 projection_mat(const Vec2& viewport_size) const;
+};
+
 struct Camera3d {
   Vec3 position;
   Vec3 direction;
@@ -14,7 +23,7 @@ struct Camera3d {
 
   Rot3 rotation() const;
   Mat4 view_mat() const;
-  Mat4 projection_mat(float aspect_ratio) const;
+  Mat4 projection_mat(const Vec2& viewport_size) const;
 };
 
 } // namespace datagui

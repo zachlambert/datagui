@@ -2,6 +2,32 @@
 
 namespace datagui {
 
+Mat3 Camera2d::view_mat() const {
+  Rot2 R_T = Rot2(angle).mat().transpose();
+  Vec2 minus_R_T_pos = R_T * (-position);
+
+  Mat3 view;
+  view(2, 2) = 1;
+  for (std::size_t i = 0; i < 2; i++) {
+    for (std::size_t j = 0; j < 2; j++) {
+      view(i, j) = R_T.mat()(i, j);
+    }
+  }
+  for (std::size_t i = 0; i < 2; i++) {
+    view(i, 2) = minus_R_T_pos(i);
+  }
+  return view;
+}
+
+Mat3 Camera2d::projection_mat(const Vec2& viewport_size) const {
+  float height = width * viewport_size.y / viewport_size.x;
+  return Mat3{
+      {1 / (0.5f * width), 0, 0},
+      {0, 1 / (0.5f * height), 0},
+      {0, 0, 1},
+  };
+}
+
 Rot3 Camera3d::rotation() const {
   const Vec3& n3 = -direction;
   Vec3 n1 = Vec3(0, 0, 1).cross(n3);
@@ -28,9 +54,10 @@ Mat4 Camera3d::view_mat() const {
   return view;
 }
 
-Mat4 Camera3d::projection_mat(float aspect_ratio) const {
+Mat4 Camera3d::projection_mat(const Vec2& viewport_size) const {
   Mat4 projection;
 
+  float aspect_ratio = viewport_size.x / viewport_size.y;
   projection(0, 0) = 1.f / std::tan(0.5f * fov_degrees * M_PI / 180.f);
   projection(1, 1) = aspect_ratio * projection(0, 0);
   projection(2, 2) =

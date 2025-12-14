@@ -43,16 +43,11 @@ const static std::string vertex_shader = R"(
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 uv;
 
-uniform vec2 viewport_size;
+uniform mat3 PV;
 out vec2 fs_uv;
 
 void main(){
-  gl_Position = vec4(
-    (pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
-    (pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
-    0,
-    1
-  );
+  gl_Position = vec4((PV * vec3(pos, 1)).xy, 0, 1);
   fs_uv = uv;
 }
 )";
@@ -70,8 +65,7 @@ void main(){
 }
 )";
 
-ImageShader::ImageShader() :
-    program_id(0), uniform_viewport_size(0), VAO(0), VBO(0) {}
+ImageShader::ImageShader() : program_id(0), uniform_PV(0), VAO(0), VBO(0) {}
 
 ImageShader::~ImageShader() {
   if (program_id > 0) {
@@ -87,7 +81,7 @@ ImageShader::~ImageShader() {
 
 ImageShader::ImageShader(ImageShader&& other) {
   program_id = other.program_id;
-  uniform_viewport_size = other.uniform_viewport_size;
+  uniform_PV = other.uniform_PV;
   VAO = other.VAO;
   VBO = other.VBO;
 
@@ -98,7 +92,7 @@ ImageShader::ImageShader(ImageShader&& other) {
 
 void ImageShader::init() {
   program_id = create_program(vertex_shader, fragment_shader);
-  uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
+  uniform_PV = glGetUniformLocation(program_id, "PV");
 
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
@@ -196,16 +190,29 @@ void ImageShader::queue_texture(const Box2& box, int texture) {
   command.texture = texture;
 }
 
-void ImageShader::draw(const Vec2& viewport_size) {
+void ImageShader::draw(const Box2& viewport, const Camera2d& camera) {
+  if (commands.empty()) {
+    return;
+  }
+  glViewport(
+      viewport.lower.x,
+      viewport.lower.y,
+      viewport.upper.x,
+      viewport.upper.y);
+
+  Mat3 V = camera.view_mat();
+  Mat3 P = camera.projection_mat(viewport.size());
+  Mat3 PV = P * V;
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
 
   glUseProgram(program_id);
-  glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
 
   for (const auto& command : commands) {
     glBindTexture(GL_TEXTURE_2D, command.texture);

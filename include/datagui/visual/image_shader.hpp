@@ -1,6 +1,7 @@
 #pragma once
 
 #include "datagui/geometry/box.hpp"
+#include "datagui/geometry/camera.hpp"
 #include <vector>
 
 namespace datagui {
@@ -60,7 +61,7 @@ public:
   // Y up
   void queue_texture(const Box2& box, int texture);
 
-  void draw(const Vec2& viewport_size);
+  void draw(const Box2& viewport, const Camera2d& camera);
   void clear();
 
 private:
@@ -75,7 +76,7 @@ private:
   std::vector<Command> commands;
 
   unsigned int program_id;
-  unsigned int uniform_viewport_size;
+  unsigned int uniform_PV;
   unsigned int VAO;
   unsigned int VBO;
 };
