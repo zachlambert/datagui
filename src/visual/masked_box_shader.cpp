@@ -10,9 +10,9 @@ const static std::string vertex_shader = R"(
 #version 330 core
 
 layout(location = 0) in vec2 vertex_pos;
-layout(location = 1) in vec3 box_lower;
-layout(location = 2) in vec3 box_upper;
-layout(location = 3) in vec3 mask_lower;
+layout(location = 1) in vec2 box_lower;
+layout(location = 2) in vec2 box_upper;
+layout(location = 3) in vec2 mask_lower;
 layout(location = 4) in vec2 mask_upper;
 layout(location = 5) in vec4 color;
 layout(location = 6) in vec4 border_color;
@@ -32,14 +32,12 @@ flat out vec4 fs_border_color;
 flat out float fs_border_width;
 flat out float fs_radius;
 
-void main(){
-  mat3 M = mat3(M_col1, M_col2, M_col3);
-
-  fs_position = box_lower + vertex_pos * (box_upper - box_lower),
+void main() {
+  fs_position = box_lower + vertex_pos * (box_upper - box_lower);
   vec2 viewport_center = (viewport_lower + viewport_upper) / 2;
   vec2 viewport_half_size = (viewport_upper - viewport_lower) / 2;
   gl_Position = vec4(
-    (position - viewport_center) / viewport_half_size
+    (fs_position - viewport_center) / viewport_half_size,
     0,
     1
   );
@@ -52,6 +50,7 @@ void main(){
   fs_border_color = border_color;
   fs_border_width = border_width;
   fs_radius = radius;
+}
 )";
 
 const static std::string fragment_shader = R"(
@@ -86,10 +85,10 @@ void main(){
 
   // Signed distance, +ve = outside, -ve = inside
   float s;
-  if (x <= radius && y <= radius) {
-    s = radius - hypot(radius - x, radius - y);
+  if (x <= fs_radius && y <= fs_radius) {
+    s = length(vec2(fs_radius - x, fs_radius - y)) - fs_radius;
   } else {
-    s = -max(x, y);
+    s = -min(x, y);
   }
   if (s > 0) {
     color = vec4(0, 0, 0, 0);
@@ -163,7 +162,7 @@ void MaskedBoxShader::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)(offsetof(Element, box) + offsetof(Box2, lower)));
+      (void*)(offsetof(Element, box) + offsetof(Box2, upper)));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -175,7 +174,7 @@ void MaskedBoxShader::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)(offsetof(Element, box) + offsetof(Box2, lower)));
+      (void*)(offsetof(Element, mask) + offsetof(Box2, lower)));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -187,7 +186,7 @@ void MaskedBoxShader::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)(offsetof(Element, box) + offsetof(Box2, lower)));
+      (void*)(offsetof(Element, mask) + offsetof(Box2, upper)));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
