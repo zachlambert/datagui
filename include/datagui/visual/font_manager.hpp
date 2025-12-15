@@ -85,7 +85,7 @@ public:
       const std::string& text,
       Font font,
       int font_size,
-      Length width);
+      Length width = LengthWrap());
   float text_height(Font font, int font_size);
 
 private:

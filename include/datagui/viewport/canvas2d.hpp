@@ -8,10 +8,11 @@ namespace datagui {
 
 class Canvas2d : public Viewport {
 public:
-  void box(
-      const Box2& box,
+  void rect(
+      const Vec2& position,
+      float angle,
+      const Vec2& size,
       const Color& color,
-      float radius = 0,
       float border_width = 0,
       const Color& border_color = Color::Black());
 
@@ -25,8 +26,7 @@ public:
   void ellipse(
       const Vec2& position,
       float angle,
-      float x_radius,
-      float y_radius,
+      const Vec2& radii,
       const Color& color,
       float border_width = 0,
       const Color& border_color = Color::Black());
@@ -61,6 +61,7 @@ private:
 
   void mouse_event(const Vec2& size, const MouseEvent& event) override;
 
+  Camera2d camera;
   Shape2dShader shape_shader;
   TextShader text_shader;
 };

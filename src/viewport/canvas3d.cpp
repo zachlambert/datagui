@@ -167,10 +167,10 @@ void Canvas3d::end() {
 
 void Canvas3d::redraw() {
   bind_framebuffer();
-  shape_shader.draw(framebuffer_size(), camera);
-  mesh_shader.draw(framebuffer_size(), camera);
-  uv_mesh_shader.draw(framebuffer_size(), camera);
-  point_cloud_shader.draw(framebuffer_size(), camera);
+  shape_shader.draw(viewport(), camera);
+  mesh_shader.draw(viewport(), camera);
+  uv_mesh_shader.draw(viewport(), camera);
+  point_cloud_shader.draw(viewport(), camera);
   unbind_framebuffer();
 }
 

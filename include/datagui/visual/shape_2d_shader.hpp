@@ -10,48 +10,34 @@ class Shape2dShader {
 public:
   void init();
 
-  void queue_box(
-      const Box2& box,
-      const Color& color,
-      float radius,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
-
   void queue_rect(
       const Vec2& position,
       float angle,
       const Vec2& size,
       const Color& color,
-      float radius,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
+      float border_width = 0,
+      Color border_color = Color());
 
   void queue_circle(
       const Vec2& position,
       float radius,
       const Color& color,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
+      float border_width = 0,
+      Color border_color = Color());
 
   void queue_ellipse(
       const Vec2& position,
       float angle,
-      float x_radius,
-      float y_radius,
+      const Vec2& radii,
       const Color& color,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
+      float border_width = 0,
+      Color border_color = Color());
 
   void queue_line(
       const Vec2& a,
       const Vec2& b,
       float width,
       const Color& color,
-      const Box2& mask,
       bool rounded_ends = true);
 
   void queue_capsule(
@@ -59,24 +45,19 @@ public:
       const Vec2& end,
       float radius,
       const Color& color,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
+      float border_width = 0,
+      Color border_color = Color());
 
   void draw(const Box2& viewport, const Camera2d& camera);
   void clear();
 
 private:
   struct Element {
-    Vec2 position; // Centre
-    Rot2 rotation;
-    Vec2 size;
-    float radius;
-    Vec2 radius_scale;
+    Mat3 M;
+    Vec2 radius;
+    Vec2 border_width;
     Color color;
-    float border_width;
     Color border_color;
-    Box2 mask;
   };
   std::vector<Element> elements;
 
@@ -90,6 +71,7 @@ private:
   unsigned int VAO;
   unsigned int static_VBO;
   unsigned int instance_VBO;
+  std::size_t static_vertex_count = 0;
 };
 
 } // namespace datagui

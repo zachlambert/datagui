@@ -44,7 +44,7 @@ int main() {
     window.render_begin();
 
     point_cloud_shader.queue_point_cloud(point_cloud, Vec3(), Rot3(), 0.08);
-    point_cloud_shader.draw(window.size(), camera);
+    point_cloud_shader.draw(Box2(Vec2(), window.size()), camera);
     point_cloud_shader.clear();
 
     window.render_end();

@@ -14,14 +14,13 @@ int main() {
       auto color = gui.variable<Color>(Color::Red());
       auto border_size = gui.variable<float>(5);
       auto width = gui.variable<float>(100);
-      auto radius = gui.variable<float>(10);
 
       if (auto canvas = gui.viewport<datagui::Canvas2d>(200, 200)) {
         Vec2 center = Vec2(100, 100);
         Vec2 lower = center - Vec2::uniform(*width / 2);
         Vec2 upper = center + Vec2::uniform(*width / 2);
 
-        canvas->box(Box2(lower, upper), *color, *radius, *border_size);
+        canvas->rect(lower, 0, upper - lower, *color, *border_size);
         gui.end();
       }
 
@@ -39,10 +38,6 @@ int main() {
         gui.text_box("Border size");
         gui.args().always();
         gui.slider<float>(0, *width / 2, border_size);
-
-        gui.text_box("Radius");
-        gui.args().always();
-        gui.slider<float>(0, *width / 2, radius);
 
         gui.end();
       }

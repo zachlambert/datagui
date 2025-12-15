@@ -7,7 +7,7 @@
 namespace datagui {
 
 void GuiRenderer::init(std::shared_ptr<FontManager> fm) {
-  shape_shader.init();
+  box_shader.init();
   text_shader.init(fm);
   image_shader.init();
   this->fm = fm;
@@ -17,15 +17,16 @@ void GuiRenderer::queue_box(
     const Box2& box,
     const Color& bg_color,
     float border_width,
-    Color border_color) {
+    Color border_color,
+    float radius) {
   assert(!masks.empty());
-  shape_shader.queue_box(
+  box_shader.queue_box(
+      flip_box(masks.top()),
       flip_box(box),
       bg_color,
-      0,
       border_width,
       border_color,
-      masks.top());
+      radius);
 }
 
 void GuiRenderer::queue_text(
@@ -72,10 +73,10 @@ void GuiRenderer::render() {
   camera.position = viewport.center();
   camera.angle = 0;
   camera.width = viewport.size().x;
-  shape_shader.draw(viewport, camera);
+  box_shader.draw(viewport);
   text_shader.draw(viewport, camera);
   image_shader.draw(viewport, camera);
-  shape_shader.clear();
+  box_shader.clear();
   text_shader.clear();
   image_shader.clear();
 }

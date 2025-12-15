@@ -43,7 +43,7 @@ public:
       Font font,
       int font_size,
       Color text_color,
-      Length width);
+      Length width = LengthWrap());
 
   void draw(const Box2& viewport, const Camera2d& camera);
   void clear();

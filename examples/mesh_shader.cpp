@@ -67,7 +67,7 @@ int main() {
     window.render_begin();
 
     mesh_shader.queue_mesh(mesh, Vec3(), Rot3(), Color::Red());
-    mesh_shader.draw(window.size(), camera);
+    mesh_shader.draw(Box2(Vec2(), window.size()), camera);
     mesh_shader.clear();
 
     window.render_end();

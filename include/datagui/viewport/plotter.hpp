@@ -200,9 +200,10 @@ private:
   std::shared_ptr<Theme> theme;
   std::shared_ptr<FontManager> fm;
 
-  Shape2dShader shape_shader;
-  TextShader text_shader;
-  ImageShader image_shader;
+  Shape2dShader fixed_shape_shader;
+  TextShader fixed_text_shader;
+  Shape2dShader plot_shape_shader;
+  ImageShader plot_image_shader;
 };
 
 }; // namespace datagui

@@ -33,6 +33,7 @@ add_library(datagui SHARED
   src/visual/color_map.cpp
   src/visual/font_manager.cpp
   src/visual/image_shader.cpp
+  src/visual/masked_box_shader.cpp
   src/visual/mesh_shader.cpp
   src/visual/point_cloud_shader.cpp
   src/visual/gui_renderer.cpp

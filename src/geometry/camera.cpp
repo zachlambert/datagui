@@ -4,7 +4,7 @@ namespace datagui {
 
 Mat3 Camera2d::view_mat() const {
   Rot2 R_T = Rot2(angle).mat().transpose();
-  Vec2 minus_R_T_pos = R_T * (-position);
+  Vec2 minus_R_T_pos = R_T.mat() * (-position);
 
   Mat3 view;
   view(2, 2) = 1;

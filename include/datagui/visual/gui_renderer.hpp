@@ -3,7 +3,7 @@
 #include "datagui/geometry/camera.hpp"
 #include "datagui/visual/font_manager.hpp"
 #include "datagui/visual/image_shader.hpp"
-#include "datagui/visual/shape_2d_shader.hpp"
+#include "datagui/visual/masked_box_shader.hpp"
 #include "datagui/visual/text_shader.hpp"
 #include <assert.h>
 #include <memory>
@@ -19,7 +19,8 @@ public:
       const Box2& box,
       const Color& bg_color,
       float border_width = 0,
-      Color border_color = Color::Black());
+      Color border_color = Color::Black(),
+      float radius = 0);
 
   void queue_text(
       const Vec2& origin,
@@ -46,7 +47,7 @@ private:
   Box2 viewport;
   Camera2d camera;
 
-  Shape2dShader shape_shader;
+  MaskedBoxShader box_shader;
   TextShader text_shader;
   ImageShader image_shader;
 

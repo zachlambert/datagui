@@ -86,9 +86,10 @@ void Plotter::impl_init(
     const std::shared_ptr<FontManager>& fm) {
   this->theme = theme;
   this->fm = fm;
-  shape_shader.init();
-  text_shader.init(fm);
-  image_shader.init();
+  fixed_shape_shader.init();
+  fixed_text_shader.init(fm);
+  plot_shape_shader.init();
+  plot_image_shader.init();
 }
 
 void Plotter::begin() {
@@ -104,31 +105,44 @@ void Plotter::end() {
 }
 
 void Plotter::redraw() {
+  Camera2d fixed_camera;
+  fixed_camera.position = viewport().center();
+  fixed_camera.angle = 0;
+  fixed_camera.width = viewport().size().x;
+
+  // TODO
+  Camera2d plot_camera;
+  plot_camera.position = viewport().center();
+  plot_camera.angle = 0;
+  plot_camera.width = viewport().size().x;
+
   queue_commands();
   bind_framebuffer();
-  shape_shader.draw(framebuffer_size());
-  text_shader.draw(framebuffer_size());
-  image_shader.draw(framebuffer_size());
+
+  fixed_shape_shader.draw(viewport(), fixed_camera);
+  fixed_text_shader.draw(viewport(), fixed_camera);
+  plot_shape_shader.draw(viewport(), plot_camera);
+  plot_image_shader.draw(viewport(), plot_camera);
+
   unbind_framebuffer();
-  shape_shader.clear();
-  text_shader.clear();
-  image_shader.clear();
+  fixed_shape_shader.clear();
+  fixed_text_shader.clear();
+  plot_shape_shader.clear();
+  plot_image_shader.clear();
 }
 
 void Plotter::queue_commands() {
   Box2 bounds;
   float text_height = fm->text_height(theme->text_font, theme->text_size);
-  Vec2 size = framebuffer_size();
-  Box2 mask(Vec2(), size);
+  Vec2 size = viewport().size();
 
   float header_size = 0;
   float title_width = 0;
   if (!title_.empty()) {
-    Vec2 title_size =
-        fm->text_size(title_, theme->text_font, theme->text_size, LengthWrap());
+    Vec2 title_size = fm->text_size(title_, theme->text_font, theme->text_size);
     title_width = std::min(title_size.x + theme->text_padding, size.x / 2);
     header_size = title_size.y;
-    text_shader.queue_text(
+    fixed_text_shader.queue_text(
         Vec2(args.outer_padding, size.y - args.outer_padding),
         0,
         title_,
@@ -170,17 +184,13 @@ void Plotter::queue_commands() {
       pos.x += j * item_width;
       pos.y -= i * item_height;
 
-      shape_shader.queue_box(
-          Box2(
-              Vec2(pos.x, pos.y - text_height),
-              Vec2(pos.x + text_height, pos.y)),
-          item.args.color,
+      fixed_shape_shader.queue_rect(
+          Vec2(pos.x, pos.y - text_height),
           0,
-          0,
-          Color::Black(),
-          mask);
+          Vec2::uniform(text_height),
+          item.args.color);
 
-      text_shader.queue_text(
+      fixed_text_shader.queue_text(
           pos + Vec2(text_height + theme->text_padding, 0),
           0,
           item.args.label,
@@ -197,7 +207,13 @@ void Plotter::queue_commands() {
     }
   }
 
-  shape_shader.queue_box(mask, Color::Clear(), 0, 2, Color::Gray(0.5), mask);
+  fixed_shape_shader.queue_rect(
+      Vec2(),
+      0,
+      viewport().size(),
+      Color::Clear(),
+      2,
+      Color::Gray(0.5));
 
   float left_padding = args.tick_length + 3 * text_height +
                        2 * args.inner_padding + args.outer_padding;
@@ -250,29 +266,26 @@ void Plotter::queue_commands() {
     Vec2 position = to_plot_position(point);
     switch (args.marker_style) {
     case datagui::PlotMarkerStyle::Circle:
-      shape_shader.queue_circle(
+      plot_shape_shader.queue_circle(
           position,
           args.marker_width / 2,
           args.color,
           0,
-          Color::Black(),
-          plot_area);
+          Color::Black());
       break;
     case datagui::PlotMarkerStyle::Cross: {
       Vec2 delta_up(args.marker_width / 2, args.marker_width / 2);
       Vec2 delta_down(args.marker_width / 2, -args.marker_width / 2);
-      shape_shader.queue_line(
+      plot_shape_shader.queue_line(
           position - delta_up,
           position + delta_up,
           args.marker_width * 0.3,
-          args.color,
-          plot_area);
-      shape_shader.queue_line(
+          args.color);
+      plot_shape_shader.queue_line(
           position - delta_down,
           position + delta_down,
           args.marker_width * 0.3,
-          args.color,
-          plot_area);
+          args.color);
     } break;
     default:
       break;
@@ -287,12 +300,8 @@ void Plotter::queue_commands() {
         Vec2 dir = (position_b - position_a) / ab_length;
         switch (args.line_style) {
         case datagui::PlotLineStyle::Solid:
-          shape_shader.queue_line(
-              position_a,
-              position_b,
-              args.line_width,
-              args.color,
-              plot_area);
+          plot_shape_shader
+              .queue_line(position_a, position_b, args.line_width, args.color);
           break;
         case datagui::PlotLineStyle::Dashed: {
           const float resolution = 20;
@@ -301,12 +310,11 @@ void Plotter::queue_commands() {
             float s2 = s1 + resolution;
             int i = (length + s1) / resolution;
             if (i % 2 == 0) {
-              shape_shader.queue_line(
+              plot_shape_shader.queue_line(
                   position_a + std::max(s1, 0.f) * dir,
                   position_a + std::min(s2, ab_length) * dir,
                   args.line_width,
                   args.color,
-                  plot_area,
                   false);
             }
             s1 = s2;
@@ -337,7 +345,7 @@ void Plotter::queue_commands() {
     Vec2 plot_lower = to_plot_position(item.bounds.lower);
     Vec2 plot_upper = to_plot_position(item.bounds.upper);
     if (item.image.is_loaded()) {
-      image_shader.queue_image(
+      plot_image_shader.queue_image(
           item.image,
           plot_lower,
           plot_upper - plot_lower,
@@ -399,25 +407,23 @@ void Plotter::queue_commands() {
       }
     }
     item.image.load(item.width, item.height, pixels.data());
-    image_shader.queue_image(
+    plot_image_shader.queue_image(
         item.image,
         plot_lower,
         plot_upper - plot_lower,
         plot_area);
   }
 
-  shape_shader.queue_line(
+  fixed_shape_shader.queue_line(
       plot_area.lower,
       plot_area.lower_right(),
       args.line_width,
-      args.tick_color,
-      mask);
-  shape_shader.queue_line(
+      args.tick_color);
+  fixed_shape_shader.queue_line(
       plot_area.lower,
       plot_area.upper_left(),
       args.line_width,
-      args.tick_color,
-      mask);
+      args.tick_color);
 
   Vec2 subview_lower = bounds.lower + subview.lower * bounds.size();
   Vec2 subview_upper = bounds.lower + subview.upper * bounds.size();
@@ -428,71 +434,60 @@ void Plotter::queue_commands() {
   for (const auto& tick : xticks) {
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x * tick.position;
-    shape_shader.queue_line(
+    fixed_shape_shader.queue_line(
         pos,
         pos + Vec2(0, -args.tick_length),
         args.line_width,
-        args.tick_color,
-        mask);
+        args.tick_color);
 
-    Vec2 label_size = fm->text_size(
-        tick.label,
-        theme->text_font,
-        theme->text_size,
-        LengthWrap());
+    Vec2 label_size =
+        fm->text_size(tick.label, theme->text_font, theme->text_size);
     pos.x -= label_size.x / 2;
     pos.y -= args.tick_length + args.inner_padding;
 
-    text_shader.queue_text(
+    fixed_text_shader.queue_text(
         pos,
         0,
         tick.label,
         theme->text_font,
         theme->text_size,
-        theme->text_color,
-        LengthWrap());
+        theme->text_color);
   }
   if (!xticks_power.empty()) {
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x + args.inner_padding;
     pos.y -= args.tick_length + 2 * args.inner_padding + text_height;
 
-    text_shader.queue_text(
+    fixed_text_shader.queue_text(
         pos,
         0,
         xticks_power,
         theme->text_font,
         theme->text_size,
-        theme->text_color,
-        LengthWrap());
+        theme->text_color);
   }
 
   for (const auto& tick : yticks) {
     Vec2 pos = plot_area.lower;
     pos.y += plot_area.size().y * tick.position;
-    shape_shader.queue_line(
+    fixed_shape_shader.queue_line(
         pos,
         pos + Vec2(-args.tick_length, 0),
         args.line_width,
-        args.tick_color,
-        mask);
+        args.tick_color);
 
-    Vec2 label_size = fm->text_size(
-        tick.label,
-        theme->text_font,
-        theme->text_size,
-        LengthWrap());
+    Vec2 label_size =
+        fm->text_size(tick.label, theme->text_font, theme->text_size);
     pos.x -= args.tick_length + label_size.x + args.inner_padding;
     pos.y += label_size.y / 2;
 
-    text_shader.queue_text(
+    fixed_text_shader.queue_text(
         pos,
         0,
         tick.label,
         theme->text_font,
         theme->text_size,
-        theme->text_color,
-        LengthWrap());
+        theme->text_color);
   }
   if (!yticks_power.empty()) {
     Vec2 label_size = fm->text_size(
@@ -505,51 +500,40 @@ void Plotter::queue_commands() {
     pos.y += plot_area.size().y + args.inner_padding + text_height;
     pos.x -= args.tick_length + 2 * args.inner_padding + label_size.x;
 
-    text_shader.queue_text(
+    fixed_text_shader.queue_text(
         pos,
         0,
         xticks_power,
         theme->text_font,
         theme->text_size,
-        theme->text_color,
-        LengthWrap());
+        theme->text_color);
   }
 
   if (!xlabel_.empty()) {
-    Vec2 text_size = fm->text_size(
-        xlabel_,
-        theme->text_font,
-        theme->text_size,
-        LengthWrap());
+    Vec2 text_size = fm->text_size(xlabel_, theme->text_font, theme->text_size);
     Vec2 pos = plot_area.lower;
     pos.x += plot_area.size().x / 2 - text_size.x / 2;
     pos.y -= (args.tick_length + text_height + 2 * args.inner_padding);
-    text_shader.queue_text(
+    fixed_text_shader.queue_text(
         pos,
         0,
         xlabel_,
         theme->text_font,
         theme->text_size,
-        theme->text_color,
-        LengthWrap());
+        theme->text_color);
   }
   if (!ylabel_.empty()) {
-    Vec2 text_size = fm->text_size(
-        ylabel_,
-        theme->text_font,
-        theme->text_size,
-        LengthWrap());
+    Vec2 text_size = fm->text_size(ylabel_, theme->text_font, theme->text_size);
     Vec2 pos = plot_area.lower;
     pos.x -= (args.tick_length + 3 * text_height + 2 * args.inner_padding);
     pos.y += plot_area.size().y / 2 - text_size.x / 2;
-    text_shader.queue_text(
+    fixed_text_shader.queue_text(
         pos,
         M_PI / 2,
         ylabel_,
         theme->text_font,
         theme->text_size,
-        theme->text_color,
-        LengthWrap());
+        theme->text_color);
   }
 }
 
