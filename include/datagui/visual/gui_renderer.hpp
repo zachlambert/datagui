@@ -4,7 +4,7 @@
 #include "datagui/visual/font_manager.hpp"
 #include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_2d_shader.hpp"
-#include "datagui/visual/text_shader.hpp"
+#include "datagui/visual/text_2d_shader.hpp"
 #include <assert.h>
 #include <memory>
 #include <stack>
@@ -48,7 +48,7 @@ private:
   Camera2d camera;
 
   Shape2dShader shape_shader;
-  TextShader text_shader;
+  Text2dShader text_shader;
   ImageShader image_shader;
 
   std::shared_ptr<FontManager> fm;

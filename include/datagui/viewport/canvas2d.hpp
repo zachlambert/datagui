@@ -2,7 +2,7 @@
 
 #include "datagui/viewport/viewport.hpp"
 #include "datagui/visual/shape_2d_shader.hpp"
-#include "datagui/visual/text_shader.hpp"
+#include "datagui/visual/text_2d_shader.hpp"
 
 namespace datagui {
 
@@ -63,7 +63,7 @@ private:
 
   Camera2d camera;
   Shape2dShader shape_shader;
-  TextShader text_shader;
+  Text2dShader text_shader;
 };
 
 } // namespace datagui

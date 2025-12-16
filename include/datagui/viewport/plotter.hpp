@@ -3,7 +3,7 @@
 #include "datagui/viewport/viewport.hpp"
 #include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_2d_shader.hpp"
-#include "datagui/visual/text_shader.hpp"
+#include "datagui/visual/text_2d_shader.hpp"
 #include <functional>
 #include <vector>
 
@@ -201,7 +201,7 @@ private:
   std::shared_ptr<FontManager> fm;
 
   Shape2dShader fixed_shape_shader;
-  TextShader fixed_text_shader;
+  Text2dShader fixed_text_shader;
   Shape2dShader plot_shape_shader;
   ImageShader plot_image_shader;
 };

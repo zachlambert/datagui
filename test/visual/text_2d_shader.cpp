@@ -1,11 +1,11 @@
-#include <datagui/visual/text_shader.hpp>
+#include <datagui/visual/text_2d_shader.hpp>
 #include <datagui/visual/window.hpp>
 
 int main() {
   using namespace datagui;
 
   Window window;
-  TextShader shader;
+  Text2dShader shader;
   auto fm = std::make_shared<FontManager>();
   shader.init(fm);
 

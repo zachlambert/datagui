@@ -1,4 +1,4 @@
-#include "datagui/visual/text_shader.hpp"
+#include "datagui/visual/text_2d_shader.hpp"
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 #include <assert.h>
@@ -36,7 +36,7 @@ void main(){
 }
 )";
 
-void TextShader::init(const std::shared_ptr<FontManager>& fm) {
+void Text2dShader::init(const std::shared_ptr<FontManager>& fm) {
   this->fm = fm;
 
   // Configure shader program and buffers
@@ -77,7 +77,7 @@ void TextShader::init(const std::shared_ptr<FontManager>& fm) {
   glBindVertexArray(0);
 }
 
-void TextShader::queue_masked_text(
+void Text2dShader::queue_masked_text(
     const Box2& mask,
     const Vec2& origin,
     const std::string& text,
@@ -125,7 +125,7 @@ void TextShader::queue_masked_text(
   }
 }
 
-void TextShader::queue_text(
+void Text2dShader::queue_text(
     const Vec2& origin,
     float angle,
     const std::string& text,
@@ -153,7 +153,7 @@ void TextShader::queue_text(
   }
 }
 
-std::vector<TextShader::Vertex>& TextShader::get_vertices(
+std::vector<Text2dShader::Vertex>& Text2dShader::get_vertices(
     Font font,
     int font_size,
     const Color& color) {
@@ -175,7 +175,7 @@ std::vector<TextShader::Vertex>& TextShader::get_vertices(
   }
 }
 
-void TextShader::draw(const Box2& viewport, const Camera2d& camera) {
+void Text2dShader::draw(const Box2& viewport, const Camera2d& camera) {
   if (char_lists.empty()) {
     return;
   }
@@ -227,7 +227,7 @@ void TextShader::draw(const Box2& viewport, const Camera2d& camera) {
   glUseProgram(0);
 }
 
-void TextShader::clear() {
+void Text2dShader::clear() {
   char_lists.clear();
 }
 

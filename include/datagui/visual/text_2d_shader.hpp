@@ -9,7 +9,7 @@
 
 namespace datagui {
 
-class TextShader {
+class Text2dShader {
   struct Vertex {
     Vec2 pos;
     Vec2 uv;
