@@ -94,7 +94,6 @@ void Text2dShader::queue_masked_text(
     box.lower += origin;
     box.upper += origin;
     if (!intersects(mask, box)) {
-      // Not visible
       continue;
     }
     if (!contains(mask, box)) {

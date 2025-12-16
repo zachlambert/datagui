@@ -83,9 +83,9 @@ void GuiRenderer::render() {
 
 void GuiRenderer::push_mask(const Box2& mask) {
   if (masks.empty()) {
-    masks.push(flip_box(mask));
+    masks.push(mask);
   } else {
-    masks.push(intersection(masks.top(), flip_box(mask)));
+    masks.push(intersection(masks.top(), mask));
   }
 }
 
