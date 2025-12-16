@@ -75,14 +75,12 @@ void main() {
   if (fs_radius.x > 0 && fs_radius.y > 0
       && arc_pos.x >= 0 && arc_pos.y >= 0)
   {
-    vec2 arc_pos_normalized = arc_pos / fs_radius;
-    vec2 border_width_normalized = fs_border_width / fs_radius;
-    float r = length(arc_pos_normalized);
-    float w = dot(arc_pos_normalized, border_width_normalized)
-      / (arc_pos_normalized.x + arc_pos_normalized.y);
-    if (r > 1) {
+    vec2 arc_pos_outer = arc_pos / fs_radius;
+    vec2 arc_pos_inner = arc_pos / (fs_radius - fs_border_width);
+
+    if (length(arc_pos_outer) > 1) {
       discard;
-    } else if (r > 1 - w) {
+    } else if (length(arc_pos_inner) > 1) {
       color = fs_border_color;
     } else {
       color = fs_color;
@@ -331,7 +329,7 @@ void Shape2dShader::queue_line(
   auto& element = elements.emplace_back();
   element.M = make_transform(position, angle, size);
   element.color = color;
-  element.border_width = 0;
+  element.border_width = Vec2();
   element.radius = radius / size;
 }
 

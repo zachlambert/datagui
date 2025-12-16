@@ -8,9 +8,10 @@ int main() {
   Shape2dShader shader;
   shader.init();
 
-  int i = 0;
   while (window.running()) {
     window.render_begin();
+
+    // queue_masked_box
 
     shader.queue_masked_box(
         Box2(Vec2(), window.size()),
@@ -55,11 +56,49 @@ int main() {
         Color::Gray(0.5),
         20);
 
+    // queue_rect
+
+    shader.queue_rect(
+        Vec2(100, 300),
+        M_PI / 8,
+        Vec2(150, 30),
+        Color::Hsl(100, 0.5, 0.5),
+        2);
+
+    shader.queue_circle(Vec2(180, 300), 60, Color::Hsl(220, 0.5, 0.5, 0.5), 2);
+
+    shader.queue_ellipse(
+        Vec2(400, 300),
+        -M_PI / 8,
+        Vec2(150, 40),
+        Color::Hsl(300, 1, 0.5),
+        10);
+
+    shader.queue_capsule(
+        Vec2(450, 400),
+        Vec2(350, 500),
+        40,
+        Color::Hsl(40, 1, 0.5),
+        10);
+
+    shader.queue_line(
+        Vec2(660, 200),
+        Vec2(660, 500),
+        20,
+        Color::Hsl(300, 1, 0.5));
+
+    shader.queue_line(
+        Vec2(700, 200),
+        Vec2(700, 500),
+        20,
+        Color::Hsl(260, 1, 0.5),
+        false);
+
+    // draw
+
     Camera2d camera;
-    camera.position = window.size() / 2 +
-                      50.f * (Rot2(2 * M_PI * i / 100).mat() * Vec2::unit_x());
-    camera.angle = (M_PI / 10) * (-0.5 * std::sin(2 * M_PI * i / 200));
-    i++;
+    camera.position = window.size() / 2;
+    camera.angle = 0;
     camera.width = window.size().x;
 
     shader.draw(window.viewport(), camera);

@@ -19,7 +19,7 @@ struct Vec2 {
 
   Vec2() : x(0), y(0) {}
   Vec2(float x, float y) : x(x), y(y) {}
-  Vec2(float* data) : data{data[0], data[1]} {}
+  explicit Vec2(float* data) : data{data[0], data[1]} {}
 
   float& operator()(std::size_t i) {
     assert(i <= 1);
@@ -172,7 +172,7 @@ struct Vec3 {
 
   Vec3() : data{} {}
   Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
-  Vec3(float* data) : data{data[0], data[1], data[2]} {}
+  explicit Vec3(float* data) : data{data[0], data[1], data[2]} {}
 
   float& operator()(std::size_t i) {
     assert(i <= 2);

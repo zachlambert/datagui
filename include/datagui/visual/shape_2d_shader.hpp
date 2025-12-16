@@ -15,7 +15,7 @@ public:
       const Box2& box,
       const Color& color,
       float border_width = 0,
-      Color border_color = Color(),
+      Color border_color = Color::Black(),
       float radius = 0);
 
   void queue_rect(
@@ -24,14 +24,14 @@ public:
       const Vec2& size,
       const Color& color,
       float border_width = 0,
-      Color border_color = Color());
+      Color border_color = Color::Black());
 
   void queue_circle(
       const Vec2& position,
       float radius,
       const Color& color,
       float border_width = 0,
-      Color border_color = Color());
+      Color border_color = Color::Black());
 
   void queue_ellipse(
       const Vec2& position,
@@ -39,7 +39,7 @@ public:
       const Vec2& radii,
       const Color& color,
       float border_width = 0,
-      Color border_color = Color());
+      Color border_color = Color::Black());
 
   void queue_line(
       const Vec2& a,
@@ -54,7 +54,7 @@ public:
       float radius,
       const Color& color,
       float border_width = 0,
-      Color border_color = Color());
+      Color border_color = Color::Black());
 
   void draw(const Box2& viewport, const Camera2d& camera);
   void clear();
