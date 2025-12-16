@@ -27,14 +27,14 @@ class TextShader {
 public:
   void init(const std::shared_ptr<FontManager>& fm);
 
-  void queue_text(
+  void queue_masked_text(
+      const Box2& mask,
       const Vec2& origin,
       const std::string& text,
       Font font,
       int font_size,
       Color text_color,
-      Length width,
-      const Box2& mask);
+      Length width = LengthWrap());
 
   void queue_text(
       const Vec2& origin,
@@ -49,15 +49,10 @@ public:
   void clear();
 
 private:
-  void queue_text(
-      const Vec2& origin,
-      float angle,
-      const std::string& text,
+  std::vector<Vertex>& get_vertices(
       Font font,
       int font_size,
-      Color text_color,
-      Length width,
-      const std::optional<Box2>& mask);
+      const Color& color);
 
   std::shared_ptr<FontManager> fm;
   std::vector<CharList> char_lists;

@@ -3,7 +3,7 @@
 namespace datagui {
 
 #ifdef DATAGUI_DEBUG
-std::ostream& operator<<(std::ostream& os, Box2& vec) {
+std::ostream& operator<<(std::ostream& os, const Box2& vec) {
   os << vec.lower << ", " << vec.upper;
   return os;
 }

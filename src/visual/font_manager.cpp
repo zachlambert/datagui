@@ -399,4 +399,41 @@ float FontManager::text_height(Font font, int font_size) {
   return fs.line_height;
 }
 
+std::vector<FontManager::Character> FontManager::text_characters(
+    const std::string& text,
+    Font font,
+    int font_size,
+    Length width) {
+  const auto& fs = font_structure(font, font_size);
+
+  auto fixed_width = std::get_if<LengthFixed>(&width);
+  Vec2 offset;
+  offset.y -= fs.line_height;
+
+  std::vector<Character> characters;
+  for (char c_char : text) {
+    if (c_char == '\n') {
+      offset.x = 0;
+      offset.y -= fs.line_height;
+      continue;
+    }
+    if (!fs.char_valid(c_char)) {
+      continue;
+    }
+    const auto& c = fs.get(c_char);
+
+    if (fixed_width && offset.x + c.advance > fixed_width->value) {
+      offset.x = 0;
+      offset.y += fs.line_height;
+    }
+
+    Vec2 position = offset + c.offset + Vec2(0, fs.descender);
+    Box2 box(position, position + c.size);
+    characters.emplace_back(box, c.uv);
+
+    offset.x += c.advance;
+  }
+  return characters;
+}
+
 } // namespace datagui

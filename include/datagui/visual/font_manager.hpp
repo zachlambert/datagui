@@ -81,12 +81,24 @@ private:
 class FontManager {
 public:
   const FontStructure& font_structure(Font font, int font_size);
+
   Vec2 text_size(
       const std::string& text,
       Font font,
       int font_size,
       Length width = LengthWrap());
+
   float text_height(Font font, int font_size);
+
+  struct Character {
+    Box2 pos;
+    Box2 uv;
+  };
+  std::vector<Character> text_characters(
+      const std::string& text,
+      Font font,
+      int font_size,
+      Length width = LengthWrap());
 
 private:
   std::unordered_map<std::pair<Font, int>, FontStructure> fonts;

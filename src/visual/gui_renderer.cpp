@@ -37,14 +37,14 @@ void GuiRenderer::queue_text(
     Color text_color,
     Length width) {
   assert(!masks.empty());
-  text_shader.queue_text(
+  text_shader.queue_masked_text(
+      flip_box(masks.top()),
       flip_position(origin),
       text,
       font,
       font_size,
       text_color,
-      width,
-      masks.top());
+      width);
 }
 
 void GuiRenderer::queue_image(const Box2& box, const Image& image) {
