@@ -13,52 +13,73 @@ layout(location = 0) in vec2 vertex_pos;
 layout(location = 1) in vec3 M_col1;
 layout(location = 2) in vec3 M_col2;
 layout(location = 3) in vec3 M_col3;
-layout(location = 4) in vec2 radius;
-layout(location = 5) in vec2 border_width;
-layout(location = 6) in vec4 color;
-layout(location = 7) in vec4 border_color;
+layout(location = 4) in vec4 color;
+layout(location = 5) in vec4 border_color;
+layout(location = 6) in vec2 border_width;
+layout(location = 7) in vec2 radius;
+layout(location = 8) in vec2 mask_lower;
+layout(location = 9) in vec2 mask_upper;
 
-uniform Mat3 PV;
+uniform mat3 PV;
 
 out vec2 fs_position_ms;
-flat out vec2 fs_radius;
-flat out vec2 fs_border_width;
-flat out vec4 fs_color;
-flat out vec4 fs_border_color
 
-void main(){
+flat out vec4 fs_color;
+flat out vec4 fs_border_color;
+flat out vec2 fs_border_width;
+flat out vec2 fs_radius;
+flat out vec2 fs_mask_lower;
+flat out vec2 fs_mask_upper;
+
+void main() {
   mat3 M = mat3(M_col1, M_col2, M_col3);
   gl_Position = vec4((PV * M * vec3(vertex_pos, 1)).xy, 0, 1);
 
   fs_position_ms = vertex_pos;
-  fs_radius = radius;
-  fs_border_width = border_width;
   fs_color = color;
   fs_border_color = border_color;
+  fs_border_width = border_width;
+  fs_radius = radius;
+  fs_mask_lower = mask_lower;
+  fs_mask_upper = mask_upper;
+}
 )";
 
 const static std::string rect_fs = R"(
 #version 330 core
 
 in vec2 fs_position_ms;
-in vec2 fs_radius;
-in vec2 fs_border_width;
-in vec4 fs_color;
-in vec4 fs_border_color;
+flat in vec4 fs_color;
+flat in vec4 fs_border_color;
+flat in vec2 fs_border_width;
+flat in vec2 fs_radius;
+flat in vec2 fs_mask_lower;
+flat in vec2 fs_mask_upper;
 
 out vec4 color;
 
-void main(){
+void main() {
+  if (fs_position_ms.x < fs_mask_lower.x
+      || fs_position_ms.x > fs_mask_upper.x
+      || fs_position_ms.y < fs_mask_lower.y
+      || fs_position_ms.y > fs_mask_upper.y)
+  {
+    discard;
+  }
+
   vec2 size = vec2(0.5, 0.5);
   vec2 pos = abs(fs_position_ms);
   vec2 arc_origin = size - fs_radius;
   vec2 arc_pos = pos - arc_origin;
 
-  if (arc_pos.x >= 0 && arc_pos.y >= 0) {
+  if (fs_radius.x > 0 && fs_radius.y > 0
+      && arc_pos.x >= 0 && arc_pos.y >= 0)
+  {
     vec2 arc_pos_normalized = arc_pos / fs_radius;
     vec2 border_width_normalized = fs_border_width / fs_radius;
-    r = length(arc_pos_normalized);
-    float w = dot(arc_pos_normalized, border_width_normalized) / r;
+    float r = length(arc_pos_normalized);
+    float w = dot(arc_pos_normalized, border_width_normalized)
+      / (arc_pos_normalized.x + arc_pos_normalized.y);
     if (r > 1) {
       discard;
     } else if (r > 1 - w) {
@@ -70,8 +91,8 @@ void main(){
     if (pos.x > size.x || pos.y > size.y) {
       discard;
     }
-    if (pos.x < size.x - fs_border_width.x
-        || pos.y < size.y - fs_border_width.y) {
+    if (pos.x > size.x - fs_border_width.x
+        || pos.y > size.y - fs_border_width.y) {
       color = fs_border_color;
     } else {
       color = fs_color;
@@ -139,11 +160,11 @@ void Shape2dShader::init() {
 
   glVertexAttribPointer(
       index,
-      2,
+      4,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)offsetof(Element, radius));
+      (void*)offsetof(Element, color));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -154,7 +175,7 @@ void Shape2dShader::init() {
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)offsetof(Element, color));
+      (void*)offsetof(Element, border_color));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -172,11 +193,33 @@ void Shape2dShader::init() {
 
   glVertexAttribPointer(
       index,
-      4,
+      2,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)offsetof(Element, border_color));
+      (void*)offsetof(Element, radius));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)(offsetof(Element, mask) + offsetof(Box2, lower)));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      2,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)(offsetof(Element, mask) + offsetof(Box2, upper)));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -205,6 +248,23 @@ static Mat3 make_transform(
   return result;
 };
 
+void Shape2dShader::queue_masked_box(
+    const Box2& mask,
+    const Box2& box,
+    const Color& color,
+    float border_width,
+    Color border_color,
+    float radius) {
+  auto& element = elements.emplace_back();
+  element.M = make_transform(box.center(), 0, box.size());
+  element.color = color;
+  element.border_color = border_color;
+  element.border_width = Vec2::uniform(border_width) / box.size();
+  element.radius = Vec2::uniform(radius) / box.size();
+  element.mask.lower = (mask.lower - box.center()) / box.size();
+  element.mask.upper = (mask.upper - box.center()) / box.size();
+}
+
 void Shape2dShader::queue_rect(
     const Vec2& position,
     float angle,
@@ -212,13 +272,12 @@ void Shape2dShader::queue_rect(
     const Color& color,
     float border_width,
     Color border_color) {
-  Element element;
+  auto& element = elements.emplace_back();
   element.M = make_transform(position, angle, size);
-  element.radius = Vec2();
   element.color = color;
-  element.border_width = Vec2::uniform(border_width) / size;
   element.border_color = border_color;
-  elements.push_back(element);
+  element.border_width = Vec2::uniform(border_width) / size;
+  element.radius = Vec2();
 }
 
 void Shape2dShader::queue_circle(
@@ -227,13 +286,13 @@ void Shape2dShader::queue_circle(
     const Color& color,
     float border_width,
     Color border_color) {
-  Element element;
-  element.M = make_transform(position, 0, Vec2::uniform(2 * radius));
-  element.radius = Vec2::uniform(0.5);
+  auto& element = elements.emplace_back();
+  Vec2 size = Vec2::uniform(2 * radius);
+  element.M = make_transform(position, 0, size);
   element.color = color;
   element.border_width = Vec2::uniform(border_width / (2 * radius));
   element.border_color = border_color;
-  elements.push_back(element);
+  element.radius = Vec2::uniform(0.5);
 }
 
 void Shape2dShader::queue_ellipse(
@@ -243,13 +302,12 @@ void Shape2dShader::queue_ellipse(
     const Color& color,
     float border_width,
     Color border_color) {
-  Element element;
+  auto& element = elements.emplace_back();
   element.M = make_transform(position, angle, 2 * radii);
-  element.radius = Vec2::uniform(0.5);
   element.color = color;
   element.border_width = Vec2::uniform(border_width) / (2 * radii);
   element.border_color = border_color;
-  elements.push_back(element);
+  element.radius = Vec2::uniform(0.5);
 }
 
 void Shape2dShader::queue_line(
@@ -270,12 +328,11 @@ void Shape2dShader::queue_line(
     radius = Vec2();
   }
 
-  Element element;
+  auto& element = elements.emplace_back();
   element.M = make_transform(position, angle, size);
-  element.radius = radius / size;
   element.color = color;
   element.border_width = 0;
-  elements.push_back(element);
+  element.radius = radius / size;
 }
 
 void Shape2dShader::queue_capsule(
@@ -289,13 +346,12 @@ void Shape2dShader::queue_capsule(
   float angle = std::atan2(end.y - start.y, end.x - start.x);
   Vec2 size = Vec2((start - end).length() + 2 * radius, 2 * radius);
 
-  Element element;
+  auto& element = elements.emplace_back();
   element.M = make_transform(position, angle, size);
-  element.radius = Vec2::uniform(radius) / size;
   element.color = color;
   element.border_width = Vec2::uniform(border_width) / size;
+  element.radius = Vec2::uniform(radius) / size;
   element.border_color = border_color;
-  elements.push_back(element);
 }
 
 void Shape2dShader::draw(const Box2& viewport, const Camera2d& camera) {

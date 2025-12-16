@@ -10,6 +10,14 @@ class Shape2dShader {
 public:
   void init();
 
+  void queue_masked_box(
+      const Box2& mask,
+      const Box2& box,
+      const Color& color,
+      float border_width = 0,
+      Color border_color = Color(),
+      float radius = 0);
+
   void queue_rect(
       const Vec2& position,
       float angle,
@@ -54,10 +62,11 @@ public:
 private:
   struct Element {
     Mat3 M;
-    Vec2 radius;
-    Vec2 border_width;
     Color color;
     Color border_color;
+    Vec2 border_width;
+    Vec2 radius;
+    Box2 mask = Box2(Vec2(-0.5, -0.5), Vec2(0.5, 0.5));
   };
   std::vector<Element> elements;
 

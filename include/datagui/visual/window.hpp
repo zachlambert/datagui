@@ -23,7 +23,7 @@ public:
         title("datagui"),
         width(900),
         height(600),
-        vsync(false),
+        vsync(true),
         resizable(true) {}
   };
 
