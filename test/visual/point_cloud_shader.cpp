@@ -17,6 +17,7 @@ int main() {
   camera.fov_degrees = 90;
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
+  camera.size = window.size();
 
   struct Point {
     Vec3 position;
