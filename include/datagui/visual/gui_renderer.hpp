@@ -31,7 +31,7 @@ public:
       Length width = LengthWrap());
 
   void queue_image(const Box2& box, const Image& image);
-  void queue_texture(const Box2& box, int texture);
+  void queue_viewport(const Box2& box, int texture);
 
   void begin(const Box2& viewport);
   void end();

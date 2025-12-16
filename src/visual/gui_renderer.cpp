@@ -48,12 +48,15 @@ void GuiRenderer::queue_text(
 }
 
 void GuiRenderer::queue_image(const Box2& box, const Image& image) {
-  image_shader
-      .queue_image(image, flip_position(box.upper_left()), 0, box.size());
+  image_shader.queue_masked_image(
+      flip_box(masks.top()),
+      image,
+      flip_position(box.upper_left()),
+      box.size());
 }
 
-void GuiRenderer::queue_texture(const Box2& box, int texture) {
-  image_shader.queue_texture(flip_box(box), texture);
+void GuiRenderer::queue_viewport(const Box2& box, int texture) {
+  image_shader.queue_viewport(flip_box(masks.top()), flip_box(box), texture);
 }
 
 void GuiRenderer::begin(const Box2& viewport) {

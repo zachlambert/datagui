@@ -345,11 +345,11 @@ void Plotter::queue_commands() {
     Vec2 plot_lower = to_plot_position(item.bounds.lower);
     Vec2 plot_upper = to_plot_position(item.bounds.upper);
     if (item.image.is_loaded()) {
-      plot_image_shader.queue_image(
+      plot_image_shader.queue_masked_image(
+          plot_area,
           item.image,
           plot_lower,
-          plot_upper - plot_lower,
-          plot_area);
+          plot_upper - plot_lower);
       continue;
     }
 
@@ -407,11 +407,11 @@ void Plotter::queue_commands() {
       }
     }
     item.image.load(item.width, item.height, pixels.data());
-    plot_image_shader.queue_image(
+    plot_image_shader.queue_masked_image(
+        plot_area,
         item.image,
         plot_lower,
-        plot_upper - plot_lower,
-        plot_area);
+        plot_upper - plot_lower);
   }
 
   fixed_shape_shader.queue_line(

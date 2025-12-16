@@ -46,20 +46,22 @@ public:
   void init();
 
   // Y down
+
   void queue_image(
       const Image& image,
       const Vec2& position,
       float angle,
       const Vec2& size);
 
-  void queue_image(
+  void queue_masked_image(
+      const Box2& mask,
       const Image& image,
       const Vec2& position,
-      const Vec2& size,
-      const Box2& mask);
+      const Vec2& size);
 
   // Y up
-  void queue_texture(const Box2& box, int texture);
+
+  void queue_viewport(const Box2& mask, const Box2& box, int texture);
 
   void draw(const Box2& viewport, const Camera2d& camera);
   void clear();

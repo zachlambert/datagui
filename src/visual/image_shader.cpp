@@ -127,6 +127,9 @@ void ImageShader::queue_image(
     const Vec2& position,
     float angle,
     const Vec2& size) {
+  if (!image.is_loaded()) {
+    return;
+  }
 
   Mat2 R = Rot2(angle).mat();
   Vec2 lower_left = position;
@@ -134,8 +137,7 @@ void ImageShader::queue_image(
   Vec2 upper_left = position + R * Vec2(0, size.y);
   Vec2 upper_right = position + R * size;
 
-  commands.emplace_back();
-  auto& command = commands.back();
+  auto& command = commands.emplace_back();
 
   // Y flipped
   command.vertices = {
@@ -148,45 +150,56 @@ void ImageShader::queue_image(
   command.texture = image.texture();
 }
 
-void ImageShader::queue_image(
+void ImageShader::queue_masked_image(
+    const Box2& mask,
     const Image& image,
     const Vec2& position,
-    const Vec2& size,
-    const Box2& mask) {
-  auto& command = commands.emplace_back();
+    const Vec2& size) {
+  if (!image.is_loaded()) {
+    return;
+  }
 
   Box2 region = intersection(mask, Box2(position, position + size));
-  Vec2 uv_lower = (region.lower - position) / size;
-  Vec2 uv_upper = (region.upper - position) / size;
+  Box2 uv;
+  uv.lower = (region.lower - position) / size;
+  uv.upper = (region.upper - position) / size;
 
   // Y flipped
-  float left_x = uv_lower.x;
-  float right_x = uv_upper.x;
-  float lower_y = 1 - uv_lower.y;
-  float upper_y = 1 - uv_upper.y;
+  uv.lower.y = 1 - uv.lower.y;
+  uv.upper.y = 1 - uv.upper.y;
 
+  auto& command = commands.emplace_back();
   command.vertices = {
-      Vertex{region.lower_left(), Vec2(left_x, lower_y)},
-      Vertex{region.lower_right(), Vec2(right_x, lower_y)},
-      Vertex{region.upper_left(), Vec2(left_x, upper_y)},
-      Vertex{region.lower_right(), Vec2(right_x, lower_y)},
-      Vertex{region.upper_right(), Vec2(right_x, upper_y)},
-      Vertex{region.upper_left(), Vec2(left_x, upper_y)}};
+      Vertex{region.lower_left(), uv.lower_left()},
+      Vertex{region.lower_right(), uv.lower_right()},
+      Vertex{region.upper_left(), uv.upper_left()},
+      Vertex{region.lower_right(), uv.lower_right()},
+      Vertex{region.upper_right(), uv.upper_right()},
+      Vertex{region.upper_left(), uv.upper_left()}};
   command.texture = image.texture();
 }
 
-void ImageShader::queue_texture(const Box2& box, int texture) {
+void ImageShader::queue_viewport(
+    const Box2& mask,
+    const Box2& box,
+    int texture) {
+  if (texture == 0) {
+    return;
+  }
 
-  commands.emplace_back();
-  auto& command = commands.back();
+  Box2 region = intersection(mask, box);
+  Box2 uv;
+  uv.lower = (region.lower - box.lower) / box.size();
+  uv.upper = (region.upper - box.lower) / box.size();
 
+  auto& command = commands.emplace_back();
   command.vertices = {
-      Vertex{box.lower_left(), Vec2(0, 0)},
-      Vertex{box.lower_right(), Vec2(1, 0)},
-      Vertex{box.upper_left(), Vec2(0, 1)},
-      Vertex{box.lower_right(), Vec2(1, 0)},
-      Vertex{box.upper_right(), Vec2(1, 1)},
-      Vertex{box.upper_left(), Vec2(0, 1)}};
+      Vertex{region.lower_left(), uv.lower_left()},
+      Vertex{region.lower_right(), uv.lower_right()},
+      Vertex{region.upper_left(), uv.upper_left()},
+      Vertex{region.lower_right(), uv.lower_right()},
+      Vertex{region.upper_right(), uv.upper_right()},
+      Vertex{region.upper_left(), uv.upper_left()}};
   command.texture = texture;
 }
 
