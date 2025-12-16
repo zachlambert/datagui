@@ -207,7 +207,7 @@ void PointCloudShader::draw(const Box2& viewport, const Camera3d& camera) {
       viewport.upper.y);
 
   Mat4 V = camera.view_mat();
-  Mat4 P = camera.projection_mat(viewport.size());
+  Mat4 P = camera.projection_mat();
 
   glDisable(GL_BLEND);
   glEnable(GL_CULL_FACE);

@@ -201,7 +201,7 @@ void ImageShader::draw(const Box2& viewport, const Camera2d& camera) {
       viewport.upper.y);
 
   Mat3 V = camera.view_mat();
-  Mat3 P = camera.projection_mat(viewport.size());
+  Mat3 P = camera.projection_mat();
   Mat3 PV = P * V;
 
   glEnable(GL_BLEND);

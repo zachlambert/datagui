@@ -166,6 +166,7 @@ void Canvas3d::end() {
 }
 
 void Canvas3d::redraw() {
+  camera.size = viewport().size();
   bind_framebuffer();
   shape_shader.draw(viewport(), camera);
   mesh_shader.draw(viewport(), camera);

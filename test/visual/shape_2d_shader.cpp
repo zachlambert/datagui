@@ -99,7 +99,7 @@ int main() {
     Camera2d camera;
     camera.position = window.size() / 2;
     camera.angle = 0;
-    camera.width = window.size().x;
+    camera.size = window.size();
 
     shader.draw(window.viewport(), camera);
     shader.clear();

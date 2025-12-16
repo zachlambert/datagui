@@ -368,7 +368,7 @@ void Shape2dShader::draw(const Box2& viewport, const Camera2d& camera) {
   glDisable(GL_DEPTH_TEST);
 
   Mat3 V = camera.view_mat();
-  Mat3 P = camera.projection_mat(viewport.size());
+  Mat3 P = camera.projection_mat();
   Mat3 PV = P * V;
 
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);

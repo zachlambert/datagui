@@ -228,7 +228,7 @@ void TextShader::draw(const Box2& viewport, const Camera2d& camera) {
   glDisable(GL_DEPTH_TEST);
 
   Mat3 V = camera.view_mat();
-  Mat3 P = camera.projection_mat(viewport.size());
+  Mat3 P = camera.projection_mat();
   Mat3 PV = P * V;
 
   glUseProgram(program_id);

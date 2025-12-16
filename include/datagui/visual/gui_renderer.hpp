@@ -3,7 +3,7 @@
 #include "datagui/geometry/camera.hpp"
 #include "datagui/visual/font_manager.hpp"
 #include "datagui/visual/image_shader.hpp"
-#include "datagui/visual/masked_box_shader.hpp"
+#include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/text_shader.hpp"
 #include <assert.h>
 #include <memory>
@@ -47,7 +47,7 @@ private:
   Box2 viewport;
   Camera2d camera;
 
-  MaskedBoxShader box_shader;
+  Shape2dShader shape_shader;
   TextShader text_shader;
   ImageShader image_shader;
 

@@ -19,11 +19,10 @@ Mat3 Camera2d::view_mat() const {
   return view;
 }
 
-Mat3 Camera2d::projection_mat(const Vec2& viewport_size) const {
-  float height = width * viewport_size.y / viewport_size.x;
+Mat3 Camera2d::projection_mat() const {
   return Mat3{
-      {1 / (0.5f * width), 0, 0},
-      {0, 1 / (0.5f * height), 0},
+      {1 / (0.5f * size.x * zoom), 0, 0},
+      {0, 1 / (0.5f * size.y * zoom), 0},
       {0, 0, 1},
   };
 }
@@ -54,10 +53,10 @@ Mat4 Camera3d::view_mat() const {
   return view;
 }
 
-Mat4 Camera3d::projection_mat(const Vec2& viewport_size) const {
+Mat4 Camera3d::projection_mat() const {
   Mat4 projection;
 
-  float aspect_ratio = viewport_size.x / viewport_size.y;
+  float aspect_ratio = size.x / size.y;
   projection(0, 0) = 1.f / std::tan(0.5f * fov_degrees * M_PI / 180.f);
   projection(1, 1) = aspect_ratio * projection(0, 0);
   projection(2, 2) =

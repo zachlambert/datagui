@@ -108,13 +108,13 @@ void Plotter::redraw() {
   Camera2d fixed_camera;
   fixed_camera.position = viewport().center();
   fixed_camera.angle = 0;
-  fixed_camera.width = viewport().size().x;
+  fixed_camera.size = viewport().size();
 
   // TODO
   Camera2d plot_camera;
   plot_camera.position = viewport().center();
   plot_camera.angle = 0;
-  plot_camera.width = viewport().size().x;
+  plot_camera.size = viewport().size();
 
   queue_commands();
   bind_framebuffer();

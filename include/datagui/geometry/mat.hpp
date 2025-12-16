@@ -210,4 +210,10 @@ inline Mat4 operator*(const Mat4& lhs, const Mat4& rhs) {
   return result;
 }
 
+#ifdef DATAGUI_DEBUG
+std::ostream& operator<<(std::ostream& os, const Mat2& mat);
+std::ostream& operator<<(std::ostream& os, const Mat3& mat);
+std::ostream& operator<<(std::ostream& os, const Mat4& mat);
+#endif
+
 } // namespace datagui
