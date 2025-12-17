@@ -88,6 +88,7 @@ void Plotter::impl_init(
   this->fm = fm;
   fixed_shape_shader.init();
   fixed_text_shader.init(fm);
+  fixed_image_shader.init();
   plot_shape_shader.init();
   plot_image_shader.init();
 }
@@ -120,12 +121,14 @@ void Plotter::redraw() {
 
   fixed_shape_shader.draw(viewport(), fixed_camera);
   fixed_text_shader.draw(viewport(), fixed_camera);
+  fixed_image_shader.draw(viewport(), fixed_camera);
   plot_shape_shader.draw(plot_area, plot_camera);
   plot_image_shader.draw(plot_area, plot_camera);
 
   unbind_framebuffer();
   fixed_shape_shader.clear();
   fixed_text_shader.clear();
+  fixed_image_shader.clear();
   plot_shape_shader.clear();
   plot_image_shader.clear();
 }
@@ -138,7 +141,8 @@ void Plotter::queue_commands() {
   float header_size = 0;
   float title_width = 0;
   if (!title_.empty()) {
-    Vec2 title_size = fm->text_size(title_, theme->text_font, theme->text_size);
+    Vec2 title_size =
+        fm->text_size(title_, theme->text_font, 1.4 * theme->text_size);
     title_width = std::min(title_size.x + theme->text_padding, size.x / 2);
     header_size = title_size.y;
     fixed_text_shader.queue_text(
@@ -146,7 +150,7 @@ void Plotter::queue_commands() {
         0,
         title_,
         theme->text_font,
-        theme->text_size,
+        1.4 * theme->text_size,
         theme->text_color,
         LengthFixed(title_width));
   }
@@ -340,47 +344,34 @@ void Plotter::queue_commands() {
   }
 
   for (const auto& item : heatmap_items) {
-    Vec2 plot_lower = to_plot_position(item.bounds.lower);
-    Vec2 plot_upper = to_plot_position(item.bounds.upper);
-    if (item.image.is_loaded()) {
-      plot_image_shader
-          .queue_image(item.image, plot_lower, 0, plot_upper - plot_lower);
-      continue;
-    }
-
-    auto to_coords = [&](std::size_t i, std::size_t j) {
-      Vec2 normalized = Vec2(float(j) + 0.5, item.height - (float(i) + 0.5)) /
-                        Vec2(item.width, item.height);
-      return item.bounds.lower + item.bounds.size() * normalized;
-    };
-    float min_value = item.args.min_value ? *item.args.min_value
-                                          : std::numeric_limits<float>::max();
-    float max_value = item.args.max_value ? *item.args.max_value
-                                          : -std::numeric_limits<float>::max();
-    for (std::size_t i = 0; i < item.height; i++) {
-      for (std::size_t j = 0; j < item.width; j++) {
-        Vec2 coords = to_coords(i, j);
-        float value = item.function(to_coords(i, j));
-        if (!item.args.min_value) {
-          min_value = std::min(min_value, value);
-        }
-        if (!item.args.max_value) {
-          max_value = std::max(max_value, value);
+    if (!item.image.is_loaded()) {
+      auto to_coords = [&](std::size_t i, std::size_t j) {
+        Vec2 normalized = Vec2(float(j) + 0.5, item.height - (float(i) + 0.5)) /
+                          Vec2(item.width, item.height);
+        return item.bounds.lower + item.bounds.size() * normalized;
+      };
+      item.min_value = item.args.min_value ? *item.args.min_value
+                                           : std::numeric_limits<float>::max();
+      item.max_value = item.args.max_value ? *item.args.max_value
+                                           : -std::numeric_limits<float>::max();
+      for (std::size_t i = 0; i < item.height; i++) {
+        for (std::size_t j = 0; j < item.width; j++) {
+          Vec2 coords = to_coords(i, j);
+          float value = item.function(to_coords(i, j));
+          if (!item.args.min_value) {
+            item.min_value = std::min(item.min_value, value);
+          }
+          if (!item.args.max_value) {
+            item.max_value = std::max(item.max_value, value);
+          }
         }
       }
-    }
 
-    struct Pixel {
-      std::uint8_t r, g, b, a;
-    };
-    std::vector<Pixel> pixels(item.width * item.height);
-    for (std::size_t i = 0; i < item.height; i++) {
-      for (std::size_t j = 0; j < item.width; j++) {
-        auto& pixel = pixels[i * item.width + j];
-        float value = item.function(to_coords(i, j));
-        float s = (value - min_value) / (max_value - min_value);
-        s = std::clamp(s, 0.f, 1.f);
-
+      struct Pixel {
+        std::uint8_t r, g, b, a;
+      };
+      auto get_pixel = [&item](float s) {
+        Pixel pixel;
         switch (item.args.type) {
         case HeatmapType::Viridis: {
           Vec3 color = color_map_viridis(s);
@@ -399,11 +390,75 @@ void Plotter::queue_commands() {
         }
         }
         pixel.a = 255;
+        return pixel;
+      };
+
+      {
+        std::vector<Pixel> pixels(item.width * item.height);
+        for (std::size_t i = 0; i < item.height; i++) {
+          for (std::size_t j = 0; j < item.width; j++) {
+            float value = item.function(to_coords(i, j));
+            float s =
+                (value - item.min_value) / (item.max_value - item.min_value);
+            s = std::clamp(s, 0.f, 1.f);
+            pixels[i * item.width + j] = get_pixel(s);
+          }
+        }
+        item.image.load(item.width, item.height, pixels.data());
+      }
+
+      {
+        std::size_t width = 32;
+        std::size_t height = 256;
+        std::vector<Pixel> pixels(width * height);
+        for (std::size_t i = 0; i < height; i++) {
+          float s = 1 - float(i) / (height - 1);
+          Pixel pixel = get_pixel(s);
+          for (std::size_t j = 0; j < width; j++) {
+            pixels[i * width + j] = pixel;
+          }
+        }
+        item.scale_image.load(width, height, pixels.data());
       }
     }
-    item.image.load(item.width, item.height, pixels.data());
+
+    Vec2 plot_lower = to_plot_position(item.bounds.lower);
+    Vec2 plot_upper = to_plot_position(item.bounds.upper);
+
     plot_image_shader
         .queue_image(item.image, plot_lower, 0, plot_upper - plot_lower);
+
+    fixed_image_shader.queue_image(
+        item.scale_image,
+        plot_area.lower_right() + Vec2(args.inner_padding, 0),
+        0,
+        Vec2(args.heatmap_scale_width, plot_area.size().y));
+
+    {
+      std::stringstream ss;
+      ss << std::fixed << std::setprecision(1) << item.max_value;
+      fixed_text_shader.queue_text(
+          plot_area.upper +
+              Vec2(args.inner_padding, text_height + args.inner_padding),
+          0,
+          ss.str(),
+          theme->text_font,
+          theme->text_size,
+          theme->text_color);
+    }
+
+    {
+      std::stringstream ss;
+      ss << std::fixed << std::setprecision(1) << item.min_value;
+      fixed_text_shader.queue_text(
+          plot_area.lower_right() +
+              Vec2(args.inner_padding, -args.inner_padding),
+          0,
+          ss.str(),
+          theme->text_font,
+          theme->text_size,
+          theme->text_color);
+    }
   }
 
   fixed_shape_shader.queue_line(

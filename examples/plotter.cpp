@@ -73,6 +73,7 @@ int main() {
           auto f = [](const Vec2& pos) {
             return std::exp(-pos.x) * std::sin(2 * M_PIf * pos.y);
           };
+          plotter->title("exp(-x) * sin(2*pi*y)");
           plotter->heatmap(Vec2(-1, -1), Vec2(1, 1), f, 100, 100);
           gui.end();
         }

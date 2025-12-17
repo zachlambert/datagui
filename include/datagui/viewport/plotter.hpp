@@ -109,6 +109,7 @@ struct PlotterArgs {
   float outer_padding = 10;
   float line_width = 2;
   Color tick_color = Color::Gray(0.2);
+  float heatmap_scale_width = 16;
 };
 
 class Plotter : public Viewport {
@@ -187,7 +188,11 @@ private:
     std::function<float(const Vec2&)> function;
     std::size_t width;
     std::size_t height;
+
+    mutable float min_value;
+    mutable float max_value;
     mutable Image image;
+    mutable Image scale_image;
   };
   std::vector<HeatmapItem> heatmap_items;
 
@@ -201,6 +206,7 @@ private:
 
   Shape2dShader fixed_shape_shader;
   Text2dShader fixed_text_shader;
+  ImageShader fixed_image_shader;
   Shape2dShader plot_shape_shader;
   ImageShader plot_image_shader;
 };
