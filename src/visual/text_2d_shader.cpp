@@ -182,8 +182,8 @@ void Text2dShader::draw(const Box2& viewport, const Camera2d& camera) {
   glViewport(
       viewport.lower.x,
       viewport.lower.y,
-      viewport.upper.x,
-      viewport.upper.y);
+      viewport.upper.x - viewport.lower.x,
+      viewport.upper.y - viewport.lower.y);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

@@ -105,24 +105,23 @@ void Plotter::end() {
 }
 
 void Plotter::redraw() {
+  queue_commands();
+  bind_framebuffer();
+
   Camera2d fixed_camera;
   fixed_camera.position = viewport().center();
   fixed_camera.angle = 0;
   fixed_camera.size = viewport().size();
 
-  // TODO
   Camera2d plot_camera;
-  plot_camera.position = viewport().center();
+  plot_camera.position = plot_area.center();
   plot_camera.angle = 0;
-  plot_camera.size = viewport().size();
-
-  queue_commands();
-  bind_framebuffer();
+  plot_camera.size = plot_area.size();
 
   fixed_shape_shader.draw(viewport(), fixed_camera);
   fixed_text_shader.draw(viewport(), fixed_camera);
-  plot_shape_shader.draw(viewport(), plot_camera);
-  plot_image_shader.draw(viewport(), plot_camera);
+  plot_shape_shader.draw(plot_area, plot_camera);
+  plot_image_shader.draw(plot_area, plot_camera);
 
   unbind_framebuffer();
   fixed_shape_shader.clear();
@@ -185,7 +184,7 @@ void Plotter::queue_commands() {
       pos.y -= i * item_height;
 
       fixed_shape_shader.queue_rect(
-          Vec2(pos.x, pos.y - text_height),
+          Vec2(pos.x, pos.y - text_height / 2),
           0,
           Vec2::uniform(text_height),
           item.args.color);
@@ -208,7 +207,7 @@ void Plotter::queue_commands() {
   }
 
   fixed_shape_shader.queue_rect(
-      Vec2(),
+      viewport().size() / 2,
       0,
       viewport().size(),
       Color::Clear(),
@@ -224,10 +223,9 @@ void Plotter::queue_commands() {
       bottom_padding,
       header_size + args.inner_padding + args.outer_padding);
 
-  Box2 plot_area = Box2(
+  plot_area = Box2(
       Vec2(left_padding, bottom_padding),
       size - Vec2(right_padding, top_padding));
-  prev_plot_area = plot_area;
 
   if (plot_items.empty() && heatmap_items.empty()) {
     bounds = Box2(Vec2(), Vec2(1, 1));
@@ -345,11 +343,8 @@ void Plotter::queue_commands() {
     Vec2 plot_lower = to_plot_position(item.bounds.lower);
     Vec2 plot_upper = to_plot_position(item.bounds.upper);
     if (item.image.is_loaded()) {
-      plot_image_shader.queue_masked_image(
-          plot_area,
-          item.image,
-          plot_lower,
-          plot_upper - plot_lower);
+      plot_image_shader
+          .queue_image(item.image, plot_lower, 0, plot_upper - plot_lower);
       continue;
     }
 
@@ -407,11 +402,8 @@ void Plotter::queue_commands() {
       }
     }
     item.image.load(item.width, item.height, pixels.data());
-    plot_image_shader.queue_masked_image(
-        plot_area,
-        item.image,
-        plot_lower,
-        plot_upper - plot_lower);
+    plot_image_shader
+        .queue_image(item.image, plot_lower, 0, plot_upper - plot_lower);
   }
 
   fixed_shape_shader.queue_line(
@@ -556,7 +548,7 @@ void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
   }
 
   Vec2 delta = mouse_down_subview.size() * (mouse_down_pos - event.position) /
-               prev_plot_area.size();
+               plot_area.size();
   subview =
       Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
 

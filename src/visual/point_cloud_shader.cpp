@@ -203,8 +203,8 @@ void PointCloudShader::draw(const Box2& viewport, const Camera3d& camera) {
   glViewport(
       viewport.lower.x,
       viewport.lower.y,
-      viewport.upper.x,
-      viewport.upper.y);
+      viewport.upper.x - viewport.lower.x,
+      viewport.upper.y - viewport.lower.y);
 
   Mat4 V = camera.view_mat();
   Mat4 P = camera.projection_mat();

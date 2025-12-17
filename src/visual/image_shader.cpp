@@ -211,8 +211,8 @@ void ImageShader::draw(const Box2& viewport, const Camera2d& camera) {
   glViewport(
       viewport.lower.x,
       viewport.lower.y,
-      viewport.upper.x,
-      viewport.upper.y);
+      viewport.upper.x - viewport.lower.x,
+      viewport.upper.y - viewport.lower.y);
 
   Mat3 V = camera.view_mat();
   Mat3 P = camera.projection_mat();
