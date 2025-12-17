@@ -16,8 +16,7 @@ int main() {
       auto width = gui.variable<float>(100);
 
       if (auto canvas = gui.viewport<datagui::Canvas2d>(200, 200)) {
-        Vec2 center = Vec2(100, 100);
-        canvas->rect(center, 0, Vec2::uniform(*width), *color, *border_size);
+        canvas->rect(Vec2(), 0, Vec2::uniform(*width), *color, *border_size);
         gui.end();
       }
 

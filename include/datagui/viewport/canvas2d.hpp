@@ -60,6 +60,10 @@ private:
   void redraw();
 
   void mouse_event(const Vec2& size, const MouseEvent& event) override;
+  bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
+
+  Vec2 click_camera_pos;
+  Vec2 click_mouse_pos;
 
   Camera2d camera;
   Shape2dShader shape_shader;

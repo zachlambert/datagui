@@ -82,7 +82,6 @@ void Canvas2d::impl_init(
 
 void Canvas2d::redraw() {
   bind_framebuffer();
-  camera.position = viewport().center();
   camera.size = viewport().size();
   shape_shader.draw(viewport(), camera);
   text_shader.draw(viewport(), camera);
@@ -90,7 +89,28 @@ void Canvas2d::redraw() {
 }
 
 void Canvas2d::mouse_event(const Vec2& size, const MouseEvent& event) {
-  // TODO
+  if (event.button != MouseButton::Left) {
+    return;
+  }
+  if (event.action == MouseAction::Press) {
+    if (event.is_double_click) {
+      camera.position = Vec2();
+      camera.zoom = 1;
+    }
+    click_mouse_pos = event.position;
+    click_camera_pos = camera.position;
+    return;
+  }
+
+  camera.position =
+      click_camera_pos - (event.position - click_mouse_pos) / camera.zoom;
+  redraw();
+}
+
+bool Canvas2d::scroll_event(const Vec2& size, const ScrollEvent& event) {
+  camera.zoom *= std::exp(-event.amount / 1000);
+  redraw();
+  return true;
 }
 
 }; // namespace datagui

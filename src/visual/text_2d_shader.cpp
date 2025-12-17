@@ -16,7 +16,8 @@ uniform mat3 PV;
 out vec2 fs_uv;
 
 void main(){
-  gl_Position = vec4((PV * vec3(position, 1)).xy, 0, 1);
+  vec3 coords = PV * vec3(position, 1);
+  gl_Position = vec4(coords.xy / coords.z, 0, 1);
   fs_uv = uv;
 }
 )";

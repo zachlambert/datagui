@@ -33,7 +33,8 @@ flat out vec2 fs_mask_upper;
 
 void main() {
   mat3 M = mat3(M_col1, M_col2, M_col3);
-  gl_Position = vec4((PV * M * vec3(vertex_pos, 1)).xy, 0, 1);
+  vec3 coords = PV * M * vec3(vertex_pos, 1);
+  gl_Position = vec4(coords.xy / coords.z, 0, 1);
 
   fs_position_ms = vertex_pos;
   fs_color = color;

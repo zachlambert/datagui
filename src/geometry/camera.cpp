@@ -21,9 +21,9 @@ Mat3 Camera2d::view_mat() const {
 
 Mat3 Camera2d::projection_mat() const {
   return Mat3{
-      {1 / (0.5f * size.x * zoom), 0, 0},
-      {0, 1 / (0.5f * size.y * zoom), 0},
-      {0, 0, 1},
+      {1 / (0.5f * size.x), 0, 0},
+      {0, 1 / (0.5f * size.y), 0},
+      {0, 0, 1.f / zoom},
   };
 }
 
