@@ -25,8 +25,8 @@ public:
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm);
 
-  Vec2 framebuffer_size() const {
-    return Vec2(width, height);
+  Box2 viewport() const {
+    return Box2(Vec2(), Vec2(width, height));
   }
 
   virtual void begin() = 0;
@@ -41,7 +41,7 @@ public:
   }
 
 protected:
-  void bind_framebuffer();
+  void bind_framebuffer(const Color& bg_color = Color::White());
   void unbind_framebuffer();
 
 private:

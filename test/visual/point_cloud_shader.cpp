@@ -17,6 +17,7 @@ int main() {
   camera.fov_degrees = 90;
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
+  camera.size = window.size();
 
   struct Point {
     Vec3 position;
@@ -44,7 +45,7 @@ int main() {
     window.render_begin();
 
     point_cloud_shader.queue_point_cloud(point_cloud, Vec3(), Rot3(), 0.08);
-    point_cloud_shader.draw(window.size(), camera);
+    point_cloud_shader.draw(Box2(Vec2(), window.size()), camera);
     point_cloud_shader.clear();
 
     window.render_end();

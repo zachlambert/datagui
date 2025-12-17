@@ -1,4 +1,5 @@
 #include "datagui/geometry/box.hpp"
+#include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/mat.hpp"
 #include "datagui/geometry/rot.hpp"
 #include "datagui/geometry/vec.hpp"

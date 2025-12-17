@@ -522,7 +522,7 @@ void Gui::render() {
   };
 
   window.render_begin();
-  renderer.begin(window.size());
+  renderer.begin(Box2(Vec2(), window.size()));
 
   render_tree(tree.root());
   renderer.render();

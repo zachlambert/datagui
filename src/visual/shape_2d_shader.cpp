@@ -1,7 +1,6 @@
 #include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
-#include <array>
 #include <assert.h>
 #include <string>
 
@@ -11,101 +10,100 @@ const static std::string rect_vs = R"(
 #version 330 core
 
 layout(location = 0) in vec2 vertex_pos;
-layout(location = 1) in vec2 position;
-layout(location = 2) in vec2 rotation_row1;
-layout(location = 3) in vec2 rotation_row2;
-layout(location = 4) in vec2 size;
-layout(location = 5) in float radius;
-layout(location = 6) in vec2 radius_scale;
-layout(location = 7) in vec4 color;
-layout(location = 8) in float border_width;
-layout(location = 9) in vec4 border_color;
-layout(location = 10) in vec2 mask_lower;
-layout(location = 11) in vec2 mask_upper;
+layout(location = 1) in vec3 M_col1;
+layout(location = 2) in vec3 M_col2;
+layout(location = 3) in vec3 M_col3;
+layout(location = 4) in vec4 color;
+layout(location = 5) in vec4 border_color;
+layout(location = 6) in vec2 border_width;
+layout(location = 7) in vec2 radius;
+layout(location = 8) in vec2 mask_lower;
+layout(location = 9) in vec2 mask_upper;
 
-uniform vec2 viewport_size;
+uniform mat3 PV;
 
-out vec2 fs_offset;
-out vec2 fs_size;
-out float fs_radius;
-out vec2 fs_radius_scale;
-out vec2 fs_mask_offset;
-out vec2 fs_mask_size;
-out vec4 fs_color;
-out float fs_border_width;
-out vec4 fs_border_color;
+out vec2 fs_position_ms;
 
-void main(){
-  fs_offset = vec2(vertex_pos.x * size.x, vertex_pos.y * size.y);
-  mat2 rotation = mat2(rotation_row1, rotation_row2);
-  vec2 fs_pos = position + rotation * fs_offset;
-  gl_Position = vec4(
-    (fs_pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
-    (fs_pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
-    0,
-    1);
+flat out vec4 fs_color;
+flat out vec4 fs_border_color;
+flat out vec2 fs_border_width;
+flat out vec2 fs_radius;
+flat out vec2 fs_mask_lower;
+flat out vec2 fs_mask_upper;
 
-  fs_size = size / 2;
-  fs_radius = radius;
-  fs_radius_scale = radius_scale;
-  fs_border_width = border_width;
-  fs_border_color = border_color;
+void main() {
+  mat3 M = mat3(M_col1, M_col2, M_col3);
+  vec3 coords = PV * M * vec3(vertex_pos, 1);
+  gl_Position = vec4(coords.xy / coords.z, 0, 1);
 
-  fs_mask_offset = fs_pos - (mask_lower + mask_upper) / 2;
-  fs_mask_size = (mask_upper - mask_lower) / 2;
-
+  fs_position_ms = vertex_pos;
   fs_color = color;
+  fs_border_color = border_color;
+  fs_border_width = border_width;
+  fs_radius = radius;
+  fs_mask_lower = mask_lower;
+  fs_mask_upper = mask_upper;
 }
 )";
 
 const static std::string rect_fs = R"(
 #version 330 core
 
-in vec2 fs_offset;
-in vec2 fs_size;
-in float fs_radius;
-in vec2 fs_radius_scale;
-in vec2 fs_mask_offset;
-in vec2 fs_mask_size;
-in vec4 fs_color;
-in float fs_border_width;
-in vec4 fs_border_color;
-
-uniform vec2 viewport_size;
+in vec2 fs_position_ms;
+flat in vec4 fs_color;
+flat in vec4 fs_border_color;
+flat in vec2 fs_border_width;
+flat in vec2 fs_radius;
+flat in vec2 fs_mask_lower;
+flat in vec2 fs_mask_upper;
 
 out vec4 color;
 
-void main(){
-  vec2 d_outer = (abs(fs_offset) - fs_size) / fs_radius_scale + fs_radius;
-  vec2 d_inner = (abs(fs_offset) - max(fs_size-fs_border_width, 0)) /
-    fs_radius_scale + max(fs_radius - fs_border_width, 0);
+void main() {
+  if (fs_position_ms.x < fs_mask_lower.x
+      || fs_position_ms.x > fs_mask_upper.x
+      || fs_position_ms.y < fs_mask_lower.y
+      || fs_position_ms.y > fs_mask_upper.y)
+  {
+    discard;
+  }
 
-  float s_outer = length(max(d_outer, 0)) + min(max(d_outer.x, d_outer.y), 0);
-  float s_inner = length(max(d_inner, 0)) + min(max(d_inner.x, d_inner.y), 0);
+  vec2 size = vec2(0.5, 0.5);
+  vec2 pos = abs(fs_position_ms);
+  vec2 arc_origin = size - fs_radius;
+  vec2 arc_pos = pos - arc_origin;
 
-  float in_outer = float(s_outer <= fs_radius);
-  float in_inner = float(s_inner <= max(fs_radius - fs_border_width, 0));
+  if (fs_radius.x > 0 && fs_radius.y > 0
+      && arc_pos.x >= 0 && arc_pos.y >= 0)
+  {
+    vec2 arc_pos_outer = arc_pos / fs_radius;
+    vec2 arc_pos_inner = arc_pos / (fs_radius - fs_border_width);
 
-  vec2 mask_d = abs(fs_mask_offset) - fs_mask_size;
-  float mask_s = length(max(mask_d, 0.0)) + min(max(mask_d.x, mask_d.y), 0.0);
-  float in_mask = float(mask_s < 0);
-
-  color = in_mask * (in_inner * fs_color + in_outer * (1-in_inner) * fs_border_color);
+    if (length(arc_pos_outer) > 1) {
+      discard;
+    } else if (length(arc_pos_inner) > 1) {
+      color = fs_border_color;
+    } else {
+      color = fs_color;
+    }
+  } else {
+    if (pos.x > size.x || pos.y > size.y) {
+      discard;
+    }
+    if (pos.x > size.x - fs_border_width.x
+        || pos.y > size.y - fs_border_width.y) {
+      color = fs_border_color;
+    } else {
+      color = fs_color;
+    }
+  }
 }
 )";
-
-static const std::array<Vec2, 6> quad_vertices = {
-    Vec2(-0.5f, 0.5f),
-    Vec2(0.5f, -0.5f),
-    Vec2(-0.5f, -0.5f),
-    Vec2(-0.5f, 0.5f),
-    Vec2(0.5f, -0.5f),
-    Vec2(0.5f, 0.5f)};
 
 void Shape2dShader::init() {
   program_id = create_program(rect_vs, rect_fs);
 
-  uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
+  uniform_PV = glGetUniformLocation(program_id, "PV");
 
   // Generate ids
   glGenVertexArrays(1, &VAO);
@@ -115,12 +113,24 @@ void Shape2dShader::init() {
   // Bind vertex array
   glBindVertexArray(VAO);
 
+  struct Vertex {
+    Vec2 position;
+  };
+  const std::vector<Vertex> static_vertices = {
+      {Vec2(-0.5f, 0.5f)},
+      {Vec2(0.5f, -0.5f)},
+      {Vec2(-0.5f, -0.5f)},
+      {Vec2(-0.5f, 0.5f)},
+      {Vec2(0.5f, -0.5f)},
+      {Vec2(0.5f, 0.5f)}};
+  static_vertex_count = static_vertices.size();
+
   // Bind and configure buffer for vertex attributes
   glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
-      quad_vertices.size() * sizeof(Vec2),
-      quad_vertices.data(),
+      static_vertices.size() * sizeof(Vertex),
+      static_vertices.data(),
       GL_STATIC_DRAW);
 
   GLuint index = 0;
@@ -134,73 +144,18 @@ void Shape2dShader::init() {
   // Bind and configure buffer for indices
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
 
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)offsetof(Element, position));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
-
-  // Row 1
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)offsetof(Element, rotation));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
-
-  // Row 2
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)(offsetof(Element, rotation) + 2 * sizeof(float)));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)offsetof(Element, size));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      1,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)offsetof(Element, radius));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Element),
-      (void*)offsetof(Element, radius_scale));
-  glVertexAttribDivisor(index, 1);
-  glEnableVertexAttribArray(index);
-  index++;
+  for (std::size_t i = 0; i < 3; i++) {
+    glVertexAttribPointer(
+        index,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(Element),
+        (void*)(offsetof(Element, M) + sizeof(float) * 3 * i));
+    glVertexAttribDivisor(index, 1);
+    glEnableVertexAttribArray(index);
+    index++;
+  }
 
   glVertexAttribPointer(
       index,
@@ -215,7 +170,18 @@ void Shape2dShader::init() {
 
   glVertexAttribPointer(
       index,
-      1,
+      4,
+      GL_FLOAT,
+      GL_FALSE,
+      sizeof(Element),
+      (void*)offsetof(Element, border_color));
+  glVertexAttribDivisor(index, 1);
+  glEnableVertexAttribArray(index);
+  index++;
+
+  glVertexAttribPointer(
+      index,
+      2,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
@@ -226,11 +192,11 @@ void Shape2dShader::init() {
 
   glVertexAttribPointer(
       index,
-      4,
+      2,
       GL_FLOAT,
       GL_FALSE,
       sizeof(Element),
-      (void*)offsetof(Element, border_color));
+      (void*)offsetof(Element, radius));
   glVertexAttribDivisor(index, 1);
   glEnableVertexAttribArray(index);
   index++;
@@ -260,25 +226,42 @@ void Shape2dShader::init() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Shape2dShader::queue_box(
+static Mat3 make_transform(
+    const Vec2& position,
+    float angle,
+    const Vec2& size) {
+  Mat2 scale;
+  scale(0, 0) = size.x;
+  scale(1, 1) = size.y;
+  Mat2 top_left = Rot2(angle).mat() * scale;
+
+  Mat3 result;
+  for (std::size_t i = 0; i < 2; i++) {
+    for (std::size_t j = 0; j < 2; j++) {
+      result(i, j) = top_left(i, j);
+    }
+  }
+  result(0, 2) = position.x;
+  result(1, 2) = position.y;
+  result(2, 2) = 1;
+  return result;
+};
+
+void Shape2dShader::queue_masked_box(
+    const Box2& mask,
     const Box2& box,
     const Color& color,
-    float radius,
     float border_width,
     Color border_color,
-    const Box2& mask) {
-
-  Element element;
-  element.position = box.center();
-  element.rotation = Rot2();
-  element.size = box.size();
-  element.radius = radius;
-  element.radius_scale = Vec2::ones();
+    float radius) {
+  auto& element = elements.emplace_back();
+  element.M = make_transform(box.center(), 0, box.size());
   element.color = color;
-  element.border_width = border_width;
   element.border_color = border_color;
-  element.mask = mask;
-  elements.push_back(element);
+  element.border_width = Vec2::uniform(border_width) / box.size();
+  element.radius = Vec2::uniform(radius) / box.size();
+  element.mask.lower = (mask.lower - box.center()) / box.size();
+  element.mask.upper = (mask.upper - box.center()) / box.size();
 }
 
 void Shape2dShader::queue_rect(
@@ -286,21 +269,69 @@ void Shape2dShader::queue_rect(
     float angle,
     const Vec2& size,
     const Color& color,
-    float radius,
     float border_width,
-    Color border_color,
-    const Box2& mask) {
-  Element element;
-  element.position = position;
-  element.rotation = Rot2(angle);
-  element.size = size;
-  element.radius = radius;
-  element.radius_scale = Vec2::ones();
+    Color border_color) {
+  auto& element = elements.emplace_back();
+  element.M = make_transform(position, angle, size);
   element.color = color;
-  element.border_width = border_width;
   element.border_color = border_color;
-  element.mask = mask;
-  elements.push_back(element);
+  element.border_width = Vec2::uniform(border_width) / size;
+  element.radius = Vec2();
+}
+
+void Shape2dShader::queue_circle(
+    const Vec2& position,
+    float radius,
+    const Color& color,
+    float border_width,
+    Color border_color) {
+  auto& element = elements.emplace_back();
+  Vec2 size = Vec2::uniform(2 * radius);
+  element.M = make_transform(position, 0, size);
+  element.color = color;
+  element.border_width = Vec2::uniform(border_width / (2 * radius));
+  element.border_color = border_color;
+  element.radius = Vec2::uniform(0.5);
+}
+
+void Shape2dShader::queue_ellipse(
+    const Vec2& position,
+    float angle,
+    const Vec2& radii,
+    const Color& color,
+    float border_width,
+    Color border_color) {
+  auto& element = elements.emplace_back();
+  element.M = make_transform(position, angle, 2 * radii);
+  element.color = color;
+  element.border_width = Vec2::uniform(border_width) / (2 * radii);
+  element.border_color = border_color;
+  element.radius = Vec2::uniform(0.5);
+}
+
+void Shape2dShader::queue_line(
+    const Vec2& a,
+    const Vec2& b,
+    float width,
+    const Color& color,
+    bool rounded_ends) {
+  Vec2 position = (a + b) / 2;
+  float angle = std::atan2(b.y - a.y, b.x - a.x);
+  Vec2 size;
+  Vec2 radius;
+  if (rounded_ends) {
+    size = Vec2((b - a).length() + width, width);
+    radius = Vec2::uniform(width / 2);
+  } else {
+    size = Vec2((b - a).length(), width);
+    radius = Vec2();
+  }
+
+  auto& element = elements.emplace_back();
+  element.M = make_transform(position, angle, size);
+  element.color = color;
+  element.border_width = Vec2();
+  element.radius = radius / size;
 }
 
 void Shape2dShader::queue_capsule(
@@ -309,97 +340,37 @@ void Shape2dShader::queue_capsule(
     float radius,
     const Color& color,
     float border_width,
-    Color border_color,
-    const Box2& mask) {
-  Element element;
-  element.position = (start + end) / 2;
-  element.rotation = Rot2::line_rot(start, end);
-  element.size = Vec2((start - end).length() + 2 * radius, 2 * radius);
-  element.radius = radius;
-  element.radius_scale = Vec2::ones();
+    Color border_color) {
+  Vec2 position = (start + end) / 2;
+  float angle = std::atan2(end.y - start.y, end.x - start.x);
+  Vec2 size = Vec2((start - end).length() + 2 * radius, 2 * radius);
+
+  auto& element = elements.emplace_back();
+  element.M = make_transform(position, angle, size);
   element.color = color;
-  element.border_width = border_width;
+  element.border_width = Vec2::uniform(border_width) / size;
+  element.radius = Vec2::uniform(radius) / size;
   element.border_color = border_color;
-  element.mask = mask;
-  elements.push_back(element);
 }
 
-void Shape2dShader::queue_circle(
-    const Vec2& position,
-    float radius,
-    const Color& color,
-    float border_width,
-    Color border_color,
-    const Box2& mask) {
-  Element element;
-  element.position = position;
-  element.rotation = Rot2();
-  element.size = Vec2::uniform(2 * radius);
-  element.radius = radius;
-  element.radius_scale = Vec2::ones();
-  element.color = color;
-  element.border_width = border_width;
-  element.border_color = border_color;
-  element.mask = mask;
-  elements.push_back(element);
-}
-
-void Shape2dShader::queue_ellipse(
-    const Vec2& position,
-    float angle,
-    float x_radius,
-    float y_radius,
-    const Color& color,
-    float border_width,
-    Color border_color,
-    const Box2& mask) {
-  Element element;
-  element.position = position;
-  element.rotation = Rot2(angle);
-  element.size = Vec2(2 * x_radius, 2 * y_radius);
-  element.radius = std::min(x_radius, y_radius);
-  element.radius_scale = Vec2(x_radius, y_radius) / element.radius;
-  element.color = color;
-  element.border_width = border_width;
-  element.border_color = border_color;
-  element.mask = mask;
-  elements.push_back(element);
-}
-
-void Shape2dShader::queue_line(
-    const Vec2& a,
-    const Vec2& b,
-    float width,
-    const Color& color,
-    const Box2& mask,
-    bool rounded_ends) {
-  float angle = std::atan2(b.y - a.y, b.x - a.x);
-  Element element;
-  element.position = (a + b) / 2;
-  element.rotation = Rot2(angle);
-  if (rounded_ends) {
-    element.size = Vec2((b - a).length() + width, width);
-    element.radius = width / 2;
-  } else {
-    element.size = Vec2((b - a).length(), width);
-    element.radius = 0;
-  }
-  element.radius_scale = Vec2::ones();
-  element.color = color;
-  element.border_width = 0;
-  element.mask = mask;
-  elements.push_back(element);
-}
-
-void Shape2dShader::draw(const Vec2& viewport_size) {
+void Shape2dShader::draw(const Box2& viewport, const Camera2d& camera) {
   if (elements.empty()) {
     return;
   }
+  glViewport(
+      viewport.lower.x,
+      viewport.lower.y,
+      viewport.upper.x - viewport.lower.x,
+      viewport.upper.y - viewport.lower.y);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
+
+  Mat3 V = camera.view_mat();
+  Mat3 P = camera.projection_mat();
+  Mat3 PV = P * V;
 
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
   glBufferData(
@@ -410,9 +381,9 @@ void Shape2dShader::draw(const Vec2& viewport_size) {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUseProgram(program_id);
-  glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
+  glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
   glBindVertexArray(VAO);
-  glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertices.size(), elements.size());
+  glDrawArraysInstanced(GL_TRIANGLES, 0, static_vertex_count, elements.size());
 }
 
 void Shape2dShader::clear() {

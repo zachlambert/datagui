@@ -43,16 +43,12 @@ const static std::string vertex_shader = R"(
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 uv;
 
-uniform vec2 viewport_size;
+uniform mat3 PV;
 out vec2 fs_uv;
 
 void main(){
-  gl_Position = vec4(
-    (pos.x - viewport_size.x / 2) / (viewport_size.x / 2),
-    (pos.y - viewport_size.y / 2) / (viewport_size.y / 2),
-    0,
-    1
-  );
+  vec3 coords = PV * vec3(pos, 1);
+  gl_Position = vec4(coords.xy / coords.z, 0, 1);
   fs_uv = uv;
 }
 )";
@@ -70,8 +66,7 @@ void main(){
 }
 )";
 
-ImageShader::ImageShader() :
-    program_id(0), uniform_viewport_size(0), VAO(0), VBO(0) {}
+ImageShader::ImageShader() : program_id(0), uniform_PV(0), VAO(0), VBO(0) {}
 
 ImageShader::~ImageShader() {
   if (program_id > 0) {
@@ -87,7 +82,7 @@ ImageShader::~ImageShader() {
 
 ImageShader::ImageShader(ImageShader&& other) {
   program_id = other.program_id;
-  uniform_viewport_size = other.uniform_viewport_size;
+  uniform_PV = other.uniform_PV;
   VAO = other.VAO;
   VBO = other.VBO;
 
@@ -98,7 +93,7 @@ ImageShader::ImageShader(ImageShader&& other) {
 
 void ImageShader::init() {
   program_id = create_program(vertex_shader, fragment_shader);
-  uniform_viewport_size = glGetUniformLocation(program_id, "viewport_size");
+  uniform_PV = glGetUniformLocation(program_id, "PV");
 
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
@@ -133,6 +128,9 @@ void ImageShader::queue_image(
     const Vec2& position,
     float angle,
     const Vec2& size) {
+  if (!image.is_loaded()) {
+    return;
+  }
 
   Mat2 R = Rot2(angle).mat();
   Vec2 lower_left = position;
@@ -140,8 +138,7 @@ void ImageShader::queue_image(
   Vec2 upper_left = position + R * Vec2(0, size.y);
   Vec2 upper_right = position + R * size;
 
-  commands.emplace_back();
-  auto& command = commands.back();
+  auto& command = commands.emplace_back();
 
   // Y flipped
   command.vertices = {
@@ -154,58 +151,82 @@ void ImageShader::queue_image(
   command.texture = image.texture();
 }
 
-void ImageShader::queue_image(
+void ImageShader::queue_masked_image(
+    const Box2& mask,
     const Image& image,
     const Vec2& position,
-    const Vec2& size,
-    const Box2& mask) {
-  auto& command = commands.emplace_back();
+    const Vec2& size) {
+  if (!image.is_loaded()) {
+    return;
+  }
 
   Box2 region = intersection(mask, Box2(position, position + size));
-  Vec2 uv_lower = (region.lower - position) / size;
-  Vec2 uv_upper = (region.upper - position) / size;
+  Box2 uv;
+  uv.lower = (region.lower - position) / size;
+  uv.upper = (region.upper - position) / size;
 
   // Y flipped
-  float left_x = uv_lower.x;
-  float right_x = uv_upper.x;
-  float lower_y = 1 - uv_lower.y;
-  float upper_y = 1 - uv_upper.y;
+  uv.lower.y = 1 - uv.lower.y;
+  uv.upper.y = 1 - uv.upper.y;
 
+  auto& command = commands.emplace_back();
   command.vertices = {
-      Vertex{region.lower_left(), Vec2(left_x, lower_y)},
-      Vertex{region.lower_right(), Vec2(right_x, lower_y)},
-      Vertex{region.upper_left(), Vec2(left_x, upper_y)},
-      Vertex{region.lower_right(), Vec2(right_x, lower_y)},
-      Vertex{region.upper_right(), Vec2(right_x, upper_y)},
-      Vertex{region.upper_left(), Vec2(left_x, upper_y)}};
+      Vertex{region.lower_left(), uv.lower_left()},
+      Vertex{region.lower_right(), uv.lower_right()},
+      Vertex{region.upper_left(), uv.upper_left()},
+      Vertex{region.lower_right(), uv.lower_right()},
+      Vertex{region.upper_right(), uv.upper_right()},
+      Vertex{region.upper_left(), uv.upper_left()}};
   command.texture = image.texture();
 }
 
-void ImageShader::queue_texture(const Box2& box, int texture) {
+void ImageShader::queue_viewport(
+    const Box2& mask,
+    const Box2& box,
+    int texture) {
+  if (texture == 0) {
+    return;
+  }
 
-  commands.emplace_back();
-  auto& command = commands.back();
+  Box2 region = intersection(mask, box);
+  Box2 uv;
+  uv.lower = (region.lower - box.lower) / box.size();
+  uv.upper = (region.upper - box.lower) / box.size();
 
+  auto& command = commands.emplace_back();
   command.vertices = {
-      Vertex{box.lower_left(), Vec2(0, 0)},
-      Vertex{box.lower_right(), Vec2(1, 0)},
-      Vertex{box.upper_left(), Vec2(0, 1)},
-      Vertex{box.lower_right(), Vec2(1, 0)},
-      Vertex{box.upper_right(), Vec2(1, 1)},
-      Vertex{box.upper_left(), Vec2(0, 1)}};
+      Vertex{region.lower_left(), uv.lower_left()},
+      Vertex{region.lower_right(), uv.lower_right()},
+      Vertex{region.upper_left(), uv.upper_left()},
+      Vertex{region.lower_right(), uv.lower_right()},
+      Vertex{region.upper_right(), uv.upper_right()},
+      Vertex{region.upper_left(), uv.upper_left()}};
   command.texture = texture;
 }
 
-void ImageShader::draw(const Vec2& viewport_size) {
+void ImageShader::draw(const Box2& viewport, const Camera2d& camera) {
+  if (commands.empty()) {
+    return;
+  }
+  glViewport(
+      viewport.lower.x,
+      viewport.lower.y,
+      viewport.upper.x - viewport.lower.x,
+      viewport.upper.y - viewport.lower.y);
+
+  Mat3 V = camera.view_mat();
+  Mat3 P = camera.projection_mat();
+  Mat3 PV = P * V;
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_CULL_FACE);
   glDisable(GL_DEPTH_TEST);
 
   glUseProgram(program_id);
-  glUniform2f(uniform_viewport_size, viewport_size.x, viewport_size.y);
   glBindVertexArray(VAO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
 
   for (const auto& command : commands) {
     glBindTexture(GL_TEXTURE_2D, command.texture);

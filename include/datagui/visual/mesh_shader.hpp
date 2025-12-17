@@ -1,6 +1,7 @@
 #pragma once
 
 #include "datagui/color.hpp"
+#include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
 #include <vector>
@@ -53,7 +54,7 @@ public:
       const Rot3& orientation,
       const Color& color);
 
-  void draw(const Vec2& viewport_size, const Camera3d& camera);
+  void draw(const Box2& viewport, const Camera3d& camera);
   void clear();
 
 private:

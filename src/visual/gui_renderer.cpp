@@ -17,15 +17,16 @@ void GuiRenderer::queue_box(
     const Box2& box,
     const Color& bg_color,
     float border_width,
-    Color border_color) {
+    Color border_color,
+    float radius) {
   assert(!masks.empty());
-  shape_shader.queue_box(
+  shape_shader.queue_masked_box(
+      flip_box(masks.top()),
       flip_box(box),
       bg_color,
-      0,
       border_width,
       border_color,
-      masks.top());
+      radius);
 }
 
 void GuiRenderer::queue_text(
@@ -36,31 +37,34 @@ void GuiRenderer::queue_text(
     Color text_color,
     Length width) {
   assert(!masks.empty());
-  text_shader.queue_text(
+  text_shader.queue_masked_text(
+      flip_box(masks.top()),
       flip_position(origin),
       text,
       font,
       font_size,
       text_color,
-      width,
-      masks.top());
+      width);
 }
 
 void GuiRenderer::queue_image(const Box2& box, const Image& image) {
-  image_shader
-      .queue_image(image, flip_position(box.upper_left()), 0, box.size());
+  image_shader.queue_masked_image(
+      flip_box(masks.top()),
+      image,
+      flip_position(box.upper_left()),
+      box.size());
 }
 
-void GuiRenderer::queue_texture(const Box2& box, int texture) {
-  image_shader.queue_texture(flip_box(box), texture);
+void GuiRenderer::queue_viewport(const Box2& box, int texture) {
+  image_shader.queue_viewport(flip_box(masks.top()), flip_box(box), texture);
 }
 
-void GuiRenderer::begin(const Vec2& viewport_size) {
-  this->viewport_size = viewport_size;
+void GuiRenderer::begin(const Box2& viewport) {
+  this->viewport = viewport;
   if (masks.size() == 1) {
     masks.pop();
   }
-  masks.push(Box2(Vec2(), viewport_size));
+  masks.push(viewport);
 }
 
 void GuiRenderer::end() {
@@ -69,9 +73,12 @@ void GuiRenderer::end() {
 }
 
 void GuiRenderer::render() {
-  shape_shader.draw(viewport_size);
-  text_shader.draw(viewport_size);
-  image_shader.draw(viewport_size);
+  camera.position = viewport.center();
+  camera.angle = 0;
+  camera.size = viewport.size();
+  shape_shader.draw(viewport, camera);
+  text_shader.draw(viewport, camera);
+  image_shader.draw(viewport, camera);
   shape_shader.clear();
   text_shader.clear();
   image_shader.clear();
@@ -79,9 +86,9 @@ void GuiRenderer::render() {
 
 void GuiRenderer::push_mask(const Box2& mask) {
   if (masks.empty()) {
-    masks.push(flip_box(mask));
+    masks.push(mask);
   } else {
-    masks.push(intersection(masks.top(), flip_box(mask)));
+    masks.push(intersection(masks.top(), mask));
   }
 }
 
@@ -91,13 +98,13 @@ void GuiRenderer::pop_mask() {
 
 Box2 GuiRenderer::flip_box(const Box2& box) {
   Box2 result = box;
-  result.lower.y = viewport_size.y - box.upper.y;
-  result.upper.y = viewport_size.y - box.lower.y;
+  result.lower.y = viewport.size().y - box.upper.y;
+  result.upper.y = viewport.size().y - box.lower.y;
   return result;
 }
 
 Vec2 GuiRenderer::flip_position(const Vec2& origin) {
-  return Vec2(origin.x, viewport_size.y - origin.y);
+  return Vec2(origin.x, viewport.size().y - origin.y);
 }
 
 } // namespace datagui

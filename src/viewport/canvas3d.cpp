@@ -159,6 +159,7 @@ void Canvas3d::begin() {
   mesh_shader.clear();
   uv_mesh_shader.clear();
   point_cloud_shader.clear();
+  bg_color_ = Color::White();
 }
 
 void Canvas3d::end() {
@@ -166,11 +167,12 @@ void Canvas3d::end() {
 }
 
 void Canvas3d::redraw() {
-  bind_framebuffer();
-  shape_shader.draw(framebuffer_size(), camera);
-  mesh_shader.draw(framebuffer_size(), camera);
-  uv_mesh_shader.draw(framebuffer_size(), camera);
-  point_cloud_shader.draw(framebuffer_size(), camera);
+  camera.size = viewport().size();
+  bind_framebuffer(bg_color_);
+  shape_shader.draw(viewport(), camera);
+  mesh_shader.draw(viewport(), camera);
+  uv_mesh_shader.draw(viewport(), camera);
+  point_cloud_shader.draw(viewport(), camera);
   unbind_framebuffer();
 }
 

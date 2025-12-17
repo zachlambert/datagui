@@ -64,4 +64,8 @@ inline bool contains(const Box2& outer_box, const Box2& inner_box) {
          inner_box.upper <= outer_box.upper;
 }
 
+#ifdef DATAGUI_DEBUG
+std::ostream& operator<<(std::ostream& os, const Box2& box);
+#endif
+
 } // namespace datagui

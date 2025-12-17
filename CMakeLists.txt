@@ -27,6 +27,7 @@ add_library(datagui SHARED
 
   src/geometry/box.cpp
   src/geometry/camera.cpp
+  src/geometry/mat.cpp
   src/geometry/rot.cpp
   src/geometry/vec.cpp
 
@@ -39,7 +40,7 @@ add_library(datagui SHARED
   src/visual/shader_utils.cpp
   src/visual/shape_2d_shader.cpp
   src/visual/shape_3d_shader.cpp
-  src/visual/text_shader.cpp
+  src/visual/text_2d_shader.cpp
   src/visual/uv_mesh_shader.cpp
   src/visual/window.cpp
 

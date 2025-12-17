@@ -23,7 +23,7 @@ public:
         title("datagui"),
         width(900),
         height(600),
-        vsync(false),
+        vsync(true),
         resizable(true) {}
   };
 
@@ -36,6 +36,9 @@ public:
 
   const Vec2& size() const {
     return size_;
+  }
+  Box2 viewport() const {
+    return Box2(Vec2(), size_);
   }
 
   void poll_events();

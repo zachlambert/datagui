@@ -172,7 +172,7 @@ void glfw_char_callback(GLFWwindow* glfw_window, unsigned int codepoint) {
 }
 
 Window::Window(const Config& config) :
-    config(config), window(nullptr), size_() {
+    config(config), window(nullptr), size_(config.width, config.height) {
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     mouse_button_down_[i] = false;
   }

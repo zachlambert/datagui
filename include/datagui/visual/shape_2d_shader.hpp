@@ -10,73 +10,63 @@ class Shape2dShader {
 public:
   void init();
 
-  void queue_box(
+  void queue_masked_box(
+      const Box2& mask,
       const Box2& box,
       const Color& color,
-      float radius,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
+      float border_width = 0,
+      Color border_color = Color::Black(),
+      float radius = 0);
 
   void queue_rect(
       const Vec2& position,
       float angle,
       const Vec2& size,
       const Color& color,
-      float radius,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
-
-  void queue_capsule(
-      const Vec2& start,
-      const Vec2& end,
-      float radius,
-      const Color& color,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
+      float border_width = 0,
+      Color border_color = Color::Black());
 
   void queue_circle(
       const Vec2& position,
       float radius,
       const Color& color,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
+      float border_width = 0,
+      Color border_color = Color::Black());
 
   void queue_ellipse(
       const Vec2& position,
       float angle,
-      float x_radius,
-      float y_radius,
+      const Vec2& radii,
       const Color& color,
-      float border_width,
-      Color border_color,
-      const Box2& mask);
+      float border_width = 0,
+      Color border_color = Color::Black());
 
   void queue_line(
       const Vec2& a,
       const Vec2& b,
       float width,
       const Color& color,
-      const Box2& mask,
       bool rounded_ends = true);
 
-  void draw(const Vec2& viewport_size);
+  void queue_capsule(
+      const Vec2& start,
+      const Vec2& end,
+      float radius,
+      const Color& color,
+      float border_width = 0,
+      Color border_color = Color::Black());
+
+  void draw(const Box2& viewport, const Camera2d& camera);
   void clear();
 
 private:
   struct Element {
-    Vec2 position; // Centre
-    Rot2 rotation;
-    Vec2 size;
-    float radius;
-    Vec2 radius_scale;
+    Mat3 M;
     Color color;
-    float border_width;
     Color border_color;
-    Box2 mask;
+    Vec2 border_width;
+    Vec2 radius;
+    Box2 mask = Box2(Vec2(-0.5, -0.5), Vec2(0.5, 0.5));
   };
   std::vector<Element> elements;
 
@@ -84,12 +74,13 @@ private:
   unsigned int program_id;
 
   // Uniforms
-  unsigned int uniform_viewport_size;
+  unsigned int uniform_PV;
 
   // Array/buffer objects
   unsigned int VAO;
   unsigned int static_VBO;
   unsigned int instance_VBO;
+  std::size_t static_vertex_count = 0;
 };
 
 } // namespace datagui

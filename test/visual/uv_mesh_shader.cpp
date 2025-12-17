@@ -1,11 +1,11 @@
-#include <datagui/visual/mesh_shader.hpp>
+#include <datagui/visual/uv_mesh_shader.hpp>
 #include <datagui/visual/window.hpp>
 
 int main() {
   using namespace datagui;
 
   Window window;
-  MeshShader mesh_shader;
+  UvMeshShader mesh_shader;
   mesh_shader.init();
 
   Camera3d camera;
@@ -17,10 +17,12 @@ int main() {
   camera.fov_degrees = 90;
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
+  camera.size = window.size();
 
   struct Vertex {
     Vec3 position;
     Vec3 normal;
+    Vec2 uv;
   };
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
@@ -40,6 +42,7 @@ int main() {
       Vertex vertex;
       vertex.position = n1 * r1 + n2 * r2;
       vertex.normal = n2;
+      vertex.uv = Vec2{float(i % 2), float(j % 2)};
       vertices.push_back(vertex);
     }
   }
@@ -53,21 +56,38 @@ int main() {
       indices.push_back(((i + 1) % N) * N + (j + 1) % N);
     }
   }
+  struct Pixel {
+    std::uint8_t r, g, b, a;
+  };
+  std::size_t width = 256;
+  std::vector<Pixel> pixels(width * width);
+  for (std::size_t i = 0; i < width; i++) {
+    for (std::size_t j = 0; j < width; j++) {
+      auto& pixel = pixels[i * width + j];
+      if ((i / 128 + j / 128) % 2 == 0) {
+        pixel = {255, 150, 150, 255};
+      } else {
+        pixel = {150, 150, 255, 255};
+      }
+    }
+  }
 
-  Mesh mesh;
+  UvMesh mesh;
   mesh.load_vertices(
       vertices.data(),
       vertices.size(),
       offsetof(Vertex, position),
       offsetof(Vertex, normal),
+      offsetof(Vertex, uv),
       sizeof(Vertex));
   mesh.load_indices(indices.data(), indices.size());
+  mesh.load_texture(width, width, pixels.data());
 
   while (window.running()) {
     window.render_begin();
 
-    mesh_shader.queue_mesh(mesh, Vec3(), Rot3(), Color::Red());
-    mesh_shader.draw(window.size(), camera);
+    mesh_shader.queue_mesh(mesh, Vec3(), Rot3());
+    mesh_shader.draw(Box2(Vec2(), window.size()), camera);
     mesh_shader.clear();
 
     window.render_end();

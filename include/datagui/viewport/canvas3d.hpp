@@ -82,6 +82,10 @@ public:
       const Rot3& orientation,
       float point_size);
 
+  void bg_color(const Color& color) {
+    bg_color_ = color;
+  }
+
 private:
   void begin() override;
   void end() override;
@@ -99,6 +103,7 @@ private:
   UvMeshShader uv_mesh_shader;
   PointCloudShader point_cloud_shader;
 
+  Color bg_color_ = Color::White();
   Vec3 click_point;
   Vec3 click_point_direction;
   Vec3 click_camera_direction;

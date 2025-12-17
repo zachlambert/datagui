@@ -1,9 +1,10 @@
 #pragma once
 
+#include "datagui/geometry/camera.hpp"
 #include "datagui/visual/font_manager.hpp"
 #include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_2d_shader.hpp"
-#include "datagui/visual/text_shader.hpp"
+#include "datagui/visual/text_2d_shader.hpp"
 #include <assert.h>
 #include <memory>
 #include <stack>
@@ -18,7 +19,8 @@ public:
       const Box2& box,
       const Color& bg_color,
       float border_width = 0,
-      Color border_color = Color::Black());
+      Color border_color = Color::Black(),
+      float radius = 0);
 
   void queue_text(
       const Vec2& origin,
@@ -29,9 +31,9 @@ public:
       Length width = LengthWrap());
 
   void queue_image(const Box2& box, const Image& image);
-  void queue_texture(const Box2& box, int texture);
+  void queue_viewport(const Box2& box, int texture);
 
-  void begin(const Vec2& viewport_size);
+  void begin(const Box2& viewport);
   void end();
 
   void render();
@@ -42,12 +44,14 @@ private:
   Box2 flip_box(const Box2& box);
   Vec2 flip_position(const Vec2& origin);
 
+  Box2 viewport;
+  Camera2d camera;
+
   Shape2dShader shape_shader;
-  TextShader text_shader;
+  Text2dShader text_shader;
   ImageShader image_shader;
 
   std::shared_ptr<FontManager> fm;
-  Vec2 viewport_size;
   std::stack<Box2> masks;
 };
 

@@ -368,13 +368,15 @@ bool layout_scroll_event(
   }
 
   Vec2 new_pos = state.scroll_pos;
-  if (state.content_overrun.x > 0 && event.mod.shift) {
+  if (state.content_overrun.x > 0 &&
+      (event.mod.shift || state.content_overrun.y <= 0)) {
     new_pos.x = std::clamp(
         state.scroll_pos.x + event.amount,
         0.f,
         state.content_overrun.x);
   }
-  if (state.content_overrun.y > 0 && !event.mod.shift) {
+  if (state.content_overrun.y > 0 &&
+      (!event.mod.shift || state.content_overrun.x <= 0)) {
     new_pos.y = std::clamp(
         state.scroll_pos.y + event.amount,
         0.f,

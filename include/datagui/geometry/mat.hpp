@@ -14,7 +14,7 @@ struct Mat2 {
 
   Mat2() : data{} {}
   Mat2(float a, float b, float c, float d) : data{a, c, b, d} {}
-  Mat2(float* data) {
+  explicit Mat2(float* data) {
     for (std::size_t i = 0; i < 4; i++) {
       this->data[i] = data[i];
     }
@@ -83,7 +83,7 @@ struct Mat3 {
   float data[9];
 
   Mat3() : data{} {}
-  Mat3(float* data) {
+  explicit Mat3(float* data) {
     for (std::size_t i = 0; i < 9; i++) {
       this->data[i] = data[i];
     }
@@ -157,7 +157,7 @@ struct Mat4 {
   float data[16];
 
   Mat4() : data{} {}
-  Mat4(float* data) {
+  explicit Mat4(float* data) {
     for (std::size_t i = 0; i < 16; i++) {
       this->data[i] = data[i];
     }
@@ -209,5 +209,11 @@ inline Mat4 operator*(const Mat4& lhs, const Mat4& rhs) {
   }
   return result;
 }
+
+#ifdef DATAGUI_DEBUG
+std::ostream& operator<<(std::ostream& os, const Mat2& mat);
+std::ostream& operator<<(std::ostream& os, const Mat3& mat);
+std::ostream& operator<<(std::ostream& os, const Mat4& mat);
+#endif
 
 } // namespace datagui

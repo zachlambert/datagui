@@ -3,7 +3,7 @@
 #include "datagui/viewport/viewport.hpp"
 #include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_2d_shader.hpp"
-#include "datagui/visual/text_shader.hpp"
+#include "datagui/visual/text_2d_shader.hpp"
 #include <functional>
 #include <vector>
 
@@ -109,6 +109,7 @@ struct PlotterArgs {
   float outer_padding = 10;
   float line_width = 2;
   Color tick_color = Color::Gray(0.2);
+  float heatmap_scale_width = 16;
 };
 
 class Plotter : public Viewport {
@@ -170,11 +171,11 @@ private:
 
   PlotterArgs args;
 
+  bool mouse_down_valid = false;
   Vec2 mouse_down_pos;
   Box2 mouse_down_subview;
   Box2 subview = Box2(Vec2(), Vec2::ones());
-  Box2 prev_plot_area =
-      Box2(Vec2(), Vec2::ones()); // Used for mouse event handling
+  Box2 plot_area;
 
   struct PlotItem {
     PlotArgs args;
@@ -188,7 +189,11 @@ private:
     std::function<float(const Vec2&)> function;
     std::size_t width;
     std::size_t height;
+
+    mutable float min_value;
+    mutable float max_value;
     mutable Image image;
+    mutable Image scale_image;
   };
   std::vector<HeatmapItem> heatmap_items;
 
@@ -200,9 +205,11 @@ private:
   std::shared_ptr<Theme> theme;
   std::shared_ptr<FontManager> fm;
 
-  Shape2dShader shape_shader;
-  TextShader text_shader;
-  ImageShader image_shader;
+  Shape2dShader fixed_shape_shader;
+  Text2dShader fixed_text_shader;
+  ImageShader fixed_image_shader;
+  Shape2dShader plot_shape_shader;
+  ImageShader plot_image_shader;
 };
 
 }; // namespace datagui
