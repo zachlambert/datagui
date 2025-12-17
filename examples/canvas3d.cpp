@@ -34,11 +34,19 @@ int main() {
   }
 
   while (gui.running()) {
+    gui.args().horizontal().align_top();
     if (gui.group()) {
+      auto bg_color = gui.variable<Color>(Color::Hsl(220, 0.4, 0.85));
+      auto box_opacity = gui.variable<float>(0.8);
+      auto box_size = gui.variable<float>(2.0);
       if (auto canvas = gui.viewport<datagui::Canvas3d>(512, 512)) {
+        canvas->bg_color(*bg_color);
         canvas->grid(10, 10);
-        canvas
-            ->box(Vec3(0, 0, 1), Rot3(), Vec3::uniform(2), Color(1, 0, 0, 0.8));
+        canvas->box(
+            Vec3(0, 0, 1),
+            Rot3(),
+            Vec3::uniform(*box_size),
+            Color(1, 0, 0, *box_opacity));
         canvas->box(
             Vec3(3, 0, 1),
             Rot3(Euler(M_PI / 4, 0, 0)),
@@ -69,6 +77,22 @@ int main() {
         canvas->axes(Vec3(-5, -5, 0), Rot3(), 2);
 
         canvas->point_cloud(point_cloud, Vec3(), Rot3(), 0.08);
+
+        gui.end();
+      }
+      gui.args().grid(-1, 2);
+      if (gui.group()) {
+        gui.text_box("Bg Color");
+        gui.args().always();
+        gui.color_picker(bg_color);
+
+        gui.text_box("Red Box Opacity");
+        gui.args().always();
+        gui.slider(0.f, 1.f, box_opacity);
+
+        gui.text_box("Red Box Size");
+        gui.args().always();
+        gui.slider(0.f, 10.f, box_size);
 
         gui.end();
       }

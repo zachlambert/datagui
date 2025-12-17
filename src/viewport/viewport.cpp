@@ -76,10 +76,10 @@ void Viewport::init(
   impl_init(theme, fm);
 }
 
-void Viewport::bind_framebuffer() {
+void Viewport::bind_framebuffer(const Color& bg_color) {
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
   glViewport(0, 0, width, height);
-  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClearColor(bg_color.r, bg_color.g, bg_color.b, 1.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

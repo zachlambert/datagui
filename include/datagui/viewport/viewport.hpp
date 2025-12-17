@@ -41,7 +41,7 @@ public:
   }
 
 protected:
-  void bind_framebuffer();
+  void bind_framebuffer(const Color& bg_color = Color::White());
   void unbind_framebuffer();
 
 private:

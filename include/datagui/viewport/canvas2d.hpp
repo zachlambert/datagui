@@ -50,6 +50,10 @@ public:
       Color text_color,
       Length width);
 
+  void bg_color(const Color& color) {
+    bg_color_ = color;
+  }
+
 private:
   void begin() override;
   void end() override;
@@ -62,6 +66,7 @@ private:
   void mouse_event(const Vec2& size, const MouseEvent& event) override;
   bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
 
+  Color bg_color_ = Color::White();
   Vec2 click_camera_pos;
   Vec2 click_mouse_pos;
 

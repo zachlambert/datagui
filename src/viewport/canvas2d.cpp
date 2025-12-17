@@ -67,6 +67,7 @@ void Canvas2d::text(
 void Canvas2d::begin() {
   shape_shader.clear();
   text_shader.clear();
+  bg_color_ = Color::White();
 }
 
 void Canvas2d::end() {
@@ -81,7 +82,7 @@ void Canvas2d::impl_init(
 }
 
 void Canvas2d::redraw() {
-  bind_framebuffer();
+  bind_framebuffer(bg_color_);
   camera.size = viewport().size();
   shape_shader.draw(viewport(), camera);
   text_shader.draw(viewport(), camera);
