@@ -13,4 +13,5 @@ create_example(gui_6)
 create_example(datapack)
 
 create_example(canvas2d)
+create_example(canvas3d)
 create_example(plotter)

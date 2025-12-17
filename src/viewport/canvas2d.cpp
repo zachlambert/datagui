@@ -82,6 +82,7 @@ void Canvas2d::impl_init(
 
 void Canvas2d::redraw() {
   bind_framebuffer();
+  camera.position = viewport().center();
   camera.size = viewport().size();
   shape_shader.draw(viewport(), camera);
   text_shader.draw(viewport(), camera);

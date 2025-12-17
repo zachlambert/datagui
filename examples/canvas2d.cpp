@@ -17,10 +17,7 @@ int main() {
 
       if (auto canvas = gui.viewport<datagui::Canvas2d>(200, 200)) {
         Vec2 center = Vec2(100, 100);
-        Vec2 lower = center - Vec2::uniform(*width / 2);
-        Vec2 upper = center + Vec2::uniform(*width / 2);
-
-        canvas->rect(lower, 0, upper - lower, *color, *border_size);
+        canvas->rect(center, 0, Vec2::uniform(*width), *color, *border_size);
         gui.end();
       }
 
