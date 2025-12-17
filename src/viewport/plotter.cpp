@@ -141,8 +141,7 @@ void Plotter::queue_commands() {
   float header_size = 0;
   float title_width = 0;
   if (!title_.empty()) {
-    Vec2 title_size =
-        fm->text_size(title_, theme->text_font, 1.4 * theme->text_size);
+    Vec2 title_size = fm->text_size(title_, theme->text_font, theme->text_size);
     title_width = std::min(title_size.x + theme->text_padding, size.x / 2);
     header_size = title_size.y;
     fixed_text_shader.queue_text(
@@ -150,7 +149,7 @@ void Plotter::queue_commands() {
         0,
         title_,
         theme->text_font,
-        1.4 * theme->text_size,
+        theme->text_size,
         theme->text_color,
         LengthFixed(title_width));
   }
@@ -589,16 +588,22 @@ void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
     return;
   }
   if (event.action == MouseAction::Press) {
+    if (!plot_area.contains(event.position)) {
+      mouse_down_valid = false;
+      return;
+    }
     if (event.is_double_click) {
       subview = Box2(Vec2(), Vec2::ones());
       mouse_down_subview = subview;
       return;
     }
+    mouse_down_valid = true;
     mouse_down_pos = event.position;
     mouse_down_subview = subview;
     return;
   }
-  if (event.action != MouseAction::Hold || event.button != MouseButton::Left) {
+  if (!mouse_down_valid || event.action != MouseAction::Hold ||
+      event.button != MouseButton::Left) {
     return;
   }
 
@@ -611,6 +616,9 @@ void Plotter::mouse_event(const Vec2& size, const MouseEvent& event) {
 }
 
 bool Plotter::scroll_event(const Vec2& element_size, const ScrollEvent& event) {
+  if (!plot_area.contains(event.position)) {
+    return false;
+  }
   float ratio = std::exp(event.amount / 1000.f);
   Vec2 size_ratio = Vec2::ones();
   if (!event.mod.shift) {

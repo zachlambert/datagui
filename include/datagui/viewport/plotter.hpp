@@ -171,6 +171,7 @@ private:
 
   PlotterArgs args;
 
+  bool mouse_down_valid = false;
   Vec2 mouse_down_pos;
   Box2 mouse_down_subview;
   Box2 subview = Box2(Vec2(), Vec2::ones());
