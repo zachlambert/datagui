@@ -40,11 +40,12 @@ PlotHandle Plotter::plot(
     const float* y,
     std::size_t size,
     std::size_t stride) {
+  assert(stride % sizeof(float) == 0);
   PlotItem& item = plot_items.emplace_back();
-  item.points.reserve(size);
+  item.points.resize(size);
   for (std::size_t i = 0; i < size; i++) {
-    item.points[i].x = x[i * stride];
-    item.points[i].y = y[i * stride];
+    item.points[i].x = x[i * (stride / sizeof(float))];
+    item.points[i].y = y[i * (stride / sizeof(float))];
   }
   item.args.color = default_plot_colors[default_color_i];
   default_color_i = (default_color_i + 1) % default_plot_colors.size();
@@ -56,11 +57,42 @@ PlotHandle Plotter::plot(
     const double* y,
     std::size_t size,
     std::size_t stride) {
+  assert(stride % sizeof(float) == 0);
   PlotItem& item = plot_items.emplace_back();
-  item.points.reserve(size);
+  item.points.resize(size);
   for (std::size_t i = 0; i < size; i++) {
-    item.points[i].x = x[i * stride];
-    item.points[i].y = y[i * stride];
+    item.points[i].x = x[i * (stride / sizeof(double))];
+    item.points[i].y = y[i * (stride / sizeof(double))];
+  }
+  item.args.color = default_plot_colors[default_color_i];
+  default_color_i = (default_color_i + 1) % default_plot_colors.size();
+  return PlotHandle(item.args);
+}
+
+PlotHandle Plotter::plot_function(
+    const std::function<float(float)>& f,
+    float x_min,
+    float x_max,
+    float x_resolution) {
+  PlotItem& item = plot_items.emplace_back();
+  item.points.clear();
+  for (float x = x_min; x <= x_max; x += x_resolution) {
+    item.points.push_back({x, f(x)});
+  }
+  item.args.color = default_plot_colors[default_color_i];
+  default_color_i = (default_color_i + 1) % default_plot_colors.size();
+  return PlotHandle(item.args);
+}
+
+PlotHandle Plotter::plot_function(
+    const std::function<double(double)>& f,
+    double x_min,
+    double x_max,
+    double x_resolution) {
+  PlotItem& item = plot_items.emplace_back();
+  item.points.clear();
+  for (float x = x_min; x <= x_max; x += x_resolution) {
+    item.points.push_back({float(x), float(f(x))});
   }
   item.args.color = default_plot_colors[default_color_i];
   default_color_i = (default_color_i + 1) % default_plot_colors.size();
@@ -98,6 +130,9 @@ void Plotter::begin() {
   heatmap_items.clear();
   xlabel_.clear();
   ylabel_.clear();
+  xlimit_ = std::nullopt;
+  ylimit_ = std::nullopt;
+  undistorted_ = false;
   default_color_i = 0;
 }
 
@@ -122,8 +157,8 @@ void Plotter::redraw() {
   fixed_shape_shader.draw(viewport(), fixed_camera);
   fixed_text_shader.draw(viewport(), fixed_camera);
   fixed_image_shader.draw(viewport(), fixed_camera);
-  plot_shape_shader.draw(plot_area, plot_camera);
   plot_image_shader.draw(plot_area, plot_camera);
+  plot_shape_shader.draw(plot_area, plot_camera);
 
   unbind_framebuffer();
   fixed_shape_shader.clear();
@@ -253,6 +288,29 @@ void Plotter::queue_commands() {
   if (!heatmap_items.empty()) {
     for (const auto& item : heatmap_items) {
       bounds = bounding(item.bounds, bounds);
+    }
+  }
+  if (xlimit_.has_value()) {
+    bounds.lower.x = xlimit_->first;
+    bounds.upper.x = xlimit_->second;
+  }
+  if (ylimit_.has_value()) {
+    bounds.lower.y = ylimit_->first;
+    bounds.upper.y = ylimit_->second;
+  }
+  if (undistorted_) {
+    double target_ratio = viewport().size().y / viewport().size().x;
+    double ratio = bounds.size().y / bounds.size().x;
+    if (ratio > target_ratio) {
+      double width = bounds.size().y / target_ratio;
+      double center = bounds.center().x;
+      bounds.lower.x = center - width / 2;
+      bounds.upper.x = center + width / 2;
+    } else {
+      double height = bounds.size().x * target_ratio;
+      double center = bounds.center().y;
+      bounds.lower.y = center - height / 2;
+      bounds.upper.y = center + height / 2;
     }
   }
 

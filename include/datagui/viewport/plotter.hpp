@@ -121,19 +121,32 @@ public:
       const float* x,
       const float* y,
       std::size_t size,
-      std::size_t stride = 1);
+      std::size_t stride = sizeof(float));
   PlotHandle plot(const std::vector<float>& x, const std::vector<float>& y) {
-    return plot(x.data(), y.data(), 1);
+    assert(x.size() == y.size());
+    return plot(x.data(), y.data(), x.size(), sizeof(float));
   }
 
   PlotHandle plot(
       const double* x,
       const double* y,
       std::size_t size,
-      std::size_t stride = 1);
+      std::size_t stride = sizeof(double));
   PlotHandle plot(const std::vector<double>& x, const std::vector<double>& y) {
-    return plot(x.data(), y.data(), 1);
+    assert(x.size() == y.size());
+    return plot(x.data(), y.data(), x.size(), sizeof(double));
   }
+
+  PlotHandle plot_function(
+      const std::function<float(float)>& f,
+      float x_min,
+      float x_max,
+      float x_resolution);
+  PlotHandle plot_function(
+      const std::function<double(double)>& f,
+      double x_min,
+      double x_max,
+      double x_resolution);
 
   HeatmapHandle heatmap(
       const Vec2& lower,
@@ -150,6 +163,15 @@ public:
   }
   void ylabel(const std::string& ylabel) {
     ylabel_ = ylabel;
+  }
+  void xlimit(float lower, float upper) {
+    xlimit_ = std::make_pair(lower, upper);
+  }
+  void ylimit(float lower, float upper) {
+    ylimit_ = std::make_pair(lower, upper);
+  }
+  void undistorted() {
+    undistorted_ = true;
   }
 
 private:
@@ -200,6 +222,9 @@ private:
   std::string title_;
   std::string xlabel_;
   std::string ylabel_;
+  std::optional<std::pair<float, float>> xlimit_;
+  std::optional<std::pair<float, float>> ylimit_;
+  bool undistorted_ = false;
 
   std::size_t default_color_i = 0;
   std::shared_ptr<Theme> theme;

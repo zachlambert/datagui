@@ -171,8 +171,15 @@ void glfw_char_callback(GLFWwindow* glfw_window, unsigned int codepoint) {
   window->text_events_.push_back(event);
 }
 
-Window::Window(const Config& config) :
-    config(config), window(nullptr), size_(config.width, config.height) {
+Window::Window(
+    const std::string& title,
+    std::size_t width,
+    std::size_t height) :
+    title(title),
+    default_width(width),
+    default_height(height),
+    window(nullptr),
+    size_(width, height) {
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     mouse_button_down_[i] = false;
   }
@@ -214,9 +221,9 @@ void Window::open() {
 
   // Create window with graphics context
   window = glfwCreateWindow(
-      config.width,
-      config.height,
-      config.title.c_str(),
+      default_width,
+      default_height,
+      title.c_str(),
       nullptr,
       nullptr);
 
@@ -226,11 +233,8 @@ void Window::open() {
 
   glfwMakeContextCurrent(window);
 
-  if (config.vsync) {
-    glfwSwapInterval(1);
-  } else {
-    glfwSwapInterval(0);
-  }
+  // Enable vsync
+  glfwSwapInterval(1);
 
   if (glewInit() != GLEW_OK) {
     throw std::runtime_error("Failed to initialise glew");
@@ -268,6 +272,16 @@ void Window::render_begin() {
 
 void Window::render_end() {
   glfwSwapBuffers(window);
+}
+
+void Window::set_fixed_size(const Vec2& size) {
+  glfwSetWindowSize(window, size.x, size.y);
+  glfwSetWindowAttrib(window, GLFW_RESIZABLE, false);
+  size_ = size;
+}
+
+void Window::set_dynamic_size() {
+  glfwSetWindowAttrib(window, GLFW_RESIZABLE, true);
 }
 
 void Window::poll_events() {

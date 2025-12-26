@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <cmath>
 #include <cstddef>
+#include <initializer_list>
 
 namespace datagui {
 

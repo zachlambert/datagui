@@ -13,21 +13,10 @@ namespace datagui {
 
 class Window {
 public:
-  struct Config {
-    std::string title;
-    int width;
-    int height;
-    bool vsync;
-    bool resizable;
-    Config() :
-        title("datagui"),
-        width(900),
-        height(600),
-        vsync(true),
-        resizable(true) {}
-  };
-
-  Window(const Config& config = Config());
+  Window(
+      const std::string& title = "datagui",
+      std::size_t width = 900,
+      std::size_t height = 600);
   ~Window();
 
   bool running() const;
@@ -40,6 +29,8 @@ public:
   Box2 viewport() const {
     return Box2(Vec2(), size_);
   }
+  void set_fixed_size(const Vec2& size);
+  void set_dynamic_size();
 
   void poll_events();
 
@@ -63,7 +54,10 @@ private:
   void open();
   void close();
 
-  const Config config;
+  std::string title;
+  std::size_t default_width;
+  std::size_t default_height;
+
   GLFWwindow* window;
   Vec2 size_;
 

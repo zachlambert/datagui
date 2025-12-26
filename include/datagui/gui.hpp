@@ -22,7 +22,9 @@ namespace datagui {
 
 class Gui {
 public:
-  Gui(const Window::Config& window_config = Window::Config());
+  Gui(const std::string& title = "datagui",
+      std::size_t width = 900,
+      std::size_t height = 600);
 
   // Setup
 

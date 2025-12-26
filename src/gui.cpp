@@ -21,7 +21,8 @@ namespace datagui {
 
 using namespace std::placeholders;
 
-Gui::Gui(const Window::Config& config) : window(config) {
+Gui::Gui(const std::string& title, std::size_t width, std::size_t height) :
+    window(title, width, height) {
   fm = std::make_shared<FontManager>();
   theme = std::make_shared<Theme>(theme_default());
   renderer.init(fm);
@@ -675,6 +676,12 @@ void Gui::calculate_sizes() {
     {
       auto root = tree.root();
       assert(root);
+
+      if (root.state().dynamic_size == Vec2()) {
+        window.set_fixed_size(root.state().fixed_size);
+      } else {
+        window.set_dynamic_size();
+      }
       root.state().position = Vec2();
       root.state().size = window.size();
       stack.push(root);

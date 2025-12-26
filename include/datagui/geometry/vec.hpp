@@ -21,6 +21,15 @@ struct Vec2 {
   Vec2(float x, float y) : x(x), y(y) {}
   explicit Vec2(float* data) : data{data[0], data[1]} {}
 
+  template <typename T>
+  static Vec2 cast(T x, T y) {
+    return Vec2(static_cast<float>(x), static_cast<float>(y));
+  }
+  template <typename T>
+  static Vec2 cast(T* data) {
+    return Vec2(static_cast<float>(data[0]), static_cast<float>(data[1]));
+  }
+
   float& operator()(std::size_t i) {
     assert(i <= 1);
     return data[i];
