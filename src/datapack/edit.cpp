@@ -18,10 +18,53 @@ void datapack_edit(
   auto iter = schema.begin();
   std::string next_label = root_label;
 
-  while (iter != schema.end()) {
-    while (iter != schema.end() && !stack.empty()) {
+  while (iter != schema.end() || !stack.empty()) {
+    while (!stack.empty()) {
       auto parent = stack.top();
 
+      if (parent.list()) {
+        assert(!list_stack.empty());
+        auto& state = list_stack.top();
+
+        if (state.i != 0) {
+          auto keys = state.keys;
+          std::size_t key = (*keys)[state.i - 1];
+          gui.button("Remove", [=]() { keys.mut().remove(key); });
+          gui.end();
+        }
+
+        while (state.i < state.keys->size()) {
+          gui.key((*state.keys)[state.i]);
+          gui.args().horizontal();
+          if (gui.group()) {
+            break;
+          }
+          state.i++;
+        }
+
+        if (state.i == state.keys->size()) {
+          gui.end();
+          auto keys_var = state.keys;
+          gui.button("new", [keys_var]() { keys_var.mut().append(); });
+          gui.end();
+          stack.pop();
+          list_stack.pop();
+          iter = parent.skip();
+          continue;
+        }
+
+        state.i++;
+        iter = parent.next();
+        break;
+      }
+
+      // For all non-list containers, if at the end of the schema,
+      // then pop and continue, no extra logic required
+      if (iter == schema.end()) {
+        gui.end();
+        stack.pop();
+        continue;
+      }
       if (parent.object_begin()) {
         bool have_next = false;
         while (true) {
@@ -56,41 +99,6 @@ void datapack_edit(
           throw datapack::SchemaError("Expected TupleNext");
         }
         iter = iter.next();
-        break;
-      }
-      if (parent.list()) {
-        assert(!list_stack.empty());
-        auto& state = list_stack.top();
-
-        if (state.i != 0) {
-          auto keys = state.keys;
-          std::size_t key = (*keys)[state.i - 1];
-          gui.button("Remove", [=]() { keys.mut().remove(key); });
-          gui.end();
-        }
-
-        while (state.i < state.keys->size()) {
-          gui.key((*state.keys)[state.i]);
-          gui.args().horizontal();
-          if (gui.group()) {
-            break;
-          }
-          state.i++;
-        }
-
-        if (state.i == state.keys->size()) {
-          gui.end();
-          auto keys_var = state.keys;
-          gui.button("new", [keys_var]() { keys_var.mut().append(); });
-          gui.end();
-          stack.pop();
-          list_stack.pop();
-          iter = parent.skip();
-          continue;
-        }
-
-        state.i++;
-        iter = parent.next();
         break;
       }
       if (parent.optional()) {
@@ -292,6 +300,7 @@ void datapack_edit(
       continue;
     }
   }
+  assert(stack.empty());
 }
 
 } // namespace datagui

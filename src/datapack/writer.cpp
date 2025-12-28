@@ -227,6 +227,9 @@ void GuiWriter::list_begin() {
 
   gui.args().tight();
   gui.group();
+
+  // Hack to force gui to depend on key list here
+  *key_list;
 }
 
 void GuiWriter::list_next() {

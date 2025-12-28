@@ -181,7 +181,8 @@ public:
   template <typename T>
   void edit(
       const std::string& label,
-      const std::function<void(const T&)>& callback) {
+      const std::function<void(const T&)>& callback,
+      const T& initial_value = T()) {
     bool is_new = !current;
     args_.tight();
     if (!group()) {
@@ -189,8 +190,10 @@ public:
     }
     auto schema = variable<datapack::Schema>(
         []() { return datapack::Schema::make<T>(); });
-    datapack_edit(*this, label, *schema);
-    if (!is_new) {
+    if (is_new) {
+      datapack_write(*this, label, initial_value);
+    } else {
+      datapack_edit(*this, label, *schema);
       auto node_capture = current.prev();
       callback(datapack_read<T>(node_capture));
     }

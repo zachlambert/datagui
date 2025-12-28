@@ -88,6 +88,7 @@ int main() {
 
   int revisit = 0;
   while (gui.running()) {
+    gui.args().width_expand();
     if (gui.group()) {
       auto value = gui.variable<Foo>();
 
@@ -101,6 +102,13 @@ int main() {
       gui.args().text_size(20).text_color(datagui::Color::Blue());
       gui.text_box("Edit + Overwritten by above");
       gui.edit<Foo>("Foo 2", value);
+
+      gui.args().text_size(20).text_color(datagui::Color::Blue());
+      gui.text_box("List");
+      gui.edit<std::vector<std::string>>(
+          "Test",
+          [](const std::vector<std::string>&) {},
+          {"first", "second"});
 
       std::cout << "Revisit: " << revisit++ << std::endl;
       gui.end();
