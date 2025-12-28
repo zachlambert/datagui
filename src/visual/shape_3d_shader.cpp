@@ -571,6 +571,9 @@ void Shape3dShader::queue_box(
     const Rot3& orientation,
     const Vec3& scale,
     const Color& color) {
+  if (scale.x <= 0 || scale.y <= 0 || scale.z <= 0) {
+    return;
+  }
   auto& element = elements[(std::size_t)ShapeType::Box].emplace_back();
   element.transform = make_transform(position, orientation, scale);
   element.color = color;
@@ -582,6 +585,9 @@ void Shape3dShader::queue_cylinder(
     float radius,
     float length,
     const Color& color) {
+  if (radius <= 0 || length <= 0) {
+    return;
+  }
   auto& element = elements[(std::size_t)ShapeType::Cylinder].emplace_back();
   element.transform = make_transform(
       base_position,
@@ -594,6 +600,9 @@ void Shape3dShader::queue_sphere(
     const Vec3& position,
     float radius,
     const Color& color) {
+  if (radius <= 0) {
+    return;
+  }
   auto& element = elements[(std::size_t)ShapeType::Sphere].emplace_back();
   element.transform = make_transform(position, Rot3(), Vec3::uniform(radius));
   element.color = color;
@@ -604,6 +613,9 @@ void Shape3dShader::queue_half_sphere(
     const Vec3& direction,
     float radius,
     const Color& color) {
+  if (radius <= 0) {
+    return;
+  }
   auto& element = elements[(std::size_t)ShapeType::HalfSphere].emplace_back();
   element.transform = make_transform(
       position,
@@ -618,6 +630,9 @@ void Shape3dShader::queue_cone(
     float radius,
     float length,
     const Color& color) {
+  if (radius <= 0 || length <= 0) {
+    return;
+  }
   auto& element = elements[(std::size_t)ShapeType::Cone].emplace_back();
   element.transform = make_transform(
       base_position,
@@ -631,6 +646,9 @@ void Shape3dShader::queue_capsule(
     const Vec3& end,
     float radius,
     const Color& color) {
+  if (radius <= 0) {
+    return;
+  }
   float length = std::max((end - start).length(), 0.f);
   if (length != 0.f) {
     Vec3 direction = (end - start) / length;
@@ -676,6 +694,9 @@ void Shape3dShader::queue_plane(
     const Rot3& orientation,
     const Vec2& scale,
     const Color& color) {
+  if (scale.x <= 0 || scale.y <= 0) {
+    return;
+  }
   auto& element = elements[(std::size_t)ShapeType::Plane].emplace_back();
   element.transform =
       make_transform(position, orientation, Vec3(scale.x, scale.y, 1));

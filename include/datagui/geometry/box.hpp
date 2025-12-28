@@ -29,7 +29,7 @@ struct Box2 {
   }
 
   bool empty() const {
-    return lower == upper;
+    return lower.x >= upper.x || lower.y >= upper.y;
   }
 
   Vec2 lower_left() const {

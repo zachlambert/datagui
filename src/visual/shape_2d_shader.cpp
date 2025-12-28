@@ -254,6 +254,9 @@ void Shape2dShader::queue_masked_box(
     float border_width,
     Color border_color,
     float radius) {
+  if (box.empty()) {
+    return;
+  }
   auto& element = elements.emplace_back();
   element.M = make_transform(box.center(), 0, box.size());
   element.color = color;
@@ -271,6 +274,9 @@ void Shape2dShader::queue_rect(
     const Color& color,
     float border_width,
     Color border_color) {
+  if (size.x <= 0 || size.y <= 0) {
+    return;
+  }
   auto& element = elements.emplace_back();
   element.M = make_transform(position, angle, size);
   element.color = color;
@@ -285,6 +291,9 @@ void Shape2dShader::queue_circle(
     const Color& color,
     float border_width,
     Color border_color) {
+  if (radius <= 0) {
+    return;
+  }
   auto& element = elements.emplace_back();
   Vec2 size = Vec2::uniform(2 * radius);
   element.M = make_transform(position, 0, size);
@@ -301,6 +310,9 @@ void Shape2dShader::queue_ellipse(
     const Color& color,
     float border_width,
     Color border_color) {
+  if (radii.x <= 0 || radii.y <= 0) {
+    return;
+  }
   auto& element = elements.emplace_back();
   element.M = make_transform(position, angle, 2 * radii);
   element.color = color;
@@ -315,6 +327,9 @@ void Shape2dShader::queue_line(
     float width,
     const Color& color,
     bool rounded_ends) {
+  if (width <= 0) {
+    return;
+  }
   Vec2 position = (a + b) / 2;
   float angle = std::atan2(b.y - a.y, b.x - a.x);
   Vec2 size;
@@ -341,6 +356,9 @@ void Shape2dShader::queue_capsule(
     const Color& color,
     float border_width,
     Color border_color) {
+  if (radius <= 0) {
+    return;
+  }
   Vec2 position = (start + end) / 2;
   float angle = std::atan2(end.y - start.y, end.x - start.x);
   Vec2 size = Vec2((start - end).length() + 2 * radius, 2 * radius);
