@@ -34,7 +34,7 @@ int main() {
   }
 
   PointCloud point_cloud;
-  point_cloud.load_points(
+  point_cloud.load_colored_points(
       points.data(),
       points.size(),
       offsetof(Point, position),

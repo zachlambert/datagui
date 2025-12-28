@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/color.hpp"
 #include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
@@ -17,12 +18,19 @@ public:
   PointCloud& operator=(const PointCloud&) = delete;
   PointCloud& operator=(PointCloud&&) = delete;
 
-  void load_points(
+  void load_colored_points(
       void* points,
       std::size_t num_points,
       std::size_t positions_offset,
       std::size_t colors_offset,
       std::size_t stride);
+
+  void load_points(
+      void* points,
+      std::size_t num_points,
+      std::size_t positions_offset,
+      std::size_t stride,
+      const Color& color);
 
 private:
   void init();

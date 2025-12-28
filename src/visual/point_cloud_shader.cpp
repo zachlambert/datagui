@@ -91,8 +91,12 @@ PointCloud::~PointCloud() {
 PointCloud::PointCloud(PointCloud&& other) {
   VAO = other.VAO;
   VBO = other.VBO;
+  vertex_count = other.vertex_count;
+  initialized = other.initialized;
   other.VAO = 0;
   other.VBO = 0;
+  other.vertex_count = 0;
+  other.initialized = false;
 }
 
 void PointCloud::init() {
@@ -132,7 +136,7 @@ void PointCloud::init() {
   initialized = true;
 }
 
-void PointCloud::load_points(
+void PointCloud::load_colored_points(
     void* points,
     std::size_t num_points,
     std::size_t positions_offset,
@@ -149,6 +153,37 @@ void PointCloud::load_points(
         *(Vec3*)((std::uint8_t*)points + i * stride + positions_offset);
     gl_points[i].color =
         *(Vec3*)((std::uint8_t*)points + i * stride + colors_offset);
+  }
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(
+      GL_ARRAY_BUFFER,
+      gl_points.size() * sizeof(Vertex),
+      gl_points.data(),
+      GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  vertex_count = num_points;
+}
+
+void PointCloud::load_points(
+    void* points,
+    std::size_t num_points,
+    std::size_t positions_offset,
+    std::size_t stride,
+    const Color& color) {
+
+  if (!initialized) {
+    init();
+  }
+
+  std::vector<Vertex> gl_points(num_points);
+  for (std::size_t i = 0; i < num_points; i++) {
+    gl_points[i].position =
+        *(Vec3*)((std::uint8_t*)points + i * stride + positions_offset);
+    gl_points[i].color.x = color.r * 255;
+    gl_points[i].color.y = color.g * 255;
+    gl_points[i].color.z = color.b * 255;
   }
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
