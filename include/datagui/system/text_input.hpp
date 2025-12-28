@@ -19,6 +19,7 @@ public:
   void mouse_event(ElementPtr element, const MouseEvent& event) override;
   void key_event(ElementPtr element, const KeyEvent& event) override;
   void text_event(ElementPtr element, const TextEvent& event) override;
+  bool scroll_event(ElementPtr element, const ScrollEvent& event) override;
 
   void focus_enter(ElementPtr element) override;
   void focus_leave(ElementPtr element, bool success) override;

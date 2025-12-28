@@ -87,32 +87,29 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
     }
   }
 
-  std::string value_str;
   switch (type) {
   case datapack::NumberType::I32:
-    value_str = std::to_string(*(std::int32_t*)value);
+    gui.number_input<std::int32_t>(*(std::int32_t*)value, {});
     break;
   case datapack::NumberType::I64:
-    value_str = std::to_string(*(std::int64_t*)value);
+    gui.number_input<std::int64_t>(*(std::int64_t*)value, {});
     break;
   case datapack::NumberType::U32:
-    value_str = std::to_string(*(std::uint32_t*)value);
+    gui.number_input<std::uint32_t>(*(std::uint32_t*)value, {});
     break;
   case datapack::NumberType::U64:
-    value_str = std::to_string(*(std::uint64_t*)value);
+    gui.number_input<std::uint64_t>(*(std::uint64_t*)value, {});
     break;
   case datapack::NumberType::U8:
-    value_str = std::to_string(*(std::uint8_t*)value);
+    gui.number_input<std::uint8_t>(*(std::uint8_t*)value, {});
     break;
   case datapack::NumberType::F32:
-    value_str = std::to_string(*(float*)value);
+    gui.number_input<float>(*(float*)value, {});
     break;
   case datapack::NumberType::F64:
-    value_str = std::to_string(*(double*)value);
+    gui.number_input<double>(*(double*)value, {});
     break;
   }
-
-  gui.text_input(value_str, {});
 }
 
 void GuiWriter::boolean(bool value) {

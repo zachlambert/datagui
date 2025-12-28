@@ -149,11 +149,54 @@ void TextInputSystem::text_event(ElementPtr element, const TextEvent& event) {
       event);
 }
 
+bool TextInputSystem::scroll_event(
+    ElementPtr element,
+    const ScrollEvent& event) {
+  auto& text_input = element.text_input();
+  const auto& state = element.state();
+
+  if (!text_input.number_type.has_value()) {
+    return false;
+  }
+  auto type = *text_input.number_type;
+  if (type != NumberType::F32 && type != NumberType::F64) {
+    // Currently only support floats
+    // For integers, need to keep a floating-point value for the
+    // scroll progress and round the current value
+    return false;
+  }
+
+  double scroll_amount = -0.001 * event.amount;
+  if (event.mod.shift) {
+    scroll_amount /= 10;
+  }
+  if (event.mod.ctrl) {
+    scroll_amount *= 10;
+  }
+
+  const std::string& text = state.focused ? active_text : text_input.text;
+  double value;
+  text_to_number(text, value);
+  value += scroll_amount;
+  if (state.focused) {
+    active_text = std::to_string(value);
+  } else {
+    text_input.text = std::to_string(value);
+    if (text_input.callback) {
+      text_input.callback(text_input.text);
+    } else {
+      element.set_dirty();
+    }
+  }
+
+  return true;
+}
+
 void TextInputSystem::focus_enter(ElementPtr element) {
-  const auto& props = element.text_input();
+  const auto& text_input = element.text_input();
 
   active_selection.reset(0);
-  active_text = props.text;
+  active_text = text_input.text;
 }
 
 void TextInputSystem::focus_leave(ElementPtr element, bool success) {
