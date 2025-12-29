@@ -134,7 +134,7 @@ void UvMesh::init() {
 }
 
 void UvMesh::load_vertices(
-    void* vertices,
+    const void* vertices,
     std::size_t num_vertices,
     std::size_t positions_offset,
     std::size_t normals_offset,
@@ -165,7 +165,7 @@ void UvMesh::load_vertices(
 }
 
 void UvMesh::load_indices(
-    unsigned int* const indices,
+    const unsigned int* const indices,
     std::size_t num_indices) {
   if (!initialized) {
     init();

@@ -19,13 +19,13 @@ public:
   Mesh& operator=(Mesh&&) = delete;
 
   void load_vertices(
-      void* vertices,
+      const void* vertices,
       std::size_t num_vertices,
       std::size_t positions_offset,
       std::size_t normals_offset,
       std::size_t stride);
 
-  void load_indices(unsigned int* const indices, std::size_t num_indices);
+  void load_indices(const unsigned int* const indices, std::size_t num_indices);
 
 private:
   struct Vertex {

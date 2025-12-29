@@ -69,9 +69,12 @@ Mesh::Mesh(Mesh&& other) {
   VBO = other.VBO;
   EBO = other.VBO;
   index_count = other.index_count;
+  initialized = other.initialized;
   other.VAO = 0;
   other.VBO = 0;
   other.EBO = 0;
+  other.index_count = 0;
+  other.initialized = false;
 }
 
 void Mesh::init() {
@@ -115,7 +118,7 @@ void Mesh::init() {
 }
 
 void Mesh::load_vertices(
-    void* vertices,
+    const void* vertices,
     std::size_t num_vertices,
     std::size_t positions_offset,
     std::size_t normals_offset,
@@ -142,7 +145,9 @@ void Mesh::load_vertices(
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Mesh::load_indices(unsigned int* const indices, std::size_t num_indices) {
+void Mesh::load_indices(
+    const unsigned int* const indices,
+    std::size_t num_indices) {
   if (!initialized) {
     init();
   }
