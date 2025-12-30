@@ -140,6 +140,7 @@ void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
 void GuiWriter::optional_begin(bool has_value) {
   make_collapsable();
   auto has_value_var = gui.variable<bool>(has_value);
+  has_value_var.mut_internal() = has_value; // Overwrite if exists
   gui.checkbox(has_value_var);
   if (!*has_value_var) {
     gui.end();
@@ -159,6 +160,7 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
 
   make_collapsable();
   auto choice_var = gui.variable<int>(value);
+  choice_var.mut_internal() = value; // Ovewrite if exists
   gui.select(labels_str, choice_var);
   gui.key(*choice_var);
 
@@ -240,11 +242,12 @@ void GuiWriter::list_next() {
     gui.end();
   }
 
-  assert(state.index == state.keys->size());
-  std::size_t new_key = state.keys.mut_internal().append();
+  if (state.index == state.keys->size()) {
+    state.keys.mut_internal().append();
+  }
 
   gui.key((*state.keys)[state.index]);
-  gui.args().horizontal();
+  gui.args().horizontal().align_top();
   gui.group();
 
   state.index++;
@@ -256,12 +259,16 @@ void GuiWriter::list_end() {
   auto keys = state.keys;
 
   if (state.index != 0) {
-    std::size_t remove_i = state.index - 1;
-    gui.button("Remove", [=]() { keys.mut().remove(remove_i); });
+    std::size_t key = (*keys)[state.index - 1];
+    gui.button("Remove", [=]() { keys.mut().remove(key); });
     gui.end();
   }
 
   gui.end();
+
+  while (state.index < keys->size()) {
+    keys.mut_internal().remove((*keys)[state.index]);
+  }
 
   gui.button("new", [=]() { keys.mut().append(); });
   gui.end();
@@ -274,6 +281,7 @@ void GuiWriter::make_label() {
     gui.text_box(next_label);
     next_label.clear();
   }
+  label_from_object = false;
 }
 
 void GuiWriter::make_collapsable() {

@@ -35,7 +35,7 @@ void datapack_edit(
 
         while (state.i < state.keys->size()) {
           gui.key((*state.keys)[state.i]);
-          gui.args().horizontal();
+          gui.args().horizontal().align_top();
           if (gui.group()) {
             break;
           }

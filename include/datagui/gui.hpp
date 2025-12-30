@@ -148,9 +148,11 @@ public:
     } else {
       Var<T> result = var_current.as<T>();
       var_current = var_current.next();
+#if 0
       if (overwrite) {
         result.mut_internal() = initial_value;
       }
+#endif
       return result;
     }
   }
