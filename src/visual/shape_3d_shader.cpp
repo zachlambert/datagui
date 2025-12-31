@@ -203,7 +203,7 @@ static void create_sphere(
     std::vector<Vertex>& vertices,
     std::vector<unsigned int>& indices) {
 
-  float resolution = 0.1;
+  float resolution = 0.5;
   const size_t N = std::max((size_t)std::ceil(2 * M_PI / resolution), 2lu);
   std::size_t start = vertices.size();
 
@@ -236,7 +236,7 @@ static void create_sphere(
     if (j < 2 * N - 1) {
       indices.push_back(start + 2 + j);
     } else {
-      indices.push_back(start);
+      indices.push_back(start + 1);
     }
   }
   // Bottom strip, common vertex = bottom

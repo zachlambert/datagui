@@ -62,7 +62,7 @@ Rot3 Rot3::line_rot(const Vec3& direction) {
 
   std::size_t min_axis = 0;
   for (std::size_t i = 1; i < 3; i++) {
-    if (u1(i) < std::fabs(u1(min_axis))) {
+    if (std::fabs(u1(i)) < std::fabs(u1(min_axis))) {
       min_axis = i;
     }
   }

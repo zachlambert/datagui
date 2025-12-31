@@ -103,7 +103,7 @@ private:
   UvMeshShader uv_mesh_shader;
   PointCloudShader point_cloud_shader;
 
-  Color bg_color_ = Color::White();
+  Color bg_color_ = Color::Gray(0.95);
   Vec3 click_point;
   Vec3 click_point_direction;
   Vec3 click_camera_direction;

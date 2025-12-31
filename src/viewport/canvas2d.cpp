@@ -67,7 +67,8 @@ void Canvas2d::text(
 void Canvas2d::begin() {
   shape_shader.clear();
   text_shader.clear();
-  bg_color_ = Color::White();
+  bg_color_ = Color::Gray(0.95);
+  scale_ = 1;
 }
 
 void Canvas2d::end() {
@@ -84,8 +85,11 @@ void Canvas2d::impl_init(
 void Canvas2d::redraw() {
   bind_framebuffer(bg_color_);
   camera.size = viewport().size();
+  double original_zoom = camera.zoom;
+  camera.zoom *= (viewport().size().x / scale_);
   shape_shader.draw(viewport(), camera);
   text_shader.draw(viewport(), camera);
+  camera.zoom = original_zoom;
   unbind_framebuffer();
 }
 
@@ -103,8 +107,9 @@ void Canvas2d::mouse_event(const Vec2& size, const MouseEvent& event) {
     return;
   }
 
+  double full_scale = camera.zoom * (viewport().size().x / scale_);
   camera.position =
-      click_camera_pos - (event.position - click_mouse_pos) / camera.zoom;
+      click_camera_pos - (event.position - click_mouse_pos) / full_scale;
   redraw();
 }
 

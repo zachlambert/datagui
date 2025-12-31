@@ -159,7 +159,7 @@ void Canvas3d::begin() {
   mesh_shader.clear();
   uv_mesh_shader.clear();
   point_cloud_shader.clear();
-  bg_color_ = Color::White();
+  bg_color_ = Color::Gray(0.95);
 }
 
 void Canvas3d::end() {

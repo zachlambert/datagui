@@ -77,6 +77,29 @@ Mesh::Mesh(Mesh&& other) {
   other.initialized = false;
 }
 
+Mesh& Mesh::operator=(Mesh&& other) {
+  if (VAO > 0) {
+    glDeleteVertexArrays(1, &VAO);
+  }
+  if (VBO > 0) {
+    glDeleteBuffers(1, &VBO);
+  }
+  if (EBO > 0) {
+    glDeleteBuffers(1, &EBO);
+  }
+  VAO = other.VAO;
+  VBO = other.VBO;
+  EBO = other.VBO;
+  index_count = other.index_count;
+  initialized = other.initialized;
+  other.VAO = 0;
+  other.VBO = 0;
+  other.EBO = 0;
+  other.index_count = 0;
+  other.initialized = false;
+  return *this;
+}
+
 void Mesh::init() {
   assert(!initialized);
   assert(VAO == 0);

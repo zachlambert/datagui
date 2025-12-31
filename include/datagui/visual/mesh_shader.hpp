@@ -13,10 +13,10 @@ public:
   Mesh() : initialized(false), VAO(0), VBO(0), EBO(0), index_count(0) {}
   ~Mesh();
   Mesh(Mesh&&);
+  Mesh& operator=(Mesh&&);
 
   Mesh(const Mesh&) = delete;
   Mesh& operator=(const Mesh&) = delete;
-  Mesh& operator=(Mesh&&) = delete;
 
   void load_vertices(
       const void* vertices,
