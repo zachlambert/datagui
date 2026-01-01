@@ -201,7 +201,7 @@ void ImageShader::draw(const Box2& viewport, const Camera2d& camera) {
     if (command.texture > 0) {
       glBindTexture(GL_TEXTURE_2D, command.texture);
     } else {
-      assert(command.image->texture > 0);
+      assert(command.image.data->texture > 0);
       glBindTexture(GL_TEXTURE_2D, command.image.data->texture);
     }
     glBufferData(

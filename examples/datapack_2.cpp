@@ -12,6 +12,13 @@ struct Point {
   double x;
   double y;
 };
+struct Circle {
+  double x;
+  double y;
+  double r;
+};
+
+using Shape = std::variant<Point, Circle>;
 
 namespace datapack {
 
@@ -21,6 +28,17 @@ DATAPACK_INLINE(Point, value, packer) {
   packer.value("y", value.y);
   packer.object_end();
 }
+
+DATAPACK_INLINE(Circle, value, packer) {
+  packer.object_begin();
+  packer.value("x", value.x);
+  packer.value("y", value.y);
+  packer.value("r", value.r);
+  packer.object_end();
+}
+
+DATAPACK_LABELLED_VARIANT(Shape, 2);
+DATAPACK_LABELLED_VARIANT_DEF(Shape) = {"Point", "Circle"};
 
 } // namespace datapack
 
@@ -33,6 +51,10 @@ int main() {
     if (gui.group()) {
       auto points = gui.variable<std::vector<Point>>();
       gui.edit("Points", points);
+
+      auto shape = gui.variable<Shape>();
+      gui.edit("Shape", shape);
+
       gui.end();
     }
     gui.poll();

@@ -57,6 +57,25 @@ void datapack_edit(
         iter = parent.next();
         break;
       }
+      if (parent.variant_next()) {
+        if (iter != parent.next()) {
+          gui.end();
+          stack.pop();
+
+          while (iter != schema.end()) {
+            if (iter.variant_end()) {
+              iter = iter.next();
+              break;
+            }
+            if (!iter.variant_next()) {
+              throw datapack::SchemaError("Expected VariantNext");
+            }
+            iter = iter.next().skip();
+          }
+          continue;
+        }
+        break;
+      }
 
       // For all non-list containers, if at the end of the schema,
       // then pop and continue, no extra logic required
@@ -105,28 +124,6 @@ void datapack_edit(
         if (iter != parent.next()) {
           gui.end();
           stack.pop();
-          continue;
-        }
-        break;
-      }
-      if (parent.variant_next()) {
-        if (iter != parent.next()) {
-          gui.end();
-          stack.pop();
-
-          while (iter != schema.end()) {
-            if (iter.variant_end()) {
-              iter = iter.next();
-              break;
-            }
-            if (!iter.variant_next()) {
-              throw datapack::SchemaError("Expected VariantNext");
-            }
-            iter = iter.next().skip();
-          }
-          if (iter == schema.end()) {
-            throw datapack::SchemaError("Unexpected end of schema");
-          }
           continue;
         }
         break;

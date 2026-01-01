@@ -1,4 +1,5 @@
 #include "datagui/viewport/canvas2d.hpp"
+#include "datagui/visual/color_map.hpp"
 
 namespace datagui {
 
@@ -64,9 +65,45 @@ void Canvas2d::text(
       .queue_text(origin, angle, text, font, font_size, text_color, width);
 }
 
+void Canvas2d::heatmap(
+    const Vec2& lower,
+    const Vec2& upper,
+    const std::function<float(float x, float y)>& function,
+    float min_value,
+    float max_value,
+    std::size_t width,
+    std::size_t height) {
+  struct Pixel {
+    std::uint8_t r, g, b, a;
+    ;
+  };
+  std::vector<Pixel> pixels(width * height);
+  for (std::size_t i = 0; i < height; i++) {
+    for (std::size_t j = 0; j < width; j++) {
+      Vec2 normalized =
+          Vec2(float(j) + 0.5, height - (float(i) + 0.5)) / Vec2(width, height);
+      Vec2 coords = lower + (upper - lower) * normalized;
+      float value = function(coords.x, coords.y);
+      float s = (value - min_value) / (max_value - min_value);
+      s = std::clamp(s, 0.f, 1.f);
+      auto& pixel = pixels[i * width + j];
+      Vec3 color = color_map_viridis(s);
+      pixel.r = color.x * 255;
+      pixel.g = color.y * 255;
+      pixel.b = color.z * 255;
+      pixel.a = 255;
+    }
+  }
+
+  Image image;
+  image.load(width, height, pixels.data());
+  image_shader.queue_image(image, lower, 0, upper - lower);
+}
+
 void Canvas2d::begin() {
   shape_shader.clear();
   text_shader.clear();
+  image_shader.clear();
   bg_color_ = Color::Gray(0.95);
   scale_ = 1;
 }
@@ -80,6 +117,7 @@ void Canvas2d::impl_init(
     const std::shared_ptr<FontManager>& fm) {
   shape_shader.init();
   text_shader.init(fm);
+  image_shader.init();
 }
 
 void Canvas2d::redraw() {
@@ -89,6 +127,7 @@ void Canvas2d::redraw() {
   camera.zoom *= (viewport().size().x / scale_);
   shape_shader.draw(viewport(), camera);
   text_shader.draw(viewport(), camera);
+  image_shader.draw(viewport(), camera);
   camera.zoom = original_zoom;
   unbind_framebuffer();
 }

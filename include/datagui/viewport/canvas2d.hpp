@@ -1,8 +1,10 @@
 #pragma once
 
 #include "datagui/viewport/viewport.hpp"
+#include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/text_2d_shader.hpp"
+#include <functional>
 
 namespace datagui {
 
@@ -50,6 +52,15 @@ public:
       Color text_color,
       Length width);
 
+  void heatmap(
+      const Vec2& lower,
+      const Vec2& upper,
+      const std::function<float(float x, float y)>& function,
+      float min_value,
+      float max_value,
+      std::size_t width = 256,
+      std::size_t height = 256);
+
   void scale(float scale) {
     scale_ = scale;
   }
@@ -77,6 +88,7 @@ private:
   Camera2d camera;
   Shape2dShader shape_shader;
   Text2dShader text_shader;
+  ImageShader image_shader;
 };
 
 } // namespace datagui
