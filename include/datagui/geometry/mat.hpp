@@ -8,6 +8,8 @@
 
 namespace datagui {
 
+class Rot3;
+
 // All matrices are column-major to be compatible with glsl
 
 struct Mat2 {
@@ -171,6 +173,12 @@ struct Mat4 {
       i++;
     }
   }
+  static Mat4 Transform(const Vec3& position, const Rot3& orientation);
+  static Mat4 Transform(
+      const Vec3& position,
+      const Rot3& orientation,
+      const Vec3& scale);
+
   Mat4 transpose() const {
     Mat4 result;
     for (std::size_t i = 0; i < 4; i++) {

@@ -55,14 +55,14 @@ int main() {
     }
   }
 
-  Mesh mesh;
-  mesh.load_vertices(
+  auto mesh = std::make_shared<Mesh>();
+  mesh->load_vertices(
       vertices.data(),
       vertices.size(),
       offsetof(Vertex, position),
       offsetof(Vertex, normal),
       sizeof(Vertex));
-  mesh.load_indices(indices.data(), indices.size());
+  mesh->load_indices(indices.data(), indices.size());
 
   while (window.running()) {
     window.render_begin();

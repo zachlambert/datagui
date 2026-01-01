@@ -4,6 +4,7 @@
 #include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
+#include <memory>
 #include <vector>
 
 namespace datagui {
@@ -49,7 +50,7 @@ public:
   void init();
 
   void queue_mesh(
-      const Mesh& mesh,
+      const std::shared_ptr<Mesh>& mesh,
       const Vec3& position,
       const Rot3& orientation,
       const Color& color);
@@ -59,8 +60,7 @@ public:
 
 private:
   struct Command {
-    unsigned int VAO;
-    std::size_t index_count;
+    std::shared_ptr<Mesh> mesh;
     Mat4 model_mat;
     Color color;
   };

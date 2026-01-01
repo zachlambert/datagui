@@ -196,26 +196,13 @@ void MeshShader::init() {
 }
 
 void MeshShader::queue_mesh(
-    const Mesh& mesh,
+    const std::shared_ptr<Mesh>& mesh,
     const Vec3& position,
     const Rot3& orientation,
     const Color& color) {
   auto& command = commands.emplace_back();
-
-  command.VAO = mesh.VAO;
-  command.index_count = mesh.index_count;
-
-  command.model_mat = Mat4();
-  command.model_mat(3, 3) = 1;
-  for (std::size_t i = 0; i < 3; i++) {
-    for (std::size_t j = 0; j < 3; j++) {
-      command.model_mat(i, j) = orientation.mat()(i, j);
-    }
-  }
-  for (std::size_t i = 0; i < 3; i++) {
-    command.model_mat(i, 3) = position(i);
-  }
-
+  command.mesh = mesh;
+  command.model_mat = Mat4::Transform(position, orientation);
   command.color = color;
 }
 
@@ -245,10 +232,10 @@ void MeshShader::draw(const Box2& viewport, const Camera3d& camera) {
     glUniformMatrix4fv(uniform_M, 1, GL_FALSE, command.model_mat.data);
     glUniform4fv(uniform_mesh_color, 1, command.color.data);
 
-    glBindVertexArray(command.VAO);
+    glBindVertexArray(command.mesh->VAO);
     glDrawElements(
         GL_TRIANGLES,
-        command.index_count,
+        command.mesh->index_count,
         GL_UNSIGNED_INT,
         (void*)0);
   }

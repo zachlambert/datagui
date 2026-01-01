@@ -208,26 +208,13 @@ void PointCloudShader::init() {
 }
 
 void PointCloudShader::queue_point_cloud(
-    const PointCloud& point_cloud,
+    const std::shared_ptr<PointCloud>& point_cloud,
     const Vec3& position,
     const Rot3& orientation,
     float point_size) {
   auto& command = commands.emplace_back();
-
-  command.VAO = point_cloud.VAO;
-  command.vertex_count = point_cloud.vertex_count;
-
-  command.model_mat = Mat4();
-  command.model_mat(3, 3) = 1;
-  for (std::size_t i = 0; i < 3; i++) {
-    for (std::size_t j = 0; j < 3; j++) {
-      command.model_mat(i, j) = orientation.mat()(i, j);
-    }
-  }
-  for (std::size_t i = 0; i < 3; i++) {
-    command.model_mat(i, 3) = position(i);
-  }
-
+  command.point_cloud = point_cloud;
+  command.model_mat = Mat4::Transform(position, orientation);
   command.point_size = point_size;
 }
 
@@ -256,8 +243,8 @@ void PointCloudShader::draw(const Box2& viewport, const Camera3d& camera) {
   for (const auto& command : commands) {
     glUniformMatrix4fv(uniform_M, 1, GL_FALSE, command.model_mat.data);
     glUniform1f(uniform_point_size, command.point_size);
-    glBindVertexArray(command.VAO);
-    glDrawArrays(GL_POINTS, 0, command.vertex_count);
+    glBindVertexArray(command.point_cloud->VAO);
+    glDrawArrays(GL_POINTS, 0, command.point_cloud->vertex_count);
   }
 
   glBindVertexArray(0);

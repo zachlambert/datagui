@@ -7,21 +7,30 @@
 namespace datagui {
 
 Image::~Image() {
-  if (texture_ > 0) {
-    glDeleteTextures(1, &texture_);
+  if (texture > 0) {
+    glDeleteTextures(1, &texture);
   }
 }
 
 Image::Image(Image&& other) {
-  texture_ = other.texture_;
-  other.texture_ = 0;
+  texture = other.texture;
+  other.texture = 0;
+}
+
+Image& Image::operator=(Image&& other) {
+  if (texture > 0) {
+    glDeleteTextures(1, &texture);
+  }
+  texture = other.texture;
+  other.texture = 0;
+  return *this;
 }
 
 void Image::load(std::size_t width, std::size_t height, void* pixels) {
-  if (texture_ == 0) {
-    glGenTextures(1, &texture_);
+  if (texture == 0) {
+    glGenTextures(1, &texture);
   }
-  glBindTexture(GL_TEXTURE_2D, texture_);
+  glBindTexture(GL_TEXTURE_2D, texture);
   glTexImage2D(
       GL_TEXTURE_2D,
       0,
@@ -124,11 +133,11 @@ void ImageShader::init() {
 }
 
 void ImageShader::queue_image(
-    const Image& image,
+    const std::shared_ptr<Image>& image,
     const Vec2& position,
     float angle,
     const Vec2& size) {
-  if (!image.is_loaded()) {
+  if (!image->is_loaded()) {
     return;
   }
 
@@ -139,6 +148,7 @@ void ImageShader::queue_image(
   Vec2 upper_right = position + R * size;
 
   auto& command = commands.emplace_back();
+  command.image = image;
 
   // Y flipped
   command.vertices = {
@@ -148,15 +158,14 @@ void ImageShader::queue_image(
       Vertex{lower_right, Vec2(1, 1)},
       Vertex{upper_right, Vec2(1, 0)},
       Vertex{upper_left, Vec2(0, 0)}};
-  command.texture = image.texture();
 }
 
 void ImageShader::queue_masked_image(
     const Box2& mask,
-    const Image& image,
+    const std::shared_ptr<Image>& image,
     const Vec2& position,
     const Vec2& size) {
-  if (!image.is_loaded()) {
+  if (!image->is_loaded()) {
     return;
   }
 
@@ -170,6 +179,7 @@ void ImageShader::queue_masked_image(
   uv.upper.y = 1 - uv.upper.y;
 
   auto& command = commands.emplace_back();
+  command.image = image;
   command.vertices = {
       Vertex{region.lower_left(), uv.lower_left()},
       Vertex{region.lower_right(), uv.lower_right()},
@@ -177,7 +187,6 @@ void ImageShader::queue_masked_image(
       Vertex{region.lower_right(), uv.lower_right()},
       Vertex{region.upper_right(), uv.upper_right()},
       Vertex{region.upper_left(), uv.upper_left()}};
-  command.texture = image.texture();
 }
 
 void ImageShader::queue_viewport(
@@ -194,6 +203,7 @@ void ImageShader::queue_viewport(
   uv.upper = (region.upper - box.lower) / box.size();
 
   auto& command = commands.emplace_back();
+  command.texture = texture;
   command.vertices = {
       Vertex{region.lower_left(), uv.lower_left()},
       Vertex{region.lower_right(), uv.lower_right()},
@@ -201,7 +211,6 @@ void ImageShader::queue_viewport(
       Vertex{region.lower_right(), uv.lower_right()},
       Vertex{region.upper_right(), uv.upper_right()},
       Vertex{region.upper_left(), uv.upper_left()}};
-  command.texture = texture;
 }
 
 void ImageShader::draw(const Box2& viewport, const Camera2d& camera) {
@@ -229,7 +238,12 @@ void ImageShader::draw(const Box2& viewport, const Camera2d& camera) {
   glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
 
   for (const auto& command : commands) {
-    glBindTexture(GL_TEXTURE_2D, command.texture);
+    if (command.texture > 0) {
+      glBindTexture(GL_TEXTURE_2D, command.texture);
+    } else {
+      assert(command.image->texture > 0);
+      glBindTexture(GL_TEXTURE_2D, command.image->texture);
+    }
     glBufferData(
         GL_ARRAY_BUFFER,
         command.vertices.size() * sizeof(Vertex),

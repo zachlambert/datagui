@@ -30,7 +30,7 @@ public:
       Color text_color,
       Length width = LengthWrap());
 
-  void queue_image(const Box2& box, const Image& image);
+  void queue_image(const Box2& box, const std::shared_ptr<Image>& image);
   void queue_viewport(const Box2& box, int texture);
 
   void begin(const Box2& viewport);

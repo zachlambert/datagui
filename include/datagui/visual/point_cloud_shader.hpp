@@ -4,6 +4,7 @@
 #include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
+#include <memory>
 #include <vector>
 
 namespace datagui {
@@ -13,9 +14,9 @@ public:
   PointCloud() : initialized(false), VAO(0), VBO(0), vertex_count(0) {}
   ~PointCloud();
   PointCloud(PointCloud&&);
+  PointCloud& operator=(const PointCloud&);
 
   PointCloud(const PointCloud&) = delete;
-  PointCloud& operator=(const PointCloud&) = delete;
   PointCloud& operator=(PointCloud&&) = delete;
 
   void load_colored_points(
@@ -53,7 +54,7 @@ public:
   void init();
 
   void queue_point_cloud(
-      const PointCloud& point_cloud,
+      const std::shared_ptr<PointCloud>& point_cloud,
       const Vec3& position,
       const Rot3& orientation,
       float point_size);
@@ -63,8 +64,7 @@ public:
 
 private:
   struct Command {
-    unsigned int VAO;
-    std::size_t vertex_count;
+    std::shared_ptr<PointCloud> point_cloud;
     Mat4 model_mat;
     float point_size;
   };

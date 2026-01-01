@@ -212,28 +212,13 @@ void UvMeshShader::init() {
 }
 
 void UvMeshShader::queue_mesh(
-    const UvMesh& mesh,
+    const std::shared_ptr<UvMesh>& uv_mesh,
     const Vec3& position,
     const Rot3& orientation,
     float opacity) {
   auto& command = commands.emplace_back();
-
-  command.VAO = mesh.VAO;
-  command.texture = mesh.texture;
-  command.texture = mesh.texture;
-  command.index_count = mesh.index_count;
-
-  command.model_mat = Mat4();
-  command.model_mat(3, 3) = 1;
-  for (std::size_t i = 0; i < 3; i++) {
-    for (std::size_t j = 0; j < 3; j++) {
-      command.model_mat(i, j) = orientation.mat()(i, j);
-    }
-  }
-  for (std::size_t i = 0; i < 3; i++) {
-    command.model_mat(i, 3) = position(i);
-  }
-
+  command.uv_mesh = uv_mesh;
+  command.model_mat = Mat4::Transform(position, orientation);
   command.opacity = opacity;
 }
 
@@ -263,12 +248,12 @@ void UvMeshShader::draw(const Box2& viewport, const Camera3d& camera) {
     glUniformMatrix4fv(uniform_M, 1, GL_FALSE, command.model_mat.data);
     glUniform1f(uniform_opacity, command.opacity);
 
-    glBindVertexArray(command.VAO);
-    glBindTexture(GL_TEXTURE_2D, command.texture);
+    glBindVertexArray(command.uv_mesh->VAO);
+    glBindTexture(GL_TEXTURE_2D, command.uv_mesh->texture);
 
     glDrawElements(
         GL_TRIANGLES,
-        command.index_count,
+        command.uv_mesh->index_count,
         GL_UNSIGNED_INT,
         (void*)0);
   }

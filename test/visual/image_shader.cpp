@@ -2,7 +2,7 @@
 #include <datagui/visual/image_shader.hpp>
 #include <datagui/visual/window.hpp>
 
-datagui::Image make_image(
+std::shared_ptr<datagui::Image> make_image(
     std::size_t w,
     std::size_t h,
     datagui::Vec2 n,
@@ -32,9 +32,8 @@ datagui::Image make_image(
     }
   }
 
-  datagui::Image image;
-  image.load(w, h, pixels.data());
-  return std::move(image);
+  auto image = std::make_shared<datagui::Image>();
+  image->load(w, h, pixels.data());
 }
 
 int main() {

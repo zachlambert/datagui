@@ -47,7 +47,9 @@ void GuiRenderer::queue_text(
       width);
 }
 
-void GuiRenderer::queue_image(const Box2& box, const Image& image) {
+void GuiRenderer::queue_image(
+    const Box2& box,
+    const std::shared_ptr<Image>& image) {
   image_shader.queue_masked_image(
       flip_box(masks.top()),
       image,

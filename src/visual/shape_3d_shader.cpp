@@ -4,29 +4,6 @@
 
 namespace datagui {
 
-static Mat4 make_transform(
-    const Vec3& position,
-    const Rot3& orientation,
-    const Vec3& scale) {
-  Mat3 scale_mat;
-  for (std::size_t i = 0; i < 3; i++) {
-    scale_mat(i, i) = scale(i);
-  }
-  Mat3 top_left = orientation.mat() * scale_mat;
-
-  Mat4 transform;
-  transform(3, 3) = 1;
-  for (std::size_t i = 0; i < 3; i++) {
-    for (std::size_t j = 0; j < 3; j++) {
-      transform(i, j) = top_left(i, j);
-    }
-  }
-  for (std::size_t i = 0; i < 3; i++) {
-    transform(i, 3) = position(i);
-  }
-  return transform;
-}
-
 const static std::string shape_3d_vs = R"(
 #version 330 core
 
@@ -575,7 +552,7 @@ void Shape3dShader::queue_box(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::Box].emplace_back();
-  element.transform = make_transform(position, orientation, scale);
+  element.transform = Mat4::Transform(position, orientation, scale);
   element.color = color;
 }
 
@@ -589,7 +566,7 @@ void Shape3dShader::queue_cylinder(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::Cylinder].emplace_back();
-  element.transform = make_transform(
+  element.transform = Mat4::Transform(
       base_position,
       Rot3::line_rot(direction),
       Vec3(length, radius, radius));
@@ -604,7 +581,7 @@ void Shape3dShader::queue_sphere(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::Sphere].emplace_back();
-  element.transform = make_transform(position, Rot3(), Vec3::uniform(radius));
+  element.transform = Mat4::Transform(position, Rot3(), Vec3::uniform(radius));
   element.color = color;
 }
 
@@ -617,7 +594,7 @@ void Shape3dShader::queue_half_sphere(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::HalfSphere].emplace_back();
-  element.transform = make_transform(
+  element.transform = Mat4::Transform(
       position,
       Rot3::line_rot(direction),
       Vec3::uniform(radius));
@@ -634,7 +611,7 @@ void Shape3dShader::queue_cone(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::Cone].emplace_back();
-  element.transform = make_transform(
+  element.transform = Mat4::Transform(
       base_position,
       Rot3::line_rot(direction),
       Vec3(length, radius, radius));
@@ -699,7 +676,7 @@ void Shape3dShader::queue_plane(
   }
   auto& element = elements[(std::size_t)ShapeType::Plane].emplace_back();
   element.transform =
-      make_transform(position, orientation, Vec3(scale.x, scale.y, 1));
+      Mat4::Transform(position, orientation, Vec3(scale.x, scale.y, 1));
   element.color = color;
 }
 

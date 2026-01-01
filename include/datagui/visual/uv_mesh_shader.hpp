@@ -3,6 +3,7 @@
 #include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
+#include <memory>
 #include <vector>
 
 namespace datagui {
@@ -12,10 +13,10 @@ public:
   UvMesh() : initialized(false), VAO(0), VBO(0), EBO(0), index_count(0) {}
   ~UvMesh();
   UvMesh(UvMesh&&);
+  UvMesh& operator=(UvMesh&&);
 
   UvMesh(const UvMesh&) = delete;
   UvMesh& operator=(const UvMesh&) = delete;
-  UvMesh& operator=(UvMesh&&) = delete;
 
   void load_vertices(
       const void* vertices,
@@ -53,7 +54,7 @@ public:
   void init();
 
   void queue_mesh(
-      const UvMesh& mesh,
+      const std::shared_ptr<UvMesh>& uv_mesh,
       const Vec3& position,
       const Rot3& orientation,
       float opacity = 1);
@@ -63,9 +64,7 @@ public:
 
 private:
   struct Command {
-    unsigned int VAO;
-    unsigned int texture;
-    std::size_t index_count;
+    std::shared_ptr<UvMesh> uv_mesh;
     Mat4 model_mat;
     float opacity;
   };

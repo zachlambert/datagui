@@ -33,8 +33,8 @@ int main() {
     }
   }
 
-  PointCloud point_cloud;
-  point_cloud.load_colored_points(
+  auto point_cloud = std::make_shared<PointCloud>();
+  point_cloud->load_colored_points(
       points.data(),
       points.size(),
       offsetof(Point, position),
