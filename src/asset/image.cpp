@@ -1,5 +1,6 @@
 #include "datagui/asset/image.hpp"
 #include <GL/glew.h>
+#include <assert.h>
 
 namespace datagui {
 
@@ -28,6 +29,7 @@ void Image::load(std::size_t width, std::size_t height, void* pixels) {
     data = std::make_shared<Data>();
     glGenTextures(1, &data->texture);
   }
+  assert(data->texture > 0);
   data->width = width;
   data->height = height;
 

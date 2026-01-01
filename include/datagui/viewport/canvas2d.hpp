@@ -40,8 +40,8 @@ public:
       const Vec2& b,
       float radius,
       const Color& color,
-      float border_width,
-      const Color& border_color);
+      float border_width = 0,
+      const Color& border_color = Color::Black());
 
   void text(
       const Vec2& origin,

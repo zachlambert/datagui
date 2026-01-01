@@ -84,10 +84,30 @@ void Canvas2d::heatmap(
           Vec2(float(j) + 0.5, height - (float(i) + 0.5)) / Vec2(width, height);
       Vec2 coords = lower + (upper - lower) * normalized;
       float value = function(coords.x, coords.y);
-      float s = (value - min_value) / (max_value - min_value);
-      s = std::clamp(s, 0.f, 1.f);
+
+      Vec3 color;
+      if (min_value < 0 && max_value > 0) {
+        if (value >= 0) {
+          Vec3 min = {0, 1, 1};
+          Vec3 max = {0, 0, 1};
+          float s = std::min(value, max_value) / max_value;
+          color = (1 - s) * min + s * max;
+        } else {
+          Vec3 min = {1, 1, 0};
+          Vec3 max = {1, 0, 0};
+          float s = std::max(value, min_value) / min_value;
+          color = (1 - s) * min + s * max;
+        }
+        float s = (value - min_value) / (max_value - min_value);
+        Vec3 color = color_map_viridis(s);
+        s = std::clamp(s, 0.f, 1.f);
+      } else {
+        float s = (value - min_value) / (max_value - min_value);
+        s = std::clamp(s, 0.f, 1.f);
+        color = color_map_viridis(s);
+      }
+
       auto& pixel = pixels[i * width + j];
-      Vec3 color = color_map_viridis(s);
       pixel.r = color.x * 255;
       pixel.g = color.y * 255;
       pixel.b = color.z * 255;
@@ -125,9 +145,9 @@ void Canvas2d::redraw() {
   camera.size = viewport().size();
   double original_zoom = camera.zoom;
   camera.zoom *= (viewport().size().x / scale_);
+  image_shader.draw(viewport(), camera);
   shape_shader.draw(viewport(), camera);
   text_shader.draw(viewport(), camera);
-  image_shader.draw(viewport(), camera);
   camera.zoom = original_zoom;
   unbind_framebuffer();
 }
