@@ -1,56 +1,20 @@
 #pragma once
 
+#include "datagui/asset/mesh.hpp"
 #include "datagui/color.hpp"
 #include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
-#include <memory>
 #include <vector>
 
 namespace datagui {
-
-class Mesh {
-public:
-  Mesh() : initialized(false), VAO(0), VBO(0), EBO(0), index_count(0) {}
-  ~Mesh();
-  Mesh(Mesh&&);
-  Mesh& operator=(Mesh&&);
-
-  Mesh(const Mesh&) = delete;
-  Mesh& operator=(const Mesh&) = delete;
-
-  void load_vertices(
-      const void* vertices,
-      std::size_t num_vertices,
-      std::size_t positions_offset,
-      std::size_t normals_offset,
-      std::size_t stride);
-
-  void load_indices(const unsigned int* const indices, std::size_t num_indices);
-
-private:
-  struct Vertex {
-    Vec3 position;
-    Vec3 normal;
-  };
-
-  void init();
-  bool initialized;
-
-  unsigned int VAO;
-  unsigned int VBO;
-  unsigned int EBO;
-  std::size_t index_count;
-
-  friend class MeshShader;
-};
 
 class MeshShader {
 public:
   void init();
 
   void queue_mesh(
-      const std::shared_ptr<Mesh>& mesh,
+      const Mesh& mesh,
       const Vec3& position,
       const Rot3& orientation,
       const Color& color);
@@ -60,7 +24,7 @@ public:
 
 private:
   struct Command {
-    std::shared_ptr<Mesh> mesh;
+    Mesh mesh;
     Mat4 model_mat;
     Color color;
   };

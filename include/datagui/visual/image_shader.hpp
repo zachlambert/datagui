@@ -1,34 +1,12 @@
 #pragma once
 
+#include "datagui/asset/image.hpp"
 #include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include <memory>
 #include <vector>
 
 namespace datagui {
-
-class Image {
-public:
-  Image() : width(0), height(0), texture(0) {}
-  ~Image();
-  Image(Image&&);
-  Image& operator=(Image&&);
-
-  Image(const Image&) = delete;
-  Image& operator=(const Image&) = delete;
-
-  void load(std::size_t width, std::size_t height, void* pixels);
-  bool is_loaded() const {
-    return texture != 0;
-  }
-
-private:
-  std::size_t width;
-  std::size_t height;
-  unsigned int texture;
-
-  friend class ImageShader;
-};
 
 class ImageShader {
 public:
@@ -45,14 +23,14 @@ public:
   // Y down
 
   void queue_image(
-      const std::shared_ptr<Image>& image,
+      const Image& image,
       const Vec2& position,
       float angle,
       const Vec2& size);
 
   void queue_masked_image(
       const Box2& mask,
-      const std::shared_ptr<Image>& image,
+      const Image& image,
       const Vec2& position,
       const Vec2& size);
 
@@ -69,7 +47,7 @@ private:
     Vec2 uv;
   };
   struct Command {
-    std::shared_ptr<Image> image;
+    Image image;
     int texture = 0; // Image or texture used
     std::vector<Vertex> vertices;
   };

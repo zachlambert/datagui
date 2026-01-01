@@ -72,16 +72,16 @@ int main() {
     }
   }
 
-  auto mesh = std::make_shared<UvMesh>();
-  mesh->load_vertices(
+  UvMesh mesh;
+  mesh.load_vertices(
       vertices.data(),
       vertices.size(),
       offsetof(Vertex, position),
       offsetof(Vertex, normal),
       offsetof(Vertex, uv),
       sizeof(Vertex));
-  mesh->load_indices(indices.data(), indices.size());
-  mesh->load_texture(width, width, pixels.data());
+  mesh.load_indices(indices.data(), indices.size());
+  mesh.load_texture(width, width, pixels.data());
 
   while (window.running()) {
     window.render_begin();

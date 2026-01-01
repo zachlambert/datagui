@@ -6,46 +6,6 @@
 
 namespace datagui {
 
-Image::~Image() {
-  if (texture > 0) {
-    glDeleteTextures(1, &texture);
-  }
-}
-
-Image::Image(Image&& other) {
-  texture = other.texture;
-  other.texture = 0;
-}
-
-Image& Image::operator=(Image&& other) {
-  if (texture > 0) {
-    glDeleteTextures(1, &texture);
-  }
-  texture = other.texture;
-  other.texture = 0;
-  return *this;
-}
-
-void Image::load(std::size_t width, std::size_t height, void* pixels) {
-  if (texture == 0) {
-    glGenTextures(1, &texture);
-  }
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(
-      GL_TEXTURE_2D,
-      0,
-      GL_RGBA,
-      width,
-      height,
-      0,
-      GL_RGBA,
-      GL_UNSIGNED_BYTE,
-      pixels);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glBindTexture(GL_TEXTURE_2D, 0);
-}
-
 const static std::string vertex_shader = R"(
 #version 330 core
 
@@ -133,11 +93,11 @@ void ImageShader::init() {
 }
 
 void ImageShader::queue_image(
-    const std::shared_ptr<Image>& image,
+    const Image& image,
     const Vec2& position,
     float angle,
     const Vec2& size) {
-  if (!image->is_loaded()) {
+  if (!image.is_loaded()) {
     return;
   }
 
@@ -162,10 +122,10 @@ void ImageShader::queue_image(
 
 void ImageShader::queue_masked_image(
     const Box2& mask,
-    const std::shared_ptr<Image>& image,
+    const Image& image,
     const Vec2& position,
     const Vec2& size) {
-  if (!image->is_loaded()) {
+  if (!image.is_loaded()) {
     return;
   }
 
@@ -242,7 +202,7 @@ void ImageShader::draw(const Box2& viewport, const Camera2d& camera) {
       glBindTexture(GL_TEXTURE_2D, command.texture);
     } else {
       assert(command.image->texture > 0);
-      glBindTexture(GL_TEXTURE_2D, command.image->texture);
+      glBindTexture(GL_TEXTURE_2D, command.image.data->texture);
     }
     glBufferData(
         GL_ARRAY_BUFFER,

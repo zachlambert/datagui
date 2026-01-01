@@ -1,0 +1,48 @@
+#pragma once
+
+#include "datagui/geometry/vec.hpp"
+#include <memory>
+
+namespace datagui {
+
+class Mesh {
+public:
+  void load_vertices(
+      const void* vertices,
+      std::size_t num_vertices,
+      std::size_t positions_offset,
+      std::size_t normals_offset,
+      std::size_t stride);
+
+  void load_indices(const unsigned int* const indices, std::size_t num_indices);
+
+  bool is_loaded() const {
+    return bool(data) && data->VBO > 0 && data->EBO > 0;
+  }
+
+private:
+  struct Vertex {
+    Vec3 position;
+    Vec3 normal;
+  };
+  void init();
+
+  struct Data {
+    unsigned int VAO;
+    unsigned int VBO;
+    unsigned int EBO;
+    std::size_t index_count;
+
+    Data() : VAO(0), VBO(0), EBO(0), index_count(0) {}
+    ~Data();
+    Data(Data&&);
+    Data& operator=(Data&&);
+    Data(const Data&) = delete;
+    Data& operator=(const Data&) = delete;
+  };
+  std::shared_ptr<Data> data;
+
+  friend class MeshShader;
+};
+
+} // namespace datagui

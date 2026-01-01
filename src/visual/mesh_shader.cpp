@@ -52,140 +52,6 @@ void main(){
 }
 )";
 
-Mesh::~Mesh() {
-  if (VAO > 0) {
-    glDeleteVertexArrays(1, &VAO);
-  }
-  if (VBO > 0) {
-    glDeleteBuffers(1, &VBO);
-  }
-  if (EBO > 0) {
-    glDeleteBuffers(1, &EBO);
-  }
-}
-
-Mesh::Mesh(Mesh&& other) {
-  VAO = other.VAO;
-  VBO = other.VBO;
-  EBO = other.VBO;
-  index_count = other.index_count;
-  initialized = other.initialized;
-  other.VAO = 0;
-  other.VBO = 0;
-  other.EBO = 0;
-  other.index_count = 0;
-  other.initialized = false;
-}
-
-Mesh& Mesh::operator=(Mesh&& other) {
-  if (VAO > 0) {
-    glDeleteVertexArrays(1, &VAO);
-  }
-  if (VBO > 0) {
-    glDeleteBuffers(1, &VBO);
-  }
-  if (EBO > 0) {
-    glDeleteBuffers(1, &EBO);
-  }
-  VAO = other.VAO;
-  VBO = other.VBO;
-  EBO = other.VBO;
-  index_count = other.index_count;
-  initialized = other.initialized;
-  other.VAO = 0;
-  other.VBO = 0;
-  other.EBO = 0;
-  other.index_count = 0;
-  other.initialized = false;
-  return *this;
-}
-
-void Mesh::init() {
-  assert(!initialized);
-  assert(VAO == 0);
-  assert(VBO == 0);
-  assert(EBO == 0);
-
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
-
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-  GLuint index = 0;
-  glVertexAttribPointer(
-      index,
-      3,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)(offsetof(Vertex, position)));
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      3,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)(offsetof(Vertex, normal)));
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glBindVertexArray(0);
-
-  initialized = true;
-}
-
-void Mesh::load_vertices(
-    const void* vertices,
-    std::size_t num_vertices,
-    std::size_t positions_offset,
-    std::size_t normals_offset,
-    std::size_t stride) {
-
-  if (!initialized) {
-    init();
-  }
-
-  std::vector<Vertex> gl_vertices(num_vertices);
-  for (std::size_t i = 0; i < num_vertices; i++) {
-    gl_vertices[i].position =
-        *(Vec3*)((std::uint8_t*)vertices + i * stride + positions_offset);
-    gl_vertices[i].normal =
-        *(Vec3*)((std::uint8_t*)vertices + i * stride + normals_offset);
-  }
-
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(
-      GL_ARRAY_BUFFER,
-      gl_vertices.size() * sizeof(Vertex),
-      gl_vertices.data(),
-      GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void Mesh::load_indices(
-    const unsigned int* const indices,
-    std::size_t num_indices) {
-  if (!initialized) {
-    init();
-  }
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(
-      GL_ELEMENT_ARRAY_BUFFER,
-      num_indices * sizeof(unsigned int),
-      indices,
-      GL_STATIC_DRAW);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-  index_count = num_indices;
-}
-
 void MeshShader::init() {
   program_id = create_program(vertex_shader, fragment_shader);
 
@@ -196,7 +62,7 @@ void MeshShader::init() {
 }
 
 void MeshShader::queue_mesh(
-    const std::shared_ptr<Mesh>& mesh,
+    const Mesh& mesh,
     const Vec3& position,
     const Rot3& orientation,
     const Color& color) {
@@ -232,10 +98,10 @@ void MeshShader::draw(const Box2& viewport, const Camera3d& camera) {
     glUniformMatrix4fv(uniform_M, 1, GL_FALSE, command.model_mat.data);
     glUniform4fv(uniform_mesh_color, 1, command.color.data);
 
-    glBindVertexArray(command.mesh->VAO);
+    glBindVertexArray(command.mesh.data->VAO);
     glDrawElements(
         GL_TRIANGLES,
-        command.mesh->index_count,
+        command.mesh.data->index_count,
         GL_UNSIGNED_INT,
         (void*)0);
   }

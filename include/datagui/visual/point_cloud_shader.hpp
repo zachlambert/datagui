@@ -1,60 +1,19 @@
 #pragma once
 
-#include "datagui/color.hpp"
+#include "datagui/asset/point_cloud.hpp"
 #include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/rot.hpp"
-#include <memory>
 #include <vector>
 
 namespace datagui {
-
-class PointCloud {
-public:
-  PointCloud() : initialized(false), VAO(0), VBO(0), vertex_count(0) {}
-  ~PointCloud();
-  PointCloud(PointCloud&&);
-  PointCloud& operator=(const PointCloud&);
-
-  PointCloud(const PointCloud&) = delete;
-  PointCloud& operator=(PointCloud&&) = delete;
-
-  void load_colored_points(
-      void* points,
-      std::size_t num_points,
-      std::size_t positions_offset,
-      std::size_t colors_offset,
-      std::size_t stride);
-
-  void load_points(
-      void* points,
-      std::size_t num_points,
-      std::size_t positions_offset,
-      std::size_t stride,
-      const Color& color);
-
-private:
-  void init();
-
-  struct Vertex {
-    Vec3 position;
-    Vec3 color;
-  };
-
-  bool initialized;
-  unsigned int VAO;
-  unsigned int VBO;
-  std::size_t vertex_count;
-
-  friend class PointCloudShader;
-};
 
 class PointCloudShader {
 public:
   void init();
 
   void queue_point_cloud(
-      const std::shared_ptr<PointCloud>& point_cloud,
+      const PointCloud& point_cloud,
       const Vec3& position,
       const Rot3& orientation,
       float point_size);
@@ -64,7 +23,7 @@ public:
 
 private:
   struct Command {
-    std::shared_ptr<PointCloud> point_cloud;
+    PointCloud point_cloud;
     Mat4 model_mat;
     float point_size;
   };

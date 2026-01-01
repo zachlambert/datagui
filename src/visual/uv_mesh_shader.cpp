@@ -61,147 +61,6 @@ void main(){
 }
 )";
 
-UvMesh::~UvMesh() {
-  if (VAO > 0) {
-    glDeleteVertexArrays(1, &VAO);
-  }
-  if (VBO > 0) {
-    glDeleteBuffers(1, &VBO);
-  }
-  if (EBO > 0) {
-    glDeleteBuffers(1, &EBO);
-  }
-}
-
-UvMesh::UvMesh(UvMesh&& other) {
-  VAO = other.VAO;
-  VBO = other.VBO;
-  EBO = other.VBO;
-  index_count = other.index_count;
-  other.VAO = 0;
-  other.VBO = 0;
-  other.EBO = 0;
-}
-
-void UvMesh::init() {
-  assert(!initialized);
-  assert(VAO == 0);
-  assert(VBO == 0);
-  assert(EBO == 0);
-
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
-
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-  GLuint index = 0;
-  glVertexAttribPointer(
-      index,
-      3,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)(offsetof(Vertex, position)));
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      3,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)(offsetof(Vertex, normal)));
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)(offsetof(Vertex, uv)));
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glBindVertexArray(0);
-
-  initialized = true;
-}
-
-void UvMesh::load_vertices(
-    const void* vertices,
-    std::size_t num_vertices,
-    std::size_t positions_offset,
-    std::size_t normals_offset,
-    std::size_t uvs_offset,
-    std::size_t stride) {
-
-  if (!initialized) {
-    init();
-  }
-
-  std::vector<Vertex> gl_vertices(num_vertices);
-  for (std::size_t i = 0; i < num_vertices; i++) {
-    gl_vertices[i].position =
-        *(Vec3*)((std::uint8_t*)vertices + i * stride + positions_offset);
-    gl_vertices[i].normal =
-        *(Vec3*)((std::uint8_t*)vertices + i * stride + normals_offset);
-    gl_vertices[i].uv =
-        *(Vec2*)((std::uint8_t*)vertices + i * stride + uvs_offset);
-  }
-
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(
-      GL_ARRAY_BUFFER,
-      num_vertices * sizeof(Vertex),
-      gl_vertices.data(),
-      GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void UvMesh::load_indices(
-    const unsigned int* const indices,
-    std::size_t num_indices) {
-  if (!initialized) {
-    init();
-  }
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(
-      GL_ELEMENT_ARRAY_BUFFER,
-      num_indices * sizeof(unsigned int),
-      indices,
-      GL_STATIC_DRAW);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-  index_count = num_indices;
-}
-
-void UvMesh::load_texture(std::size_t width, std::size_t height, void* data) {
-  if (texture == 0) {
-    glGenTextures(1, &texture);
-  }
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(
-      GL_TEXTURE_2D,
-      0,
-      GL_RGBA,
-      width,
-      height,
-      0,
-      GL_RGBA,
-      GL_UNSIGNED_BYTE,
-      data);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glBindTexture(GL_TEXTURE_2D, 0);
-}
-
 void UvMeshShader::init() {
   program_id = create_program(vertex_shader, fragment_shader);
 
@@ -212,7 +71,7 @@ void UvMeshShader::init() {
 }
 
 void UvMeshShader::queue_mesh(
-    const std::shared_ptr<UvMesh>& uv_mesh,
+    const UvMesh& uv_mesh,
     const Vec3& position,
     const Rot3& orientation,
     float opacity) {
@@ -248,12 +107,12 @@ void UvMeshShader::draw(const Box2& viewport, const Camera3d& camera) {
     glUniformMatrix4fv(uniform_M, 1, GL_FALSE, command.model_mat.data);
     glUniform1f(uniform_opacity, command.opacity);
 
-    glBindVertexArray(command.uv_mesh->VAO);
-    glBindTexture(GL_TEXTURE_2D, command.uv_mesh->texture);
+    glBindVertexArray(command.uv_mesh.data->VAO);
+    glBindTexture(GL_TEXTURE_2D, command.uv_mesh.data->texture);
 
     glDrawElements(
         GL_TRIANGLES,
-        command.uv_mesh->index_count,
+        command.uv_mesh.data->index_count,
         GL_UNSIGNED_INT,
         (void*)0);
   }

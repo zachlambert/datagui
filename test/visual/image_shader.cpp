@@ -2,7 +2,7 @@
 #include <datagui/visual/image_shader.hpp>
 #include <datagui/visual/window.hpp>
 
-std::shared_ptr<datagui::Image> make_image(
+datagui::Image make_image(
     std::size_t w,
     std::size_t h,
     datagui::Vec2 n,
@@ -32,8 +32,9 @@ std::shared_ptr<datagui::Image> make_image(
     }
   }
 
-  auto image = std::make_shared<datagui::Image>();
-  image->load(w, h, pixels.data());
+  datagui::Image image;
+  image.load(w, h, pixels.data());
+  return image;
 }
 
 int main() {
@@ -43,15 +44,15 @@ int main() {
   ImageShader shader;
   shader.init();
 
-  auto image_1 = make_image(128, 128, {1, 1}, Color::Red(), Color::Blue());
-  auto image_2 = make_image(
+  Image image_1 = make_image(128, 128, {1, 1}, Color::Red(), Color::Blue());
+  Image image_2 = make_image(
       128,
       128,
       {2, -1},
       Color::Hsl(160, 1, 0.5),
       Color::Hsl(200, 1, 0.5, 0.4));
 
-  auto image_3 = make_image(
+  Image image_3 = make_image(
       128,
       128,
       {0, 1},
