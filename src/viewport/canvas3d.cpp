@@ -3,13 +3,7 @@
 namespace datagui {
 
 Canvas3d::Canvas3d() {
-  camera.direction = Rot3(Euler(0, M_PI / 6, M_PI / 4)).mat() * Vec3(1, 0, 0);
-  camera.position.x = -7;
-  camera.position.y = -7;
-  camera.position.z = 5;
-  camera.fov_degrees = 70;
-  camera.clipping_min = 0.001;
-  camera.clipping_max = 1000;
+  reset_camera();
 }
 
 void Canvas3d::box(
@@ -194,6 +188,9 @@ void Canvas3d::mouse_event(const Vec2& size, const MouseEvent& event) {
   Vec3 direction_world = camera.rotation().mat() * direction;
 
   if (event.action == MouseAction::Press) {
+    if (event.is_double_click) {
+      reset_camera();
+    }
     float distance = camera.position.z / (-direction_world.z);
     click_point = camera.position + distance * direction_world;
     click_distance_z = distance * std::abs(direction.z);
@@ -241,6 +238,16 @@ bool Canvas3d::scroll_event(const Vec2& size, const ScrollEvent& event) {
 
   redraw();
   return true;
+}
+
+void Canvas3d::reset_camera() {
+  camera.direction = Rot3(Euler(0, M_PI / 6, M_PI / 4)).mat() * Vec3(1, 0, 0);
+  camera.position.x = -7;
+  camera.position.y = -7;
+  camera.position.z = 5;
+  camera.fov_degrees = 70;
+  camera.clipping_min = 0.001;
+  camera.clipping_max = 1000;
 }
 
 }; // namespace datagui
