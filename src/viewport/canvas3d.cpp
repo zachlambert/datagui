@@ -104,7 +104,7 @@ void Canvas3d::axes(
 
 void Canvas3d::grid(std::size_t size, float width) {
   Color color = Color::Gray(0.8);
-  float line_width = 0.05;
+  float line_width = 0.02;
   for (std::size_t i = 0; i <= size; i++) {
     float x = -width / 2 + i * width / size;
     shape_shader.queue_plane(
