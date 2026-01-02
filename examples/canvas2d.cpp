@@ -12,12 +12,14 @@ int main() {
       gui.text_box("Canvas");
 
       auto color = gui.variable<Color>(Color::Red());
-      auto border_size = gui.variable<float>(5);
-      auto width = gui.variable<float>(100);
+      auto border_size = gui.variable<float>(0.05);
+      auto width = gui.variable<float>(1);
 
-      if (auto canvas = gui.viewport<datagui::Canvas2d>(200, 200)) {
+      if (auto canvas = gui.viewport<datagui::Canvas2d>(500, 200)) {
+        canvas->scale(5);
         canvas->bg_color(Color::Hsl(300, 0.4, 0.8));
         canvas->rect(Vec2(), 0, Vec2::uniform(*width), *color, *border_size);
+        canvas->text(std::to_string(*width), Vec2(*width / 2, *width / 2));
         gui.end();
       }
 
@@ -30,7 +32,7 @@ int main() {
 
         gui.text_box("Width");
         gui.args().always();
-        gui.slider<float>(10, 200, width);
+        gui.slider<float>(0.1, 2, width);
 
         gui.text_box("Border size");
         gui.args().always();

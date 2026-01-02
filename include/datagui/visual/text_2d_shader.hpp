@@ -39,6 +39,7 @@ public:
   void queue_text(
       const Vec2& origin,
       float angle,
+      float scale,
       const std::string& text,
       Font font,
       int font_size,

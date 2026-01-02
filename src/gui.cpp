@@ -677,7 +677,8 @@ void Gui::calculate_sizes() {
       auto root = tree.root();
       assert(root);
 
-      if (root.state().dynamic_size == Vec2()) {
+      // Special case: Fixed size if root is a viewport
+      if (root.type() == Type::ViewportPtr) {
         window.set_fixed_size(root.state().fixed_size);
       } else {
         window.set_dynamic_size();

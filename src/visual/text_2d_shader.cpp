@@ -128,6 +128,7 @@ void Text2dShader::queue_masked_text(
 void Text2dShader::queue_text(
     const Vec2& origin,
     float angle,
+    float scale,
     const std::string& text,
     Font font,
     int font_size,
@@ -139,10 +140,10 @@ void Text2dShader::queue_text(
 
   for (const auto& [box, uv] : characters) {
     Mat2 rot = Rot2(angle).mat();
-    Vec2 lower_left = origin + rot * box.lower_left();
-    Vec2 lower_right = origin + rot * box.lower_right();
-    Vec2 upper_left = origin + rot * box.upper_left();
-    Vec2 upper_right = origin + rot * box.upper_right();
+    Vec2 lower_left = origin + scale * (rot * box.lower_left());
+    Vec2 lower_right = origin + scale * (rot * box.lower_right());
+    Vec2 upper_left = origin + scale * (rot * box.upper_left());
+    Vec2 upper_right = origin + scale * (rot * box.upper_right());
 
     vertices.push_back(Vertex{lower_left, uv.lower_left()});
     vertices.push_back(Vertex{lower_right, uv.lower_right()});

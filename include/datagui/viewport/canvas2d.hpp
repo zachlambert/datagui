@@ -44,13 +44,13 @@ public:
       const Color& border_color = Color::Black());
 
   void text(
-      const Vec2& origin,
-      float angle,
       const std::string& text,
-      Font font,
-      int font_size,
-      Color text_color,
-      Length width);
+      const Vec2& origin,
+      float angle = 0,
+      int font_size = 20,
+      Font font = Font::DejaVuSans,
+      Color text_color = Color::Black(),
+      Length width = LengthWrap());
 
   void heatmap(
       const Vec2& lower,
@@ -80,7 +80,7 @@ private:
   void mouse_event(const Vec2& size, const MouseEvent& event) override;
   bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
 
-  float scale_ = 1;
+  std::optional<float> scale_;
   Color bg_color_ = Color::Gray(0.95);
   Vec2 click_camera_pos;
   Vec2 click_mouse_pos;

@@ -182,6 +182,7 @@ void Plotter::queue_commands() {
     fixed_text_shader.queue_text(
         Vec2(args.outer_padding, size.y - args.outer_padding),
         0,
+        1,
         title_,
         theme->text_font,
         theme->text_size,
@@ -230,6 +231,7 @@ void Plotter::queue_commands() {
       fixed_text_shader.queue_text(
           pos + Vec2(text_height + theme->text_padding, 0),
           0,
+          1,
           item.args.label,
           theme->text_font,
           theme->text_size,
@@ -498,6 +500,7 @@ void Plotter::queue_commands() {
           plot_area.upper +
               Vec2(args.inner_padding, text_height + args.inner_padding),
           0,
+          1,
           ss.str(),
           theme->text_font,
           theme->text_size,
@@ -511,6 +514,7 @@ void Plotter::queue_commands() {
           plot_area.lower_right() +
               Vec2(args.inner_padding, -args.inner_padding),
           0,
+          1,
           ss.str(),
           theme->text_font,
           theme->text_size,
@@ -552,6 +556,7 @@ void Plotter::queue_commands() {
     fixed_text_shader.queue_text(
         pos,
         0,
+        1,
         tick.label,
         theme->text_font,
         theme->text_size,
@@ -565,6 +570,7 @@ void Plotter::queue_commands() {
     fixed_text_shader.queue_text(
         pos,
         0,
+        1,
         xticks_power,
         theme->text_font,
         theme->text_size,
@@ -588,6 +594,7 @@ void Plotter::queue_commands() {
     fixed_text_shader.queue_text(
         pos,
         0,
+        1,
         tick.label,
         theme->text_font,
         theme->text_size,
@@ -607,6 +614,7 @@ void Plotter::queue_commands() {
     fixed_text_shader.queue_text(
         pos,
         0,
+        1,
         xticks_power,
         theme->text_font,
         theme->text_size,
@@ -621,6 +629,7 @@ void Plotter::queue_commands() {
     fixed_text_shader.queue_text(
         pos,
         0,
+        1,
         xlabel_,
         theme->text_font,
         theme->text_size,
@@ -634,6 +643,7 @@ void Plotter::queue_commands() {
     fixed_text_shader.queue_text(
         pos,
         M_PI / 2,
+        1,
         ylabel_,
         theme->text_font,
         theme->text_size,
