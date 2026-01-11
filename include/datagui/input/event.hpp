@@ -18,6 +18,7 @@ struct MouseEvent {
   MouseButton button;
   MouseAction action;
   Vec2 position;
+  Vec2 press_position;
   Modifiers mod;
   bool is_double_click = false;
 };

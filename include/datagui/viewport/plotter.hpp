@@ -180,8 +180,8 @@ private:
       const std::shared_ptr<FontManager>& fm) override;
   void begin() override;
   void end() override;
-  void mouse_event(const Vec2& size, const MouseEvent& event) override;
-  bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
+  void mouse_event(const MouseEvent& event) override;
+  bool scroll_event(const ScrollEvent& event) override;
   void queue_commands();
   void redraw();
 

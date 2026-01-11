@@ -14,10 +14,9 @@ int main() {
   camera.direction.z = -std::sin(M_PI / 4);
   camera.position.x = -2;
   camera.position.z = 2;
-  camera.fov_degrees = 90;
+  camera.fov = Vec2::uniform(M_PI / 2);
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
-  camera.size = window.size();
 
   struct Point {
     Vec3 position;

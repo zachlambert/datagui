@@ -16,7 +16,7 @@ int main() {
       auto width = gui.variable<float>(1);
 
       if (auto canvas = gui.viewport<datagui::Canvas2d>(500, 200)) {
-        canvas->scale(5);
+        canvas->view_size(5, 2);
         canvas->bg_color(Color::Hsl(300, 0.4, 0.8));
         canvas->rect(Vec2(), 0, Vec2::uniform(*width), *color, *border_size);
         canvas->text(std::to_string(*width), Vec2(*width / 2, *width / 2));

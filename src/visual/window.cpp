@@ -62,7 +62,17 @@ void glfw_mouse_button_callback(
 
   double mx, my;
   glfwGetCursorPos(glfw_window, &mx, &my);
-  event.position = Vec2(mx, my);
+  Vec2 position = Vec2(mx, my);
+  auto& press_position =
+      window->mouse_down_position_[(std::size_t)event.button];
+
+  event.position = position;
+  if (event.action == MouseAction::Press) {
+    event.press_position = position;
+    press_position = position;
+  } else {
+    event.press_position = press_position;
+  }
 
   window->mouse_events_.push_back(event);
 }
@@ -317,6 +327,7 @@ void Window::poll_events() {
       continue;
     }
     hold_event.button = (MouseButton)i;
+    hold_event.press_position = mouse_down_position_[i];
     mouse_events_.push_back(hold_event);
   }
 

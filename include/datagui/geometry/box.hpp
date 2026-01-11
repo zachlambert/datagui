@@ -44,6 +44,19 @@ struct Box2 {
   Vec2 upper_right() const {
     return upper;
   }
+
+  // To local box coords [0, 1]
+  Vec2 to_coords(const Vec2& position) {
+    return Vec2(
+        (position.x - lower.x) / (upper.x - lower.x),
+        (position.y - lower.y) / (upper.y - lower.y));
+  }
+  // From local box coords [0, 1]
+  Vec2 from_local(const Vec2& coords) {
+    return Vec2(
+        lower.x + coords.x * (upper.x - lower.x),
+        lower.y + coords.y * (upper.y - lower.y));
+  }
 };
 
 inline bool intersects(const Box2& a, const Box2& b) {

@@ -23,7 +23,7 @@ int main() {
     shader.queue_text(
         Vec2(250, 100),
         M_PI / 4,
-        1,
+        Vec2::ones(),
         "rotated?",
         Font::DejaVuSansMono,
         24,

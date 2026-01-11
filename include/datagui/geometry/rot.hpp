@@ -67,6 +67,10 @@ public:
   Rot2(float* data) : mat_(data) {}
   Rot2(const Mat2& mat) : mat_(mat) {}
 
+  const Rot2 inverse() const {
+    return Rot2(mat_.transpose());
+  }
+
   const Mat2& mat() const {
     return mat_;
   }
@@ -77,6 +81,10 @@ private:
   Mat2 mat_;
 };
 
+inline Vec2 operator*(const Rot2& lhs, const Vec2& rhs) {
+  return lhs.mat() * rhs;
+}
+
 class Rot3 {
 public:
   Rot3() : mat_(Mat3::identity()) {}
@@ -85,6 +93,10 @@ public:
 
   Rot3(const Euler& euler);
   Rot3(const Quat& quat);
+
+  const Rot3 inverse() const {
+    return Rot3(mat_.transpose());
+  }
 
   const Mat3& mat() const {
     return mat_;
@@ -96,5 +108,9 @@ public:
 private:
   Mat3 mat_;
 };
+
+inline Vec3 operator*(const Rot3& lhs, const Vec3& rhs) {
+  return lhs.mat() * rhs;
+}
 
 } // namespace datagui

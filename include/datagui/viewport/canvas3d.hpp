@@ -94,8 +94,8 @@ private:
   void impl_init(
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm) override;
-  void mouse_event(const Vec2& size, const MouseEvent& event) override;
-  bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
+  void mouse_event(const MouseEvent& event) override;
+  bool scroll_event(const ScrollEvent& event) override;
   void reset_camera();
 
   Camera3d camera;

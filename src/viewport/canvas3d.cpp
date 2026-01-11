@@ -161,7 +161,6 @@ void Canvas3d::end() {
 }
 
 void Canvas3d::redraw() {
-  camera.size = viewport().size();
   bind_framebuffer(bg_color_);
   shape_shader.draw(viewport(), camera);
   mesh_shader.draw(viewport(), camera);
@@ -179,20 +178,15 @@ void Canvas3d::impl_init(
   point_cloud_shader.init();
 }
 
-void Canvas3d::mouse_event(const Vec2& size, const MouseEvent& event) {
-  Vec3 direction;
-  direction.x = (event.position.x - size.x / 2) / (size.x / 2);
-  direction.y = (event.position.y - size.y / 2) / (size.y / 2);
-  direction.z = -1;
-  // Not normalized
-  Vec3 direction_world = camera.rotation().mat() * direction;
+void Canvas3d::mouse_event(const MouseEvent& event) {
+  Vec3 direction = camera.ray_from_camera(event.position);
 
   if (event.action == MouseAction::Press) {
     if (event.is_double_click) {
       reset_camera();
     }
-    float distance = camera.position.z / (-direction_world.z);
-    click_point = camera.position + distance * direction_world;
+    float distance = camera.position.z / (-direction.z);
+    click_point = camera.position + distance * direction;
     click_distance_z = distance * std::abs(direction.z);
     click_point_direction = direction;
     click_camera_direction = camera.direction;
@@ -217,25 +211,17 @@ void Canvas3d::mouse_event(const Vec2& size, const MouseEvent& event) {
         -std::sin(pitch),
     };
   } else if (event.button == MouseButton::Middle) {
-    Vec3 direction_world = camera.rotation().mat() * direction;
-    camera.position = click_point - direction_world * click_distance_z;
+    camera.position = click_point - direction * click_distance_z;
   }
 
   redraw();
 }
 
-bool Canvas3d::scroll_event(const Vec2& size, const ScrollEvent& event) {
-  Vec3 direction;
-  direction.x = (event.position.x - size.x / 2) / (size.x / 2);
-  direction.y = (event.position.y - size.y / 2) / (size.y / 2);
-  direction.z = -1;
-  // Not normalized
-  Vec3 direction_world = camera.rotation().mat() * direction;
-
-  float distance = camera.position.z / (-direction_world.z);
+bool Canvas3d::scroll_event(const ScrollEvent& event) {
+  Vec3 direction = camera.ray_from_camera(event.position);
+  float distance = camera.position.z / (-direction.z);
   float new_distance = std::exp(-event.amount / 1000) * distance;
-  camera.position += direction_world * (new_distance - distance);
-
+  camera.position += direction * (new_distance - distance);
   redraw();
   return true;
 }
@@ -245,7 +231,8 @@ void Canvas3d::reset_camera() {
   camera.position.x = -7;
   camera.position.y = -7;
   camera.position.z = 5;
-  camera.fov_degrees = 70;
+  camera.fov.x = M_PI * 70 / 180;
+  camera.fov.y = camera.fov.x * viewport().size().y / viewport().size().x;
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
 }

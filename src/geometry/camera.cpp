@@ -23,8 +23,18 @@ Mat3 Camera2d::projection_mat() const {
   return Mat3{
       {1 / (0.5f * size.x), 0, 0},
       {0, 1 / (0.5f * size.y), 0},
-      {0, 0, 1.f / zoom},
+      {0, 0, 1.f},
   };
+}
+
+Vec2 Camera2d::to_camera(const Vec2& world_pos) const {
+  Vec2 pos_cs = Rot2(-angle) * (world_pos - position);
+  return Vec2::uniform(0.5) + pos_cs / size;
+}
+
+Vec2 Camera2d::from_camera(const Vec2& camera_pos) const {
+  Vec2 pos_cs = (camera_pos - Vec2::uniform(0.5)) * size;
+  return position + Rot2(angle) * pos_cs;
 }
 
 Rot3 Camera3d::rotation() const {
@@ -56,9 +66,8 @@ Mat4 Camera3d::view_mat() const {
 Mat4 Camera3d::projection_mat() const {
   Mat4 projection;
 
-  float aspect_ratio = size.x / size.y;
-  projection(0, 0) = 1.f / std::tan(0.5f * fov_degrees * M_PI / 180.f);
-  projection(1, 1) = aspect_ratio * projection(0, 0);
+  projection(0, 0) = 1.f / std::tan(0.5f * fov.x);
+  projection(1, 1) = 1.f / std::tan(0.5f * fov.y);
   projection(2, 2) =
       -(clipping_min + clipping_max) / (clipping_max - clipping_min);
   projection(2, 3) =
@@ -66,6 +75,20 @@ Mat4 Camera3d::projection_mat() const {
   projection(3, 2) = -1;
 
   return projection;
+}
+
+Vec2 Camera3d::to_camera(const Vec3& world_pos) const {
+  Vec3 pos_cs = rotation().inverse() * (world_pos - position);
+  Vec2 view_frustum = Vec2(std::tan(0.5f * fov.x), std::tan(0.5f * fov.y));
+  return Vec2::uniform(0.5) +
+         0.5 * (Vec2(pos_cs.x, pos_cs.y) / pos_cs.z) / view_frustum;
+}
+
+Vec3 Camera3d::ray_from_camera(const Vec2& camera_pos) const {
+  Vec2 view_frustum = Vec2(std::tan(0.5f * fov.x), std::tan(0.5f * fov.y));
+  Vec2 pos_cs = (camera_pos - Vec2::uniform(0.5)) * view_frustum;
+  Vec3 ray_cs = Vec3(pos_cs.x, pos_cs.y, 1);
+  return rotation() * ray_cs / ray_cs.length();
 }
 
 } // namespace datagui

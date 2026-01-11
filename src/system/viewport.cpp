@@ -25,11 +25,10 @@ void ViewportPtrSystem::mouse_event(
   const auto& state = element.state();
   const auto& viewport = element.viewport();
 
-  MouseEvent event_viewport = event;
-  event_viewport.position.x = event.position.x - state.position.x;
-  event_viewport.position.y =
-      state.position.y + state.size.y - event.position.y;
-  viewport.viewport->mouse_event(state.size, event_viewport);
+  MouseEvent remapped = event;
+  remapped.position = state.box().to_coords(event.position);
+  remapped.press_position = state.box().to_coords(event.position);
+  viewport.viewport->mouse_event(remapped);
 }
 
 bool ViewportPtrSystem::scroll_event(
@@ -38,11 +37,9 @@ bool ViewportPtrSystem::scroll_event(
   const auto& state = element.state();
   const auto& viewport = element.viewport();
 
-  ScrollEvent event_viewport = event;
-  event_viewport.position.x = event.position.x - state.position.x;
-  event_viewport.position.y =
-      state.position.y + state.size.y - event.position.y;
-  return viewport.viewport->scroll_event(state.size, event_viewport);
+  ScrollEvent remapped = event;
+  remapped.position = state.box().to_coords(event.position);
+  return viewport.viewport->scroll_event(remapped);
 }
 
 } // namespace datagui

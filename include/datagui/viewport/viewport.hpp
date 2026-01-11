@@ -31,8 +31,8 @@ public:
 
   virtual void begin() = 0;
   virtual void end() = 0;
-  virtual void mouse_event(const Vec2& size, const MouseEvent& event) {}
-  virtual bool scroll_event(const Vec2& size, const ScrollEvent& event) {
+  virtual void mouse_event(const MouseEvent& event) {}
+  virtual bool scroll_event(const ScrollEvent& event) {
     return false;
   }
 

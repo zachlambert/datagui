@@ -61,11 +61,20 @@ public:
       std::size_t width = 256,
       std::size_t height = 256);
 
-  void scale(float scale) {
-    scale_ = scale;
+  void view_size(float width, float height = 0) {
+    nominal_camera_size.x = width;
+    if (height <= 0) {
+      nominal_camera_size.y = width * viewport().size().y / viewport().size().x;
+    } else {
+      nominal_camera_size.y = height;
+    }
   }
   void bg_color(const Color& color) {
     bg_color_ = color;
+  }
+
+  void click_callback(const std::function<void(const MouseEvent&)>& callback) {
+    click_callback_ = callback;
   }
 
 private:
@@ -77,13 +86,15 @@ private:
       const std::shared_ptr<FontManager>& fm) override;
   void redraw();
 
-  void mouse_event(const Vec2& size, const MouseEvent& event) override;
-  bool scroll_event(const Vec2& size, const ScrollEvent& event) override;
+  void mouse_event(const MouseEvent& event) override;
+  bool scroll_event(const ScrollEvent& event) override;
 
-  std::optional<float> scale_;
   Color bg_color_ = Color::Gray(0.95);
-  Vec2 click_camera_pos;
-  Vec2 click_mouse_pos;
+  Camera2d click_camera;
+  std::function<void(const MouseEvent&)> click_callback_;
+
+  Vec2 nominal_camera_size;
+  float zoom = 1;
 
   Camera2d camera;
   Shape2dShader shape_shader;
