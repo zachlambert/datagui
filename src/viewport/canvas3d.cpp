@@ -162,6 +162,7 @@ void Canvas3d::end() {
 
 void Canvas3d::redraw() {
   bind_framebuffer(bg_color_);
+  camera.fov.y = camera.fov.x * viewport().ratio_yx();
   shape_shader.draw(viewport(), camera);
   mesh_shader.draw(viewport(), camera);
   uv_mesh_shader.draw(viewport(), camera);
@@ -179,48 +180,58 @@ void Canvas3d::impl_init(
 }
 
 void Canvas3d::mouse_event(const MouseEvent& event) {
-  Vec3 direction = camera.ray_from_camera(event.position);
-
-  if (event.action == MouseAction::Press) {
-    if (event.is_double_click) {
-      reset_camera();
+  if (event.button == MouseButton::Left && event.is_double_click) {
+    reset_camera();
+    redraw();
+  }
+  if (event.button != MouseButton::Middle) {
+#if 0
+    if (click_callback_) {
+      click_callback_(event);
     }
-    float distance = camera.position.z / (-direction.z);
-    click_point = camera.position + distance * direction;
-    click_distance_z = distance * std::abs(direction.z);
-    click_point_direction = direction;
-    click_camera_direction = camera.direction;
+#endif
     return;
   }
-  if (event.action != MouseAction::Hold) {
+  if (event.action == MouseAction::Press) {
+    click_camera = camera;
     return;
   }
 
-  if (event.button == MouseButton::Left) {
-    float pitch = std::asin(-click_camera_direction.z) +
-                  std::atan(direction.y) - std::atan(click_point_direction.y);
-    pitch = std::clamp(pitch, -0.4f * M_PIf, 0.4f * M_PIf);
-    float yaw =
-        std::atan2(click_camera_direction.y, click_camera_direction.x) +
-        std::atan2(std::sin(pitch) + std::cos(pitch), -direction.x) -
-        std::atan2(std::sin(pitch) + std::cos(pitch), -click_point_direction.x);
-
+  if (event.mod.shift) {
+    Vec3 delta_cs = 2 * (click_camera.ray_camera(event.position) -
+                         click_camera.ray_camera(event.press_position));
+    float yaw_change = std::atan2(delta_cs.x, 1);
+    float pitch_change = std::atan2(delta_cs.y, 1);
+    float click_yaw =
+        std::atan2(click_camera.direction.y, click_camera.direction.x);
+    float click_pitch = std::atan2(
+        -click_camera.direction.z,
+        std::hypot(click_camera.direction.x, click_camera.direction.y));
+    float yaw = click_yaw + yaw_change;
+    float pitch = click_pitch + pitch_change;
     camera.direction = {
         std::cos(yaw) * std::cos(pitch),
         std::sin(yaw) * std::cos(pitch),
         -std::sin(pitch),
     };
-  } else if (event.button == MouseButton::Middle) {
-    camera.position = click_point - direction * click_distance_z;
+  } else {
+    float distance = click_camera.position.z /
+                     click_camera.direction_world(event.press_position).z;
+    Vec3 delta_cs = 2 *
+                    (click_camera.ray_camera(event.position) -
+                     click_camera.ray_camera(event.press_position)) *
+                    distance;
+    camera.position =
+        click_camera.position + click_camera.rotation() * delta_cs;
   }
 
   redraw();
 }
 
 bool Canvas3d::scroll_event(const ScrollEvent& event) {
-  Vec3 direction = camera.ray_from_camera(event.position);
+  Vec3 direction = camera.direction_world(event.position);
   float distance = camera.position.z / (-direction.z);
-  float new_distance = std::exp(-event.amount / 1000) * distance;
+  float new_distance = std::exp(-event.amount / 250) * distance;
   camera.position += direction * (new_distance - distance);
   redraw();
   return true;
@@ -232,7 +243,7 @@ void Canvas3d::reset_camera() {
   camera.position.y = -7;
   camera.position.z = 5;
   camera.fov.x = M_PI * 70 / 180;
-  camera.fov.y = camera.fov.x * viewport().size().y / viewport().size().x;
+  // Set fov.y during redraw since window size may change
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
 }

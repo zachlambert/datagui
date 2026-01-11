@@ -4,7 +4,7 @@
 int main() {
   using namespace datagui;
 
-  Window window;
+  Window window("point_cloud_shader", 800, 800);
   PointCloudShader point_cloud_shader;
   point_cloud_shader.init();
 

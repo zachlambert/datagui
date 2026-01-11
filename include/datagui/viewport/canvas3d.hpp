@@ -105,10 +105,13 @@ private:
   PointCloudShader point_cloud_shader;
 
   Color bg_color_ = Color::Gray(0.95);
+  Camera3d click_camera;
+#if 0
   Vec3 click_point;
   Vec3 click_point_direction;
   Vec3 click_camera_direction;
   float click_distance_z;
+#endif
 };
 
 } // namespace datagui

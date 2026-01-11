@@ -4,7 +4,7 @@
 int main() {
   using namespace datagui;
 
-  Window window;
+  Window window("uv_mesh_shader", 800, 800);
   UvMeshShader mesh_shader;
   mesh_shader.init();
 

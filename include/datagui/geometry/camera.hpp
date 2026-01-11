@@ -47,7 +47,8 @@ struct Camera3d {
   Mat4 projection_mat() const;
 
   Vec2 to_camera(const Vec3& world_pos) const;
-  Vec3 ray_from_camera(const Vec2& camera_pos) const;
+  Vec3 ray_camera(const Vec2& camera_pos) const;
+  Vec3 direction_world(const Vec2& camera_pos) const;
 };
 
 } // namespace datagui

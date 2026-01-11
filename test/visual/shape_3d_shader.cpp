@@ -4,7 +4,7 @@
 int main() {
   using namespace datagui;
 
-  Window window;
+  Window window("shape_3d_shader", 800, 800);
   Shape3dShader shape_shader;
   shape_shader.init();
 
@@ -13,10 +13,9 @@ int main() {
   camera.direction.z = -std::sin(M_PI / 4);
   camera.position.x = -8.0;
   camera.position.z = 6;
-  camera.fov_degrees = 90;
+  camera.fov = Vec2::uniform(M_PI / 2);
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
-  camera.size = window.size();
 
   while (window.running()) {
     window.render_begin();

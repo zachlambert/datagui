@@ -230,6 +230,7 @@ void Window::open() {
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
   // Create window with graphics context
+  printf("Default size: %li, %li\n", default_width, default_height);
   window = glfwCreateWindow(
       default_width,
       default_height,

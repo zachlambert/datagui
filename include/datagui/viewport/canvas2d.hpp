@@ -61,14 +61,8 @@ public:
       std::size_t width = 256,
       std::size_t height = 256);
 
-  void view_size(float width, float height = 0) {
-    nominal_camera_size.x = width;
-    if (height <= 0) {
-      nominal_camera_size.y = width * viewport().size().y / viewport().size().x;
-    } else {
-      nominal_camera_size.y = height;
-    }
-  }
+  void view_size(float width, float height = 0);
+
   void bg_color(const Color& color) {
     bg_color_ = color;
   }

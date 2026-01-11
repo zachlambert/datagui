@@ -62,6 +62,7 @@ void Canvas2d::text(
     Color text_color,
     Length width) {
   Vec2 text_scale = camera.size / viewport().size();
+  std::cout << text_scale << std::endl;
   text_shader.queue_text(
       origin,
       angle,
@@ -128,12 +129,23 @@ void Canvas2d::heatmap(
   image_shader.queue_image(image, lower, 0, upper - lower);
 }
 
+void Canvas2d::view_size(float width, float height) {
+  nominal_camera_size.x = width;
+  if (height <= 0) {
+    nominal_camera_size.y = width * viewport().size().y / viewport().size().x;
+  } else {
+    nominal_camera_size.y = height;
+  }
+  camera.size = nominal_camera_size / zoom;
+}
+
 void Canvas2d::begin() {
   shape_shader.clear();
   text_shader.clear();
   image_shader.clear();
   bg_color_ = Color::Gray(0.95);
   nominal_camera_size = viewport().size();
+  camera.size = nominal_camera_size / zoom;
 }
 
 void Canvas2d::end() {
@@ -150,6 +162,7 @@ void Canvas2d::impl_init(
 
 void Canvas2d::redraw() {
   bind_framebuffer(bg_color_);
+  camera.size = nominal_camera_size / zoom;
   image_shader.draw(viewport(), camera);
   shape_shader.draw(viewport(), camera);
   text_shader.draw(viewport(), camera);
@@ -157,6 +170,11 @@ void Canvas2d::redraw() {
 }
 
 void Canvas2d::mouse_event(const MouseEvent& event) {
+  if (event.button == MouseButton::Left && event.is_double_click) {
+    camera.position = Vec2();
+    zoom = 1;
+    redraw();
+  }
   if (event.button != MouseButton::Middle) {
     if (click_callback_) {
       click_callback_(event);
@@ -164,21 +182,20 @@ void Canvas2d::mouse_event(const MouseEvent& event) {
     return;
   }
   if (event.action == MouseAction::Press) {
-    if (event.is_double_click) {
-      camera.position = Vec2();
-      zoom = 1;
-    }
     click_camera = camera;
     return;
   }
 
-  camera.position = click_camera.from_camera(event.position) -
+  camera.position = click_camera.position +
+                    click_camera.from_camera(event.press_position) -
                     click_camera.from_camera(event.position);
   redraw();
 }
 
 bool Canvas2d::scroll_event(const ScrollEvent& event) {
-  zoom *= std::exp(-event.amount / 1000);
+  float change_factor = std::exp(-event.amount / 250);
+  camera.size /= change_factor;
+  zoom *= change_factor;
   redraw();
   return true;
 }

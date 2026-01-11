@@ -57,6 +57,9 @@ struct Box2 {
         lower.x + coords.x * (upper.x - lower.x),
         lower.y + coords.y * (upper.y - lower.y));
   }
+  float ratio_yx() const {
+    return (upper.y - lower.y) / (upper.x - lower.x);
+  }
 };
 
 inline bool intersects(const Box2& a, const Box2& b) {
