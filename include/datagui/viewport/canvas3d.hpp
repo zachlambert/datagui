@@ -5,6 +5,7 @@
 #include "datagui/visual/point_cloud_shader.hpp"
 #include "datagui/visual/shape_3d_shader.hpp"
 #include "datagui/visual/uv_mesh_shader.hpp"
+#include <functional>
 
 namespace datagui {
 
@@ -86,6 +87,10 @@ public:
     bg_color_ = color;
   }
 
+  void click_callback(const std::function<void(const MouseEvent&)>& callback) {
+    click_callback_ = callback;
+  }
+
 private:
   void begin() override;
   void end() override;
@@ -106,12 +111,7 @@ private:
 
   Color bg_color_ = Color::Gray(0.95);
   Camera3d click_camera;
-#if 0
-  Vec3 click_point;
-  Vec3 click_point_direction;
-  Vec3 click_camera_direction;
-  float click_distance_z;
-#endif
+  std::function<void(const MouseEvent& event)> click_callback_;
 };
 
 } // namespace datagui

@@ -62,7 +62,6 @@ void Canvas2d::text(
     Color text_color,
     Length width) {
   Vec2 text_scale = camera.size / viewport().size();
-  std::cout << text_scale << std::endl;
   text_shader.queue_text(
       origin,
       angle,
@@ -146,6 +145,7 @@ void Canvas2d::begin() {
   bg_color_ = Color::Gray(0.95);
   nominal_camera_size = viewport().size();
   camera.size = nominal_camera_size / zoom;
+  click_callback_ = {};
 }
 
 void Canvas2d::end() {
@@ -177,7 +177,10 @@ void Canvas2d::mouse_event(const MouseEvent& event) {
   }
   if (event.button != MouseButton::Middle) {
     if (click_callback_) {
-      click_callback_(event);
+      MouseEvent remapped = event;
+      remapped.press_position = camera.from_camera(event.press_position);
+      remapped.position = camera.from_camera(event.position);
+      click_callback_(remapped);
     }
     return;
   }

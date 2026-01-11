@@ -154,6 +154,7 @@ void Canvas3d::begin() {
   uv_mesh_shader.clear();
   point_cloud_shader.clear();
   bg_color_ = Color::Gray(0.95);
+  click_callback_ = {};
 }
 
 void Canvas3d::end() {
@@ -185,11 +186,14 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
     redraw();
   }
   if (event.button != MouseButton::Middle) {
-#if 0
     if (click_callback_) {
-      click_callback_(event);
+      Vec3 press_ray = camera.ray_camera(event.press_position);
+      Vec3 ray = camera.ray_camera(event.position);
+      MouseEvent remapped = event;
+      remapped.press_position = Vec2(press_ray.x, press_ray.y);
+      remapped.position = Vec2(ray.x, ray.y);
+      click_callback_(remapped);
     }
-#endif
     return;
   }
   if (event.action == MouseAction::Press) {
