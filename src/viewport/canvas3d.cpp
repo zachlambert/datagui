@@ -181,10 +181,6 @@ void Canvas3d::impl_init(
 }
 
 void Canvas3d::mouse_event(const MouseEvent& event) {
-  if (event.button == MouseButton::Left && event.is_double_click) {
-    reset_camera();
-    redraw();
-  }
   if (event.button != MouseButton::Middle) {
     if (click_callback_) {
       Vec3 press_ray = camera.ray_camera(event.press_position);
@@ -197,13 +193,18 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
     return;
   }
   if (event.action == MouseAction::Press) {
+    if (event.mod.ctrl) {
+      reset_camera();
+      redraw();
+    }
     click_camera = camera;
     return;
   }
 
   if (event.mod.shift) {
-    Vec3 delta_cs = 2 * (click_camera.ray_camera(event.position) -
-                         click_camera.ray_camera(event.press_position));
+    Vec3 delta_cs =
+        (click_camera.ray_camera(event.position) -
+         click_camera.ray_camera(event.press_position));
     float yaw_change = std::atan2(delta_cs.x, 1);
     float pitch_change = std::atan2(delta_cs.y, 1);
     float click_yaw =
@@ -211,8 +212,11 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
     float click_pitch = std::atan2(
         -click_camera.direction.z,
         std::hypot(click_camera.direction.x, click_camera.direction.y));
+
     float yaw = click_yaw + yaw_change;
     float pitch = click_pitch + pitch_change;
+    pitch = std::clamp(pitch, -M_PIf * 0.48f, M_PIf * 0.48f);
+
     camera.direction = {
         std::cos(yaw) * std::cos(pitch),
         std::sin(yaw) * std::cos(pitch),
@@ -221,8 +225,7 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
   } else {
     float distance = click_camera.position.z /
                      click_camera.direction_world(event.press_position).z;
-    Vec3 delta_cs = 2 *
-                    (click_camera.ray_camera(event.position) -
+    Vec3 delta_cs = (click_camera.ray_camera(event.position) -
                      click_camera.ray_camera(event.press_position)) *
                     distance;
     camera.position =
@@ -233,10 +236,14 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
 }
 
 bool Canvas3d::scroll_event(const ScrollEvent& event) {
-  Vec3 direction = camera.direction_world(event.position);
-  float distance = camera.position.z / (-direction.z);
-  float new_distance = std::exp(-event.amount / 250) * distance;
-  camera.position += direction * (new_distance - distance);
+  float distance = -event.amount / 20.f;
+  if (event.mod.shift) {
+    distance /= 10;
+  }
+  if (event.mod.ctrl) {
+    distance *= 10;
+  }
+  camera.position += camera.direction_world(event.position) * distance;
   redraw();
   return true;
 }

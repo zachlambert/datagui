@@ -1,4 +1,5 @@
 #include "datagui/geometry/camera.hpp"
+#include <cstdio>
 
 namespace datagui {
 
@@ -85,8 +86,8 @@ Vec2 Camera3d::to_camera(const Vec3& world_pos) const {
 }
 
 Vec3 Camera3d::ray_camera(const Vec2& camera_pos) const {
-  Vec2 view_frustum = Vec2(std::tan(0.5f * fov.x), std::tan(0.5f * fov.y));
-  Vec2 pos_cs = (camera_pos - Vec2::uniform(0.5)) * view_frustum;
+  Vec2 view_size = 2 * Vec2(std::tan(0.5f * fov.x), std::tan(0.5f * fov.y));
+  Vec2 pos_cs = (camera_pos - Vec2::uniform(0.5)) * view_size;
   Vec3 ray_cs = Vec3(pos_cs.x, pos_cs.y, -1);
   return ray_cs;
 }

@@ -170,11 +170,6 @@ void Canvas2d::redraw() {
 }
 
 void Canvas2d::mouse_event(const MouseEvent& event) {
-  if (event.button == MouseButton::Left && event.is_double_click) {
-    camera.position = Vec2();
-    zoom = 1;
-    redraw();
-  }
   if (event.button != MouseButton::Middle) {
     if (click_callback_) {
       MouseEvent remapped = event;
@@ -185,6 +180,11 @@ void Canvas2d::mouse_event(const MouseEvent& event) {
     return;
   }
   if (event.action == MouseAction::Press) {
+    if (event.mod.ctrl) {
+      camera.position = Vec2();
+      zoom = 1;
+      redraw();
+    }
     click_camera = camera;
     return;
   }
@@ -199,6 +199,8 @@ bool Canvas2d::scroll_event(const ScrollEvent& event) {
   float change_factor = std::exp(-event.amount / 250);
   camera.size /= change_factor;
   zoom *= change_factor;
+  camera.position +=
+      (event.position - Vec2::uniform(0.5)) * (change_factor - 1) * camera.size;
   redraw();
   return true;
 }

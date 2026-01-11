@@ -67,6 +67,7 @@ private:
   std::vector<TextEvent> text_events_;
   std::array<bool, MouseButtonSize> mouse_button_down_;
   std::array<Vec2, MouseButtonSize> mouse_down_position_;
+  std::array<Modifiers, MouseButtonSize> mouse_down_mod_;
   Vec2 mouse_pos_;
 
   static constexpr double double_click_time = 0.3;

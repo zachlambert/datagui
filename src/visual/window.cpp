@@ -192,6 +192,8 @@ Window::Window(
     size_(width, height) {
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     mouse_button_down_[i] = false;
+    mouse_down_mod_[i].ctrl = false;
+    mouse_down_mod_[i].shift = false;
   }
   open();
   std::scoped_lock<std::shared_mutex> lock(windows_mutex);
@@ -230,7 +232,6 @@ void Window::open() {
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
   // Create window with graphics context
-  printf("Default size: %li, %li\n", default_width, default_height);
   window = glfwCreateWindow(
       default_width,
       default_height,
@@ -311,7 +312,12 @@ void Window::poll_events() {
   mouse_pos_ = Vec2(mx, my);
 
   for (auto& event : mouse_events_) {
-    event.mod = mod;
+    if (event.action == MouseAction::Press) {
+      event.mod = mod;
+      mouse_down_mod_[(std::size_t)event.button] = mod;
+    } else {
+      event.mod = mouse_down_mod_[(std::size_t)event.button];
+    }
   }
   for (auto& event : scroll_events_) {
     event.position = mouse_pos_;
@@ -321,7 +327,6 @@ void Window::poll_events() {
   MouseEvent hold_event;
   hold_event.action = MouseAction::Hold;
   hold_event.position = mouse_pos_;
-  hold_event.mod = mod;
 
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     if (!mouse_button_down_[i]) {
@@ -329,6 +334,7 @@ void Window::poll_events() {
     }
     hold_event.button = (MouseButton)i;
     hold_event.press_position = mouse_down_position_[i];
+    hold_event.mod = mouse_down_mod_[i];
     mouse_events_.push_back(hold_event);
   }
 
