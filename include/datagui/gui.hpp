@@ -13,12 +13,19 @@
 #include "datagui/viewport/viewport.hpp"
 #include "datagui/visual/gui_renderer.hpp"
 #include "datagui/visual/window.hpp"
+#include "datagui/viewport/canvas2d.hpp"
+#include "datagui/viewport/canvas3d.hpp"
+#include "datagui/viewport/plotter.hpp"
 #include <memory>
 #include <set>
 #include <unordered_set>
 #include <vector>
 
 namespace datagui {
+
+class Plotter;
+class Canvas2d;
+class Canvas3d;
 
 class Gui {
 public:
@@ -148,11 +155,6 @@ public:
     } else {
       Var<T> result = var_current.as<T>();
       var_current = var_current.next();
-#if 0
-      if (overwrite) {
-        result.mut_internal() = initial_value;
-      }
-#endif
       return result;
     }
   }
@@ -233,30 +235,14 @@ public:
     return args_;
   }
 
-  template <typename T>
-  requires std::is_base_of_v<Viewport, T>
-  T* viewport(float width, float height) {
-    check_begin();
-    current.expect(Type::ViewportPtr, read_key());
-    auto& viewport = current.viewport();
-    if (!viewport.viewport) {
-      viewport.viewport = std::make_unique<T>();
-      viewport.viewport->init(width, height, theme, fm);
-    }
-    // Renderered width/height can differ to the initial width/height
-    // above - this defines the size used for the framebuffer
-    viewport.width = width;
-    viewport.height = height;
-
-    if (!current.dirty()) {
-      current = current.next();
-      return nullptr;
-    }
-    move_down();
-    viewport.viewport->begin();
-    T* ptr = dynamic_cast<T*>(viewport.viewport.get());
-    assert(ptr);
-    return ptr;
+  Canvas2d* canvas2d(float width, float height) {
+    return viewport<Canvas2d>(width, height);
+  }
+  Canvas3d* canvas3d(float width, float height) {
+    return viewport<Canvas3d>(width, height);
+  }
+  Plotter* plotter(float width, float height) {
+    return viewport<Plotter>(width, height);
   }
 
 private:
@@ -279,6 +265,10 @@ private:
 
   void change_tree_focus(ElementPtr from, ElementPtr to);
   void focus_next(bool reverse);
+
+  template <typename T>
+  requires std::is_base_of_v<Viewport, T>
+  T* viewport(float width, float height);
 
   Window window;
   Tree tree;

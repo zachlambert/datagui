@@ -1023,4 +1023,33 @@ void Gui::retrigger() {
   tree.set_retrigger(stack.top().first);
 }
 
+template <typename T>
+requires std::is_base_of_v<Viewport, T>
+T* Gui::viewport(float width, float height) {
+  check_begin();
+  current.expect(Type::ViewportPtr, read_key());
+  auto& viewport = current.viewport();
+  if (!viewport.viewport) {
+    viewport.viewport = std::make_unique<T>();
+    viewport.viewport->init(width, height, theme, fm);
+  }
+  // Renderered width/height can differ to the initial width/height
+  // above - this defines the size used for the framebuffer
+  viewport.width = width;
+  viewport.height = height;
+
+  if (!current.dirty()) {
+    current = current.next();
+    return nullptr;
+  }
+  move_down();
+  viewport.viewport->begin();
+  T* ptr = dynamic_cast<T*>(viewport.viewport.get());
+  assert(ptr);
+  return ptr;
+}
+template Canvas2d* Gui::viewport<Canvas2d>(float, float);
+template Canvas3d* Gui::viewport<Canvas3d>(float, float);
+template Plotter* Gui::viewport<Plotter>(float, float);
+
 } // namespace datagui

@@ -17,7 +17,7 @@ int main() {
       auto click_1 = gui.variable<Vec2>();
       auto click_2 = gui.variable<Vec2>();
 
-      if (auto canvas = gui.viewport<datagui::Canvas2d>(500, 200)) {
+      if (auto canvas = gui.canvas2d(500, 200)) {
         canvas->view_size(5, 2);
         canvas->bg_color(Color::Hsl(300, 0.4, 0.8));
         canvas->rect(Vec2(), 0, Vec2::uniform(*width), *color, *border_size);

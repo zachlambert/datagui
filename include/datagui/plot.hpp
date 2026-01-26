@@ -12,7 +12,7 @@ inline void plot(
     const std::function<void(Plotter&)> plot) {
   Gui gui(title);
   while (gui.running()) {
-    if (auto plotter = gui.viewport<Plotter>(width, height)) {
+    if (auto plotter = gui.plotter(width, height)) {
       plot(*plotter);
       gui.end();
     }

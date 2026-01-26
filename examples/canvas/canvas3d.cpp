@@ -39,7 +39,7 @@ int main() {
       auto bg_color = gui.variable<Color>(Color::Hsl(220, 0.4, 0.85));
       auto box_opacity = gui.variable<float>(0.8);
       auto box_size = gui.variable<float>(2.0);
-      if (auto canvas = gui.viewport<datagui::Canvas3d>(512, 512)) {
+      if (auto canvas = gui.canvas3d(512, 512)) {
         canvas->bg_color(*bg_color);
         canvas->grid(10, 10);
         canvas->box(

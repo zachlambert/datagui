@@ -14,7 +14,7 @@ int main() {
   }
 
   while (gui.running()) {
-    if (auto plotter = gui.viewport<datagui::Plotter>(400, 400)) {
+    if (auto plotter = gui.plotter(400, 400)) {
       plotter->plot(xs, ys);
       gui.end();
     }

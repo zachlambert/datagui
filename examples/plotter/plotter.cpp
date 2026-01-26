@@ -23,7 +23,7 @@ int main() {
     if (gui.group()) {
       if (gui.vsplit(0.5)) {
         if (gui.group()) {
-          if (auto plotter = gui.viewport<datagui::Plotter>(400, 400)) {
+          if (auto plotter = gui.plotter(400, 400)) {
             gui.retrigger();
 
             auto now = std::chrono::high_resolution_clock::now();
@@ -76,7 +76,7 @@ int main() {
           gui.end();
         }
         if (gui.group()) {
-          if (auto plotter = gui.viewport<datagui::Plotter>(400, 400)) {
+          if (auto plotter = gui.plotter(400, 400)) {
             gui.retrigger();
             auto f = [&](const Vec2& pos) {
               return std::exp(-pos.x * a) * std::sin(b * 2 * M_PIf * pos.y);
