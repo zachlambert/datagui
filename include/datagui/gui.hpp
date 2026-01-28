@@ -10,12 +10,12 @@
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/gui_renderer.hpp"
-#include "datagui/visual/window.hpp"
 #include "datagui/viewport/canvas2d.hpp"
 #include "datagui/viewport/canvas3d.hpp"
 #include "datagui/viewport/plotter.hpp"
+#include "datagui/viewport/viewport.hpp"
+#include "datagui/visual/gui_renderer.hpp"
+#include "datagui/visual/window.hpp"
 #include <memory>
 #include <set>
 #include <unordered_set>
@@ -183,6 +183,7 @@ public:
   void retrigger();
 
   template <typename T>
+  requires std::is_default_constructible_v<T>
   void edit(
       const std::string& label,
       const std::function<void(const T&)>& callback,
@@ -199,7 +200,9 @@ public:
     } else {
       datapack_edit(*this, label, *schema);
       auto node_capture = current.prev();
-      callback(datapack_read<T>(node_capture));
+      T result;
+      datapack_read<T>(node_capture, result);
+      callback(result);
     }
     end();
   }
@@ -225,8 +228,28 @@ public:
       datapack_edit(*this, label, *schema);
       if (!is_new) {
         auto node_capture = current.prev();
-        var.set(datapack_read<T>(node_capture));
+        datapack_read<T>(node_capture, var.mut());
       }
+    }
+    end();
+  }
+
+  template <typename T>
+  requires datapack::writeable<T> && datapack::readable<T>
+  void edit(const std::string& label, T& value) {
+    bool is_new = !current;
+    args_.tight();
+    if (!group()) {
+      return;
+    }
+    auto schema = variable<datapack::Schema>(
+        [&]() { return datapack::Schema::make<T>(); });
+    if (is_new) {
+      datapack_write(*this, label, value);
+    } else {
+      datapack_edit(*this, label, *schema);
+      auto node_capture = current.prev();
+      value = datapack_read<T>(node_capture);
     }
     end();
   }

@@ -45,42 +45,36 @@ namespace datapack {
 DATAPACK_LABELLED_VARIANT(Shape, 2);
 DATAPACK_LABELLED_VARIANT_DEF(Shape) = {"point", "line"};
 
-DATAPACK_INLINE(Point, value, packer) {
-  packer.object_begin();
-  packer.value("x", value.x);
-  packer.value("y", value.x);
-  packer.object_end();
+DATAPACK_INLINE(Point, x, y)
+DATAPACK_INLINE(Line, x1, y1, x2, y2)
+DATAPACK_INLINE(Person, name, age)
+
+inline void read(Reader& reader, Foo& foo) {
+  reader.object_begin();
+  reader.value("number", foo.number);
+  reader.value("test", foo.test);
+  reader.value("person", foo.person);
+  reader.value("shape", foo.shape);
+  reader.value("points", foo.points);
+  reader.value("names", foo.names);
+  reader.value("color", foo.color);
+  reader.constraint(ConstraintNumberRange(-1, 1));
+  reader.value("scale", foo.scale);
+  reader.object_end();
+}
+inline void write(Writer& writer, const Foo& foo) {
+  writer.object_begin();
+  writer.value("number", foo.number);
+  writer.value("test", foo.test);
+  writer.value("person", foo.person);
+  writer.value("shape", foo.shape);
+  writer.value("points", foo.points);
+  writer.value("names", foo.names);
+  writer.value("color", foo.color);
+  writer.value("scale", foo.scale);
+  writer.object_end();
 }
 
-DATAPACK_INLINE(Line, value, packer) {
-  packer.object_begin();
-  packer.value("x1", value.x1);
-  packer.value("y1", value.y1);
-  packer.value("x2", value.x2);
-  packer.value("y2", value.y2);
-  packer.object_end();
-}
-
-DATAPACK_INLINE(Person, value, packer) {
-  packer.object_begin();
-  packer.value("name", value.name);
-  packer.value("age", value.age);
-  packer.object_end();
-}
-
-DATAPACK_INLINE(Foo, value, packer) {
-  packer.object_begin();
-  packer.value("number", value.number);
-  packer.value("test", value.test);
-  packer.value("person", value.person);
-  packer.value("shape", value.shape);
-  packer.value("points", value.points);
-  packer.value("names", value.names);
-  packer.value("color", value.color);
-  packer.constraint(ConstraintNumberRange(-1, 1));
-  packer.value("scale", value.scale);
-  packer.object_end();
-}
 } // namespace datapack
 
 int main() {

@@ -22,20 +22,8 @@ using Shape = std::variant<Point, Circle>;
 
 namespace datapack {
 
-DATAPACK_INLINE(Point, value, packer) {
-  packer.object_begin();
-  packer.value("x", value.x);
-  packer.value("y", value.y);
-  packer.object_end();
-}
-
-DATAPACK_INLINE(Circle, value, packer) {
-  packer.object_begin();
-  packer.value("x", value.x);
-  packer.value("y", value.y);
-  packer.value("r", value.r);
-  packer.object_end();
-}
+DATAPACK_INLINE(Point, x, y)
+DATAPACK_INLINE(Circle, x, y, r)
 
 DATAPACK_LABELLED_VARIANT(Shape, 2);
 DATAPACK_LABELLED_VARIANT_DEF(Shape) = {"Point", "Circle"};
@@ -44,6 +32,8 @@ DATAPACK_LABELLED_VARIANT_DEF(Shape) = {"Point", "Circle"};
 
 int main() {
   datagui::Gui gui;
+
+  Shape shape;
 
   int revisit = 0;
   while (gui.running()) {

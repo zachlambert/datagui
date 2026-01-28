@@ -44,12 +44,10 @@ private:
 };
 
 template <typename T>
-T datapack_read(ConstElementPtr node) {
+void datapack_read(ConstElementPtr node, T& value) {
   GuiReader reader(node);
-  T value;
   reader.value(value);
   assert(reader.valid());
-  return value;
 }
 
 } // namespace datagui

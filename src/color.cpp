@@ -1,4 +1,6 @@
 #include "datagui/color.hpp"
+#include <algorithm>
+#include <array>
 
 namespace datagui {
 
@@ -116,14 +118,6 @@ Color Color::multiply(float factor) const {
 
 namespace datapack {
 
-DATAPACK_IMPL(datagui::Color, value, packer) {
-  packer.constraint(ConstraintObjectColor());
-  packer.object_begin();
-  packer.value("r", value.r);
-  packer.value("g", value.g);
-  packer.value("b", value.b);
-  packer.value("a", value.a);
-  packer.object_end();
-}
+DATAPACK_DEF(datagui::Color, r, g, b, a)
 
 } // namespace datapack

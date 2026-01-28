@@ -1,7 +1,5 @@
 #pragma once
 
-#include <algorithm>
-#include <array>
 #include <cmath>
 #include <datapack/datapack.hpp>
 
@@ -63,6 +61,6 @@ public:
 
 namespace datapack {
 
-DATAPACK(datagui::Color);
+DATAPACK_DECL(datagui::Color)
 
 } // namespace datapack
