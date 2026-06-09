@@ -8,6 +8,6 @@ class Gui;
 void datapack_edit(
     Gui& gui,
     const std::string& next_label,
-    const datapack::Schema& schema);
+    const dpack::Schema& schema);
 
 } // namespace datagui

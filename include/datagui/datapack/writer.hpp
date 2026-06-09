@@ -8,12 +8,12 @@
 namespace datagui {
 
 class Gui;
-class GuiWriter : public datapack::Writer {
+class GuiWriter : public dpack::Writer {
 public:
   GuiWriter(Gui& gui, const std::string& root_label) :
       gui(gui), next_label(root_label) {}
 
-  void number(datapack::NumberType type, const void* value) override;
+  void number(dpack::NumberType type, const void* value) override;
   void boolean(bool value) override;
   void string(const char*) override;
   void enumerate(int value, const std::span<const char*>& labels) override;
@@ -33,7 +33,7 @@ public:
   void tuple_next() override;
   void tuple_end() override;
 
-  void list_begin() override;
+  void list_begin(size_t size) override;
   void list_next() override;
   void list_end() override;
 

@@ -29,7 +29,9 @@ void datapack_edit(
         if (state.i != 0) {
           auto keys = state.keys;
           std::size_t key = (*keys)[state.i - 1];
-          gui.button("Remove", [=]() { keys.mut().remove(key); });
+          gui.button("Remove", [=]() {
+            keys.mut().remove(key);
+          });
           gui.end();
         }
 
@@ -45,7 +47,9 @@ void datapack_edit(
         if (state.i == state.keys->size()) {
           gui.end();
           auto keys_var = state.keys;
-          gui.button("new", [keys_var]() { keys_var.mut().append(); });
+          gui.button("new", [keys_var]() {
+            keys_var.mut().append();
+          });
           gui.end();
           stack.pop();
           list_stack.pop();
@@ -181,7 +185,9 @@ void datapack_edit(
           iter = iter.next();
           continue;
         }
-        gui.button("new", [keys]() { keys.mut().append(); });
+        gui.button("new", [keys]() {
+          keys.mut().append();
+        });
         gui.end();
       }
       iter = iter.next().skip();

@@ -59,8 +59,8 @@ public:
 
 } // namespace datagui
 
-namespace datapack {
+namespace dpack {
 
-DATAPACK_DECL(datagui::Color)
+DPACK_DECL(datagui::Color)
 
-} // namespace datapack
+} // namespace dpack

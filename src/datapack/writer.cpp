@@ -238,7 +238,9 @@ void GuiWriter::list_next() {
   if (state.index != 0) {
     auto keys = state.keys;
     std::size_t key = (*keys)[state.index - 1];
-    gui.button("Remove", [=]() { keys.mut().remove(key); });
+    gui.button("Remove", [=]() {
+      keys.mut().remove(key);
+    });
     gui.end();
   }
 
@@ -260,7 +262,9 @@ void GuiWriter::list_end() {
 
   if (state.index != 0) {
     std::size_t key = (*keys)[state.index - 1];
-    gui.button("Remove", [=]() { keys.mut().remove(key); });
+    gui.button("Remove", [=]() {
+      keys.mut().remove(key);
+    });
     gui.end();
   }
 
@@ -270,7 +274,9 @@ void GuiWriter::list_end() {
     keys.mut_internal().remove((*keys)[state.index]);
   }
 
-  gui.button("new", [=]() { keys.mut().append(); });
+  gui.button("new", [=]() {
+    keys.mut().append();
+  });
   gui.end();
 
   list_stack.pop();

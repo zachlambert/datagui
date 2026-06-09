@@ -14,8 +14,12 @@ int main() {
             gui.text_box(std::to_string(*counter));
             gui.end();
           }
-          gui.button("Increment", [counter]() { counter.mut()++; });
-          gui.button("Decrement", [counter]() { counter.mut()--; });
+          gui.button("Increment", [counter]() {
+            counter.mut()++;
+          });
+          gui.button("Decrement", [counter]() {
+            counter.mut()--;
+          });
           gui.end();
         }
         gui.args().grid(-1, 3);
@@ -39,7 +43,9 @@ int main() {
         if (gui.popup(popup_open, "Popup", 200, 200)) {
           auto counter = gui.variable<int>(0);
           gui.text_box("Popup " + std::to_string(*counter));
-          gui.button("Increment", [=]() { counter.mut()++; });
+          gui.button("Increment", [=]() {
+            counter.mut()++;
+          });
           gui.end();
         }
 
@@ -51,7 +57,9 @@ int main() {
           if (gui.dropdown("Two - Click!")) {
             gui.text_box("Item 0");
             gui.text_box("Item 1");
-            gui.button("Spawn popup", [=]() { popup_open.set(true); });
+            gui.button("Spawn popup", [=]() {
+              popup_open.set(true);
+            });
             gui.text_box("Item 3");
             gui.end();
           }

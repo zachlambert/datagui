@@ -15,4 +15,5 @@ BreakBeforeConceptDeclarations: Always
 BreakTemplateDeclarations: Yes
 ColumnLimit: 80
 AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
 AlignEscapedNewlines: DontAlign
