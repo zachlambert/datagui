@@ -53,17 +53,6 @@ Gui::Gui(const std::string& title, std::size_t width, std::size_t height) :
   }
 }
 
-bool Gui::running() const {
-  return window.running();
-}
-
-void Gui::check_begin() {
-  if (stack.empty()) {
-    current = tree.root();
-    var_current = VarPtr();
-  }
-}
-
 void Gui::move_down() {
   stack.emplace(current, var_current);
   current = current.child();
@@ -81,11 +70,20 @@ void Gui::end() {
   current = current.next();
 }
 
-void Gui::poll() {
+bool Gui::poll() {
   assert(stack.empty());
   calculate_sizes();
   render();
   event_handling();
+
+  if (!window.running()) {
+    return false;
+  }
+
+  current = tree.root();
+  var_current = VarPtr();
+
+  return true;
 }
 
 bool Gui::button(const std::string& text) {
@@ -137,7 +135,6 @@ bool Gui::checkbox_v(bool& value) {
 }
 
 bool Gui::collapsable(const std::string& label) {
-  check_begin();
   current.expect(Type::Collapsable, read_key());
   args_.apply(current);
   auto& collapsable = current.collapsable();
@@ -184,7 +181,6 @@ bool Gui::color_picker_v(Color& value) {
 }
 
 bool Gui::dropdown(const std::string& label) {
-  check_begin();
   current.expect(Type::Dropdown, read_key());
   args_.apply(current);
   auto& dropdown = current.dropdown();
@@ -204,7 +200,6 @@ bool Gui::dropdown(const std::string& label) {
 }
 
 void Gui::group() {
-  check_begin();
   current.expect(Type::Group, read_key());
   args_.apply(current);
   move_down();
@@ -215,7 +210,6 @@ bool Gui::popup(
     const std::string& title,
     float width,
     float height) {
-  check_begin();
   current.expect(Type::Popup, read_key());
   args_.apply(current);
   auto& popup = current.popup();
@@ -223,13 +217,13 @@ bool Gui::popup(
   popup.title = title;
   popup.popup_size = Vec2(width, height);
 
-  // popup.open should always match the external open variable
-  if (popup.closed) {
+  if (popup.close_button_released) {
+    popup.close_button_released = false;
     open = false;
     popup.open = false;
-    return false;
+  } else {
+    popup.open = open;
   }
-  popup.open = open;
   if (popup.open) {
     move_down();
     return true;
@@ -345,7 +339,6 @@ INSTANTIATE(std::uint8_t)
 #undef INSTANTIATE
 
 void Gui::hsplit(float ratio) {
-  check_begin();
   bool is_new = current.expect(Type::Split, read_key());
   auto& split = current.split();
   args_.apply(current);
@@ -359,7 +352,6 @@ void Gui::hsplit(float ratio) {
 }
 
 void Gui::vsplit(float ratio) {
-  check_begin();
   bool is_new = current.expect(Type::Split, read_key());
   auto& split = current.split();
   args_.apply(current);
@@ -376,7 +368,6 @@ void Gui::vsplit(float ratio) {
 void Gui::tabs(
     std::size_t initial_tab,
     const std::vector<std::string>& labels) {
-  check_begin();
   bool is_new = current.expect(Type::Tabs, read_key());
   args_.apply(current);
   auto& tabs = current.tabs();
@@ -489,6 +480,9 @@ void Gui::text_box(const std::string& text) {
 
 void Gui::render() {
   auto render_tree = [this](ConstElementPtr root) {
+    if (!root) {
+      return;
+    }
     struct State {
       ConstElementPtr element;
       bool first_visit;
@@ -804,6 +798,9 @@ void Gui::event_handling() {
 
 ElementPtr Gui::get_leaf_node(const Vec2& position) {
   auto get_tree_leaf = [this, &position](ElementPtr root) -> ElementPtr {
+    if (!root) {
+      return ElementPtr();
+    }
     ElementPtr leaf = ElementPtr();
 
     std::stack<ElementPtr> stack;
@@ -1018,7 +1015,6 @@ void Gui::focus_next(bool reverse) {
 template <typename T>
 requires std::is_base_of_v<Viewport, T>
 T& Gui::viewport(float width, float height) {
-  check_begin();
   current.expect(Type::ViewportPtr, read_key());
   auto& viewport = current.viewport();
   if (!viewport.viewport) {

@@ -141,7 +141,7 @@ struct Popup {
 
   // State
   bool open = false;
-  bool closed = false;
+  bool close_button_released = false;
   LayoutState layout_state;
 };
 

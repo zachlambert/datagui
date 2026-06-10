@@ -4,17 +4,14 @@
 int main() {
   datagui::Gui gui;
 
-  while (gui.running()) {
+  while (gui.poll()) {
     gui.group();
-    {
-      DATAGUI_SCOPE(gui);
-      gui.text_box("Hello");
-      if (gui.button("Click Me")) {
-        std::cout << "Clicked" << std::endl;
-      }
-    }
+    DATAGUI_SCOPE(gui);
 
-    gui.poll();
+    gui.text_box("Hello");
+    if (gui.button("Click Me")) {
+      std::cout << "Clicked" << std::endl;
+    }
   }
   return 0;
 }

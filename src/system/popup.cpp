@@ -104,7 +104,7 @@ void PopupSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
 
   if (event.action == MouseAction::Release &&
       popup.close_button_box.contains(event.position)) {
-    popup.closed = true;
+    popup.close_button_released = true;
   }
 }
 

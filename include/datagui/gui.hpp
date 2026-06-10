@@ -34,8 +34,7 @@ public:
 
   // Setup
 
-  bool running() const;
-  void poll();
+  bool poll();
 
   // Common end method
 
@@ -254,7 +253,6 @@ public:
   }
 
 private:
-  void check_begin();
   void move_down();
 
   void render();

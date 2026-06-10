@@ -122,14 +122,12 @@ void edit_list_2(datagui::Gui& gui) {
 int main() {
   datagui::Gui gui;
 
-  while (gui.running()) {
+  while (gui.poll()) {
     gui.group();
-    {
-      DATAGUI_SCOPE(gui);
-      edit_list_1(gui);
-      edit_list_2(gui);
-    }
-    gui.poll();
+    DATAGUI_SCOPE(gui);
+
+    edit_list_1(gui);
+    edit_list_2(gui);
   }
   return 0;
 }
