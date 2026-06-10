@@ -3,9 +3,8 @@
 #include <datagui/gui.hpp>
 
 void edit_list_1(datagui::Gui& gui) {
-  if (!gui.group()) {
-    return;
-  }
+  gui.group();
+  DATAGUI_SCOPE(gui);
 
   struct Person {
     std::string name;
@@ -14,86 +13,80 @@ void edit_list_1(datagui::Gui& gui) {
   auto persons = gui.variable<std::vector<Person>>();
 
   gui.args().border().width_expand();
-  if (gui.group()) {
-    for (std::size_t i = 0; i < persons->size(); i++) {
-      const auto& person = (*persons)[i];
+  gui.group();
+  {
+    DATAGUI_SCOPE(gui);
+    size_t i = 0;
+    while (i < persons->size()) {
+      auto& person = (*persons)[i];
       gui.key(person.name);
-      if (!gui.group()) {
-        continue;
-      }
+      gui.group();
+      DATAGUI_SCOPE(gui);
 
       gui.text_box(person.name);
 
       gui.args().horizontal();
-      if (gui.group()) {
+      gui.group();
+      {
+        DATAGUI_SCOPE(gui);
         gui.text_box("Desc.");
-        gui.text_input(person.desc, [=](const std::string& value) {
-          persons.mut()[i].desc = value;
-        });
-        gui.end();
+        gui.text_input_v(person.desc);
       }
 
-      std::string name = person.name;
-      gui.button("Remove", [=]() {
-        auto iter = std::find_if(
-            persons->begin(),
-            persons->end(),
-            [name](const auto& person) {
-              return person.name == name;
-            });
-        assert(iter != persons->end());
-        persons.mut().erase(iter);
-      });
-      gui.end();
+      if (gui.button("Remove")) {
+        persons->erase(persons->begin() + i);
+        continue;
+      }
+      i++;
     }
-    gui.end();
   }
 
   gui.args().border();
-  if (gui.group()) {
+  gui.group();
+  {
+    DATAGUI_SCOPE(gui);
     auto new_name = gui.variable<std::string>();
     auto new_desc = gui.variable<std::string>();
 
     gui.args().grid(-1, 2);
-    if (gui.group()) {
+    gui.group();
+    {
+      DATAGUI_SCOPE(gui);
       gui.text_box("Name");
-      gui.text_input(new_name);
+      gui.text_input_v(*new_name);
       gui.text_box("Description");
-      gui.text_input(new_desc);
-      gui.end();
+      gui.text_input_v(*new_desc);
     }
 
     auto error = gui.variable<std::string>();
 
-    gui.button("Add", [=]() {
+    if (gui.button("Add")) {
       if (new_name->empty()) {
-        error.set("Cannot have an empty name");
-        return;
+        *error = "Cannot have an empty name";
+      } else {
+        auto existing = std::find_if(
+            persons->begin(),
+            persons->end(),
+            [&](const Person& person) {
+              return person.name == *new_name;
+            });
+        if (existing != persons->end()) {
+          *error = "Person with name '" + *new_name + "' already exists";
+        } else {
+          persons->push_back({*new_name, *new_desc});
+          error->clear();
+        }
       }
-      auto existing = std::find_if(
-          persons->begin(),
-          persons->end(),
-          [&](const Person& person) {
-            return person.name == *new_name;
-          });
-      if (existing != persons->end()) {
-        error.set("Person with name '" + *new_name + "' already exists");
-        return;
-      }
-      persons.mut().push_back({*new_name, *new_desc});
-      error.mut().clear();
-    });
+    }
 
     if (!error->empty()) {
       gui.key<std::string>("error box");
       gui.text_box("Error: " + *error);
     }
-
-    gui.end();
   }
-  gui.end();
 }
 
+#if 0
 void edit_list_2(datagui::Gui& gui) {
   if (!gui.group()) {
     return;
@@ -123,15 +116,17 @@ void edit_list_2(datagui::Gui& gui) {
   }
   gui.end();
 }
+#endif
 
 int main() {
   datagui::Gui gui;
 
   while (gui.running()) {
-    if (gui.group()) {
+    gui.group();
+    {
+      DATAGUI_SCOPE(gui);
       edit_list_1(gui);
-      edit_list_2(gui);
-      gui.end();
+      // edit_list_2(gui);
     }
     gui.poll();
   }

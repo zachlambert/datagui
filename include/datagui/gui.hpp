@@ -41,6 +41,8 @@ public:
 
   void end();
 
+  // DATAGUI_SCOPE(gui) will create a DeferEnd() variable
+  // to automatically call gui.end() when exiting the scope
   class DeferEnd {
   public:
     ~DeferEnd() {
