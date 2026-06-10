@@ -6,6 +6,7 @@
 #include "datagui/visual/text_2d_shader.hpp"
 #include <functional>
 #include <vector>
+#include <optional>
 
 namespace datagui {
 

@@ -186,6 +186,7 @@ public:
   void trigger(Trigger& trigger);
   void retrigger();
 
+#if 0
   template <typename T>
   requires std::is_default_constructible_v<T>
   void edit(
@@ -260,6 +261,7 @@ public:
     }
     end();
   }
+#endif
 
   Args& args() {
     return args_;

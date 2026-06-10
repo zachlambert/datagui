@@ -7,8 +7,8 @@ namespace datagui {
 void datapack_edit(
     Gui& gui,
     const std::string& root_label,
-    const datapack::Schema& schema) {
-  std::stack<datapack::Schema::Iterator> stack;
+    const dpack::Schema& schema) {
+  std::stack<dpack::Schema::Iterator> stack;
   struct ListState {
     Var<KeyList> keys;
     std::size_t i;
@@ -72,7 +72,7 @@ void datapack_edit(
               break;
             }
             if (!iter.variant_next()) {
-              throw datapack::SchemaError("Expected VariantNext");
+              throw dpack::SchemaError("Expected VariantNext");
             }
             iter = iter.next().skip();
           }
@@ -99,7 +99,7 @@ void datapack_edit(
           }
           auto object_next = iter.object_next();
           if (!object_next) {
-            throw datapack::SchemaError("Expected ObjectNext");
+            throw dpack::SchemaError("Expected ObjectNext");
           }
           next_label = object_next->key;
           have_next = true;
@@ -119,7 +119,7 @@ void datapack_edit(
           continue;
         }
         if (!iter.tuple_next()) {
-          throw datapack::SchemaError("Expected TupleNext");
+          throw dpack::SchemaError("Expected TupleNext");
         }
         iter = iter.next();
         break;
@@ -145,7 +145,7 @@ void datapack_edit(
 
     if (auto object_begin = iter.object_begin()) {
       if (object_begin->constraint) {
-        if (std::get_if<datapack::ConstraintObjectColor>(
+        if (std::get_if<dpack::ConstraintObjectColor>(
                 &(*object_begin->constraint))) {
           if (in_object) {
             gui.text_box(label);
@@ -218,11 +218,11 @@ void datapack_edit(
         iter = iter.next();
         while (iter != schema.end()) {
           if (iter.variant_end()) {
-            throw datapack::SchemaError("Didn't find matching VariantNext");
+            throw dpack::SchemaError("Didn't find matching VariantNext");
           }
           auto variant_next = iter.variant_next();
           if (!variant_next) {
-            throw datapack::SchemaError("Expected VariantNext");
+            throw dpack::SchemaError("Expected VariantNext");
           }
           if (variant_next->index == *choice) {
             break;
@@ -230,7 +230,7 @@ void datapack_edit(
           iter = iter.next().skip();
         }
         if (iter == schema.end()) {
-          throw datapack::SchemaError("Unexpected end of schema");
+          throw dpack::SchemaError("Unexpected end of schema");
         }
         assert(iter.variant_next());
         stack.push(iter);
@@ -249,7 +249,7 @@ void datapack_edit(
 
     if (auto number = iter.number()) {
       if (number->constraint) {
-        if (auto range = std::get_if<datapack::ConstraintNumberRange>(
+        if (auto range = std::get_if<dpack::ConstraintNumberRange>(
                 &(*number->constraint))) {
           gui.slider(range->lower, range->lower, range->upper, {});
           iter = iter.next();
@@ -257,25 +257,25 @@ void datapack_edit(
         }
       }
       switch (number->type) {
-      case datapack::NumberType::I32:
+      case dpack::NumberType::I32:
         gui.number_input<std::int32_t>(0, {});
         break;
-      case datapack::NumberType::I64:
+      case dpack::NumberType::I64:
         gui.number_input<std::int64_t>(0, {});
         break;
-      case datapack::NumberType::U32:
+      case dpack::NumberType::U32:
         gui.number_input<std::uint32_t>(0, {});
         break;
-      case datapack::NumberType::U64:
+      case dpack::NumberType::U64:
         gui.number_input<std::uint64_t>(0, {});
         break;
-      case datapack::NumberType::F32:
+      case dpack::NumberType::F32:
         gui.number_input<float>(0, {});
         break;
-      case datapack::NumberType::F64:
+      case dpack::NumberType::F64:
         gui.number_input<double>(0, {});
         break;
-      case datapack::NumberType::U8:
+      case dpack::NumberType::U8:
         gui.number_input<std::uint8_t>(0, {});
         break;
       }
