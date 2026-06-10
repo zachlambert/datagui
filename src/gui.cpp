@@ -71,6 +71,11 @@ void Gui::end() {
 }
 
 bool Gui::poll() {
+  if (element_focus && tree.has_removed(element_focus)) {
+    element_focus = ElementPtr();
+  }
+  tree.clear_removed();
+
   assert(stack.empty());
   calculate_sizes();
   render();

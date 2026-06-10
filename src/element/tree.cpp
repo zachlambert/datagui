@@ -56,6 +56,7 @@ void Tree::remove_element(int element, bool children_only) {
 
   while (!stack.empty()) {
     int element = stack.top();
+    removed_elements.push_back(element);
     const auto& node = elements[element];
 
     if (node.first_child == -1) {

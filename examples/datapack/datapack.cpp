@@ -34,12 +34,10 @@ struct Foo {
   bool test;
   Person person;
   Shape shape;
-#if 1
   std::optional<std::array<double, 3>> points;
   std::vector<std::string> names;
   datagui::Color color = datagui::Color::Black();
   double scale;
-#endif
 };
 
 namespace dpack {
@@ -59,11 +57,9 @@ inline void read(Reader& reader, Foo& foo) {
   reader.value("shape", foo.shape);
   reader.value("points", foo.points);
   reader.value("names", foo.names);
-#if 0
   reader.value("color", foo.color);
   reader.hint(HintRange(-1, 1));
   reader.value("scale", foo.scale);
-#endif
   reader.object_end();
 }
 inline void write(Writer& writer, const Foo& foo) {
@@ -74,10 +70,9 @@ inline void write(Writer& writer, const Foo& foo) {
   writer.value("shape", foo.shape);
   writer.value("points", foo.points);
   writer.value("names", foo.names);
-#if 0
   writer.value("color", foo.color);
+  writer.hint(HintRange(-1, 1));
   writer.value("scale", foo.scale);
-#endif
   writer.object_end();
 }
 

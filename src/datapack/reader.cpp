@@ -15,6 +15,26 @@ T number_from_string(const std::string& string) {
   return value;
 }
 
+NumberType convert_type(dpack::NumberType type) {
+  switch (type) {
+  case dpack::NumberType::I32:
+    return NumberType::I32;
+  case dpack::NumberType::I64:
+    return NumberType::I64;
+  case dpack::NumberType::U32:
+    return NumberType::U32;
+  case dpack::NumberType::U64:
+    return NumberType::U64;
+  case dpack::NumberType::F32:
+    return NumberType::F32;
+  case dpack::NumberType::F64:
+    return NumberType::F64;
+  case dpack::NumberType::U8:
+    return NumberType::U8;
+  }
+  return NumberType::I32; // Unreachable
+}
+
 void GuiReader::number(dpack::NumberType type, void* value) {
   if (in_color) {
     switch (type) {
@@ -50,6 +70,10 @@ void GuiReader::number(dpack::NumberType type, void* value) {
   if (hint_range) {
     node.expect(Type::Slider, read_id());
     auto& slider = node.slider();
+    slider.lower = hint_range->lower;
+    slider.upper = hint_range->upper;
+    slider.type = convert_type(type);
+
     changed_ |= slider.changed;
     slider.changed = false;
 
@@ -238,6 +262,7 @@ void GuiReader::object_begin() {
   auto hint = consume_hint();
   auto hint_color = hint ? std::get_if<dpack::HintColor>(&*hint) : nullptr;
   if (hint_color) {
+    enter_primitive();
     node.expect(Type::ColorPicker, read_id());
     auto& color_picker = node.color_picker();
     changed_ |= color_picker.changed;
@@ -336,15 +361,15 @@ void GuiReader::list_next() {
   auto& state = list_stack.top();
   std::uint64_t expected_id = (*state.keys)[state.pos];
   while (node && node.id() != expected_id && node.id() != add_button_id) {
-    auto remove_button = node.next();
-    auto next = remove_button.next();
-    node.erase();
-    remove_button.erase();
-    node = next;
+    node = node.erase().erase();
+    changed_ = true;
   }
   if (node.id() == add_button_id) {
     // Remove add button, re-add in list_end()
-    node.erase();
+    node = node.erase();
+  }
+  if (!node) {
+    changed_ = true;
   }
 
   next_id_ = expected_id;
@@ -360,9 +385,8 @@ void GuiReader::list_end() {
   while (node && node.id() != add_button_id) {
     auto remove_button = node.next();
     auto next = remove_button.next();
-    node.erase();
-    remove_button.erase();
-    node = next;
+    node = node.erase().erase();
+    changed_ = true;
   }
   at_object_begin = false;
 
@@ -370,11 +394,13 @@ void GuiReader::list_end() {
   auto& button = node.button();
   button.text = "Add";
   if (button.released) {
+    // Set changed = true on the next poll()
     button.released = false;
     auto& state = list_stack.top();
     list_stack.top().keys->append();
   }
 
+  list_stack.pop();
   assert(!node.next());
   node = node.parent();
 }
@@ -384,6 +410,7 @@ bool GuiReader::list_remove_button() {
   auto& button = node.button();
   button.text = "Remove";
   if (button.released) {
+    // Set changed = true on the next poll()
     button.released = false;
     auto& state = list_stack.top();
     state.keys->remove((*state.keys)[state.pos]);

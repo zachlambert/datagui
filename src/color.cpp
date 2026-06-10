@@ -118,6 +118,14 @@ Color Color::multiply(float factor) const {
 
 namespace dpack {
 
-DPACK_DEF(datagui::Color, r, g, b, a)
+DPACK_DEF_CUSTOM(datagui::Color, {
+  packer.hint(HintColor());
+  packer.object_begin();
+  packer.value("r", value.r);
+  packer.value("g", value.g);
+  packer.value("b", value.b);
+  packer.value("a", value.a);
+  packer.object_end();
+})
 
 } // namespace dpack

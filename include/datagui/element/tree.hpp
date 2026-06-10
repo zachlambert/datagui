@@ -374,6 +374,18 @@ public:
     return VarPtr(this, -1, external_var_);
   }
 
+  bool has_removed(const ConstElementPtr& ptr) {
+    for (auto index : removed_elements) {
+      if (index == ptr.index) {
+        return true;
+      }
+    }
+    return false;
+  }
+  void clear_removed() {
+    removed_elements.clear();
+  }
+
 private:
   int create_element(int parent, int prev, std::size_t id, Type type);
   void reset_element(int element, std::size_t id, Type type);
@@ -389,6 +401,7 @@ private:
   VectorMap<ElementNode> elements;
   VectorMap<VarNode> variables;
   int external_var_ = -1;
+  std::vector<int> removed_elements;
 
   VectorMap<Button> button;
   VectorMap<Checkbox> checkbox;
