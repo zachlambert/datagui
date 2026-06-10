@@ -4,38 +4,6 @@
 
 namespace datagui {
 
-void Tree::poll() {
-  auto now = clock_t::now();
-
-  for (auto& dep : dependencies) {
-    if (!dep.valid) {
-      continue;
-    }
-    assert(variables.contains(dep.variable));
-    bool dirty = (variables[dep.variable].version != dep.version);
-    if (dirty) {
-      assert(dep.element != -1);
-      set_dirty(dep.element);
-    }
-  }
-  auto iter = retrigger_elements.begin();
-  while (iter != retrigger_elements.end()) {
-    auto next = std::next(iter);
-    if (*iter) {
-      iter->set_dirty();
-    } else {
-      retrigger_elements.erase(iter);
-    }
-    iter = next;
-  }
-}
-
-void Tree::clear_dirty() {
-  for (auto& element : elements) {
-    element.dirty = false;
-  }
-}
-
 int Tree::create_element(int parent, int prev, std::size_t id, Type type) {
   int element = elements.emplace();
   auto& node = elements[element];
@@ -210,64 +178,11 @@ int Tree::create_variable(int element) {
 void Tree::clear_variables(int element) {
   int var = elements[element].first_variable;
   while (var != -1) {
-    for (auto& dep : dependencies) {
-      if (dep.variable == var) {
-        dep.valid = false;
-        break;
-      }
-    }
     int next = variables[var].next;
     variables.pop(var);
     var = next;
   }
   elements[element].first_variable = -1;
-}
-
-void Tree::create_dependency(int element, int variable) {
-  int iter = elements[element].first_dependency;
-  int prev = -1;
-  while (iter != -1) {
-    if (dependencies[iter].variable == variable) {
-      return;
-    }
-    prev = iter;
-    iter = dependencies[iter].next;
-  }
-  int current_version = variables[variable].version;
-  int dep = dependencies.emplace(element, variable, current_version);
-  dependencies[dep].prev = prev;
-  if (prev == -1) {
-    elements[element].first_dependency = dep;
-  } else {
-    dependencies[prev].next = dep;
-  }
-}
-
-void Tree::clear_dependencies(int element) {
-  assert(elements.contains(element));
-  int dep = elements[element].first_dependency;
-  while (dep != -1) {
-    int next = dependencies[dep].next;
-    dependencies.pop(dep);
-    dep = next;
-  }
-  elements[element].first_dependency = -1;
-}
-
-void Tree::set_dirty(int element) {
-  if (element == -1) {
-    return;
-  }
-
-  int iter = element;
-  while (iter != -1) {
-    if (elements[iter].dirty) {
-      // If already true, must also be true for ancestors
-      break;
-    }
-    elements[iter].dirty = true;
-    iter = elements[iter].parent;
-  }
 }
 
 } // namespace datagui

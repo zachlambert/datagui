@@ -5,7 +5,6 @@
 #include "datagui/element/unique_any.hpp"
 #include "datagui/element/vector_map.hpp"
 #include <assert.h>
-#include <chrono>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -17,14 +16,11 @@ public:
 };
 
 class Tree {
-  using clock_t = std::chrono::high_resolution_clock;
-
   // ===========================================================
   // ElementNode
 
   struct ElementNode {
     std::size_t id;
-    bool dirty = true;
 
     int parent = -1;
     int prev = -1;
@@ -32,7 +28,6 @@ class Tree {
     int first_child = -1;
     int last_child = -1;
     int first_variable = -1;
-    int first_dependency = -1;
 
     State state;
     Type type;
@@ -46,9 +41,8 @@ class Tree {
     int element;
 
     UniqueAny data;
-    int version = 0;
 
-    // Linked list of data nodes for a given gui node
+    // Linked list of var nodes for a given gui node
     int prev = -1;
     int next = -1;
 
@@ -57,21 +51,7 @@ class Tree {
 
 public:
   // ===========================================================
-  // DependencyNode
-
-  struct DependencyNode {
-    int element;
-    int variable;
-    int version = 0;
-    int next = -1;
-    int prev = -1;
-    bool valid = true; // Note: Set as false when corresponding variable removed
-    DependencyNode(int element, int variable, int version) :
-        element(element), variable(variable), version(version) {}
-  };
-
-  // ===========================================================
-  // Var
+  // Var_
 
   template <typename T, bool IsConst>
   class Var_ {
@@ -79,33 +59,15 @@ public:
     using data_ref_t = std::conditional_t<IsConst, const T&, T&>;
 
   public:
-    const T& operator*() const {
+    std::conditional_t<IsConst, const T&, T&> operator*() const {
       assert(tree && variable != -1);
       auto data_ptr = tree->variables[variable].data.cast<T>();
-      if (tree->active_node_) {
-        tree->create_dependency(tree->active_node_.index, variable);
-      }
       return *data_ptr;
     }
-    const T* operator->() const {
+    std::conditional_t<IsConst, const T*, T*> operator->() const {
       assert(tree && variable != -1);
       auto data_ptr = tree->variables[variable].data.cast<T>();
-      if (tree->active_node_) {
-        tree->create_dependency(tree->active_node_.index, variable);
-      }
       return data_ptr;
-    }
-    void set(const T& value) const {
-      assert(tree && variable != -1);
-      static_assert(!IsConst);
-      *tree->variables[variable].data.cast<T>() = value;
-      tree->variables[variable].version++;
-    }
-    T& mut() const {
-      assert(tree && variable != -1);
-      static_assert(!IsConst);
-      tree->variables[variable].version++;
-      return *tree->variables[variable].data.cast<T>();
     }
 
     template <
@@ -128,18 +90,6 @@ public:
       assert(data_ptr);
     }
 
-    int version() const {
-      if (tree->active_node_) {
-        tree->create_dependency(tree->active_node_.index, variable);
-      }
-      return tree->variables[variable].version;
-    }
-    T& mut_internal() const {
-      assert(tree && variable != -1);
-      static_assert(!IsConst);
-      return *tree->variables[variable].data.cast<T>();
-    }
-
     Tree* tree;
     int variable;
     data_ptr_t data_ptr;
@@ -156,6 +106,9 @@ public:
 
   template <bool Const>
   class ElementPtr_;
+
+  // ===========================================================
+  // VarPtr_
 
   template <bool Const>
   class VarPtr_ {
@@ -175,7 +128,6 @@ public:
       assert(tree && variable == -1);
       variable = tree->create_variable(element);
       tree->variables[variable].data = UniqueAny::Make<T>(value);
-      tree->variables[variable].version = 0;
       return Var_<T, Const>(tree, variable);
     }
 
@@ -209,7 +161,7 @@ public:
   using ConstVar = Var_<T, true>;
 
   // ===========================================================
-  // ElementPtr
+  // ElementPtr_
 
   template <bool IsConst>
   class ElementPtr_ {
@@ -369,18 +321,6 @@ public:
       return tree->elements[index].id;
     }
 
-    bool dirty() const {
-      assert(tree && index != -1);
-      return tree->elements[index].dirty;
-    }
-    void set_dirty(bool dirty = true) const {
-      static_assert(!IsConst);
-      assert(tree && index != -1);
-      if (dirty) {
-        tree->set_dirty(index);
-      }
-    }
-
     VarPtr var() const {
       assert(tree && index != -1);
       return VarPtr(tree, index, tree->elements[index].first_variable);
@@ -428,9 +368,6 @@ public:
 
   Tree() {}
 
-  void poll();
-  void clear_dirty();
-
   ElementPtr root() {
     return ElementPtr(this, -1, root_);
   }
@@ -441,14 +378,6 @@ public:
 
   VarPtr var() {
     return VarPtr(this, -1, external_var_);
-  }
-
-  void set_active_node(ConstElementPtr ptr) {
-    active_node_ = ptr;
-  }
-
-  void set_retrigger(ElementPtr element) {
-    retrigger_elements.insert(element);
   }
 
 private:
@@ -465,17 +394,10 @@ private:
   void create_dependency(int element, int variable);
   void clear_dependencies(int element);
 
-  void set_dirty(int node);
-
   int root_ = -1;
   VectorMap<ElementNode> elements;
   VectorMap<VarNode> variables;
-  VectorMap<DependencyNode> dependencies;
   int external_var_ = -1;
-
-  ConstElementPtr active_node_ = ConstElementPtr();
-  std::unordered_set<Tree::ElementPtr, Tree::ElementPtr::HashFunc>
-      retrigger_elements;
 
   VectorMap<Button> button;
   VectorMap<Checkbox> checkbox;
@@ -491,26 +413,6 @@ private:
   VectorMap<TextBox> text_box;
   VectorMap<TextInput> text_input;
   VectorMap<ViewportPtr> viewport;
-};
-
-class Trigger {
-public:
-  void trigger() {
-    auto iter = elements.begin();
-    while (iter != elements.end()) {
-      auto next = std::next(iter);
-      if (*iter) {
-        iter->set_dirty();
-      } else {
-        elements.erase(iter);
-      }
-      iter = next;
-    }
-  }
-
-private:
-  std::unordered_set<Tree::ElementPtr, Tree::ElementPtr::HashFunc> elements;
-  friend class Gui;
 };
 
 using ElementPtr = Tree::ElementPtr;
