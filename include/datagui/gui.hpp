@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include "datagui/datapack/reader.hpp"
+#include "datagui/datapack/writer.hpp"
 #include "datagui/element/args.hpp"
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
@@ -180,8 +181,15 @@ public:
   bool edit_v(T& value, const std::string& label) {
     GuiReader reader(current, label);
     reader.value(value);
-    current = reader.next_node();
-    return reader.changed();
+    if (reader.changed()) {
+      current = reader.next_node();
+      return true;
+    }
+
+    GuiWriter writer(current, label);
+    writer.value(value);
+    current = writer.next_node();
+    return false;
   }
 
   Args& args() {

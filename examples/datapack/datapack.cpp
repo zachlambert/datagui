@@ -93,6 +93,9 @@ int main() {
     if (gui.edit_v(value, "Edit Foo")) {
       std::cout << dpack::debug(value) << std::endl;
     }
+    if (gui.button("Reset foo")) {
+      value = Foo();
+    }
 
 #if 0
     gui.args().text_size(20).text_color(datagui::Color::Blue());

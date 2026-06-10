@@ -1,44 +1,46 @@
-#include "datagui/datapack/reader.hpp"
+#include "datagui/datapack/writer.hpp"
 #include "datagui/datapack/conversions.hpp"
+#include <array>
 #include <charconv>
 #include <datapack/encode/base64.hpp>
 
 namespace datagui {
 
 template <typename T>
-T number_from_string(const std::string& string) {
-  T value;
-  auto error =
-      std::from_chars(string.data(), string.data() + string.size(), value).ec;
-  if (error != std::errc{}) {
-    return T(0);
+std::string number_to_string(T value) {
+  std::array<char, 64> buffer;
+  auto result =
+      std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
+  if (result.ec != std::errc{}) {
+    return "0";
   }
-  return value;
+  return std::string(buffer.data(), result.ptr);
 }
 
-void GuiReader::number(dpack::NumberType type, void* value) {
+void GuiWriter::number(dpack::NumberType type, const void* value) {
   if (in_color) {
+    float& output = color.data[color_i - 1];
     switch (type) {
     case dpack::NumberType::I32:
-      *(std::int32_t*)value = color.data[color_i - 1] * 255;
+      output = double(*(const std::int32_t*)value) / 255;
       break;
     case dpack::NumberType::I64:
-      *(std::int64_t*)value = color.data[color_i - 1] * 255;
+      output = double(*(const std::int64_t*)value) / 255;
       break;
     case dpack::NumberType::U32:
-      *(std::int32_t*)value = color.data[color_i - 1] * 255;
+      output = double(*(const std::uint32_t*)value) / 255;
       break;
     case dpack::NumberType::U64:
-      *(std::uint64_t*)value = color.data[color_i - 1] * 255;
-      break;
-    case dpack::NumberType::F32:
-      *(float*)value = color.data[color_i - 1];
-      break;
-    case dpack::NumberType::F64:
-      *(double*)value = color.data[color_i - 1];
+      output = double(*(const std::uint64_t*)value) / 255;
       break;
     case dpack::NumberType::U8:
-      *(std::uint8_t*)value = color.data[color_i - 1] * 255;
+      output = double(*(const std::uint8_t*)value) / 255;
+      break;
+    case dpack::NumberType::F32:
+      output = *(const float*)value;
+      break;
+    case dpack::NumberType::F64:
+      output = *(const double*)value;
       break;
     }
     return;
@@ -55,108 +57,99 @@ void GuiReader::number(dpack::NumberType type, void* value) {
     slider.upper = hint_range->upper;
     slider.type = convert_type(type);
 
-    changed_ |= slider.changed;
-    slider.changed = false;
-
     switch (type) {
     case dpack::NumberType::I32:
-      *(std::int32_t*)value = slider.value;
+      slider.value = *(const std::int32_t*)value;
       break;
     case dpack::NumberType::I64:
-      *(std::int64_t*)value = slider.value;
+      slider.value = *(const std::int64_t*)value;
       break;
     case dpack::NumberType::U32:
-      *(std::uint32_t*)value = slider.value;
+      slider.value = *(const std::uint32_t*)value;
       break;
     case dpack::NumberType::U64:
-      *(std::uint64_t*)value = slider.value;
+      slider.value = *(const std::uint64_t*)value;
       break;
     case dpack::NumberType::U8:
-      *(std::uint8_t*)value = slider.value;
+      slider.value = *(const std::uint8_t*)value;
       break;
     case dpack::NumberType::F32:
-      *(float*)value = slider.value;
+      slider.value = *(const float*)value;
       break;
     case dpack::NumberType::F64:
-      *(double*)value = slider.value;
+      slider.value = *(const double*)value;
       break;
     }
+    slider.changed = false;
     return;
   }
 
   node.expect(Type::TextInput, read_id());
   auto& text_input = node.text_input();
-  changed_ |= text_input.changed;
-  text_input.changed = false;
 
   switch (type) {
   case dpack::NumberType::I32:
-    *(std::int32_t*)value = number_from_string<std::int32_t>(text_input.text);
+    text_input.text = number_to_string(*(const std::int32_t*)value);
     break;
   case dpack::NumberType::I64:
-    *(std::int64_t*)value = number_from_string<std::int64_t>(text_input.text);
+    text_input.text = number_to_string(*(const std::int64_t*)value);
     break;
   case dpack::NumberType::U32:
-    *(std::uint32_t*)value = number_from_string<std::uint32_t>(text_input.text);
+    text_input.text = number_to_string(*(const std::uint32_t*)value);
     break;
   case dpack::NumberType::U64:
-    *(std::uint64_t*)value = number_from_string<std::uint64_t>(text_input.text);
+    text_input.text = number_to_string(*(const std::uint64_t*)value);
     break;
   case dpack::NumberType::U8:
-    *(std::uint8_t*)value = number_from_string<std::uint8_t>(text_input.text);
+    text_input.text = number_to_string(*(const std::uint8_t*)value);
     break;
   case dpack::NumberType::F32:
-    *(float*)value = number_from_string<float>(text_input.text);
+    text_input.text = number_to_string(*(const float*)value);
     break;
   case dpack::NumberType::F64:
-    *(double*)value = number_from_string<double>(text_input.text);
+    text_input.text = number_to_string(*(const double*)value);
     break;
   }
+  text_input.changed = false;
 }
 
-bool GuiReader::boolean() {
+void GuiWriter::boolean(bool value) {
   enter_primitive();
   node.expect(Type::Checkbox, read_id());
   auto& checkbox = node.checkbox();
-  changed_ |= checkbox.changed;
+  checkbox.checked = value;
   checkbox.changed = false;
-  return checkbox.checked;
 }
 
-const char* GuiReader::string() {
+void GuiWriter::string(const char* value) {
   enter_primitive();
   node.expect(Type::TextInput, read_id());
   auto& text_input = node.text_input();
-  changed_ |= text_input.changed;
+  text_input.text = value;
   text_input.changed = false;
-  return text_input.text.c_str();
 }
 
-int GuiReader::enumerate(const std::span<const char*>& labels) {
+void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
   enter_primitive();
   node.expect(Type::Select, read_id());
   auto& select = node.select();
-  changed_ |= select.changed;
+  select.choices.clear();
+  for (auto label : labels) {
+    select.choices.emplace_back(label);
+  }
+  select.choice = value;
   select.changed = false;
-  return select.choice;
 }
 
-std::span<const std::uint8_t> GuiReader::binary() {
+void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
   enter_primitive();
   node.expect(Type::TextInput, read_id());
   auto& text_input = node.text_input();
-  changed_ |= text_input.changed;
+  text_input.text = dpack::base64_encode(data);
   text_input.changed = false;
-  try {
-    binary_temp = dpack::base64_decode(text_input.text);
-  } catch (const dpack::Base64Exception&) {
-    // TODO: Handle text input constraints internally
-    binary_temp.clear();
-  }
-  return binary_temp;
 }
 
-bool GuiReader::optional_begin() {
+void GuiWriter::optional_begin(bool has_value) {
   enter_container(-1, 1);
 
   node.expect(Type::Group);
@@ -172,13 +165,11 @@ bool GuiReader::optional_begin() {
   node.text_box().text = "Has value?";
   node = node.next();
 
-  bool has_value;
   node.expect(Type::Checkbox);
   {
     auto& checkbox = node.checkbox();
-    changed_ |= checkbox.changed;
+    checkbox.checked = has_value;
     checkbox.changed = false;
-    has_value = checkbox.checked;
   }
 
   node = node.parent().next();
@@ -187,52 +178,47 @@ bool GuiReader::optional_begin() {
   }
 
   if (!has_value) {
+    // optional_end() is not called when there is no value
     node = node.parent();
-    return false;
+    return;
   }
   in_composite_ = true;
-  return true;
 }
 
-void GuiReader::optional_end() {
+void GuiWriter::optional_end() {
   in_composite_ = false;
   assert(!node.next());
   node = node.parent();
 }
 
-int GuiReader::variant_begin(const std::span<const char*>& labels) {
+void GuiWriter::variant_begin(
+    int value,
+    const std::span<const char*>& labels) {
   enter_container(-1, 1);
 
-  bool is_new = node.expect(Type::Select, read_id());
+  node.expect(Type::Select, read_id());
   auto& select = node.select();
-  changed_ |= select.changed;
-  select.changed = false;
   select.choices.clear();
   for (auto label : labels) {
-    node.select().choices.emplace_back(label);
+    select.choices.emplace_back(label);
   }
-  if (is_new) {
-    // A variant always has a value, so default to the first alternative rather
-    // than the Select's "nothing selected" default of -1.
-    select.choice = 0;
-  }
+  select.choice = value;
+  select.changed = false;
 
-  int choice = select.choice;
   node = node.next();
-  while (node && node.id() != choice) {
+  while (node && node.id() != value) {
     node.state().force_hidden = true;
     node = node.next();
   }
   if (node) {
     node.state().force_hidden = false;
   }
-  next_id_ = choice;
+  next_id_ = value;
 
   in_composite_ = true;
-  return choice;
 }
 
-void GuiReader::variant_end() {
+void GuiWriter::variant_end() {
   in_composite_ = false;
   if (node) {
     node = node.next();
@@ -244,17 +230,14 @@ void GuiReader::variant_end() {
   node = node.parent();
 }
 
-void GuiReader::object_begin() {
+void GuiWriter::object_begin() {
   auto hint = consume_hint();
   auto hint_color = hint ? std::get_if<dpack::HintColor>(&*hint) : nullptr;
   if (hint_color) {
     enter_primitive();
     node.expect(Type::ColorPicker, read_id());
-    auto& color_picker = node.color_picker();
-    changed_ |= color_picker.changed;
-    color_picker.changed = false;
     in_color = true;
-    color = color_picker.value;
+    color = Color::Black();
     color_i = 0;
     return;
   }
@@ -263,7 +246,7 @@ void GuiReader::object_begin() {
   at_object_begin = true;
 }
 
-void GuiReader::object_next(const char* key) {
+void GuiWriter::object_next(const char* key) {
   if (in_color) {
     assert(color_i < 4);
     color_i++;
@@ -276,9 +259,12 @@ void GuiReader::object_next(const char* key) {
   next_label_ = key;
 }
 
-void GuiReader::object_end() {
+void GuiWriter::object_end() {
   if (in_color) {
     assert(color_i == 4);
+    auto& color_picker = node.color_picker();
+    color_picker.value = color;
+    color_picker.changed = false;
     in_color = false;
     return;
   }
@@ -293,12 +279,12 @@ void GuiReader::object_end() {
   node = node.parent();
 }
 
-void GuiReader::tuple_begin() {
+void GuiWriter::tuple_begin() {
   enter_container(-1, 1);
   at_object_begin = true;
 }
 
-void GuiReader::tuple_next() {
+void GuiWriter::tuple_next() {
   if (!at_object_begin) {
     node = node.next();
   }
@@ -306,7 +292,7 @@ void GuiReader::tuple_next() {
   next_label_ = "";
 }
 
-void GuiReader::tuple_end() {
+void GuiWriter::tuple_end() {
   if (at_object_begin) {
     assert(!node);
   } else {
@@ -317,29 +303,36 @@ void GuiReader::tuple_end() {
   node = node.parent();
 }
 
-size_t GuiReader::list_begin() {
+static constexpr std::uint64_t add_button_id =
+    std::numeric_limits<std::uint64_t>::max();
+
+void GuiWriter::list_begin(size_t size) {
   enter_container(-1, 2);
 
   auto var = node.parent().var();
   if (!var) {
     var.create(KeyList());
   }
-  list_stack.emplace(var.as<KeyList>());
+  auto keys = var.as<KeyList>();
+
+  // Resize the key list to exactly match the value being written, reusing
+  // existing keys (and therefore widgets) where possible.
+  while (keys->size() < size) {
+    keys->append();
+  }
+  while (keys->size() > size) {
+    keys->remove((*keys)[keys->size() - 1]);
+  }
+  list_stack.emplace(keys);
 
   at_object_begin = true;
-
-  return list_stack.top().keys->size();
 }
 
-static constexpr std::uint64_t add_button_id =
-    std::numeric_limits<std::uint64_t>::max();
-
-void GuiReader::list_next() {
+void GuiWriter::list_next() {
   if (!at_object_begin) {
     node = node.next();
-    if (!list_remove_button()) {
-      list_stack.top().pos++;
-    }
+    list_remove_button();
+    list_stack.top().pos++;
     node = node.next();
   }
   at_object_begin = false;
@@ -348,20 +341,16 @@ void GuiReader::list_next() {
   std::uint64_t expected_id = (*state.keys)[state.pos];
   while (node && node.id() != expected_id && node.id() != add_button_id) {
     node = node.erase().erase();
-    changed_ = true;
   }
-  if (node.id() == add_button_id) {
+  if (node && node.id() == add_button_id) {
     // Remove add button, re-add in list_end()
     node = node.erase();
-  }
-  if (!node) {
-    changed_ = true;
   }
 
   next_id_ = expected_id;
 }
 
-void GuiReader::list_end() {
+void GuiWriter::list_end() {
   if (!at_object_begin) {
     node = node.next();
     list_remove_button();
@@ -369,43 +358,24 @@ void GuiReader::list_end() {
   }
 
   while (node && node.id() != add_button_id) {
-    auto remove_button = node.next();
-    auto next = remove_button.next();
     node = node.erase().erase();
-    changed_ = true;
   }
   at_object_begin = false;
 
   node.expect(Type::Button, add_button_id);
-  auto& button = node.button();
-  button.text = "Add";
-  if (button.released) {
-    // Set changed = true on the next poll()
-    button.released = false;
-    auto& state = list_stack.top();
-    list_stack.top().keys->append();
-  }
+  node.button().text = "Add";
 
   list_stack.pop();
   assert(!node.next());
   node = node.parent();
 }
 
-bool GuiReader::list_remove_button() {
+void GuiWriter::list_remove_button() {
   node.expect(Type::Button);
-  auto& button = node.button();
-  button.text = "Remove";
-  if (button.released) {
-    // Set changed = true on the next poll()
-    button.released = false;
-    auto& state = list_stack.top();
-    state.keys->remove((*state.keys)[state.pos]);
-    return true;
-  }
-  return false;
+  node.button().text = "Remove";
 }
 
-void GuiReader::enter_primitive() {
+void GuiWriter::enter_primitive() {
   in_composite_ = false;
   is_root_ = false;
 
@@ -417,7 +387,7 @@ void GuiReader::enter_primitive() {
   next_label_.clear();
 }
 
-void GuiReader::enter_container(size_t rows, size_t cols) {
+void GuiWriter::enter_container(size_t rows, size_t cols) {
   if (in_composite_) {
     in_composite_ = false;
     node.expect(Type::Group, read_id());
@@ -443,7 +413,7 @@ void GuiReader::enter_container(size_t rows, size_t cols) {
   node = node.child();
 }
 
-ElementPtr GuiReader::next_node() {
+ElementPtr GuiWriter::next_node() {
   return node.next();
 }
 
