@@ -5,11 +5,11 @@
 
 namespace datagui {
 
-class GuiReader : public datapack::Reader {
+class GuiReader : public dpack::Reader {
 public:
   GuiReader(ConstElementPtr node) : node(node) {}
 
-  void number(datapack::NumberType type, void* value) override;
+  void number(dpack::NumberType type, void* value) override;
   bool boolean() override;
   const char* string() override;
   int enumerate(const std::span<const char*>& labels) override;
@@ -29,8 +29,8 @@ public:
   void tuple_next() override;
   void tuple_end() override;
 
-  void list_begin() override;
-  bool list_next() override;
+  size_t list_begin() override;
+  void list_next() override;
   void list_end() override;
 
 private:
@@ -44,7 +44,7 @@ private:
 };
 
 template <typename T>
-void datapack_read(ConstElementPtr node, T& value) {
+void dpack_read(ConstElementPtr node, T& value) {
   GuiReader reader(node);
   reader.value(value);
   assert(reader.valid());

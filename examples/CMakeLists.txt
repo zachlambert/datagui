@@ -12,8 +12,8 @@ create_example(gui lists)
 create_example(gui popups)
 create_example(gui splits)
 
-create_example(datapack datapack)
-create_example(datapack datapack_2)
+# create_example(datapack datapack)
+# create_example(datapack datapack_2)
 
 create_example(canvas canvas2d)
 create_example(canvas canvas3d)

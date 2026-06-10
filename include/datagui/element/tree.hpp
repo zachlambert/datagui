@@ -299,6 +299,16 @@ public:
       return ElementPtr_(tree, parent_, tree->elements[index].prev);
     }
 
+    size_t size() const {
+      size_t size = 0;
+      size_t iter = index;
+      while (iter != -1) {
+        iter = tree->elements[iter].next;
+        size++;
+      }
+      return size;
+    }
+
     std::conditional_t<IsConst, const State&, State&> state() const {
       assert(tree && index != -1);
       return tree->elements[index].state;

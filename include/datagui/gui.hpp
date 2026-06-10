@@ -4,8 +4,6 @@
 #include <GLFW/glfw3.h>
 
 #include "datagui/datapack/edit.hpp"
-#include "datagui/datapack/reader.hpp"
-#include "datagui/datapack/writer.hpp"
 #include "datagui/element/args.hpp"
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
@@ -58,7 +56,9 @@ public:
 
   void checkbox(bool initial_value, const std::function<void(bool)>& callback);
   void checkbox(bool& value) {
-    checkbox(value, [&value](bool new_value) { value = new_value; });
+    checkbox(value, [&value](bool new_value) {
+      value = new_value;
+    });
   }
   void checkbox(const Var<bool>& var);
 
@@ -89,7 +89,9 @@ public:
       int initial_choice,
       const std::function<void(int)>& callback);
   void select(const std::vector<std::string>& choices, int& choice) {
-    select(choices, choice, [&choice](int new_choice) { choice = new_choice; });
+    select(choices, choice, [&choice](int new_choice) {
+      choice = new_choice;
+    });
   }
   void select(const std::vector<std::string>& choices, const Var<int>& choice);
 
@@ -134,7 +136,9 @@ public:
   void number_input(const Var<T>& var);
   template <typename T>
   void number_input(T& value) {
-    number_input(value, [&value](T new_value) { value = new_value; });
+    number_input(value, [&value](T new_value) {
+      value = new_value;
+    });
   }
 
   void text_box(const std::string& text);
@@ -182,6 +186,7 @@ public:
   void trigger(Trigger& trigger);
   void retrigger();
 
+#if 0
   template <typename T>
   requires std::is_default_constructible_v<T>
   void edit(
@@ -193,8 +198,9 @@ public:
     if (!group()) {
       return;
     }
-    auto schema = variable<datapack::Schema>(
-        []() { return datapack::Schema::make<T>(); });
+    auto schema = variable<dpack::Schema>([]() {
+      return dpack::Schema::make<T>();
+    });
     if (is_new) {
       datapack_write(*this, label, initial_value);
     } else {
@@ -216,8 +222,9 @@ public:
     }
 
     auto var_version = variable<int>(0);
-    auto schema = variable<datapack::Schema>(
-        []() { return datapack::Schema::make<T>(); });
+    auto schema = variable<dpack::Schema>([]() {
+      return dpack::Schema::make<T>();
+    });
 
     if (var.version() != var_version.mut_internal() || is_new) {
       var_version.mut_internal() = var.version();
@@ -235,24 +242,26 @@ public:
   }
 
   template <typename T>
-  requires datapack::writeable<T> && datapack::readable<T>
+  requires dpack::supported<T>
   void edit(const std::string& label, T& value) {
     bool is_new = !current;
     args_.tight();
     if (!group()) {
       return;
     }
-    auto schema = variable<datapack::Schema>(
-        [&]() { return datapack::Schema::make<T>(); });
+    auto schema = variable<dpack::Schema>([&]() {
+      return dpack::Schema::make<T>();
+    });
     if (is_new) {
       datapack_write(*this, label, value);
     } else {
       datapack_edit(*this, label, *schema);
       auto node_capture = current.prev();
-      value = datapack_read<T>(node_capture);
+      datapack_read<T>(node_capture, value);
     }
     end();
   }
+#endif
 
   Args& args() {
     return args_;

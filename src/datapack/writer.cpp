@@ -4,30 +4,30 @@
 
 namespace datagui {
 
-void GuiWriter::number(datapack::NumberType type, const void* value) {
+void GuiWriter::number(dpack::NumberType type, const void* value) {
   if (in_color) {
     float& output = color.data[color_i - 1];
     std::string value_str;
     switch (type) {
-    case datapack::NumberType::I32:
+    case dpack::NumberType::I32:
       output = double(*(std::int32_t*)value) / 255;
       break;
-    case datapack::NumberType::I64:
+    case dpack::NumberType::I64:
       output = double(*(std::int64_t*)value) / 255;
       break;
-    case datapack::NumberType::U32:
+    case dpack::NumberType::U32:
       output = double(*(std::uint32_t*)value) / 255;
       break;
-    case datapack::NumberType::U64:
+    case dpack::NumberType::U64:
       output = double(*(std::uint64_t*)value) / 255;
       break;
-    case datapack::NumberType::U8:
+    case dpack::NumberType::U8:
       output = double(*(std::uint8_t*)value) / 255;
       break;
-    case datapack::NumberType::F32:
+    case dpack::NumberType::F32:
       output = *(float*)value;
       break;
-    case datapack::NumberType::F64:
+    case dpack::NumberType::F64:
       output = *(double*)value;
       break;
     }
@@ -36,46 +36,47 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
 
   make_label();
 
-  if (auto constraint = get_constraint<datapack::ConstraintNumber>()) {
+#if 0
+  if (auto constraint = get_constraint<dpack::ConstraintNumber>()) {
     if (auto range =
-            std::get_if<datapack::ConstraintNumberRange>(&(*constraint))) {
+            std::get_if<dpack::ConstraintNumberRange>(&(*constraint))) {
 
       switch (type) {
-      case datapack::NumberType::I32:
+      case dpack::NumberType::I32:
         gui.slider<std::int32_t>(
             *(std::int32_t*)value,
             range->lower,
             range->upper,
             {});
         break;
-      case datapack::NumberType::I64:
+      case dpack::NumberType::I64:
         gui.slider<std::int64_t>(
             *(std::int64_t*)value,
             range->lower,
             range->upper,
             {});
         break;
-      case datapack::NumberType::U32:
+      case dpack::NumberType::U32:
         gui.slider<std::uint32_t>(
             *(std::uint32_t*)value,
             range->lower,
             range->upper,
             {});
         break;
-      case datapack::NumberType::U64:
+      case dpack::NumberType::U64:
         gui.slider<std::uint64_t>(
             *(std::uint64_t*)value,
             range->lower,
             range->upper,
             {});
         break;
-      case datapack::NumberType::F32:
+      case dpack::NumberType::F32:
         gui.slider<float>(*(float*)value, range->lower, range->upper, {});
         break;
-      case datapack::NumberType::F64:
+      case dpack::NumberType::F64:
         gui.slider<double>(*(double*)value, range->lower, range->upper, {});
         break;
-      case datapack::NumberType::U8:
+      case dpack::NumberType::U8:
         gui.slider<std::uint8_t>(
             *(std::uint8_t*)value,
             range->lower,
@@ -86,27 +87,28 @@ void GuiWriter::number(datapack::NumberType type, const void* value) {
       return;
     }
   }
+#endif
 
   switch (type) {
-  case datapack::NumberType::I32:
+  case dpack::NumberType::I32:
     gui.number_input<std::int32_t>(*(std::int32_t*)value, {});
     break;
-  case datapack::NumberType::I64:
+  case dpack::NumberType::I64:
     gui.number_input<std::int64_t>(*(std::int64_t*)value, {});
     break;
-  case datapack::NumberType::U32:
+  case dpack::NumberType::U32:
     gui.number_input<std::uint32_t>(*(std::uint32_t*)value, {});
     break;
-  case datapack::NumberType::U64:
+  case dpack::NumberType::U64:
     gui.number_input<std::uint64_t>(*(std::uint64_t*)value, {});
     break;
-  case datapack::NumberType::U8:
+  case dpack::NumberType::U8:
     gui.number_input<std::uint8_t>(*(std::uint8_t*)value, {});
     break;
-  case datapack::NumberType::F32:
+  case dpack::NumberType::F32:
     gui.number_input<float>(*(float*)value, {});
     break;
-  case datapack::NumberType::F64:
+  case dpack::NumberType::F64:
     gui.number_input<double>(*(double*)value, {});
     break;
   }
@@ -133,7 +135,7 @@ void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
 
 void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
   make_label();
-  std::string text = datapack::base64_encode(data);
+  std::string text = dpack::base64_encode(data);
   gui.text_input(text, {});
 }
 
@@ -172,14 +174,16 @@ void GuiWriter::variant_end() {
 }
 
 void GuiWriter::object_begin() {
-  if (auto constraint = get_constraint<datapack::ConstraintObject>()) {
-    if (std::get_if<datapack::ConstraintObjectColor>(&(*constraint))) {
+#if 0
+  if (auto constraint = get_constraint<dpack::ConstraintObject>()) {
+    if (std::get_if<dpack::ConstraintObjectColor>(&(*constraint))) {
       in_color = true;
       color = Color::Black();
       color_i = 0;
       return;
     }
   }
+#endif
   gui.args().grid(-1, 2);
   make_collapsable();
 }
@@ -217,7 +221,9 @@ void GuiWriter::tuple_end() {
   gui.end();
 }
 
-void GuiWriter::list_begin() {
+void GuiWriter::list_begin(size_t size) {
+  (void)size;
+
   make_collapsable();
 
   auto key_list = gui.variable<KeyList>();
@@ -238,7 +244,9 @@ void GuiWriter::list_next() {
   if (state.index != 0) {
     auto keys = state.keys;
     std::size_t key = (*keys)[state.index - 1];
-    gui.button("Remove", [=]() { keys.mut().remove(key); });
+    gui.button("Remove", [=]() {
+      keys.mut().remove(key);
+    });
     gui.end();
   }
 
@@ -260,7 +268,9 @@ void GuiWriter::list_end() {
 
   if (state.index != 0) {
     std::size_t key = (*keys)[state.index - 1];
-    gui.button("Remove", [=]() { keys.mut().remove(key); });
+    gui.button("Remove", [=]() {
+      keys.mut().remove(key);
+    });
     gui.end();
   }
 
@@ -270,7 +280,9 @@ void GuiWriter::list_end() {
     keys.mut_internal().remove((*keys)[state.index]);
   }
 
-  gui.button("new", [=]() { keys.mut().append(); });
+  gui.button("new", [=]() {
+    keys.mut().append();
+  });
   gui.end();
 
   list_stack.pop();

@@ -15,90 +15,92 @@ T number_from_string(const std::string& string) {
   return value;
 }
 
-void GuiReader::number(datapack::NumberType type, void* value) {
+void GuiReader::number(dpack::NumberType type, void* value) {
   assert(node);
   if (in_color) {
     switch (type) {
-    case datapack::NumberType::I32:
+    case dpack::NumberType::I32:
       *(std::int32_t*)value = color.data[color_i - 1] * 255;
       break;
-    case datapack::NumberType::I64:
+    case dpack::NumberType::I64:
       *(std::int64_t*)value = color.data[color_i - 1] * 255;
       break;
-    case datapack::NumberType::U32:
+    case dpack::NumberType::U32:
       *(std::int32_t*)value = color.data[color_i - 1] * 255;
       break;
-    case datapack::NumberType::U64:
+    case dpack::NumberType::U64:
       *(std::uint64_t*)value = color.data[color_i - 1] * 255;
       break;
-    case datapack::NumberType::F32:
+    case dpack::NumberType::F32:
       *(float*)value = color.data[color_i - 1];
       break;
-    case datapack::NumberType::F64:
+    case dpack::NumberType::F64:
       *(double*)value = color.data[color_i - 1];
       break;
-    case datapack::NumberType::U8:
+    case dpack::NumberType::U8:
       *(std::uint8_t*)value = color.data[color_i - 1] * 255;
       break;
     }
     return;
   }
-  if (auto constraint = get_constraint<datapack::ConstraintNumber>()) {
+#if 0
+  if (auto constraint = get_constraint<dpack::ConstraintNumber>()) {
     if (auto range =
-            std::get_if<datapack::ConstraintNumberRange>(&(*constraint))) {
+            std::get_if<dpack::ConstraintNumberRange>(&(*constraint))) {
       assert(node.type() == Type::Slider);
       double input = node.slider().value;
       switch (type) {
-      case datapack::NumberType::I32:
+      case dpack::NumberType::I32:
         *(std::int32_t*)value = input;
         break;
-      case datapack::NumberType::I64:
+      case dpack::NumberType::I64:
         *(std::int64_t*)value = input;
         break;
-      case datapack::NumberType::U32:
+      case dpack::NumberType::U32:
         *(std::uint32_t*)value = input;
         break;
-      case datapack::NumberType::U64:
+      case dpack::NumberType::U64:
         *(std::uint64_t*)value = input;
         break;
-      case datapack::NumberType::U8:
+      case dpack::NumberType::U8:
         *(std::uint8_t*)value = input;
         break;
-      case datapack::NumberType::F32:
+      case dpack::NumberType::F32:
         *(float*)value = input;
         break;
-      case datapack::NumberType::F64:
+      case dpack::NumberType::F64:
         *(double*)value = input;
         break;
       }
       return;
     }
   }
+#endif
 
   assert(node.type() == Type::TextInput);
 
   const auto& text = node.text_input().text;
 
   switch (type) {
-  case datapack::NumberType::I32:
+  case dpack::NumberType::I32:
     *(std::int32_t*)value = number_from_string<std::int32_t>(text);
     break;
-  case datapack::NumberType::I64:
+  case dpack::NumberType::I64:
     *(std::int64_t*)value = number_from_string<std::int64_t>(text);
     break;
-  case datapack::NumberType::U32:
+  case dpack::NumberType::U32:
     *(std::uint32_t*)value = number_from_string<std::uint32_t>(text);
     break;
-  case datapack::NumberType::U64:
+  case dpack::NumberType::U64:
     *(std::uint64_t*)value = number_from_string<std::uint64_t>(text);
     break;
-  case datapack::NumberType::U8:
+  case dpack::NumberType::U8:
     *(std::uint8_t*)value = number_from_string<std::uint8_t>(text);
     break;
-  case datapack::NumberType::F32:
+  case dpack::NumberType::F32:
     *(float*)value = number_from_string<float>(text);
     break;
-  case datapack::NumberType::F64:
+  case dpack::NumberType::F64:
     *(double*)value = number_from_string<double>(text);
     break;
   }
@@ -122,8 +124,8 @@ int GuiReader::enumerate(const std::span<const char*>& labels) {
 std::span<const std::uint8_t> GuiReader::binary() {
   assert(node && node.type() == Type::TextInput);
   try {
-    binary_temp = datapack::base64_decode(node.text_input().text);
-  } catch (const datapack::Base64Exception&) {
+    binary_temp = dpack::base64_decode(node.text_input().text);
+  } catch (const dpack::Base64Exception&) {
     // TODO: Handle text input constraints internally
     binary_temp.clear();
   }
@@ -164,8 +166,9 @@ void GuiReader::variant_end() {
 }
 
 void GuiReader::object_begin() {
-  if (auto constraint = get_constraint<datapack::ConstraintObject>()) {
-    if (std::get_if<datapack::ConstraintObjectColor>(&(*constraint))) {
+#if 0
+  if (auto constraint = get_constraint<dpack::ConstraintObject>()) {
+    if (std::get_if<dpack::ConstraintObjectColor>(&(*constraint))) {
       assert(node && node.type() == Type::ColorPicker);
       in_color = true;
       color = node.color_picker().value;
@@ -173,6 +176,7 @@ void GuiReader::object_begin() {
       return;
     }
   }
+#endif
   assert(node.type() == Type::Collapsable);
   node = node.child();
   assert(node);
@@ -247,7 +251,7 @@ void GuiReader::tuple_end() {
   assert(node);
 }
 
-void GuiReader::list_begin() {
+size_t GuiReader::list_begin() {
   // List =
   // collapsable      # List wrapper
   //   group          # Items wrapper
@@ -263,23 +267,24 @@ void GuiReader::list_begin() {
   // list wrapper -> items wrapper -> item 0 wrapper
   node = node.child().child();
   at_object_begin = true;
+
+  return node.parent().size();
 }
 
-bool GuiReader::list_next() {
+void GuiReader::list_next() {
   if (!at_object_begin) {
     // item (i-1) content -> item i wrapper
     node = node.parent().next();
   }
   at_object_begin = false;
   if (!node) {
-    return false;
+    throw std::runtime_error("Incorrect number of tree nodes");
   }
   assert(node.type() == Type::Group);
 
   // item i wrapper -> item i content
   node = node.child();
   assert(node);
-  return true;
 }
 
 void GuiReader::list_end() {

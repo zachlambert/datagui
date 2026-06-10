@@ -129,7 +129,9 @@ void Gui::checkbox(const Var<bool>& var) {
   args_.apply(current);
   current = current.next();
 
-  checkbox.callback = [var](bool value) { var.set(value); };
+  checkbox.callback = [var](bool value) {
+    var.set(value);
+  };
   checkbox.checked = *var;
 }
 
@@ -168,7 +170,9 @@ void Gui::color_picker(const Var<Color>& var) {
   args_.apply(current);
   current = current.next();
 
-  color_picker.callback = [var](const Color& value) { var.set(value); };
+  color_picker.callback = [var](const Color& value) {
+    var.set(value);
+  };
   color_picker.value = *var;
 }
 
@@ -220,7 +224,9 @@ bool Gui::popup(
   auto& popup = current.popup();
 
   popup.title = title;
-  popup.closed_callback = [open_var]() { open_var.set(false); };
+  popup.closed_callback = [open_var]() {
+    open_var.set(false);
+  };
   popup.popup_size = Vec2(width, height);
 
   bool opened = (*open_var && !popup.open);
@@ -266,7 +272,9 @@ void Gui::select(const std::vector<std::string>& choices, const Var<int>& var) {
 
   select.choices = choices;
   select.choice = *var;
-  select.callback = [var](int value) { var.set(value); };
+  select.callback = [var](int value) {
+    var.set(value);
+  };
 }
 
 template <typename T>
@@ -292,13 +300,17 @@ void Gui::slider(
     slider.callback = callback;
   }
   if constexpr (!std::is_same_v<T, double>) {
-    slider.callback = [callback](double value) { callback(value); };
+    slider.callback = [callback](double value) {
+      callback(value);
+    };
   }
 
   if (slider.value < lower || slider.value > upper) {
     double new_value = std::clamp<double>(slider.value, lower, upper);
     slider.value = new_value;
-    misc_events.push_back([callback, new_value]() { callback(new_value); });
+    misc_events.push_back([callback, new_value]() {
+      callback(new_value);
+    });
   }
 }
 
@@ -316,12 +328,16 @@ void Gui::slider(T lower, T upper, const Var<T>& var) {
     slider.initial_value = *var;
   }
 
-  slider.callback = [var](double value) { var.set(value); };
+  slider.callback = [var](double value) {
+    var.set(value);
+  };
   slider.value = *var;
   if (slider.value < lower || slider.value > upper) {
     double new_value = std::clamp<double>(slider.value, lower, upper);
     slider.value = new_value;
-    misc_events.push_back([var, new_value]() { var.set(new_value); });
+    misc_events.push_back([var, new_value]() {
+      var.set(new_value);
+    });
   }
 }
 
@@ -418,7 +434,9 @@ void Gui::text_input(const Var<std::string>& var) {
   args_.apply(current);
   current = current.next();
 
-  text_input.callback = [var](const std::string& value) { var.set(value); };
+  text_input.callback = [var](const std::string& value) {
+    var.set(value);
+  };
   text_input.text = *var;
 }
 

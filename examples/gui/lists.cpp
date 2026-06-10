@@ -38,7 +38,9 @@ void edit_list_1(datagui::Gui& gui) {
         auto iter = std::find_if(
             persons->begin(),
             persons->end(),
-            [name](const auto& person) { return person.name == name; });
+            [name](const auto& person) {
+              return person.name == name;
+            });
         assert(iter != persons->end());
         persons.mut().erase(iter);
       });
@@ -71,7 +73,9 @@ void edit_list_1(datagui::Gui& gui) {
       auto existing = std::find_if(
           persons->begin(),
           persons->end(),
-          [&](const Person& person) { return person.name == *new_name; });
+          [&](const Person& person) {
+            return person.name == *new_name;
+          });
       if (existing != persons->end()) {
         error.set("Person with name '" + *new_name + "' already exists");
         return;
@@ -103,14 +107,18 @@ void edit_list_2(datagui::Gui& gui) {
       gui.key(key);
       if (gui.group()) {
         gui.text_input("", {});
-        gui.button("Remove", [=]() { keys.mut().remove(key); });
+        gui.button("Remove", [=]() {
+          keys.mut().remove(key);
+        });
         gui.end();
       }
     }
     gui.end();
   }
   if (gui.group()) {
-    gui.button("Push", [=]() { keys.mut().append(); });
+    gui.button("Push", [=]() {
+      keys.mut().append();
+    });
     gui.end();
   }
   gui.end();
