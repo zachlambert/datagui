@@ -624,6 +624,7 @@ void Gui::debug_render() {
        << focused.state().dynamic_size.y;
     ss << "\nsize: " << focused.state().size.x << ", "
        << focused.state().size.y;
+    ss << "\nhidden: " << (focused.state().hidden ? "true" : "false");
     if (focused.state().floating) {
       ss << "\nfloating priority: " << focused.state().float_priority;
     }

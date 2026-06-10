@@ -34,20 +34,22 @@ struct Foo {
   bool test;
   Person person;
   Shape shape;
+#if 1
   std::optional<std::array<double, 3>> points;
   std::vector<std::string> names;
   datagui::Color color = datagui::Color::Black();
   double scale;
+#endif
 };
 
-namespace datapack {
+namespace dpack {
 
-DATAPACK_LABELLED_VARIANT(Shape, 2);
-DATAPACK_LABELLED_VARIANT_DEF(Shape) = {"point", "line"};
+DPACK_LABELLED_VARIANT(Shape, 2);
+DPACK_LABELLED_VARIANT_DEF(Shape) = {"point", "line"};
 
-DATAPACK_INLINE(Point, x, y)
-DATAPACK_INLINE(Line, x1, y1, x2, y2)
-DATAPACK_INLINE(Person, name, age)
+DPACK_INLINE(Point, x, y)
+DPACK_INLINE(Line, x1, y1, x2, y2)
+DPACK_INLINE(Person, name, age)
 
 inline void read(Reader& reader, Foo& foo) {
   reader.object_begin();
@@ -57,9 +59,11 @@ inline void read(Reader& reader, Foo& foo) {
   reader.value("shape", foo.shape);
   reader.value("points", foo.points);
   reader.value("names", foo.names);
+#if 0
   reader.value("color", foo.color);
-  reader.constraint(ConstraintNumberRange(-1, 1));
+  reader.hint(HintRange(-1, 1));
   reader.value("scale", foo.scale);
+#endif
   reader.object_end();
 }
 inline void write(Writer& writer, const Foo& foo) {
@@ -70,44 +74,45 @@ inline void write(Writer& writer, const Foo& foo) {
   writer.value("shape", foo.shape);
   writer.value("points", foo.points);
   writer.value("names", foo.names);
+#if 0
   writer.value("color", foo.color);
   writer.value("scale", foo.scale);
+#endif
   writer.object_end();
 }
 
-} // namespace datapack
+} // namespace dpack
 
 int main() {
   datagui::Gui gui;
 
-  int revisit = 0;
-  while (gui.running()) {
+  while (gui.poll()) {
     gui.args().width_expand();
-    if (gui.group()) {
-      auto value = gui.variable<Foo>();
+    gui.group();
+    DATAGUI_SCOPE(gui);
 
-      gui.args().text_size(20).text_color(datagui::Color::Blue());
-      gui.text_box("Edit");
-      gui.edit<Foo>("Foo 1", [=](const Foo& new_value) {
-        std::cout << datapack::debug(new_value) << std::endl;
-        value.set(new_value);
-      });
+    auto value = gui.variable<Foo>();
 
-      gui.args().text_size(20).text_color(datagui::Color::Blue());
-      gui.text_box("Edit + Overwritten by above");
-      gui.edit<Foo>("Foo 2", value);
-
-      gui.args().text_size(20).text_color(datagui::Color::Blue());
-      gui.text_box("List");
-      gui.edit<std::vector<std::string>>(
-          "Test",
-          [](const std::vector<std::string>&) {},
-          {"first", "second"});
-
-      std::cout << "Revisit: " << revisit++ << std::endl;
-      gui.end();
+    gui.args().text_size(20).text_color(datagui::Color::Blue());
+    gui.text_box("Edit Foo");
+    if (gui.edit_v(value, "Edit Foo")) {
+      std::cout << dpack::debug(value) << std::endl;
     }
-    gui.poll();
+
+#if 0
+    gui.args().text_size(20).text_color(datagui::Color::Blue());
+    gui.text_box("Edit + Overwritten by above");
+    gui.edit<Foo>("Foo 2", value);
+
+    gui.args().text_size(20).text_color(datagui::Color::Blue());
+    gui.text_box("List");
+    gui.edit<std::vector<std::string>>(
+        "Test",
+        [](const std::vector<std::string>&) {},
+        {"first", "second"});
+
+    std::cout << "Revisit: " << revisit++ << std::endl;
+#endif
   }
   return 0;
 }
