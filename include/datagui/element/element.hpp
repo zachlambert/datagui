@@ -33,7 +33,6 @@ static constexpr std::size_t TypeCount = 14;
 struct Button {
   // Definition
   std::string text;
-  std::function<void()> callback;
 
   // Args
   std::optional<Color> text_color;
@@ -41,18 +40,16 @@ struct Button {
 
   // State
   bool down = false;
+  bool released = false;
 };
 
 struct Checkbox {
-  // Definition
-  std::function<void(bool)> callback;
-
   // Dependent
   float checkbox_size;
 
   // State
   bool checked = false;
-  int var_version = 0;
+  bool changed = false;
 };
 
 struct Collapsable {
@@ -77,7 +74,6 @@ struct Collapsable {
 
 struct ColorPicker {
   // Args
-  std::function<void(Color)> callback;
   bool always = false;
 
   // Dependent
@@ -89,7 +85,8 @@ struct ColorPicker {
   // State
   Color value;
   bool open = false;
-  bool modified = false;
+  bool modified = false; // Modified while holding down
+  bool changed = false; // Released
   bool wheel_held = false;
   bool scale_held = false;
 };
@@ -128,7 +125,6 @@ struct Popup {
   // Definition
   std::string title;
   Vec2 popup_size;
-  std::function<void()> closed_callback;
 
   // Args
   Layout layout;
@@ -145,22 +141,22 @@ struct Popup {
 
   // State
   bool open = false;
+  bool closed = false;
   LayoutState layout_state;
 };
 
 struct Select {
   // Definition
   std::vector<std::string> choices;
-  std::function<void(int)> callback;
 
   // Dependent
   std::vector<Box2> choice_boxes;
 
   // State
   int choice = -1;
-  bool var_version = 0;
   int choice_hovered = -1;
   bool open = false;
+  bool changed = false;
 };
 
 struct Slider {
@@ -169,13 +165,13 @@ struct Slider {
   NumberType type;
   double lower;
   double upper;
-  std::function<void(double)> callback;
   bool always = false;
   double initial_value = 0;
 
   // State
   double value;
   bool held = false;
+  bool changed = false;
 };
 
 struct Split {
@@ -209,7 +205,6 @@ struct Tabs {
 
 struct TextInput {
   // Definition
-  std::function<void(const std::string&)> callback;
   bool editable = true;
   std::optional<NumberType> number_type;
 
@@ -218,7 +213,7 @@ struct TextInput {
 
   // State
   std::string text;
-  int var_version = 0;
+  bool changed = false;
 };
 
 struct TextBox {

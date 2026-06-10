@@ -124,11 +124,7 @@ void TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
         return;
       }
       text_input.text = active_text;
-      if (text_input.callback) {
-        text_input.callback(text_input.text);
-      } else {
-        element.set_dirty();
-      }
+      text_input.changed = true;
     }
     return;
   }
@@ -182,11 +178,7 @@ bool TextInputSystem::scroll_event(
     active_text = std::to_string(value);
   } else {
     text_input.text = std::to_string(value);
-    if (text_input.callback) {
-      text_input.callback(text_input.text);
-    } else {
-      element.set_dirty();
-    }
+    text_input.changed = true;
   }
 
   return true;
@@ -207,11 +199,7 @@ void TextInputSystem::focus_leave(ElementPtr element, bool success) {
       return;
     }
     text_input.text = active_text;
-    if (text_input.callback) {
-      text_input.callback(text_input.text);
-    } else {
-      element.set_dirty();
-    }
+    text_input.changed = true;
   }
 }
 

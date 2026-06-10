@@ -15,6 +15,7 @@
 #include "datagui/visual/gui_renderer.hpp"
 #include "datagui/visual/window.hpp"
 #include <memory>
+#include <optional>
 #include <set>
 #include <unordered_set>
 #include <vector>
@@ -52,94 +53,46 @@ public:
 
   // Elements
 
-  void button(const std::string& text, const std::function<void()>& callback);
+  bool button(const std::string& text);
 
-  void checkbox(bool initial_value, const std::function<void(bool)>& callback);
-  void checkbox(bool& value) {
-    checkbox(value, [&value](bool new_value) {
-      value = new_value;
-    });
-  }
-  void checkbox(const Var<bool>& var);
+  std::optional<bool> checkbox(bool initial_value);
+  bool checkbox_v(bool& value);
 
   bool collapsable(const std::string& label);
 
-  void color_picker(
-      const Color& initial_value,
-      const std::function<void(const Color&)>& callback);
-  void color_picker(const Var<Color>& var);
-  void color_picker(Color& value) {
-    color_picker(value, [&value](const Color& new_value) {
-      value = new_value;
-    });
-  }
+  std::optional<Color> color_picker(const Color& initial_value);
+  bool color_picker_v(Color& value);
 
   bool dropdown(const std::string& label);
 
-  bool group();
+  void group();
 
-  bool popup(
-      const Var<bool>& open,
-      const std::string& title,
-      float width,
-      float height);
+  bool popup(bool& open, const std::string& title, float width, float height);
 
-  void select(
-      const std::vector<std::string>& choices,
+  std::optional<int> select(
       int initial_choice,
-      const std::function<void(int)>& callback);
-  void select(const std::vector<std::string>& choices, int& choice) {
-    select(choices, choice, [&choice](int new_choice) {
-      choice = new_choice;
-    });
-  }
-  void select(const std::vector<std::string>& choices, const Var<int>& choice);
+      const std::vector<std::string>& choices);
+  bool select_v(int& choice, const std::vector<std::string>& choices);
 
   template <typename T>
-  void slider(
-      T initial_value,
-      T lower,
-      T upper,
-      const std::function<void(T)>& callback);
+  std::optional<T> slider(T initial_value, T lower, T upper);
   template <typename T>
-  void slider(T lower, T upper, const Var<T>& var);
-  template <typename T>
-  void slider(T& value, T lower, T upper) {
-    std::function<void(T)> callback = [&value](T new_value) {
-      value = new_value;
-    };
-    slider(value, lower, upper, std::move(callback));
-  }
+  bool slider_v(T& value, T lower, T upper);
 
-  bool hsplit(float ratio);
-  bool vsplit(float ratio);
+  void hsplit(float ratio);
+  void vsplit(float ratio);
 
-  bool tabs(
-      const std::vector<std::string>& labels,
-      std::size_t initial_tab = 0);
+#if 0
+  void tabs(std::size_t initial_tab, const std::vector<std::string>& labels);
+#endif
 
-  void text_input(
-      const std::string& initial_value,
-      const std::function<void(const std::string& callback)>& callback);
-  void text_input(const Var<std::string>& var);
-  void text_input(std::string& value) {
-    text_input(value, [&value](const std::string& new_value) {
-      value = new_value;
-    });
-  }
+  const std::string* text_input(const std::string& initial_value);
+  bool text_input_v(std::string& value);
 
   template <typename T>
-  void number_input(
-      const T& initial_value,
-      const std::function<void(T)>& callback);
+  std::optional<T> number_input(T initial_value);
   template <typename T>
-  void number_input(const Var<T>& var);
-  template <typename T>
-  void number_input(T& value) {
-    number_input(value, [&value](T new_value) {
-      value = new_value;
-    });
-  }
+  bool number_input_v(T& value);
 
   void text_box(const std::string& text);
 
@@ -182,9 +135,6 @@ public:
       return result;
     }
   }
-
-  void trigger(Trigger& trigger);
-  void retrigger();
 
 #if 0
   template <typename T>
@@ -267,13 +217,13 @@ public:
     return args_;
   }
 
-  Canvas2d* canvas2d(float width, float height) {
+  Canvas2d& canvas2d(float width, float height) {
     return viewport<Canvas2d>(width, height);
   }
-  Canvas3d* canvas3d(float width, float height) {
+  Canvas3d& canvas3d(float width, float height) {
     return viewport<Canvas3d>(width, height);
   }
-  Plotter* plotter(float width, float height) {
+  Plotter& plotter(float width, float height) {
     return viewport<Plotter>(width, height);
   }
 
@@ -300,7 +250,7 @@ private:
 
   template <typename T>
   requires std::is_base_of_v<Viewport, T>
-  T* viewport(float width, float height);
+  T& viewport(float width, float height);
 
   Window window;
   Tree tree;

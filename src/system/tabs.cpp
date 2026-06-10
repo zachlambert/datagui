@@ -128,7 +128,6 @@ void TabsSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     if (tabs.label_boxes[i].contains(event.position)) {
       if (i != tabs.tab) {
         tabs.tab = i;
-        element.set_dirty();
       }
       return;
     }

@@ -84,11 +84,7 @@ void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   if (event.button == MouseButton::Right) {
     if (event.action == MouseAction::Release) {
       slider.value = slider.initial_value;
-      if (slider.callback) {
-        slider.callback(slider.value);
-      } else {
-        element.set_dirty();
-      }
+      slider.changed = true;
     }
     return;
   }
@@ -122,11 +118,7 @@ void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     slider.held = false;
     if (!slider.always && slider.value != active_value) {
       slider.value = active_value;
-      if (slider.callback) {
-        slider.callback(slider.value);
-      } else {
-        element.set_dirty();
-      }
+      slider.changed = true;
     }
     return;
   }
@@ -168,9 +160,9 @@ void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     break;
   }
 
-  if (slider.always && slider.callback) {
+  if (slider.always) {
     slider.value = active_value;
-    slider.callback(active_value);
+    slider.changed = true;
   }
 }
 

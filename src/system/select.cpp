@@ -124,12 +124,7 @@ void SelectSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     if (select.choice_boxes[i].contains(event.position)) {
       if (i != select.choice) {
         select.choice = i;
-        // Clicked and different
-        if (select.callback) {
-          select.callback(select.choice);
-        } else {
-          element.set_dirty();
-        }
+        select.changed = true;
       }
       return;
     }
