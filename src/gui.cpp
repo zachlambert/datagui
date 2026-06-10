@@ -53,21 +53,7 @@ Gui::Gui(const std::string& title, std::size_t width, std::size_t height) :
   }
 }
 
-bool Gui::running() const {
-  return window.running();
-}
-
-void Gui::check_begin() {
-  if (stack.empty()) {
-    tree.poll();
-    current = tree.root();
-    var_current = VarPtr();
-  }
-}
-
 void Gui::move_down() {
-  current.clear_dependencies();
-  tree.set_active_node(current);
   stack.emplace(current, var_current);
   current = current.child();
   var_current = VarPtr();
@@ -82,67 +68,79 @@ void Gui::end() {
     current.viewport().viewport->end();
   }
   current = current.next();
-  if (stack.empty()) {
-    tree.set_active_node(ConstElementPtr());
-  } else {
-    tree.set_active_node(stack.top().first);
-  }
 }
 
-void Gui::poll() {
+bool Gui::poll() {
   assert(stack.empty());
-  tree.clear_dirty();
   calculate_sizes();
   render();
   event_handling();
+
+  if (!window.running()) {
+    return false;
+  }
+
+  current = tree.root();
+  var_current = VarPtr();
+
+  return true;
 }
 
-void Gui::button(
-    const std::string& text,
-    const std::function<void()>& callback) {
-  current.expect(Type::Button, read_key());
+bool Gui::button(const std::string& text) {
+  bool is_new = current.expect(Type::Button, read_key());
   auto& button = current.button();
+  if (is_new) {
+    button.text = text;
+  }
   args_.apply(current);
   current = current.next();
 
-  button.text = text;
-  button.callback = callback;
+  if (button.released) {
+    button.released = false;
+    return true;
+  }
+  return false;
 }
 
-void Gui::checkbox(
-    bool initial_value,
-    const std::function<void(bool)>& callback) {
+std::optional<bool> Gui::checkbox(bool initial_value) {
   bool is_new = current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
+  if (is_new) {
+    checkbox.checked = initial_value;
+  }
   args_.apply(current);
   current = current.next();
 
-  checkbox.callback = callback;
-  if (is_new || overwrite) {
-    checkbox.checked = initial_value;
+  if (checkbox.changed) {
+    checkbox.changed = false;
+    return checkbox.checked;
   }
+  return std::nullopt;
 }
 
-void Gui::checkbox(const Var<bool>& var) {
+bool Gui::checkbox_v(bool& value) {
   current.expect(Type::Checkbox, read_key());
   auto& checkbox = current.checkbox();
   args_.apply(current);
   current = current.next();
 
-  checkbox.callback = [var](bool value) {
-    var.set(value);
-  };
-  checkbox.checked = *var;
+  if (checkbox.changed) {
+    checkbox.changed = false;
+    value = checkbox.checked;
+    return true;
+  } else {
+    checkbox.checked = value;
+    return false;
+  }
 }
 
 bool Gui::collapsable(const std::string& label) {
-  check_begin();
   current.expect(Type::Collapsable, read_key());
   args_.apply(current);
   auto& collapsable = current.collapsable();
   collapsable.label = label;
 
-  if (current.dirty() || overwrite) {
+  if (collapsable.open) {
     move_down();
     return true;
   }
@@ -150,34 +148,47 @@ bool Gui::collapsable(const std::string& label) {
   return false;
 }
 
-void Gui::color_picker(
-    const Color& initial_value,
-    const std::function<void(const Color&)>& callback) {
+std::optional<Color> Gui::color_picker(const Color& initial_value) {
   bool is_new = current.expect(Type::ColorPicker, read_key());
   auto& color_picker = current.color_picker();
+  if (is_new) {
+    color_picker.value = initial_value;
+  }
   args_.apply(current);
   current = current.next();
 
-  color_picker.callback = callback;
-  if (is_new || overwrite) {
-    color_picker.value = initial_value;
+  if (color_picker.changed) {
+    color_picker.changed = false;
+    return color_picker.value;
   }
+  return std::nullopt;
 }
 
-void Gui::color_picker(const Var<Color>& var) {
+bool Gui::color_picker_v(Color& value) {
   current.expect(Type::ColorPicker, read_key());
   auto& color_picker = current.color_picker();
   args_.apply(current);
   current = current.next();
 
-  color_picker.callback = [var](const Color& value) {
-    var.set(value);
-  };
-  color_picker.value = *var;
+  if (color_picker.modified) {
+    if (color_picker.always) {
+      value = color_picker.value;
+      return true;
+    } else {
+      return false;
+    }
+  }
+  if (color_picker.changed) {
+    color_picker.changed = false;
+    value = color_picker.value;
+    return true;
+  } else {
+    color_picker.value = value;
+    return false;
+  }
 }
 
 bool Gui::dropdown(const std::string& label) {
-  check_begin();
   current.expect(Type::Dropdown, read_key());
   args_.apply(current);
   auto& dropdown = current.dropdown();
@@ -192,158 +203,140 @@ bool Gui::dropdown(const std::string& label) {
     return false;
   }
 
-  if (current.dirty() || overwrite) {
-    move_down();
-    return true;
-  }
-  current = current.next();
-  return false;
+  move_down();
+  return true;
 }
 
-bool Gui::group() {
-  check_begin();
+void Gui::group() {
   current.expect(Type::Group, read_key());
   args_.apply(current);
-
-  if (current.dirty() || overwrite) {
-    move_down();
-    return true;
-  }
-  current = current.next();
-  return false;
+  move_down();
 }
 
 bool Gui::popup(
-    const Var<bool>& open_var,
+    bool& open,
     const std::string& title,
     float width,
     float height) {
-  check_begin();
   current.expect(Type::Popup, read_key());
   args_.apply(current);
   auto& popup = current.popup();
 
   popup.title = title;
-  popup.closed_callback = [open_var]() {
-    open_var.set(false);
-  };
   popup.popup_size = Vec2(width, height);
 
-  bool opened = (*open_var && !popup.open);
-  popup.open = *open_var;
-
-  if (!popup.open && current.child()) {
-    if (!popup.retain) {
-      current.clear();
-    }
-    current = current.next();
-    return false;
+  if (popup.close_button_released) {
+    popup.close_button_released = false;
+    open = false;
+    popup.open = false;
+  } else {
+    popup.open = open;
   }
-
-  if (popup.open && (opened || current.dirty() || overwrite)) {
+  if (popup.open) {
     move_down();
     return true;
+  }
+  if (current.child() && !popup.retain) {
+    current.clear();
   }
   current = current.next();
   return false;
 }
 
-void Gui::select(
-    const std::vector<std::string>& choices,
+std::optional<int> Gui::select(
     int initial_choice,
-    const std::function<void(int)>& callback) {
+    const std::vector<std::string>& choices) {
   bool is_new = current.expect(Type::Select, read_key());
   auto& select = current.select();
-  args_.apply(current);
-  current = current.next();
-
-  if (is_new || overwrite) {
+  if (is_new) {
     select.choice = initial_choice;
   }
   select.choices = choices;
-  select.callback = callback;
+  if (select.choice >= choices.size()) {
+    select.choice = std::max(1ul, choices.size()) - 1;
+  }
+  args_.apply(current);
+  current = current.next();
+
+  if (select.changed) {
+    select.changed = false;
+    return select.choice;
+  }
+  return std::nullopt;
 }
 
-void Gui::select(const std::vector<std::string>& choices, const Var<int>& var) {
+bool Gui::select_v(int& choice, const std::vector<std::string>& choices) {
   current.expect(Type::Select, read_key());
   auto& select = current.select();
   args_.apply(current);
   current = current.next();
 
-  select.choices = choices;
-  select.choice = *var;
-  select.callback = [var](int value) {
-    var.set(value);
-  };
-}
-
-template <typename T>
-void Gui::slider(
-    T initial_value,
-    T lower,
-    T upper,
-    const std::function<void(T)>& callback) {
-  bool is_new = current.expect(Type::Slider, read_key());
-  auto& slider = current.slider();
-  args_.apply(current);
-  current = current.next();
-
-  slider.type = number_type<T>();
-  slider.lower = lower;
-  slider.upper = upper;
-
-  if (is_new || overwrite) {
-    slider.value = initial_value;
-    slider.initial_value = initial_value;
-  }
-  if constexpr (std::is_same_v<T, double>) {
-    slider.callback = callback;
-  }
-  if constexpr (!std::is_same_v<T, double>) {
-    slider.callback = [callback](double value) {
-      callback(value);
-    };
-  }
-
-  if (slider.value < lower || slider.value > upper) {
-    double new_value = std::clamp<double>(slider.value, lower, upper);
-    slider.value = new_value;
-    misc_events.push_back([callback, new_value]() {
-      callback(new_value);
-    });
+  if (select.changed) {
+    select.changed = true;
+    choice = select.choice;
+    return true;
+  } else {
+    select.choice = choice;
+    return false;
   }
 }
 
 template <typename T>
-void Gui::slider(T lower, T upper, const Var<T>& var) {
+std::optional<T> Gui::slider(T initial_value, T lower, T upper) {
   bool is_new = current.expect(Type::Slider, read_key());
   auto& slider = current.slider();
-  args_.apply(current);
-  current = current.next();
-
   slider.type = number_type<T>();
-  slider.lower = lower;
-  slider.upper = upper;
+  slider.lower = static_cast<T>(lower);
+  slider.upper = static_cast<T>(upper);
   if (is_new) {
-    slider.initial_value = *var;
+    slider.value = std::clamp(
+        static_cast<double>(initial_value),
+        slider.lower,
+        slider.upper);
+  }
+  args_.apply(current);
+
+  current = current.next();
+
+  if (slider.value < slider.lower || slider.value > slider.upper) {
+    slider.value = std::clamp(slider.value, slider.lower, slider.upper);
+    slider.changed = true;
   }
 
-  slider.callback = [var](double value) {
-    var.set(value);
-  };
-  slider.value = *var;
-  if (slider.value < lower || slider.value > upper) {
-    double new_value = std::clamp<double>(slider.value, lower, upper);
-    slider.value = new_value;
-    misc_events.push_back([var, new_value]() {
-      var.set(new_value);
-    });
+  if (slider.changed) {
+    slider.changed = false;
+    return static_cast<T>(slider.value);
   }
+  return std::nullopt;
+}
+
+template <typename T>
+bool Gui::slider_v(T& value, T lower, T upper) {
+  current.expect(Type::Slider, read_key());
+  auto& slider = current.slider();
+  slider.type = number_type<T>();
+  slider.lower = static_cast<T>(lower);
+  slider.upper = static_cast<T>(upper);
+  args_.apply(current);
+
+  current = current.next();
+
+  if (!slider.changed) {
+    slider.value = static_cast<double>(value);
+    if (slider.value >= slider.lower && slider.value <= slider.upper) {
+      return false;
+    }
+    slider.value = std::clamp(slider.value, slider.lower, slider.upper);
+  }
+  // Changed or clamped
+
+  value = static_cast<double>(slider.value);
+  return true;
 }
 
 #define INSTANTIATE(T) \
-  template void Gui::slider<T>(T, T, T, const std::function<void(T)>&); \
-  template void Gui::slider<T>(T, T, const Var<T>&);
+  template std::optional<T> Gui::slider<T>(T, T, T); \
+  template bool Gui::slider_v<T>(T&, T, T);
 INSTANTIATE(std::int32_t)
 INSTANTIATE(std::int64_t)
 INSTANTIATE(std::uint32_t)
@@ -353,138 +346,142 @@ INSTANTIATE(double)
 INSTANTIATE(std::uint8_t)
 #undef INSTANTIATE
 
-bool Gui::hsplit(float ratio) {
-  check_begin();
+void Gui::hsplit(float ratio) {
   bool is_new = current.expect(Type::Split, read_key());
   auto& split = current.split();
   args_.apply(current);
 
+  if (is_new) {
+    split.ratio = ratio;
+  }
   split.direction = Direction::Horizontal;
-  if (is_new) {
-    split.ratio = ratio;
-  }
 
-  if (current.dirty() || overwrite) {
-    move_down();
-    return true;
-  }
-
-  current = current.next();
-  return false;
+  move_down();
 }
 
-bool Gui::vsplit(float ratio) {
-  check_begin();
+void Gui::vsplit(float ratio) {
   bool is_new = current.expect(Type::Split, read_key());
   auto& split = current.split();
   args_.apply(current);
 
-  split.direction = Direction::Vertical;
   if (is_new) {
     split.ratio = ratio;
   }
+  split.direction = Direction::Vertical;
 
-  if (current.dirty() || overwrite) {
-    move_down();
-    return true;
-  }
-
-  current = current.next();
-  return false;
+  move_down();
 }
 
-bool Gui::tabs(
-    const std::vector<std::string>& labels,
-    std::size_t initial_tab) {
-  check_begin();
+void Gui::tabs(size_t initial_tab) {
   bool is_new = current.expect(Type::Tabs, read_key());
-  args_.apply(current);
   auto& tabs = current.tabs();
-
+  args_.apply(current);
   if (is_new) {
-    tabs.labels = labels;
     tabs.tab = initial_tab;
   }
+  if (!is_new && tabs.tab >= tabs.labels.size()) {
+    tabs.tab = std::max(1ul, tabs.labels.size()) - 1;
+  }
+  tabs.labels.clear();
+  move_down();
+}
 
-  if (current.dirty() || overwrite) {
+bool Gui::tab_group(const std::string& label) {
+  current.expect(Type::Group, read_key());
+  args_.apply(current);
+
+  auto parent = current.parent();
+  assert(parent && parent.type() == Type::Tabs);
+  auto& tabs = parent.tabs();
+
+  size_t index = tabs.labels.size();
+  tabs.labels.push_back(label);
+  if (tabs.tab == index) {
+    current.state().hidden = false;
     move_down();
     return true;
   }
+  current.state().hidden = true;
   current = current.next();
   return false;
 }
 
-void Gui::text_input(
-    const std::string& initial_value,
-    const std::function<void(const std::string&)>& callback) {
+const std::string* Gui::text_input(const std::string& initial_value) {
   bool is_new = current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
-  args_.apply(current);
-  current = current.next();
-
-  if (is_new || overwrite) {
+  if (is_new) {
     text_input.text = initial_value;
   }
-  text_input.callback = callback;
+  args_.apply(current);
+  current = current.next();
+
+  if (text_input.changed) {
+    text_input.changed = false;
+    return &text_input.text;
+  }
+  return nullptr;
 }
 
-void Gui::text_input(const Var<std::string>& var) {
+bool Gui::text_input_v(std::string& value) {
   current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   args_.apply(current);
   current = current.next();
 
-  text_input.callback = [var](const std::string& value) {
-    var.set(value);
-  };
-  text_input.text = *var;
+  if (text_input.changed) {
+    text_input.changed = false;
+    value = text_input.text;
+    return true;
+  } else {
+    text_input.text = value;
+    return false;
+  }
 }
 
 template <typename T>
-void Gui::number_input(
-    const T& initial_value,
-    const std::function<void(T callback)>& callback) {
+std::optional<T> Gui::number_input(T initial_value) {
   bool is_new = current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
+  if (is_new) {
+    text_input.text = std::to_string(initial_value);
+  }
   args_.apply(current);
   text_input.number_type = number_type<T>();
   current = current.next();
 
-  if (is_new || overwrite) {
-    text_input.text = std::to_string(initial_value);
+  if (text_input.changed) {
+    text_input.changed = false;
+    T number;
+    if (text_to_number(text_input.text, number)) {
+      return number;
+    }
   }
-  if (callback) {
-    text_input.callback = [callback](const std::string& value) {
-      T number;
-      if (text_to_number(value, number)) {
-        callback(number);
-      }
-    };
-  } else {
-    text_input.callback = {};
-  }
+  return std::nullopt;
 }
 
 template <typename T>
-void Gui::number_input(const Var<T>& var) {
+bool Gui::number_input_v(T& value) {
   current.expect(Type::TextInput, read_key());
   auto& text_input = current.text_input();
   args_.apply(current);
   text_input.number_type = number_type<T>();
   current = current.next();
 
-  text_input.callback = [var](const std::string& value) {
+  if (text_input.changed) {
+    text_input.changed = false;
     T number;
-    if (text_to_number(value, number)) {
-      var.set(number);
+    if (text_to_number(text_input.text, number)) {
+      value = number;
+      return true;
     }
-  };
-  text_input.text = std::to_string(*var);
+  }
+  text_input.text = std::to_string(value);
+  return false;
 }
 
 #define INSTANTIATE(T) \
-  template void Gui::number_input<T>(const T&, const std::function<void(T)>&); \
-  template void Gui::number_input<T>(const Var<T>&);
+  template std::optional<T> Gui::number_input<T>(T); \
+  template bool Gui::number_input_v<T>(T&);
 INSTANTIATE(std::int32_t)
 INSTANTIATE(std::int64_t)
 INSTANTIATE(std::uint32_t)
@@ -505,6 +502,9 @@ void Gui::text_box(const std::string& text) {
 
 void Gui::render() {
   auto render_tree = [this](ConstElementPtr root) {
+    if (!root) {
+      return;
+    }
     struct State {
       ConstElementPtr element;
       bool first_visit;
@@ -820,6 +820,9 @@ void Gui::event_handling() {
 
 ElementPtr Gui::get_leaf_node(const Vec2& position) {
   auto get_tree_leaf = [this, &position](ElementPtr root) -> ElementPtr {
+    if (!root) {
+      return ElementPtr();
+    }
     ElementPtr leaf = ElementPtr();
 
     std::stack<ElementPtr> stack;
@@ -1031,20 +1034,9 @@ void Gui::focus_next(bool reverse) {
   change_tree_focus(element_focus, next);
 }
 
-void Gui::trigger(Trigger& trigger) {
-  assert(!stack.empty());
-  trigger.elements.insert(stack.top().first);
-}
-
-void Gui::retrigger() {
-  assert(!stack.empty());
-  tree.set_retrigger(stack.top().first);
-}
-
 template <typename T>
 requires std::is_base_of_v<Viewport, T>
-T* Gui::viewport(float width, float height) {
-  check_begin();
+T& Gui::viewport(float width, float height) {
   current.expect(Type::ViewportPtr, read_key());
   auto& viewport = current.viewport();
   if (!viewport.viewport) {
@@ -1056,18 +1048,14 @@ T* Gui::viewport(float width, float height) {
   viewport.width = width;
   viewport.height = height;
 
-  if (!current.dirty()) {
-    current = current.next();
-    return nullptr;
-  }
   move_down();
   viewport.viewport->begin();
   T* ptr = dynamic_cast<T*>(viewport.viewport.get());
   assert(ptr);
-  return ptr;
+  return *ptr;
 }
-template Canvas2d* Gui::viewport<Canvas2d>(float, float);
-template Canvas3d* Gui::viewport<Canvas3d>(float, float);
-template Plotter* Gui::viewport<Plotter>(float, float);
+template Canvas2d& Gui::viewport<Canvas2d>(float, float);
+template Canvas3d& Gui::viewport<Canvas3d>(float, float);
+template Plotter& Gui::viewport<Plotter>(float, float);
 
 } // namespace datagui

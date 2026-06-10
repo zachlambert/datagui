@@ -162,11 +162,7 @@ void ColorPickerSystem::mouse_event(
     }
     if (color_picker.modified) {
       color_picker.modified = false;
-      if (color_picker.callback) {
-        color_picker.callback(color_picker.value);
-      } else {
-        element.set_dirty();
-      }
+      color_picker.changed = true;
     }
     return;
   }
@@ -194,11 +190,7 @@ void ColorPickerSystem::mouse_event(
     Color new_color =
         Color::Hsl(hue, saturation, color_picker.value.lightness());
     color_picker.value = new_color;
-    if (color_picker.always) {
-      color_picker.callback(new_color);
-    } else {
-      color_picker.modified = true;
-    }
+    color_picker.modified = true;
   }
 
   if (event.action == MouseAction::Press &&
@@ -215,12 +207,7 @@ void ColorPickerSystem::mouse_event(
         color_picker.value.saturation(),
         lightness);
     color_picker.value = new_color;
-
-    if (color_picker.always) {
-      color_picker.callback(new_color);
-    } else {
-      color_picker.modified = true;
-    }
+    color_picker.modified = true;
   }
 }
 

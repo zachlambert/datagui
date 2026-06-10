@@ -5,6 +5,7 @@
 #include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/text_2d_shader.hpp"
 #include <functional>
+#include <optional>
 
 namespace datagui {
 
@@ -67,9 +68,7 @@ public:
     bg_color_ = color;
   }
 
-  void click_callback(const std::function<void(const MouseEvent&)>& callback) {
-    click_callback_ = callback;
-  }
+  std::optional<MouseEvent> mouse_event();
 
 private:
   void begin() override;
@@ -85,7 +84,7 @@ private:
 
   Color bg_color_ = Color::Gray(0.95);
   Camera2d click_camera;
-  std::function<void(const MouseEvent&)> click_callback_;
+  std::optional<MouseEvent> mouse_event_;
 
   Vec2 nominal_camera_size;
   float zoom = 1;

@@ -91,7 +91,6 @@ void DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   auto& dropdown = element.dropdown();
   if (event.action == MouseAction::Press) {
     dropdown.open = true;
-    element.set_dirty();
   }
 }
 
@@ -109,13 +108,11 @@ bool DropdownSystem::scroll_event(
 void DropdownSystem::focus_enter(ElementPtr element) {
   auto& dropdown = element.dropdown();
   dropdown.open = true;
-  element.set_dirty();
 }
 
 void DropdownSystem::focus_tree_leave(ElementPtr element) {
   auto& dropdown = element.dropdown();
   dropdown.open = false;
-  element.set_dirty();
 }
 
 } // namespace datagui

@@ -13,11 +13,10 @@ int main() {
     ys.push_back(std::exp(-x) * std::cos(10 * M_PI * x));
   }
 
-  while (gui.running()) {
-    if (auto plotter = gui.plotter(400, 400)) {
-      plotter->plot(xs, ys);
-      gui.end();
-    }
-    gui.poll();
+  while (gui.poll()) {
+    auto& plotter = gui.plotter(400, 400);
+    DATAGUI_SCOPE(gui);
+
+    plotter.plot(xs, ys);
   }
 }

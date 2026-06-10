@@ -102,14 +102,10 @@ void PopupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
 void PopupSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   auto& popup = element.popup();
 
-  if (event.action != MouseAction::Release) {
-    return;
+  if (event.action == MouseAction::Release &&
+      popup.close_button_box.contains(event.position)) {
+    popup.close_button_released = true;
   }
-
-  if (!popup.close_button_box.contains(event.position)) {
-    return;
-  }
-  popup.closed_callback();
 }
 
 bool PopupSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {

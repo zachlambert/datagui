@@ -138,6 +138,13 @@ void Canvas2d::view_size(float width, float height) {
   camera.size = nominal_camera_size / zoom;
 }
 
+std::optional<MouseEvent> Canvas2d::mouse_event() {
+  if (mouse_event_) {
+    return std::move(mouse_event_);
+  }
+  return std::nullopt;
+}
+
 void Canvas2d::begin() {
   shape_shader.clear();
   text_shader.clear();
@@ -145,7 +152,6 @@ void Canvas2d::begin() {
   bg_color_ = Color::Gray(0.95);
   nominal_camera_size = viewport().size();
   camera.size = nominal_camera_size / zoom;
-  click_callback_ = {};
 }
 
 void Canvas2d::end() {
@@ -171,12 +177,10 @@ void Canvas2d::redraw() {
 
 void Canvas2d::mouse_event(const MouseEvent& event) {
   if (event.button != MouseButton::Middle) {
-    if (click_callback_) {
-      MouseEvent remapped = event;
-      remapped.press_position = camera.from_camera(event.press_position);
-      remapped.position = camera.from_camera(event.position);
-      click_callback_(remapped);
-    }
+    MouseEvent remapped = event;
+    remapped.press_position = camera.from_camera(event.press_position);
+    remapped.position = camera.from_camera(event.position);
+    mouse_event_ = remapped;
     return;
   }
   if (event.action == MouseAction::Press) {
