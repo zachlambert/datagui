@@ -59,15 +59,12 @@ bool Gui::running() const {
 
 void Gui::check_begin() {
   if (stack.empty()) {
-    tree.poll();
     current = tree.root();
     var_current = VarPtr();
   }
 }
 
 void Gui::move_down() {
-  current.clear_dependencies();
-  tree.set_active_node(current);
   stack.emplace(current, var_current);
   current = current.child();
   var_current = VarPtr();

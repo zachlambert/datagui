@@ -6,7 +6,6 @@
 #include "datagui/element/vector_map.hpp"
 #include <assert.h>
 #include <stdexcept>
-#include <unordered_set>
 
 namespace datagui {
 
@@ -330,11 +329,6 @@ public:
       return ConstVarPtr(tree, index, tree->elements[index].first_variable);
     }
 
-    void clear_dependencies() const {
-      assert(tree && index != -1);
-      tree->clear_dependencies(index);
-    }
-
     template <
         bool OtherConst,
         typename = std::enable_if_t<IsConst || !OtherConst>>
@@ -390,9 +384,6 @@ private:
 
   int create_variable(int element);
   void clear_variables(int element);
-
-  void create_dependency(int element, int variable);
-  void clear_dependencies(int element);
 
   int root_ = -1;
   VectorMap<ElementNode> elements;

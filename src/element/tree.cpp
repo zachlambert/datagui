@@ -76,7 +76,6 @@ void Tree::remove_element(int element, bool children_only) {
       }
 
       clear_variables(element);
-      clear_dependencies(element);
 
       pop_type(elements[element].type, elements[element].type_index);
       elements.pop(element);

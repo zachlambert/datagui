@@ -25,34 +25,34 @@ add_library(datagui SHARED
   src/element/key_list.cpp
   src/element/tree.cpp
 
-  # src/geometry/box.cpp
-  # src/geometry/camera.cpp
-  # src/geometry/mat.cpp
-  # src/geometry/rot.cpp
-  # src/geometry/vec.cpp
+  src/geometry/box.cpp
+  src/geometry/camera.cpp
+  src/geometry/mat.cpp
+  src/geometry/rot.cpp
+  src/geometry/vec.cpp
 
-  # src/asset/image.cpp
-  # src/asset/mesh.cpp
-  # src/asset/point_cloud.cpp
-  # src/asset/uv_mesh.cpp
+  src/asset/image.cpp
+  src/asset/mesh.cpp
+  src/asset/point_cloud.cpp
+  src/asset/uv_mesh.cpp
 
-  # src/visual/color_map.cpp
-  # src/visual/font_manager.cpp
-  # src/visual/image_shader.cpp
-  # src/visual/mesh_shader.cpp
-  # src/visual/point_cloud_shader.cpp
-  # src/visual/gui_renderer.cpp
-  # src/visual/shader_utils.cpp
-  # src/visual/shape_2d_shader.cpp
-  # src/visual/shape_3d_shader.cpp
-  # src/visual/text_2d_shader.cpp
-  # src/visual/uv_mesh_shader.cpp
-  # src/visual/window.cpp
+  src/visual/color_map.cpp
+  src/visual/font_manager.cpp
+  src/visual/image_shader.cpp
+  src/visual/mesh_shader.cpp
+  src/visual/point_cloud_shader.cpp
+  src/visual/gui_renderer.cpp
+  src/visual/shader_utils.cpp
+  src/visual/shape_2d_shader.cpp
+  src/visual/shape_3d_shader.cpp
+  src/visual/text_2d_shader.cpp
+  src/visual/uv_mesh_shader.cpp
+  src/visual/window.cpp
 
-  # src/input/number_input.cpp
-  # src/input/text_selection.cpp
+  src/input/number_input.cpp
+  src/input/text_selection.cpp
 
-  # src/system_utils/layout.cpp
+  src/system_utils/layout.cpp
 
   # src/system/button.cpp
   # src/system/checkbox.cpp
@@ -69,10 +69,10 @@ add_library(datagui SHARED
   # src/system/text_input.cpp
   # src/system/viewport.cpp
 
-  # src/viewport/canvas2d.cpp
-  # src/viewport/canvas3d.cpp
-  # src/viewport/plotter.cpp
-  # src/viewport/viewport.cpp
+  src/viewport/canvas2d.cpp
+  src/viewport/canvas3d.cpp
+  src/viewport/plotter.cpp
+  src/viewport/viewport.cpp
 
   # src/gui.cpp
 
