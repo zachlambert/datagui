@@ -107,9 +107,8 @@ public:
   void hsplit(float ratio);
   void vsplit(float ratio);
 
-#if 0
-  void tabs(std::size_t initial_tab, const std::vector<std::string>& labels);
-#endif
+  void tabs(size_t initial_tab = 0);
+  bool tab_group(const std::string& label);
 
   const std::string* text_input(const std::string& initial_value);
   bool text_input_v(std::string& value);

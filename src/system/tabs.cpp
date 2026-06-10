@@ -76,7 +76,7 @@ void TabsSystem::set_dependent_state(ElementPtr element) {
     } else {
       c_state.size.y = c_state.fixed_size.y;
     }
-    child.state().hidden = (i != tabs.tab);
+    assert(child.state().hidden == (i != tabs.tab));
     i++;
     child = child.next();
   }

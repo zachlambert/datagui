@@ -200,7 +200,7 @@ struct Tabs {
   std::vector<Box2> label_boxes;
 
   // State
-  std::size_t tab = 0;
+  size_t tab = 0;
 };
 
 struct TextInput {

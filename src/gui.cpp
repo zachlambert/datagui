@@ -364,25 +364,39 @@ void Gui::vsplit(float ratio) {
   move_down();
 }
 
-#if 0
-void Gui::tabs(
-    std::size_t initial_tab,
-    const std::vector<std::string>& labels) {
+void Gui::tabs(size_t initial_tab) {
   bool is_new = current.expect(Type::Tabs, read_key());
-  args_.apply(current);
   auto& tabs = current.tabs();
-
+  args_.apply(current);
   if (is_new) {
     tabs.tab = initial_tab;
   }
-  tabs.labels = labels;
-  if (tabs.tab >= labels.size()) {
-    tabs.tab = std::max(1ul, labels.size()) - 1;
+  if (!is_new && tabs.tab >= tabs.labels.size()) {
+    tabs.tab = std::max(1ul, tabs.labels.size()) - 1;
   }
-
+  tabs.labels.clear();
   move_down();
 }
-#endif
+
+bool Gui::tab_group(const std::string& label) {
+  current.expect(Type::Group, read_key());
+  args_.apply(current);
+
+  auto parent = current.parent();
+  assert(parent && parent.type() == Type::Tabs);
+  auto& tabs = parent.tabs();
+
+  size_t index = tabs.labels.size();
+  tabs.labels.push_back(label);
+  if (tabs.tab == index) {
+    current.state().hidden = false;
+    move_down();
+    return true;
+  }
+  current.state().hidden = true;
+  current = current.next();
+  return false;
+}
 
 const std::string* Gui::text_input(const std::string& initial_value) {
   bool is_new = current.expect(Type::TextInput, read_key());
