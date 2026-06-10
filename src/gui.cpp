@@ -170,6 +170,14 @@ bool Gui::color_picker_v(Color& value) {
   args_.apply(current);
   current = current.next();
 
+  if (color_picker.modified) {
+    if (color_picker.always) {
+      value = color_picker.value;
+      return true;
+    } else {
+      return false;
+    }
+  }
   if (color_picker.changed) {
     color_picker.changed = false;
     value = color_picker.value;
