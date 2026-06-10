@@ -17,22 +17,22 @@ int main() {
       DATAGUI_SCOPE(gui);
       gui.text_box("Welcome Screen!");
 
-      auto name = gui.variable<std::string>("");
+      auto& name = gui.variable<std::string>("");
 
       gui.group();
       {
         DATAGUI_SCOPE(gui);
         gui.text_box("Name: ");
-        gui.text_input_v(*name);
+        gui.text_input_v(name);
       }
       if (auto value = gui.checkbox(false)) {
         std::cout << "Checked: " << *value << std::endl;
       };
 
-      if (name->empty()) {
+      if (name.empty()) {
         gui.text_box("Hello... what is your name?");
       } else {
-        gui.text_box("Hello " + *name);
+        gui.text_box("Hello " + name);
       }
 
       gui.args().height_fixed(100).border();
@@ -62,7 +62,6 @@ int main() {
         DATAGUI_SCOPE(gui);
         gui.text_box("Paused");
         gui.checkbox_v(timer_paused);
-        // printf("Timer paused: %s\n", timer_paused ? "true" : "false");
       }
 
       if (gui.collapsable("Open me")) {

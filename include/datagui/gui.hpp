@@ -123,7 +123,7 @@ public:
   void text_box(const std::string& text);
 
   template <typename T>
-  Var<T> variable(const T& initial_value = T()) {
+  T& variable(const T& initial_value = T()) {
     if (!var_current.valid()) {
       if (stack.empty()) {
         var_current = tree.var();
@@ -134,16 +134,16 @@ public:
     if (!var_current) {
       Var<T> result = var_current.create<T>(initial_value);
       var_current = var_current.next();
-      return result;
+      return *result;
     } else {
       Var<T> result = var_current.as<T>();
       var_current = var_current.next();
-      return result;
+      return *result;
     }
   }
 
   template <typename T>
-  Var<T> variable(const std::function<T()>& construct) {
+  T& variable(const std::function<T()>& construct) {
     if (!var_current.valid()) {
       if (stack.empty()) {
         var_current = tree.var();
@@ -154,11 +154,11 @@ public:
     if (!var_current) {
       Var<T> result = var_current.create<T>(construct());
       var_current = var_current.next();
-      return result;
+      return *result;
     } else {
       Var<T> result = var_current.as<T>();
       var_current = var_current.next();
-      return result;
+      return *result;
     }
   }
 
