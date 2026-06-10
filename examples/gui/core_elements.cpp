@@ -40,7 +40,7 @@ int main() {
     {
       DATAGUI_SCOPE(gui);
       for (std::size_t i = 0; i < 10; i++) {
-        gui.text_input("Item " + std::to_string(i));
+        std::ignore = gui.text_input("Item " + std::to_string(i));
       }
     }
 
@@ -72,7 +72,7 @@ int main() {
       {
         DATAGUI_SCOPE(gui);
         gui.text_box("Input");
-        gui.text_input("");
+        std::ignore = gui.text_input("");
       }
     }
 

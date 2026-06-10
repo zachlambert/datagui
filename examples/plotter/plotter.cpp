@@ -19,90 +19,94 @@ int main() {
   float a = 1;
   float b = 1;
 
-  while (gui.running()) {
-    if (gui.group()) {
-      if (gui.vsplit(0.5)) {
-        if (gui.group()) {
-          if (auto plotter = gui.plotter(400, 400)) {
-            gui.retrigger();
+  while (gui.poll()) {
+    gui.vsplit(0.5);
+    DATAGUI_SCOPE(gui);
 
-            auto now = std::chrono::high_resolution_clock::now();
-            float dt =
-                std::chrono::duration_cast<std::chrono::nanoseconds>(now - prev)
-                    .count() *
-                1e-9;
-            prev = now;
-            if (!paused) {
-              t += dt;
-            }
+    gui.group();
+    {
+      DATAGUI_SCOPE(gui);
 
-            std::vector<Vec2> a, b, c, d, e, f;
-            for (float dt = 0; dt < T; dt += T / N) {
-              a.push_back({t + dt, std::sin(freq * (t + dt))});
-              b.push_back({t + dt, std::sin(freq * (t + dt) + 1 * M_PIf / 3)});
-              c.push_back({t + dt, std::sin(freq * (t + dt) + 2 * M_PIf / 3)});
-              d.push_back({t + dt, std::sin(freq * (t + dt) + 3 * M_PIf / 3)});
-              e.push_back({t + dt, std::sin(freq * (t + dt) + 4 * M_PIf / 3)});
-              f.push_back({t + dt, std::sin(freq * (t + dt) + 5 * M_PIf / 3)});
-            }
+      auto& plotter = gui.plotter(400, 400);
+      {
+        DATAGUI_SCOPE(gui);
 
-            plotter->title("Sine Waves");
-            plotter->xlabel("Time");
-            plotter->ylabel("Value");
-
-            plotter->plot(a).line_solid(6).label("a");
-            plotter->plot(b).label("b").marker_circle();
-            plotter->plot(c).label("c").marker_cross();
-            plotter->plot(d).label("d").line_dashed();
-            plotter->plot(e).label("e").line_dashed();
-            plotter->plot(f).label("f").no_line().marker_cross();
-            gui.end();
-          }
-          gui.args().grid(-1, 2);
-          if (gui.group()) {
-            gui.text_box("Paused");
-            gui.checkbox(paused);
-
-            gui.text_box("Frequency");
-            gui.args().always();
-            gui.slider(freq, 1.f, 10.f);
-
-            gui.text_box("Time horizon");
-            gui.args().always();
-            gui.slider(T, 0.1f, 10.f);
-
-            gui.end();
-          }
-          gui.end();
+        auto now = std::chrono::high_resolution_clock::now();
+        float dt =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(now - prev)
+                .count() *
+            1e-9;
+        prev = now;
+        if (!paused) {
+          t += dt;
         }
-        if (gui.group()) {
-          if (auto plotter = gui.plotter(400, 400)) {
-            gui.retrigger();
-            auto f = [&](const Vec2& pos) {
-              return std::exp(-pos.x * a) * std::sin(b * 2 * M_PIf * pos.y);
-            };
-            plotter->title("exp(-ax) *sin(2{pi}by)");
-            plotter->heatmap(Vec2(0, -1), Vec2(2, 1), f, 100, 100);
-            gui.end();
-          }
-          gui.args().grid(-1, 2);
-          if (gui.group()) {
-            gui.text_box("a");
-            gui.args().always();
-            gui.slider(a, 0.2f, 2.f);
 
-            gui.text_box("b");
-            gui.args().always();
-            gui.slider(b, 0.2f, 2.f);
-
-            gui.end();
-          }
-          gui.end();
+        std::vector<Vec2> a, b, c, d, e, f;
+        for (float dt = 0; dt < T; dt += T / N) {
+          a.push_back({t + dt, std::sin(freq * (t + dt))});
+          b.push_back({t + dt, std::sin(freq * (t + dt) + 1 * M_PIf / 3)});
+          c.push_back({t + dt, std::sin(freq * (t + dt) + 2 * M_PIf / 3)});
+          d.push_back({t + dt, std::sin(freq * (t + dt) + 3 * M_PIf / 3)});
+          e.push_back({t + dt, std::sin(freq * (t + dt) + 4 * M_PIf / 3)});
+          f.push_back({t + dt, std::sin(freq * (t + dt) + 5 * M_PIf / 3)});
         }
-        gui.end();
+
+        plotter.title("Sine Waves");
+        plotter.xlabel("Time");
+        plotter.ylabel("Value");
+
+        plotter.plot(a).line_solid(6).label("a");
+        plotter.plot(b).label("b").marker_circle();
+        plotter.plot(c).label("c").marker_cross();
+        plotter.plot(d).label("d").line_dashed();
+        plotter.plot(e).label("e").line_dashed();
+        plotter.plot(f).label("f").no_line().marker_cross();
       }
-      gui.end();
+
+      gui.args().grid(-1, 2);
+      gui.group();
+      {
+        DATAGUI_SCOPE(gui);
+        gui.text_box("Paused");
+        gui.checkbox_v(paused);
+
+        gui.text_box("Frequency");
+        gui.args().always();
+        gui.slider_v(freq, 1.f, 10.f);
+
+        gui.text_box("Time horizon");
+        gui.args().always();
+        gui.slider_v(T, 0.1f, 10.f);
+      }
     }
-    gui.poll();
+
+    gui.group();
+    {
+      DATAGUI_SCOPE(gui);
+
+      auto& plotter = gui.plotter(400, 400);
+      {
+        DATAGUI_SCOPE(gui);
+        auto f = [&](const Vec2& pos) {
+          return std::exp(-pos.x * a) * std::sin(b * 2 * M_PIf * pos.y);
+        };
+        plotter.title("exp(-ax) *sin(2{pi}by)");
+        plotter.heatmap(Vec2(0, -1), Vec2(2, 1), f, 100, 100);
+      }
+
+      gui.args().grid(-1, 2);
+      gui.group();
+      {
+        DATAGUI_SCOPE(gui);
+
+        gui.text_box("a");
+        gui.args().always();
+        gui.slider_v(a, 0.2f, 2.f);
+
+        gui.text_box("b");
+        gui.args().always();
+        gui.slider_v(b, 0.2f, 2.f);
+      }
+    }
   }
 }

@@ -78,29 +78,29 @@ public:
 
   // Elements
 
-  bool button(const std::string& text);
+  [[nodiscard]] bool button(const std::string& text);
 
-  std::optional<bool> checkbox(bool initial_value);
+  [[nodiscard]] std::optional<bool> checkbox(bool initial_value);
   bool checkbox_v(bool& value);
 
   bool collapsable(const std::string& label);
 
-  std::optional<Color> color_picker(const Color& initial_value);
+  [[nodiscard]] std::optional<Color> color_picker(const Color& initial_value);
   bool color_picker_v(Color& value);
 
-  bool dropdown(const std::string& label);
+  [[nodiscard]] bool dropdown(const std::string& label);
 
   void group();
 
-  bool popup(bool& open, const std::string& title, float width, float height);
+  [[nodiscard]] bool popup(bool& open, const std::string& title, float width, float height);
 
-  std::optional<int> select(
+  [[nodiscard]] std::optional<int> select(
       int initial_choice,
       const std::vector<std::string>& choices);
   bool select_v(int& choice, const std::vector<std::string>& choices);
 
   template <typename T>
-  std::optional<T> slider(T initial_value, T lower, T upper);
+  [[nodiscard]] std::optional<T> slider(T initial_value, T lower, T upper);
   template <typename T>
   bool slider_v(T& value, T lower, T upper);
 
@@ -108,13 +108,13 @@ public:
   void vsplit(float ratio);
 
   void tabs(size_t initial_tab = 0);
-  bool tab_group(const std::string& label);
+  [[nodiscard]] bool tab_group(const std::string& label);
 
-  const std::string* text_input(const std::string& initial_value);
+  [[nodiscard]] const std::string* text_input(const std::string& initial_value);
   bool text_input_v(std::string& value);
 
   template <typename T>
-  std::optional<T> number_input(T initial_value);
+  [[nodiscard]] std::optional<T> number_input(T initial_value);
   template <typename T>
   bool number_input_v(T& value);
 
