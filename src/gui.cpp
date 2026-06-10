@@ -115,7 +115,7 @@ std::optional<bool> Gui::checkbox(bool initial_value) {
 
   if (checkbox.changed) {
     checkbox.changed = false;
-    return &checkbox.checked;
+    return checkbox.checked;
   }
   return std::nullopt;
 }
@@ -249,11 +249,15 @@ std::optional<int> Gui::select(
   if (is_new) {
     select.choice = initial_choice;
   }
+  select.choices = choices;
+  if (select.choice >= choices.size()) {
+    select.choice = std::max(1ul, choices.size()) - 1;
+  }
   args_.apply(current);
   current = current.next();
 
   if (select.changed) {
-    select.changed = true;
+    select.changed = false;
     return select.choice;
   }
   return std::nullopt;

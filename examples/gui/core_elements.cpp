@@ -5,26 +5,29 @@
 int main() {
   datagui::Gui gui;
 
-  auto timer = gui.variable<int>(0);
+  int timer = 0;
+  bool timer_paused = false;
+
   using clock_t = std::chrono::high_resolution_clock;
   auto next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
 
-  auto timer_paused = gui.variable<bool>(false);
-
   while (gui.running()) {
-    if (gui.group()) {
+    gui.group();
+    {
+      DATAGUI_SCOPE(gui);
       gui.text_box("Welcome Screen!");
 
       auto name = gui.variable<std::string>("");
 
-      if (gui.group()) {
+      gui.group();
+      {
+        DATAGUI_SCOPE(gui);
         gui.text_box("Name: ");
-        gui.text_input(name);
-        gui.end();
+        gui.text_input_v(*name);
       }
-      gui.checkbox(false, [](bool value) {
-        std::cout << "Checked: " << value << std::endl;
-      });
+      if (auto value = gui.checkbox(false)) {
+        std::cout << "Checked: " << *value << std::endl;
+      };
 
       if (name->empty()) {
         gui.text_box("Hello... what is your name?");
@@ -33,50 +36,52 @@ int main() {
       }
 
       gui.args().height_fixed(100).border();
-      if (gui.group()) {
+      gui.group();
+      {
+        DATAGUI_SCOPE(gui);
         for (std::size_t i = 0; i < 10; i++) {
-          gui.text_input("Item " + std::to_string(i), {});
+          gui.text_input("Item " + std::to_string(i));
         }
-        gui.end();
       }
 
       const std::vector<std::string> colors = {"red", "green", "blue"};
-      gui.select(colors, 0, [colors](int choice) {
-        std::cout << "Selected " << colors[choice] << "!" << std::endl;
-      });
+      if (auto choice = gui.select(0, colors)) {
+        std::cout << "Selected " << colors[*choice] << "!" << std::endl;
+      };
 
-      gui.text_box("Timer: " + std::to_string(*timer));
+      gui.text_box("Timer: " + std::to_string(timer));
 
-      gui.button("Reset", [&]() {
-        timer.set(0);
+      if (gui.button("Reset")) {
+        timer = 0;
         next_t = clock_t::now() + clock_t::duration(std::chrono::seconds(1));
-      });
+      }
 
       gui.args().horizontal();
-      if (gui.group()) {
+      gui.group();
+      {
+        DATAGUI_SCOPE(gui);
         gui.text_box("Paused");
-        gui.checkbox(timer_paused);
-        gui.end();
+        gui.checkbox_v(timer_paused);
+        // printf("Timer paused: %s\n", timer_paused ? "true" : "false");
       }
 
       if (gui.collapsable("Open me")) {
+        DATAGUI_SCOPE(gui);
         gui.text_box("Hello :)");
         gui.args().horizontal();
-        if (gui.group()) {
+        gui.group();
+        {
+          DATAGUI_SCOPE(gui);
           gui.text_box("Input");
-          gui.text_input("", {});
-          gui.end();
+          gui.text_input("");
         }
-        gui.end();
       }
-
-      gui.end();
     }
     gui.poll();
 
     if (clock_t::now() > next_t) {
-      if (!*timer_paused) {
-        timer.set(*timer + 1);
+      if (!timer_paused) {
+        timer += 1;
       }
       next_t += clock_t::duration(std::chrono::seconds(1));
     }

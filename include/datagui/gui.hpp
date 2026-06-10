@@ -41,6 +41,30 @@ public:
 
   void end();
 
+  class DeferEnd {
+  public:
+    ~DeferEnd() {
+      if (gui) {
+        gui->end();
+        gui = nullptr;
+      }
+    }
+    DeferEnd(DeferEnd&& other) : gui(other.gui) {
+      other.gui = nullptr;
+    }
+    DeferEnd(const DeferEnd&) = delete;
+    DeferEnd& operator=(const DeferEnd&) = delete;
+    DeferEnd& operator=(DeferEnd&&) = delete;
+
+  private:
+    DeferEnd(Gui* gui) : gui(gui) {}
+    Gui* gui;
+    friend class Gui;
+  };
+  [[nodiscard]] DeferEnd defer_end() {
+    return DeferEnd(this);
+  }
+
   // Key and dependencies
 
   void key(std::size_t key) {
@@ -326,5 +350,7 @@ private:
     return system(element).focus_tree_leave(element);
   }
 };
+
+#define DATAGUI_SCOPE(gui_name) auto defer_end = gui_name.defer_end()
 
 } // namespace datagui

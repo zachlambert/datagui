@@ -5,8 +5,8 @@ function(create_example directory name)
 endfunction()
 
 
-# create_example(gui basic)
-# create_example(gui core_elements)
+create_example(gui basic)
+create_example(gui core_elements)
 # create_example(gui extra_inputs)
 # create_example(gui lists)
 # create_example(gui popups)
