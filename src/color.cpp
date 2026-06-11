@@ -102,7 +102,7 @@ Color Color::Random() {
 }
 
 bool Color::equals(const Color& other, float max_error) const {
-  float error = 1;
+  float error = 0;
   error = std::max(error, std::abs(r - other.r));
   error = std::max(error, std::abs(g - other.g));
   error = std::max(error, std::abs(b - other.b));

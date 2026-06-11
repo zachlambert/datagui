@@ -249,7 +249,8 @@ std::optional<int> Gui::select(
     select.choice = initial_choice;
   }
   select.choices = choices;
-  if (select.choice >= choices.size()) {
+  if (select.choice >= 0 &&
+      static_cast<size_t>(select.choice) >= choices.size()) {
     select.choice = std::max(1ul, choices.size()) - 1;
   }
   args_.apply(current);
@@ -269,7 +270,7 @@ bool Gui::select_v(int& choice, const std::vector<std::string>& choices) {
   current = current.next();
 
   if (select.changed) {
-    select.changed = true;
+    select.changed = false;
     choice = select.choice;
     return true;
   } else {

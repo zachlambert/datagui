@@ -55,7 +55,7 @@ struct Checkbox {
 struct Collapsable {
   // Args
   Layout layout;
-  Length width = LengthDynamic(1);
+  Length width = LengthWrap();
   Length height = LengthWrap();
   std::string label;
   std::optional<Color> header_color;
@@ -107,7 +107,7 @@ struct Dropdown {
 struct Group {
   // Args
   Layout layout;
-  Length width = LengthDynamic(1);
+  Length width = LengthWrap();
   Length height = LengthWrap();
   std::optional<Color> bg_color;
   bool border = false;

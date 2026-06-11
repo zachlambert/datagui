@@ -90,10 +90,10 @@ public:
 
   public:
     T& operator*() const {
-      return (*parent)[index];
+      return (*parent)[static_cast<int>(index)];
     }
     T* operator->() const {
-      return &(*parent)[index];
+      return &(*parent)[static_cast<int>(index)];
     }
 
     Iterator_& operator++() {
@@ -114,15 +114,25 @@ public:
       return lhs.index == rhs.index;
     }
 
+    template <
+        bool OtherConst,
+        typename = std::enable_if_t<Const || !OtherConst>>
+    Iterator_(const Iterator_<OtherConst>& other) :
+        parent(other.parent), index(other.index) {}
+
   private:
-    Iterator_(parent_t parent, int index) : parent(parent), index(index) {
+    Iterator_(parent_t parent, std::size_t index) :
+        parent(parent), index(index) {
       while (index < parent->data_size && !parent->valid[index]) {
         index++;
       }
     }
     parent_t parent;
-    int index;
+    std::size_t index;
     friend class VectorMap;
+
+    template <bool OtherConst>
+    friend class Iterator_;
   };
   using ConstIterator = Iterator_<true>;
   using Iterator = Iterator_<false>;
@@ -137,17 +147,17 @@ public:
   Iterator end() {
     return Iterator(this, data_size);
   }
-  Iterator begin() const {
+  ConstIterator begin() const {
     return const_cast<VectorMap<T>*>(this)->begin();
   }
-  Iterator end() const {
+  ConstIterator end() const {
     return ConstIterator(this, data_size);
   }
-  Iterator cbegin() {
-    return ConstIterator(begin());
+  ConstIterator cbegin() {
+    return begin();
   }
-  Iterator cend() {
-    return ConstIterator(this, data_size);
+  ConstIterator cend() {
+    return end();
   }
 
 private:
@@ -233,7 +243,7 @@ private:
     if (other.data) {
       data_size = other.data_size;
       data_capacity = other.data_capacity;
-      data = (T*)malloc(data_capacity);
+      data = (T*)malloc(data_capacity * sizeof(T));
       copy_data(other.data, data, data_size);
     }
 
@@ -256,7 +266,7 @@ private:
         other.data = nullptr;
       }
       if constexpr (!std::is_trivially_move_constructible_v<T>) {
-        data = (T*)malloc(sizeof(data_capacity));
+        data = (T*)malloc(sizeof(T) * data_capacity);
         move_data(other.data, data, data_size);
         other.data = nullptr;
       }

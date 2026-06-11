@@ -97,6 +97,7 @@ int main() {
       value = Foo();
     }
 
+    gui.args().text_size(20).text_color(datagui::Color::Blue());
     gui.text_box("Edit Foo List");
     if (auto value = gui.edit<std::vector<Foo>>("foo list")) {
       std::cout << dpack::debug(*value) << std::endl;

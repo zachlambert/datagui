@@ -175,7 +175,7 @@ void layout_set_dependent_state(
     float size = content_box.size().y;
     float content_size = state.content_fixed_size.y;
     float available = std::max(size - content_size, 0.f);
-    float dynamic_size = state.content_dynamic_size.x;
+    float dynamic_size = state.content_dynamic_size.y;
     state.content_overrun.y = std::max(content_size - size, 0.f);
 
     for (std::size_t i = 0; i < row_sizes.size(); i++) {
