@@ -20,15 +20,15 @@ struct Circle {
 
 using Shape = std::variant<Point, Circle>;
 
-namespace datapack {
+namespace dpack {
 
-DATAPACK_INLINE(Point, x, y)
-DATAPACK_INLINE(Circle, x, y, r)
+DPACK_INLINE(Point, x, y)
+DPACK_INLINE(Circle, x, y, r)
 
-DATAPACK_LABELLED_VARIANT(Shape, 2);
-DATAPACK_LABELLED_VARIANT_DEF(Shape) = {"Point", "Circle"};
+DPACK_LABELLED_VARIANT(Shape, 2);
+DPACK_LABELLED_VARIANT_DEF(Shape) = {"Point", "Circle"};
 
-} // namespace datapack
+} // namespace dpack
 
 int main() {
   datagui::Gui gui;
@@ -36,18 +36,16 @@ int main() {
   Shape shape;
 
   int revisit = 0;
-  while (gui.running()) {
+  while (gui.poll()) {
     gui.args().width_expand();
-    if (gui.group()) {
-      auto points = gui.variable<std::vector<Point>>();
-      gui.edit("Points", points);
+    gui.group();
+    DATAGUI_SCOPE(gui);
 
-      auto shape = gui.variable<Shape>();
-      gui.edit("Shape", shape);
+    auto points = gui.variable<std::vector<Point>>();
+    gui.edit("Points", points);
 
-      gui.end();
-    }
-    gui.poll();
+    auto shape = gui.variable<Shape>();
+    gui.edit("Shape", shape);
   }
   return 0;
 }

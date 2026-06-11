@@ -123,7 +123,6 @@ void TextInputSystem::key_event(ElementPtr element, const KeyEvent& event) {
             std::min(active_selection.begin, active_text.size()));
         return;
       }
-      printf("key_event: Set to %s\n", active_text.c_str());
       text_input.text = active_text;
       text_input.changed = true;
     }
@@ -190,7 +189,6 @@ void TextInputSystem::focus_enter(ElementPtr element) {
 
   active_selection.reset(0);
   active_text = text_input.text;
-  printf("Focus enter: %s\n", active_text.c_str());
 }
 
 void TextInputSystem::focus_leave(ElementPtr element, bool success) {
@@ -200,7 +198,6 @@ void TextInputSystem::focus_leave(ElementPtr element, bool success) {
         !valid_text_to_number(*text_input.number_type, active_text)) {
       return;
     }
-    printf("focus_leave: Set to %s\n", active_text.c_str());
     text_input.text = active_text;
     text_input.changed = true;
   }
