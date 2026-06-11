@@ -1,6 +1,6 @@
 #include "datagui/datapack/common.hpp"
 
-namespace datagui {
+namespace dgui {
 
 NumberType convert_type(dpack::NumberType type) {
   switch (type) {
@@ -22,4 +22,4 @@ NumberType convert_type(dpack::NumberType type) {
   return NumberType::I32; // Unreachable
 }
 
-} // namespace datagui
+} // namespace dgui

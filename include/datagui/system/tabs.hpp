@@ -3,7 +3,7 @@
 #include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
 
-namespace datagui {
+namespace dgui {
 
 class TabsSystem : public System {
 public:
@@ -20,4 +20,4 @@ private:
   std::shared_ptr<Theme> theme;
 };
 
-} // namespace datagui
+} // namespace dgui

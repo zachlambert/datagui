@@ -2,7 +2,7 @@
 #include <datagui/visual/window.hpp>
 
 int main() {
-  using namespace datagui;
+  using namespace dgui;
 
   Window window;
   Text2dShader shader;

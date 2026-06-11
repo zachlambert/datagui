@@ -4,7 +4,7 @@
 #include "datagui/theme.hpp"
 #include "datagui/visual/gui_renderer.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void layout_set_input_state(
     ElementPtr element,
@@ -30,4 +30,4 @@ bool layout_scroll_event(
     LayoutState& state,
     const ScrollEvent& event);
 
-} // namespace datagui
+} // namespace dgui

@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <sstream>
 
-namespace datagui {
+namespace dgui {
 
 // Matplotlib colors
 std::vector<Color> default_plot_colors = {
@@ -326,7 +326,7 @@ void Plotter::queue_commands() {
   auto plot_marker = [&](const Vec2& point, const PlotArgs& args) {
     Vec2 position = to_plot_position(point);
     switch (args.marker_style) {
-    case datagui::PlotMarkerStyle::Circle:
+    case dgui::PlotMarkerStyle::Circle:
       plot_shape_shader.queue_circle(
           position,
           args.marker_width / 2,
@@ -334,7 +334,7 @@ void Plotter::queue_commands() {
           0,
           Color::Black());
       break;
-    case datagui::PlotMarkerStyle::Cross: {
+    case dgui::PlotMarkerStyle::Cross: {
       Vec2 delta_up(args.marker_width / 2, args.marker_width / 2);
       Vec2 delta_down(args.marker_width / 2, -args.marker_width / 2);
       plot_shape_shader.queue_line(
@@ -360,11 +360,11 @@ void Plotter::queue_commands() {
         float ab_length = (position_b - position_a).length();
         Vec2 dir = (position_b - position_a) / ab_length;
         switch (args.line_style) {
-        case datagui::PlotLineStyle::Solid:
+        case dgui::PlotLineStyle::Solid:
           plot_shape_shader
               .queue_line(position_a, position_b, args.line_width, args.color);
           break;
-        case datagui::PlotLineStyle::Dashed: {
+        case dgui::PlotLineStyle::Dashed: {
           const float resolution = 20;
           float s1 = -std::fmod(length, resolution);
           while (s1 < ab_length) {
@@ -758,4 +758,4 @@ std::tuple<std::string, std::vector<Plotter::Tick>> Plotter::get_ticks(
   return std::make_tuple(power_label, ticks);
 }
 
-} // namespace datagui
+} // namespace dgui

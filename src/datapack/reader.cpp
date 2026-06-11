@@ -3,7 +3,7 @@
 #include <charconv>
 #include <datapack/encode/base64.hpp>
 
-namespace datagui {
+namespace dgui {
 
 template <typename T>
 T number_from_string(const std::string& string) {
@@ -549,4 +549,4 @@ bool GuiReader::peek_changed(ConstElementPtr root) {
   return false;
 }
 
-} // namespace datagui
+} // namespace dgui

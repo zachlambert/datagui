@@ -1,6 +1,6 @@
 #include "datagui/theme.hpp"
 
-namespace datagui {
+namespace dgui {
 
 Theme theme_default() {
   Theme theme;
@@ -58,4 +58,4 @@ Theme theme_default() {
   return theme;
 }
 
-} // namespace datagui
+} // namespace dgui

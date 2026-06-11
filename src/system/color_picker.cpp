@@ -1,6 +1,6 @@
 #include "datagui/system/color_picker.hpp"
 
-namespace datagui {
+namespace dgui {
 
 ColorPickerSystem::ColorPickerSystem(
     std::shared_ptr<FontManager> fm,
@@ -219,4 +219,4 @@ void ColorPickerSystem::focus_tree_leave(ElementPtr element) {
   color_picker.open = false;
 }
 
-} // namespace datagui
+} // namespace dgui

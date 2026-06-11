@@ -4,7 +4,7 @@
 #include "datagui/visual/font_manager.hpp"
 #include "datagui/visual/gui_renderer.hpp"
 
-namespace datagui {
+namespace dgui {
 
 enum class EditType { Text, I32, I64, U32, U64, F32, F64, U8 };
 
@@ -90,4 +90,4 @@ void render_selection(
     Length width,
     GuiRenderer& renderer);
 
-} // namespace datagui
+} // namespace dgui

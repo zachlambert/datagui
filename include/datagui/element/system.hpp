@@ -5,7 +5,7 @@
 #include "datagui/input/event.hpp"
 #include "datagui/visual/gui_renderer.hpp"
 
-namespace datagui {
+namespace dgui {
 
 class System {
 public:
@@ -31,4 +31,4 @@ public:
   virtual void focus_tree_leave(ElementPtr element) {}
 };
 
-} // namespace datagui
+} // namespace dgui

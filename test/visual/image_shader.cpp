@@ -2,12 +2,12 @@
 #include <datagui/visual/image_shader.hpp>
 #include <datagui/visual/window.hpp>
 
-datagui::Image make_image(
+dgui::Image make_image(
     std::size_t w,
     std::size_t h,
-    datagui::Vec2 n,
-    const datagui::Color& a,
-    const datagui::Color& b) {
+    dgui::Vec2 n,
+    const dgui::Color& a,
+    const dgui::Color& b) {
   n /= n.length();
 
   struct Pixel {
@@ -19,7 +19,7 @@ datagui::Image make_image(
   float half_height = float(h) / 2;
   for (std::size_t i = 0; i < h; i++) {
     for (std::size_t j = 0; j < w; j++) {
-      datagui::Vec2 pos;
+      dgui::Vec2 pos;
       pos.x = (j - half_width) / half_width;
       pos.y = (i - half_height) / half_height;
 
@@ -32,13 +32,13 @@ datagui::Image make_image(
     }
   }
 
-  datagui::Image image;
+  dgui::Image image;
   image.load(w, h, pixels.data());
   return image;
 }
 
 int main() {
-  using namespace datagui;
+  using namespace dgui;
 
   Window window;
   ImageShader shader;

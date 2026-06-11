@@ -90,7 +90,7 @@ target_include_directories(datagui PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  target_compile_definitions(datagui PUBLIC -DDATAGUI_DEBUG)
+  target_compile_definitions(datagui PUBLIC -DDGUI_DEBUG)
 endif()
 
 # Additional targets

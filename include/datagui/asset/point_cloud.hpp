@@ -4,7 +4,7 @@
 #include "datagui/geometry/vec.hpp"
 #include <memory>
 
-namespace datagui {
+namespace dgui {
 
 class PointCloud {
 public:
@@ -52,4 +52,4 @@ private:
   friend class PointCloudShader;
 };
 
-} // namespace datagui
+} // namespace dgui

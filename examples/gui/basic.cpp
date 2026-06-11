@@ -2,11 +2,11 @@
 #include <iostream>
 
 int main() {
-  datagui::Gui gui;
+  dgui::Gui gui;
 
   while (gui.poll()) {
     gui.group();
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     gui.text_box("Hello");
     if (gui.button("Click Me")) {

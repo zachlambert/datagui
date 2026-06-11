@@ -1,8 +1,8 @@
 #include "datagui/geometry/vec.hpp"
 
-namespace datagui {
+namespace dgui {
 
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
 
 std::ostream& operator<<(std::ostream& os, const Vec2& vec) {
   os << "[ " << vec.x << ", " << vec.y << " ]";
@@ -16,4 +16,4 @@ std::ostream& operator<<(std::ostream& os, const Vec3& vec) {
 
 #endif
 
-} // namespace datagui
+} // namespace dgui

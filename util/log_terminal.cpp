@@ -71,7 +71,7 @@ static int get_server_sockfd(const char* port) {
 }
 
 int main() {
-  int listener_fd = get_server_sockfd(datagui::log_port);
+  int listener_fd = get_server_sockfd(dgui::log_port);
   if (listener_fd == -1) {
     fprintf(stderr, "Failed to create server socket\n");
     return 1;

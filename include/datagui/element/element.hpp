@@ -10,7 +10,7 @@
 #include <optional>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 enum class Type {
   Button,
@@ -229,4 +229,4 @@ struct ViewportPtr {
   std::unique_ptr<Viewport> viewport;
 };
 
-} // namespace datagui
+} // namespace dgui

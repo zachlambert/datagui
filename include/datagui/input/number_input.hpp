@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 
-namespace datagui {
+namespace dgui {
 
 enum class NumberType { I32, I64, U32, U64, F32, F64, U8 };
 
@@ -36,4 +36,4 @@ bool text_to_number(const std::string& text, T& value);
 
 bool valid_text_to_number(NumberType type, const std::string& text);
 
-} // namespace datagui
+} // namespace dgui

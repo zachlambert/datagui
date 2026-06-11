@@ -1,5 +1,5 @@
 #include "datagui/log.hpp"
-#ifdef DATAGUI_LOG
+#ifdef DGUI_LOG
 
 #include <algorithm>
 #include <arpa/inet.h>
@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 static bool log_init_called = false;
 static int socket_fd = -1;
@@ -193,6 +193,6 @@ void log_indent(int change) {
   assert(indent >= 0);
 }
 
-} // namespace datagui
+} // namespace dgui
 
 #endif

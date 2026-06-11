@@ -3,7 +3,7 @@
 #include <iostream>
 
 int main() {
-  datagui::Gui gui;
+  dgui::Gui gui;
 
   int timer = 0;
   bool timer_paused = false;
@@ -13,7 +13,7 @@ int main() {
 
   while (gui.poll()) {
     gui.group();
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     gui.text_box("Welcome Screen!");
 
@@ -21,7 +21,7 @@ int main() {
 
     gui.group();
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
       gui.text_box("Name: ");
       gui.text_input_v(name);
     }
@@ -38,7 +38,7 @@ int main() {
     gui.args().height_fixed(100).border();
     gui.group();
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
       for (std::size_t i = 0; i < 10; i++) {
         std::ignore = gui.text_input("Item " + std::to_string(i));
       }
@@ -59,18 +59,18 @@ int main() {
     gui.args().horizontal();
     gui.group();
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
       gui.text_box("Paused");
       gui.checkbox_v(timer_paused);
     }
 
     if (gui.collapsable("Open me")) {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
       gui.text_box("Hello :)");
       gui.args().horizontal();
       gui.group();
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         gui.text_box("Input");
         std::ignore = gui.text_input("");
       }

@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 TEST(Tree, CreateElements) {
-  using namespace datagui;
+  using namespace dgui;
 
   Tree tree;
 

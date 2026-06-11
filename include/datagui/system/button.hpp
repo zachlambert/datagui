@@ -4,7 +4,7 @@
 #include "datagui/theme.hpp"
 #include <assert.h>
 
-namespace datagui {
+namespace dgui {
 
 class ButtonSystem : public System {
 public:
@@ -21,4 +21,4 @@ private:
   std::shared_ptr<Theme> theme;
 };
 
-} // namespace datagui
+} // namespace dgui

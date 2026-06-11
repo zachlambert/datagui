@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <initializer_list>
 
-namespace datagui {
+namespace dgui {
 
 class Rot3;
 
@@ -219,10 +219,10 @@ inline Mat4 operator*(const Mat4& lhs, const Mat4& rhs) {
   return result;
 }
 
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
 std::ostream& operator<<(std::ostream& os, const Mat2& mat);
 std::ostream& operator<<(std::ostream& os, const Mat3& mat);
 std::ostream& operator<<(std::ostream& os, const Mat4& mat);
 #endif
 
-} // namespace datagui
+} // namespace dgui

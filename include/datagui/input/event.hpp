@@ -2,7 +2,7 @@
 
 #include "datagui/geometry.hpp"
 
-namespace datagui {
+namespace dgui {
 
 enum class MouseButton { Left, Middle, Right };
 static constexpr std::size_t MouseButtonSize = 3;
@@ -83,4 +83,4 @@ struct TextEvent {
   char value;
 };
 
-} // namespace datagui
+} // namespace dgui

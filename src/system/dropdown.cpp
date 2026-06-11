@@ -1,7 +1,7 @@
 #include "datagui/system/dropdown.hpp"
 #include "datagui/system_utils/layout.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void DropdownSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -115,4 +115,4 @@ void DropdownSystem::focus_tree_leave(ElementPtr element) {
   dropdown.open = false;
 }
 
-} // namespace datagui
+} // namespace dgui

@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <string>
 
-namespace datagui {
+namespace dgui {
 
 const static std::string vertex_shader = R"(
 #version 330 core
@@ -232,4 +232,4 @@ void Text2dShader::clear() {
   char_lists.clear();
 }
 
-} // namespace datagui
+} // namespace dgui

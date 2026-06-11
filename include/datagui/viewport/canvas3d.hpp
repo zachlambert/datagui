@@ -7,7 +7,7 @@
 #include "datagui/visual/uv_mesh_shader.hpp"
 #include <functional>
 
-namespace datagui {
+namespace dgui {
 
 class Canvas3d : public Viewport {
 public:
@@ -114,4 +114,4 @@ private:
   std::function<void(const MouseEvent& event)> click_callback_;
 };
 
-} // namespace datagui
+} // namespace dgui

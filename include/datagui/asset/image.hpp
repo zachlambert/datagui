@@ -2,7 +2,7 @@
 
 #include <memory>
 
-namespace datagui {
+namespace dgui {
 
 class Image {
 public:
@@ -31,4 +31,4 @@ private:
   friend class ImageShader;
 };
 
-} // namespace datagui
+} // namespace dgui

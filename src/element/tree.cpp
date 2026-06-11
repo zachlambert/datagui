@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <stack>
 
-namespace datagui {
+namespace dgui {
 
 int Tree::create_element(int parent, int prev, std::size_t id, Type type) {
   int element = elements.emplace();
@@ -186,4 +186,4 @@ void Tree::clear_variables(int element) {
   elements[element].first_variable = -1;
 }
 
-} // namespace datagui
+} // namespace dgui

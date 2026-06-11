@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 Mesh::Data::~Data() {
   if (VAO > 0) {
@@ -134,4 +134,4 @@ void Mesh::load_indices(
   data->index_count = num_indices;
 }
 
-} // namespace datagui
+} // namespace dgui

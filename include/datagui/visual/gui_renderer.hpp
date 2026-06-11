@@ -9,7 +9,7 @@
 #include <memory>
 #include <stack>
 
-namespace datagui {
+namespace dgui {
 
 class GuiRenderer {
 public:
@@ -55,4 +55,4 @@ private:
   std::stack<Box2> masks;
 };
 
-} // namespace datagui
+} // namespace dgui

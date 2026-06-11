@@ -2,7 +2,7 @@
 #include <iostream>
 
 int main() {
-  datagui::Gui gui;
+  dgui::Gui gui;
 
   std::vector<std::string> choices;
   for (std::size_t i = 0; i < 20; i++) {
@@ -11,7 +11,7 @@ int main() {
 
   while (gui.poll()) {
     gui.group();
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     auto& window_1_open = gui.variable<bool>(false);
     if (gui.button("Open window 1 (retained)")) {
@@ -19,9 +19,9 @@ int main() {
     }
 
     // Retained when closing
-    gui.args().bg_color(datagui::Color::Hsl(180, 0.7, 0.7)).retain();
+    gui.args().bg_color(dgui::Color::Hsl(180, 0.7, 0.7)).retain();
     if (gui.popup(window_1_open, "Floating 1", 700, 100)) {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
       std::ignore = gui.text_input("Input");
       gui.text_box("Here is some text");
       gui.text_box("Foo");
@@ -37,9 +37,9 @@ int main() {
     }
 
     // Not retained when closing
-    gui.args().bg_color(datagui::Color::Hsl(0, 0.7, 0.7));
+    gui.args().bg_color(dgui::Color::Hsl(0, 0.7, 0.7));
     if (gui.popup(window_2_open, "Floating 2", 300, 150)) {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
       if (auto choice = gui.select(-1, choices)) {
         std::cout << "Popup 2 Selected '" << choices[*choice] << "'"
                   << std::endl;

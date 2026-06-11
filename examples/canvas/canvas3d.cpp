@@ -2,13 +2,13 @@
 #include "datagui/gui.hpp"
 
 int main() {
-  datagui::Gui gui;
-  using datagui::Color;
-  using datagui::Euler;
-  using datagui::Rot3;
-  using datagui::Vec3;
+  dgui::Gui gui;
+  using dgui::Color;
+  using dgui::Euler;
+  using dgui::Rot3;
+  using dgui::Vec3;
 
-  datagui::PointCloud point_cloud;
+  dgui::PointCloud point_cloud;
   {
     struct Point {
       Vec3 position;
@@ -40,11 +40,11 @@ int main() {
   while (gui.poll()) {
     gui.args().horizontal().align_top();
     gui.group();
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     auto& canvas = gui.canvas3d(512, 512);
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
       canvas.bg_color(bg_color);
       canvas.grid(10, 10);
       canvas.box(
@@ -83,7 +83,7 @@ int main() {
     gui.args().grid(-1, 2);
     gui.group();
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
 
       gui.text_box("Bg Color");
       gui.args().always();

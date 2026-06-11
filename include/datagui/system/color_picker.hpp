@@ -3,7 +3,7 @@
 #include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
 
-namespace datagui {
+namespace dgui {
 
 class ColorPickerSystem : public System {
 public:
@@ -25,4 +25,4 @@ private:
   Color active_color = Color::Black();
 };
 
-} // namespace datagui
+} // namespace dgui

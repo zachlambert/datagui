@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 TEST(UniqueAny, Construct) {
-  using namespace datagui;
+  using namespace dgui;
 
   UniqueAny value;
   EXPECT_FALSE(value);

@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 PointCloud::Data::~Data() {
   if (VAO > 0) {
@@ -119,4 +119,4 @@ void PointCloud::load_points(
   data->vertex_count = num_points;
 }
 
-} // namespace datagui
+} // namespace dgui

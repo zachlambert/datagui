@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 TEST(Mat, ConstructIsZero) {
-  using namespace datagui;
+  using namespace dgui;
 
   Mat2 mat2;
   for (std::size_t i = 0; i < 2; i++) {
@@ -27,7 +27,7 @@ TEST(Mat, ConstructIsZero) {
 }
 
 TEST(Mat, VectorMultiply) {
-  using namespace datagui;
+  using namespace dgui;
 
   {
     // Column-major

@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class Text2dShader {
   struct Vertex {
@@ -69,4 +69,4 @@ private:
   unsigned int VAO, VBO;
 };
 
-} // namespace datagui
+} // namespace dgui

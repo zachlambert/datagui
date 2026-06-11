@@ -1,7 +1,7 @@
 #include "datagui/input/number_input.hpp"
 #include <charconv>
 
-namespace datagui {
+namespace dgui {
 
 template <typename T>
 bool text_to_number(const std::string& text, T& value) {
@@ -48,4 +48,4 @@ bool valid_text_to_number(NumberType type, const std::string& text) {
   return false;
 }
 
-} // namespace datagui
+} // namespace dgui

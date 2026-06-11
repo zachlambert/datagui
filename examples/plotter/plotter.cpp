@@ -4,10 +4,10 @@
 #include <cmath>
 
 int main() {
-  datagui::Gui gui;
-  using datagui::Box2;
-  using datagui::Color;
-  using datagui::Vec2;
+  dgui::Gui gui;
+  using dgui::Box2;
+  using dgui::Color;
+  using dgui::Vec2;
 
   bool paused = false;
   auto prev = std::chrono::high_resolution_clock::now();
@@ -21,15 +21,15 @@ int main() {
 
   while (gui.poll()) {
     gui.vsplit(0.5);
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     gui.group();
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
 
       auto& plotter = gui.plotter(400, 400);
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
 
         auto now = std::chrono::high_resolution_clock::now();
         float dt =
@@ -66,7 +66,7 @@ int main() {
       gui.args().grid(-1, 2);
       gui.group();
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         gui.text_box("Paused");
         gui.checkbox_v(paused);
 
@@ -82,11 +82,11 @@ int main() {
 
     gui.group();
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
 
       auto& plotter = gui.plotter(400, 400);
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         auto f = [&](const Vec2& pos) {
           return std::exp(-pos.x * a) * std::sin(b * 2 * M_PIf * pos.y);
         };
@@ -97,7 +97,7 @@ int main() {
       gui.args().grid(-1, 2);
       gui.group();
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
 
         gui.text_box("a");
         gui.args().always();

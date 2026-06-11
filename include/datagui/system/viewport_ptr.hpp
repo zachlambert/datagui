@@ -2,7 +2,7 @@
 
 #include "datagui/element/system.hpp"
 
-namespace datagui {
+namespace dgui {
 
 class ViewportPtrSystem : public System {
 public:
@@ -13,4 +13,4 @@ public:
   bool scroll_event(ElementPtr element, const ScrollEvent& event) override;
 };
 
-} // namespace datagui
+} // namespace dgui

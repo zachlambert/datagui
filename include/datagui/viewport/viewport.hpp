@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <memory>
 
-namespace datagui {
+namespace dgui {
 
 class FontManager;
 
@@ -56,4 +56,4 @@ private:
   unsigned int render_buffer;
 };
 
-} // namespace datagui
+} // namespace dgui

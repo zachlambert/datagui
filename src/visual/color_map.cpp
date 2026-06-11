@@ -1,7 +1,7 @@
 #include "datagui/visual/color_map.hpp"
 #include <algorithm>
 
-namespace datagui {
+namespace dgui {
 
 // https://github.com/BIDS/colormap/blob/master/colormaps.py
 static const Vec3 viridis_data[] = {
@@ -140,4 +140,4 @@ Vec3 color_map_viridis(float s) {
   return viridis_data[std::size_t(s * (N - 1))];
 }
 
-} // namespace datagui
+} // namespace dgui

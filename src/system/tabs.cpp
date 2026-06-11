@@ -1,6 +1,6 @@
 #include "datagui/system/tabs.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void TabsSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -134,4 +134,4 @@ void TabsSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   }
 }
 
-} // namespace datagui
+} // namespace dgui

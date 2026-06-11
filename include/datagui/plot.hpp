@@ -3,7 +3,7 @@
 #include "datagui/gui.hpp"
 #include "datagui/viewport/plotter.hpp"
 
-namespace datagui {
+namespace dgui {
 
 inline void plot(
     const std::string& title,
@@ -20,4 +20,4 @@ inline void plot(
   }
 }
 
-} // namespace datagui
+} // namespace dgui

@@ -6,7 +6,7 @@
 #include <mutex>
 #include <shared_mutex>
 
-namespace datagui {
+namespace dgui {
 
 static std::vector<std::pair<GLFWwindow*, Window*>> windows;
 static std::shared_mutex windows_mutex;
@@ -359,4 +359,4 @@ void Window::poll_events() {
   }
 }
 
-} // namespace datagui
+} // namespace dgui

@@ -1,7 +1,7 @@
 #include "datagui/viewport/canvas2d.hpp"
 #include "datagui/visual/color_map.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void Canvas2d::rect(
     const Vec2& position,
@@ -209,4 +209,4 @@ bool Canvas2d::scroll_event(const ScrollEvent& event) {
   return true;
 }
 
-}; // namespace datagui
+}; // namespace dgui

@@ -3,7 +3,7 @@
 #include <cmath>
 #include <datapack/datapack.hpp>
 
-namespace datagui {
+namespace dgui {
 
 struct Color {
 public:
@@ -57,10 +57,10 @@ public:
   Color multiply(float factor) const;
 };
 
-} // namespace datagui
+} // namespace dgui
 
 namespace dpack {
 
-DPACK_DECL(datagui::Color)
+DPACK_DECL(dgui::Color)
 
 } // namespace dpack

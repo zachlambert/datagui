@@ -5,7 +5,7 @@
 #include <datapack/datapack.hpp>
 #include <stack>
 
-namespace datagui {
+namespace dgui {
 
 // Mirror of GuiReader, but copies data from a type into the gui structure,
 // overwriting the current widget state, rather than reading the widget state
@@ -94,4 +94,4 @@ private:
   Color color;
 };
 
-} // namespace datagui
+} // namespace dgui

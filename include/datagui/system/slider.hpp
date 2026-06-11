@@ -3,7 +3,7 @@
 #include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
 
-namespace datagui {
+namespace dgui {
 
 class SliderSystem : public System {
 public:
@@ -22,4 +22,4 @@ private:
   double active_value;
 };
 
-} // namespace datagui
+} // namespace dgui

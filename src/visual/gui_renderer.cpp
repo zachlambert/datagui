@@ -4,7 +4,7 @@
 #include <memory>
 #include <stack>
 
-namespace datagui {
+namespace dgui {
 
 void GuiRenderer::init(std::shared_ptr<FontManager> fm) {
   shape_shader.init();
@@ -107,4 +107,4 @@ Vec2 GuiRenderer::flip_position(const Vec2& origin) {
   return Vec2(origin.x, viewport.size().y - origin.y);
 }
 
-} // namespace datagui
+} // namespace dgui

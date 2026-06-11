@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <stdexcept>
 
-namespace datagui {
+namespace dgui {
 
 class ElementError : public std::runtime_error {
 public:
@@ -437,4 +437,4 @@ using Var = Tree::Var<T>;
 template <typename T>
 using ConstVar = Tree::ConstVar<T>;
 
-} // namespace datagui
+} // namespace dgui

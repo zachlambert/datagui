@@ -3,7 +3,7 @@
 #include <cmath>
 
 int main() {
-  datagui::Gui gui;
+  dgui::Gui gui;
 
   std::vector<double> xs;
   std::vector<double> ys;
@@ -15,7 +15,7 @@ int main() {
 
   while (gui.poll()) {
     auto& plotter = gui.plotter(400, 400);
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     plotter.plot(xs, ys);
   }

@@ -1,7 +1,7 @@
 #include "datagui/element/args.hpp"
 #include "datagui/element/element.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void Args::apply(ElementPtr element) {
   num_cells_.consume(element.state().num_cells);
@@ -90,4 +90,4 @@ void Args::apply(ElementPtr element) {
   }
 }
 
-} // namespace datagui
+} // namespace dgui

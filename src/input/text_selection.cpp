@@ -1,7 +1,7 @@
 #include "datagui/input/text_selection.hpp"
 #include <GLFW/glfw3.h> // For copy/paste
 
-namespace datagui {
+namespace dgui {
 
 std::size_t find_cursor(
     const FontStructure& font,
@@ -325,4 +325,4 @@ void render_selection(
       highlight_color);
 }
 
-} // namespace datagui
+} // namespace dgui

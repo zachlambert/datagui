@@ -3,7 +3,7 @@
 #include "datagui/geometry/vec.hpp"
 #include <memory>
 
-namespace datagui {
+namespace dgui {
 
 class UvMesh {
 public:
@@ -50,4 +50,4 @@ private:
   friend class UvMeshShader;
 };
 
-} // namespace datagui
+} // namespace dgui

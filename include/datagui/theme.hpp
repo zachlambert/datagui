@@ -3,7 +3,7 @@
 #include "datagui/color.hpp"
 #include "datagui/font.hpp"
 
-namespace datagui {
+namespace dgui {
 
 struct Theme {
   Font text_font = Font::DejaVuSans;
@@ -59,4 +59,4 @@ struct Theme {
 
 Theme theme_default();
 
-} // namespace datagui
+} // namespace dgui

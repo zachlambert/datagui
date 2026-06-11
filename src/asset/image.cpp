@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <assert.h>
 
-namespace datagui {
+namespace dgui {
 
 Image::Data::~Data() {
   if (texture > 0) {
@@ -49,4 +49,4 @@ void Image::load(std::size_t width, std::size_t height, void* pixels) {
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-} // namespace datagui
+} // namespace dgui

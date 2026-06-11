@@ -3,7 +3,7 @@
 #include "datagui/element/tree.hpp"
 #include <optional>
 
-namespace datagui {
+namespace dgui {
 
 class Args {
   template <typename T>
@@ -203,4 +203,4 @@ private:
   friend class Gui;
 };
 
-} // namespace datagui
+} // namespace dgui

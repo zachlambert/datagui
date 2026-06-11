@@ -1,7 +1,7 @@
 #include "datagui/geometry/camera.hpp"
 #include <cstdio>
 
-namespace datagui {
+namespace dgui {
 
 Mat3 Camera2d::view_mat() const {
   Rot2 R_T = Rot2(angle).mat().transpose();
@@ -97,4 +97,4 @@ Vec3 Camera3d::direction_world(const Vec2& camera_pos) const {
   return rotation() * ray_cs / ray_cs.length();
 }
 
-} // namespace datagui
+} // namespace dgui

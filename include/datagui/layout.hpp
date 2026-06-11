@@ -4,7 +4,7 @@
 #include <variant>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 enum class XAlignment { Left, Center, Right };
 enum class YAlignment { Top, Center, Bottom };
@@ -140,4 +140,4 @@ struct FloatingTypeRelative {
 
 using FloatingType = std::variant<FloatingTypeAbsolute, FloatingTypeRelative>;
 
-} // namespace datagui
+} // namespace dgui

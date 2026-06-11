@@ -1,6 +1,6 @@
 #include "datagui/system/text_input.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void TextInputSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -203,4 +203,4 @@ void TextInputSystem::focus_leave(ElementPtr element, bool success) {
   }
 }
 
-} // namespace datagui
+} // namespace dgui
