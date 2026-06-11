@@ -86,7 +86,7 @@ int main() {
     gui.group();
     DATAGUI_SCOPE(gui);
 
-    auto value = gui.variable<Foo>();
+    auto& value = gui.variable<Foo>();
 
     gui.args().text_size(20).text_color(datagui::Color::Blue());
     gui.text_box("Edit Foo");

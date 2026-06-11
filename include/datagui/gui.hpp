@@ -167,11 +167,26 @@ public:
 
   template <dpack::serializable T>
   const T* edit(const T& initial_value, const std::string& label) {
+    bool is_new = current.expect(Type::Group, read_key());
+    current.group().layout.tight = true;
+    move_down();
+
+    if (edit_skip()) {
+      return nullptr;
+    }
+
     T& var = variable<T>(initial_value);
-    GuiReader reader(current, label);
-    reader.value(*var);
-    current = reader.next_node();
-    if (reader.changed()) {
+    if (is_new) {
+      edit_write(var, label);
+      current = current.next();
+      end();
+      return nullptr;
+    }
+    bool changed = edit_read(var, label);
+    current = current.next();
+    end();
+
+    if (changed) {
       return &var;
     }
     return nullptr;
@@ -179,17 +194,25 @@ public:
 
   template <dpack::serializable T>
   bool edit_v(T& value, const std::string& label) {
-    GuiReader reader(current, label);
-    reader.value(value);
-    if (reader.changed()) {
-      current = reader.next_node();
-      return true;
+    bool is_new = current.expect(Type::Group, read_key());
+    current.group().layout.tight = true;
+    move_down();
+
+    if (edit_skip()) {
+      return false;
     }
 
-    GuiWriter writer(current, label);
-    writer.value(value);
-    current = writer.next_node();
-    return false;
+    bool has_changed = GuiReader::peek_changed(current);
+    if (is_new || !has_changed) {
+      edit_write(value, label);
+      current = current.next();
+      end();
+      return false;
+    }
+    edit_read(value, label);
+    current = current.next();
+    end();
+    return true;
   }
 
   Args& args() {
@@ -207,6 +230,27 @@ public:
   }
 
 private:
+  template <dpack::serializable T>
+  bool edit_read(T& value, const std::string& label) {
+    GuiReader reader(current, label);
+    reader.value(value);
+    return reader.changed();
+  }
+  template <dpack::serializable T>
+  void edit_write(const T& value, const std::string& label) {
+    GuiWriter writer(current, label);
+    writer.value(value);
+  }
+  bool edit_skip() {
+    bool can_skip = current && current.type() == Type::Collapsable &&
+                    !current.collapsable().open;
+    if (can_skip) {
+      current = current.next();
+      end();
+    }
+    return can_skip;
+  }
+
   void move_down();
 
   void render();

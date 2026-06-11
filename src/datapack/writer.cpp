@@ -1,5 +1,5 @@
 #include "datagui/datapack/writer.hpp"
-#include "datagui/datapack/conversions.hpp"
+#include "datagui/datapack/common.hpp"
 #include <array>
 #include <charconv>
 #include <datapack/encode/base64.hpp>
@@ -303,66 +303,78 @@ void GuiWriter::tuple_end() {
   node = node.parent();
 }
 
-static constexpr std::uint64_t add_button_id =
-    std::numeric_limits<std::uint64_t>::max();
-
 void GuiWriter::list_begin(size_t size) {
-  enter_container(-1, 2);
+  enter_container(-1, 1);
 
   auto var = node.parent().var();
   if (!var) {
-    var.create(KeyList());
+    var.create(ListVar());
   }
-  auto keys = var.as<KeyList>();
+  auto list_var = var.as<ListVar>();
 
   // Resize the key list to exactly match the value being written, reusing
   // existing keys (and therefore widgets) where possible.
-  while (keys->size() < size) {
-    keys->append();
+  while (list_var->ids.size() < size) {
+    list_var->ids.append();
   }
-  while (keys->size() > size) {
-    keys->remove((*keys)[keys->size() - 1]);
+  while (list_var->ids.size() > size) {
+    list_var->ids.remove(list_var->ids[list_var->ids.size() - 1]);
   }
-  list_stack.emplace(keys);
+  // Writing overwrites widget state authoritatively, so there is no pending
+  // add/remove to reconcile.
+  list_var->dirty = false;
+
+  list_stack.emplace(list_var);
 
   at_object_begin = true;
+
+  node.expect(Type::Group);
+  node.group().layout.tight = true;
+  node = node.child();
 }
 
 void GuiWriter::list_next() {
+  auto& list_state = list_stack.top();
+
   if (!at_object_begin) {
     node = node.next();
     list_remove_button();
-    list_stack.top().pos++;
-    node = node.next();
+    list_state.pos++;
+    node = node.parent().next();
   }
   at_object_begin = false;
 
-  auto& state = list_stack.top();
-  std::uint64_t expected_id = (*state.keys)[state.pos];
-  while (node && node.id() != expected_id && node.id() != add_button_id) {
-    node = node.erase().erase();
-  }
-  if (node && node.id() == add_button_id) {
-    // Remove add button, re-add in list_end()
+  std::uint64_t expected_id = list_state.var->ids[list_state.pos];
+  while (node && node.id() != expected_id) {
     node = node.erase();
   }
 
-  next_id_ = expected_id;
+  node.expect(Type::Group, expected_id);
+  auto& group = node.group();
+  group.layout.tight = true;
+  group.layout.rows = 1;
+  group.layout.cols = 2;
+  node = node.child();
 }
 
 void GuiWriter::list_end() {
+  auto& list_state = list_stack.top();
+
   if (!at_object_begin) {
     node = node.next();
     list_remove_button();
-    node = node.next();
+    list_state.pos++;
+    assert(list_state.pos == list_state.var->ids.size());
+    node = node.parent().next();
   }
 
-  while (node && node.id() != add_button_id) {
-    node = node.erase().erase();
+  while (node) {
+    node = node.erase();
   }
   at_object_begin = false;
 
-  node.expect(Type::Button, add_button_id);
+  node = node.parent().next();
+  node.expect(Type::Button);
   node.button().text = "Add";
 
   list_stack.pop();
@@ -376,9 +388,17 @@ void GuiWriter::list_remove_button() {
 }
 
 void GuiWriter::enter_primitive() {
-  in_composite_ = false;
-  is_root_ = false;
+  if (is_root_) {
+    is_root_ = false;
+    node.expect(Type::Group);
+    root = node;
+    node.group().layout.tight = true;
+    node = node.child();
+    return;
+  }
 
+  // No special handling for composites, only used by enter_container
+  in_composite_ = false;
   if (!next_label_.empty()) {
     node.expect(Type::TextBox);
     node.text_box().text = next_label_;
@@ -389,6 +409,7 @@ void GuiWriter::enter_primitive() {
 
 void GuiWriter::enter_container(size_t rows, size_t cols) {
   if (in_composite_) {
+    assert(!is_root_);
     in_composite_ = false;
     node.expect(Type::Group, read_id());
     auto& group = node.group();
@@ -408,13 +429,12 @@ void GuiWriter::enter_container(size_t rows, size_t cols) {
   if (!next_label_.empty() && !is_root_) {
     node.state().num_cells = 2;
   }
+  if (is_root_) {
+    is_root_ = false;
+    root = node;
+  }
   next_label_.clear();
-  is_root_ = false;
   node = node.child();
-}
-
-ElementPtr GuiWriter::next_node() {
-  return node.next();
 }
 
 } // namespace datagui

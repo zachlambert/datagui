@@ -54,18 +54,19 @@ public:
 
   template <typename T, bool IsConst>
   class Var_ {
+    using tree_ptr_t = std::conditional_t<IsConst, const Tree*, Tree*>;
     using data_ptr_t = std::conditional_t<IsConst, const T*, T*>;
     using data_ref_t = std::conditional_t<IsConst, const T&, T&>;
 
   public:
     std::conditional_t<IsConst, const T&, T&> operator*() const {
       assert(tree && variable != -1);
-      auto data_ptr = tree->variables[variable].data.cast<T>();
+      auto data_ptr = tree->variables[variable].data.template cast<T>();
       return *data_ptr;
     }
     std::conditional_t<IsConst, const T*, T*> operator->() const {
       assert(tree && variable != -1);
-      auto data_ptr = tree->variables[variable].data.cast<T>();
+      auto data_ptr = tree->variables[variable].data.template cast<T>();
       return data_ptr;
     }
 
@@ -81,15 +82,17 @@ public:
     Var_(Var_<T, OtherConst>&& other) :
         tree(other.tree), variable(other.variable), data_ptr(other.data_ptr) {}
 
-  private:
-    Var_(Tree* tree, int variable) :
-        tree(tree),
-        variable(variable),
-        data_ptr(tree->variables[variable].data.cast<T>()) {
-      assert(data_ptr);
+    operator bool() const {
+      return data_ptr;
     }
 
-    Tree* tree;
+  private:
+    Var_(tree_ptr_t tree, int variable) :
+        tree(tree),
+        variable(variable),
+        data_ptr(tree->variables[variable].data.template cast<T>()) {}
+
+    tree_ptr_t tree;
     int variable;
     data_ptr_t data_ptr;
 
@@ -111,6 +114,7 @@ public:
 
   template <bool Const>
   class VarPtr_ {
+    using tree_ptr_t = std::conditional_t<Const, const Tree*, Tree*>;
   public:
     VarPtr_ next() {
       return VarPtr_(tree, element, tree->variables[variable].next);
@@ -139,10 +143,10 @@ public:
     VarPtr_() : tree(nullptr), element(-1), variable(-1) {}
 
   private:
-    VarPtr_(Tree* tree, int element, int variable) :
+    VarPtr_(tree_ptr_t tree, int element, int variable) :
         tree(tree), element(element), variable(variable) {}
 
-    Tree* tree;
+    tree_ptr_t tree;
     int element;
     int variable;
 
@@ -320,9 +324,12 @@ public:
       return tree->elements[index].id;
     }
 
-    VarPtr var() const {
+    std::conditional_t<IsConst, ConstVarPtr, VarPtr> var() const {
       assert(tree && index != -1);
-      return VarPtr(tree, index, tree->elements[index].first_variable);
+      return std::conditional_t<IsConst, ConstVarPtr, VarPtr>(
+          tree,
+          index,
+          tree->elements[index].first_variable);
     }
     ConstVarPtr const_var() const {
       assert(tree && index != -1);

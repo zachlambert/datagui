@@ -1,6 +1,6 @@
 #pragma once
 
-#include "datagui/element/key_list.hpp"
+#include "datagui/datapack/common.hpp"
 #include "datagui/element/tree.hpp"
 #include <datapack/datapack.hpp>
 #include <stack>
@@ -12,8 +12,8 @@ namespace datagui {
 // back into the type.
 class GuiWriter : public dpack::Writer {
 public:
-  GuiWriter(ElementPtr node, const std::string& root_label) :
-      node(node), next_label_(root_label) {}
+  GuiWriter(ElementPtr& root, const std::string& root_label) :
+      root(root), node(root), next_label_(root_label) {}
 
   void number(dpack::NumberType type, const void* value) override;
   void boolean(bool value) override;
@@ -46,8 +46,6 @@ public:
     description_ = description;
   }
 
-  ElementPtr next_node();
-
 private:
   void enter_primitive();
   void enter_container(size_t rows, size_t cols);
@@ -71,6 +69,7 @@ private:
     return std::nullopt;
   }
 
+  ElementPtr& root;
   ElementPtr node;
   std::uint64_t next_id_ = 0;
   std::string next_label_ = "";
@@ -81,9 +80,9 @@ private:
   std::optional<std::string> description_;
 
   struct ListState {
-    Var<KeyList> keys;
-    int pos;
-    ListState(Var<KeyList> keys) : keys(keys), pos(0) {}
+    Var<ListVar> var;
+    int pos = 0;
+    ListState(Var<ListVar> var) : var(var) {}
   };
   std::stack<ListState> list_stack;
 
