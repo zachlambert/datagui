@@ -22,6 +22,7 @@ private:
 
   std::shared_ptr<FontManager> fm;
   std::shared_ptr<Theme> theme;
+  Color active_color;
 };
 
 } // namespace datagui

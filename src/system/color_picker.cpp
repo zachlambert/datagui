@@ -53,18 +53,19 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   auto& color_picker = element.color_picker();
 
-  renderer
-      .queue_box(state.box(), color_picker.value, 2, theme->input_color_border);
+  const auto& color = state.focused ? active_color : color_picker.value;
+
+  renderer.queue_box(state.box(), color, 2, theme->input_color_border);
 
   if (!state.floating) {
     return;
   }
 
-  Color bg_color = color_picker.value;
+  Color bg_color = color;
   bg_color.a = 0.5;
   renderer.queue_box(state.float_box, bg_color, 2, theme->layout_border_color);
 
-  float lightness = color_picker.value.lightness();
+  float lightness = color.lightness();
   struct Pixel {
     std::uint8_t r, g, b, a;
   };
@@ -72,8 +73,8 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
     const std::size_t n = 200;
     float half_width = float(n) / 2;
 
-    float angle = M_PI + M_PI * color_picker.value.hue() / 180;
-    float saturation = color_picker.value.saturation();
+    float angle = M_PI + M_PI * color.hue() / 180;
+    float saturation = color.saturation();
     std::uint8_t marker_value = (lightness < 0.5 ? 255 : 0);
     float marker_x = std::cos(angle) * saturation;
     float marker_y = std::sin(angle) * saturation;
@@ -158,11 +159,13 @@ void ColorPickerSystem::mouse_event(
     color_picker.scale_held = false;
     if (!color_picker.open) {
       color_picker.open = true;
+      active_color = color_picker.value;
       return;
     }
     if (color_picker.modified) {
       color_picker.modified = false;
       color_picker.changed = true;
+      color_picker.value = active_color;
     }
     return;
   }
@@ -187,9 +190,7 @@ void ColorPickerSystem::mouse_event(
         hue_wheel_offset.length() / theme->color_picker_hue_wheel_radius;
     saturation = std::clamp(saturation, 0.f, 1.f);
 
-    Color new_color =
-        Color::Hsl(hue, saturation, color_picker.value.lightness());
-    color_picker.value = new_color;
+    active_color = Color::Hsl(hue, saturation, active_color.lightness());
     color_picker.modified = true;
   }
 
@@ -202,12 +203,14 @@ void ColorPickerSystem::mouse_event(
                       color_picker.lightness_box.size().y;
     lightness = std::clamp(lightness, 0.f, 1.f);
 
-    Color new_color = Color::Hsl(
-        color_picker.value.hue(),
-        color_picker.value.saturation(),
-        lightness);
-    color_picker.value = new_color;
+    active_color =
+        Color::Hsl(active_color.hue(), active_color.saturation(), lightness);
     color_picker.modified = true;
+  }
+
+  if (color_picker.modified && color_picker.always) {
+    color_picker.changed = true;
+    color_picker.value = active_color;
   }
 }
 
