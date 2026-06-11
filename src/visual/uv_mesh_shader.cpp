@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include <cstring>
 
-namespace datagui {
+namespace dgui {
 
 const static std::string vertex_shader = R"(
 #version 330 core
@@ -125,4 +125,4 @@ void UvMeshShader::clear() {
   commands.clear();
 }
 
-} // namespace datagui
+} // namespace dgui

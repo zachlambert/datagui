@@ -31,7 +31,7 @@ DPACK_LABELLED_VARIANT_DEF(Shape) = {"Point", "Circle"};
 } // namespace dpack
 
 int main() {
-  datagui::Gui gui;
+  dgui::Gui gui;
 
   Shape shape;
 
@@ -39,7 +39,7 @@ int main() {
   while (gui.poll()) {
     gui.args().width_expand();
     gui.group();
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     auto points = gui.variable<std::vector<Point>>();
     gui.edit("Points", points);

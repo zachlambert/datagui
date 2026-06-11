@@ -2,7 +2,7 @@
 #include <GL/glew.h>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 UvMesh::Data::~Data() {
   if (VAO > 0) {
@@ -174,4 +174,4 @@ void UvMesh::load_texture(
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-} // namespace datagui
+} // namespace dgui

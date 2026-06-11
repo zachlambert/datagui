@@ -1,7 +1,7 @@
 #include "datagui/viewport/viewport.hpp"
 #include <GL/glew.h>
 
-namespace datagui {
+namespace dgui {
 
 Viewport::Viewport() : width(0), height(0), texture_(0), framebuffer(0) {}
 
@@ -88,4 +88,4 @@ void Viewport::unbind_framebuffer() {
   glBindFramebuffer(GL_DEPTH_BUFFER, 0);
 }
 
-} // namespace datagui
+} // namespace dgui

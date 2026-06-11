@@ -1,6 +1,6 @@
 #include "datagui/viewport/canvas3d.hpp"
 
-namespace datagui {
+namespace dgui {
 
 Canvas3d::Canvas3d() {
   reset_camera();
@@ -259,4 +259,4 @@ void Canvas3d::reset_camera() {
   camera.clipping_max = 1000;
 }
 
-}; // namespace datagui
+}; // namespace dgui

@@ -17,7 +17,7 @@
 #include "datagui/system/text_input.hpp"
 #include "datagui/system/viewport_ptr.hpp"
 
-namespace datagui {
+namespace dgui {
 
 using namespace std::placeholders;
 
@@ -548,7 +548,7 @@ void Gui::render() {
     render_tree(element);
     renderer.render();
   }
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
   if (debug_mode_) {
     debug_render();
     renderer.render();
@@ -559,7 +559,7 @@ void Gui::render() {
   window.render_end();
 }
 
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
 void Gui::debug_render() {
   struct State {
     ConstElementPtr element;
@@ -788,7 +788,7 @@ void Gui::event_handling() {
         change_tree_focus(element_focus, ElementPtr());
         handled = true;
         break;
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
       case Key::D:
         if (event.mod.ctrl) {
           handled = true;
@@ -1057,4 +1057,4 @@ template Canvas2d& Gui::viewport<Canvas2d>(float, float);
 template Canvas3d& Gui::viewport<Canvas3d>(float, float);
 template Plotter& Gui::viewport<Plotter>(float, float);
 
-} // namespace datagui
+} // namespace dgui

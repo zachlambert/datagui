@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 TEST(Vec, ConstructIsZero) {
-  using namespace datagui;
+  using namespace dgui;
 
   Vec2 vec2;
   EXPECT_EQ(vec2.x, 0);
@@ -14,7 +14,7 @@ TEST(Vec, ConstructIsZero) {
 }
 
 TEST(Vec, Add) {
-  using namespace datagui;
+  using namespace dgui;
 
   {
     Vec2 a = {1, 2};

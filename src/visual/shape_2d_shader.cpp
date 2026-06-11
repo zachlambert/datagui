@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <string>
 
-namespace datagui {
+namespace dgui {
 
 const static std::string rect_vs = R"(
 #version 330 core
@@ -408,4 +408,4 @@ void Shape2dShader::clear() {
   elements.clear();
 }
 
-} // namespace datagui
+} // namespace dgui

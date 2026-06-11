@@ -2,7 +2,7 @@
 #include <datagui/visual/window.hpp>
 
 int main() {
-  using namespace datagui;
+  using namespace dgui;
 
   Window window("mesh_shader", 800, 800);
   MeshShader mesh_shader;

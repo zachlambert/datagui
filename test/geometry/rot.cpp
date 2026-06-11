@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 TEST(Quat, ConstructIsIdentity) {
-  using namespace datagui;
+  using namespace dgui;
 
   Quat q;
   EXPECT_EQ(q.x, 0);
@@ -12,7 +12,7 @@ TEST(Quat, ConstructIsIdentity) {
 }
 
 TEST(Euler, ConstructIsZero) {
-  using namespace datagui;
+  using namespace dgui;
 
   Euler euler;
   EXPECT_EQ(euler.roll, 0);
@@ -21,7 +21,7 @@ TEST(Euler, ConstructIsZero) {
 }
 
 TEST(Rot, ConstructIsIdentity) {
-  using namespace datagui;
+  using namespace dgui;
 
   Rot2 rot2;
   for (std::size_t i = 0; i < 2; i++) {
@@ -47,7 +47,7 @@ TEST(Rot, ConstructIsIdentity) {
 }
 
 TEST(Rot, ConstructRot2FromAngle) {
-  using namespace datagui;
+  using namespace dgui;
   const float eps = 1e-6;
 
   {
@@ -74,7 +74,7 @@ TEST(Rot, ConstructRot2FromAngle) {
 }
 
 TEST(Rot, ConstructRot3FromEuler) {
-  using namespace datagui;
+  using namespace dgui;
   const float eps = 1e-5;
 
   {
@@ -98,7 +98,7 @@ TEST(Rot, ConstructRot3FromEuler) {
 }
 
 TEST(Rot, ConstructRot3FromQuat) {
-  using namespace datagui;
+  using namespace dgui;
   const float eps = 1e-5;
 
   {

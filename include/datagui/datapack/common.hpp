@@ -4,7 +4,7 @@
 #include "datagui/input/number_input.hpp"
 #include <datapack/datapack.hpp>
 
-namespace datagui {
+namespace dgui {
 
 NumberType convert_type(dpack::NumberType type);
 
@@ -13,4 +13,4 @@ struct ListVar {
   bool dirty = false;
 };
 
-} // namespace datagui
+} // namespace dgui

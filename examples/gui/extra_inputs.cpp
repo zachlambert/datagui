@@ -2,12 +2,11 @@
 #include <iostream>
 
 int main() {
-  datagui::Gui gui;
-  using datagui::Color;
+  dgui::Gui gui;
 
   while (gui.poll()) {
     gui.group();
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     gui.text_box("Number input");
     if (auto value = gui.number_input<int>(0)) {
@@ -36,7 +35,7 @@ int main() {
     };
 
     gui.text_box("Color picker");
-    if (auto value = gui.color_picker(Color::Red())) {
+    if (auto value = gui.color_picker(dgui::Color::Red())) {
       std::cout << "Color: " << value->r << ", " << value->g << ", " << value->b
                 << std::endl;
     };

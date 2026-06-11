@@ -1,6 +1,6 @@
 #include "datagui/system/select.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void SelectSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -141,4 +141,4 @@ void SelectSystem::focus_leave(ElementPtr element, bool success) {
   select.open = false;
 }
 
-} // namespace datagui
+} // namespace dgui

@@ -1,7 +1,7 @@
 #include "datagui/geometry/rot.hpp"
 #include <array>
 
-namespace datagui {
+namespace dgui {
 
 Rot3::Rot3(const Euler& euler) {
   float s1 = std::sin(euler.roll);
@@ -76,4 +76,4 @@ Rot3 Rot3::line_rot(const Vec3& direction) {
   return Mat3(u1, u2, u3);
 }
 
-} // namespace datagui
+} // namespace dgui

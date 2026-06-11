@@ -1,6 +1,6 @@
 #include "datagui/system/button.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void ButtonSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -102,4 +102,4 @@ void ButtonSystem::key_event(ElementPtr element, const KeyEvent& event) {
   }
 }
 
-} // namespace datagui
+} // namespace dgui

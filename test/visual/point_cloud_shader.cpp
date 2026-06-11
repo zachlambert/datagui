@@ -2,7 +2,7 @@
 #include <datagui/visual/window.hpp>
 
 int main() {
-  using namespace datagui;
+  using namespace dgui;
 
   Window window("point_cloud_shader", 800, 800);
   PointCloudShader point_cloud_shader;

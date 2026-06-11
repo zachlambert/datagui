@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <sstream>
 
-namespace datagui {
+namespace dgui {
 
 void SliderSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -195,4 +195,4 @@ std::string SliderSystem::get_slider_text(const Slider& slider) const {
   return "";
 }
 
-} // namespace datagui
+} // namespace dgui

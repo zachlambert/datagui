@@ -6,7 +6,7 @@
 #include "datagui/geometry/rot.hpp"
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class Shape3dShader {
 public:
@@ -100,4 +100,4 @@ private:
   unsigned int instance_VBO;
 };
 
-} // namespace datagui
+} // namespace dgui

@@ -2,7 +2,7 @@
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 
-namespace datagui {
+namespace dgui {
 
 const static std::string shape_3d_vs = R"(
 #version 330 core
@@ -731,4 +731,4 @@ void Shape3dShader::clear() {
   }
 }
 
-} // namespace datagui
+} // namespace dgui

@@ -1,6 +1,6 @@
 #include "datagui/system/text_box.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void TextBoxSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -39,4 +39,4 @@ void TextBoxSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   renderer.pop_mask();
 }
 
-} // namespace datagui
+} // namespace dgui

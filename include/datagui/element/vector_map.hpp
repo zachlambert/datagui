@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 template <typename T>
 class VectorMap {
@@ -286,4 +286,4 @@ private:
   std::size_t size_;
 };
 
-} // namespace datagui
+} // namespace dgui

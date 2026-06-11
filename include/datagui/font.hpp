@@ -1,7 +1,7 @@
 #pragma once
 
-namespace datagui {
+namespace dgui {
 
 enum class Font { DejaVuSans, DejaVuSerif, DejaVuSansMono };
 
-} // namespace datagui
+} // namespace dgui

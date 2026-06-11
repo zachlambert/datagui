@@ -2,7 +2,7 @@
 #include <iostream>
 
 int main() {
-  using namespace datagui;
+  using namespace dgui;
 
   Window window;
   while (window.running()) {

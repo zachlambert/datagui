@@ -3,7 +3,7 @@
 #include "datagui/element/system.hpp"
 #include "datagui/theme.hpp"
 
-namespace datagui {
+namespace dgui {
 
 class DropdownSystem : public System {
 public:
@@ -27,4 +27,4 @@ private:
   std::shared_ptr<Theme> theme;
 };
 
-} // namespace datagui
+} // namespace dgui

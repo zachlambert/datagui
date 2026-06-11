@@ -13,7 +13,7 @@ extern "C" {
 #include FT_FREETYPE_H
 }
 
-namespace datagui {
+namespace dgui {
 
 const static std::string vertex_shader = R"(
 #version 330 core
@@ -436,4 +436,4 @@ std::vector<FontManager::Character> FontManager::text_characters(
   return characters;
 }
 
-} // namespace datagui
+} // namespace dgui

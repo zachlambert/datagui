@@ -4,7 +4,7 @@
 #include "datagui/input/text_selection.hpp"
 #include "datagui/theme.hpp"
 
-namespace datagui {
+namespace dgui {
 
 class TextInputSystem : public System {
 public:
@@ -31,4 +31,4 @@ private:
   TextSelection active_selection;
 };
 
-} // namespace datagui
+} // namespace dgui

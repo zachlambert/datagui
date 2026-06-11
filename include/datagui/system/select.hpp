@@ -4,7 +4,7 @@
 #include "datagui/theme.hpp"
 #include "datagui/visual/font_manager.hpp"
 
-namespace datagui {
+namespace dgui {
 
 class SelectSystem : public System {
 public:
@@ -23,4 +23,4 @@ private:
   std::shared_ptr<Theme> theme;
 };
 
-} // namespace datagui
+} // namespace dgui

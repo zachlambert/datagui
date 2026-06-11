@@ -9,14 +9,14 @@
 #include <vector>
 
 template <>
-struct std::hash<std::pair<datagui::Font, int>> {
-  using Key = std::pair<datagui::Font, int>;
+struct std::hash<std::pair<dgui::Font, int>> {
+  using Key = std::pair<dgui::Font, int>;
   std::size_t operator()(const Key& k) const {
     return std::hash<int>()(int(k.first)) ^ (std::hash<int>()(k.second) << 1);
   }
 };
 
-namespace datagui {
+namespace dgui {
 
 struct FontStructure {
   struct Character {
@@ -104,4 +104,4 @@ private:
   std::unordered_map<std::pair<Font, int>, FontStructure> fonts;
 };
 
-} // namespace datagui
+} // namespace dgui

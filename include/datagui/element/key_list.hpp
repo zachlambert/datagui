@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class KeyList {
 public:
@@ -48,4 +48,4 @@ private:
   static std::size_t next_key;
 };
 
-} // namespace datagui
+} // namespace dgui

@@ -4,7 +4,7 @@
 #include <GL/glew.h>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 const static std::string vertex_shader = R"(
 #version 330 core
@@ -223,4 +223,4 @@ void ImageShader::clear() {
   commands.clear();
 }
 
-} // namespace datagui
+} // namespace dgui

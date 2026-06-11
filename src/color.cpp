@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <array>
 
-namespace datagui {
+namespace dgui {
 
 Color Color::Hsl(float hue, float saturation, float lightness, float alpha) {
   if (hue < 0) {
@@ -114,11 +114,11 @@ Color Color::multiply(float factor) const {
   return Color(r * factor, g * factor, b * factor, a);
 }
 
-} // namespace datagui
+} // namespace dgui
 
 namespace dpack {
 
-DPACK_DEF_CUSTOM(datagui::Color, {
+DPACK_DEF_CUSTOM(dgui::Color, {
   packer.hint(HintColor());
   packer.object_begin();
   packer.value("r", value.r);

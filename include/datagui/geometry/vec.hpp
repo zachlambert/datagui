@@ -2,11 +2,11 @@
 
 #include <assert.h>
 #include <cmath>
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
 #include <iostream>
 #endif
 
-namespace datagui {
+namespace dgui {
 
 struct Vec2 {
   union {
@@ -293,9 +293,9 @@ inline Vec3 operator-(Vec3 op) {
   return op;
 }
 
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
 std::ostream& operator<<(std::ostream& os, const Vec2& vec);
 std::ostream& operator<<(std::ostream& os, const Vec3& vec);
 #endif
 
-} // namespace datagui
+} // namespace dgui

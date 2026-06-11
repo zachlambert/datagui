@@ -4,7 +4,7 @@
 #include <charconv>
 #include <datapack/encode/base64.hpp>
 
-namespace datagui {
+namespace dgui {
 
 template <typename T>
 std::string number_to_string(T value) {
@@ -449,4 +449,4 @@ void GuiWriter::enter_container(size_t rows, size_t cols) {
   node = node.child();
 }
 
-} // namespace datagui
+} // namespace dgui

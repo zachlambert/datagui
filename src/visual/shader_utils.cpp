@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 unsigned int load_shader(const std::string& code, unsigned int shader_type) {
   unsigned int shader_id = glCreateShader(shader_type);
@@ -84,4 +84,4 @@ unsigned int create_program_gs(
        load_shader(gs_code, GL_GEOMETRY_SHADER)});
 }
 
-} // namespace datagui
+} // namespace dgui

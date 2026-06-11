@@ -1,7 +1,7 @@
 #include "datagui/geometry/mat.hpp"
 #include "datagui/geometry/rot.hpp"
 
-namespace datagui {
+namespace dgui {
 
 Mat4 Mat4::Transform(const Vec3& position, const Rot3& orientation) {
   Mat4 result;
@@ -40,7 +40,7 @@ Mat4 Mat4::Transform(
   return result;
 }
 
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
 
 std::ostream& operator<<(std::ostream& os, const Mat2& mat) {
   for (std::size_t i = 0; i < 2; i++) {
@@ -89,4 +89,4 @@ std::ostream& operator<<(std::ostream& os, const Mat4& mat) {
 
 #endif
 
-} // namespace datagui
+} // namespace dgui

@@ -3,7 +3,7 @@
 #include "datagui/geometry/mat.hpp"
 #include "datagui/geometry/rot.hpp"
 
-namespace datagui {
+namespace dgui {
 
 /*
  * The to_camera and from_camera methods convert to/from
@@ -51,4 +51,4 @@ struct Camera3d {
   Vec3 direction_world(const Vec2& camera_pos) const;
 };
 
-} // namespace datagui
+} // namespace dgui

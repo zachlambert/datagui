@@ -2,8 +2,8 @@
 
 #include "datagui/geometry.hpp"
 
-namespace datagui {
+namespace dgui {
 
 Vec3 color_map_viridis(float s);
 
-} // namespace datagui
+} // namespace dgui

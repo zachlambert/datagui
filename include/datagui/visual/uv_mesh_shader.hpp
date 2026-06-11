@@ -6,7 +6,7 @@
 #include "datagui/geometry/rot.hpp"
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class UvMeshShader {
 public:
@@ -39,4 +39,4 @@ private:
   unsigned int uniform_opacity;
 };
 
-} // namespace datagui
+} // namespace dgui

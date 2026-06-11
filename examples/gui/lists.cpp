@@ -2,9 +2,9 @@
 #include <datagui/element/key_list.hpp>
 #include <datagui/gui.hpp>
 
-void edit_list_1(datagui::Gui& gui) {
+void edit_list_1(dgui::Gui& gui) {
   gui.group();
-  DATAGUI_SCOPE(gui);
+  DGUI_SCOPE(gui);
 
   struct Person {
     std::string name;
@@ -15,19 +15,19 @@ void edit_list_1(datagui::Gui& gui) {
   gui.args().border().width_expand();
   gui.group();
   {
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
     size_t i = 0;
     while (i < persons.size()) {
       gui.key(persons[i].name);
       gui.group();
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
 
       gui.text_box(persons[i].name);
 
       gui.args().horizontal();
       gui.group();
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         gui.text_box("Desc.");
         gui.text_input_v(persons[i].desc);
       }
@@ -43,14 +43,14 @@ void edit_list_1(datagui::Gui& gui) {
   gui.args().border();
   gui.group();
   {
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
     auto& new_name = gui.variable<std::string>();
     auto& new_desc = gui.variable<std::string>();
 
     gui.args().grid(-1, 2);
     gui.group();
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
       gui.text_box("Name");
       gui.text_input_v(new_name);
       gui.text_box("Description");
@@ -85,22 +85,22 @@ void edit_list_1(datagui::Gui& gui) {
   }
 }
 
-void edit_list_2(datagui::Gui& gui) {
+void edit_list_2(dgui::Gui& gui) {
   gui.args().border().width_expand();
   gui.group();
-  DATAGUI_SCOPE(gui);
+  DGUI_SCOPE(gui);
 
-  auto& keys = gui.variable<datagui::KeyList>();
+  auto& keys = gui.variable<dgui::KeyList>();
   gui.group();
   {
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
     size_t i = 0;
     while (i < keys.size()) {
       gui.args().horizontal();
       gui.key(keys[i]);
       gui.group();
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         std::ignore = gui.text_input("");
         if (gui.button("Remove")) {
           keys.remove(keys[i]);
@@ -112,7 +112,7 @@ void edit_list_2(datagui::Gui& gui) {
   }
   gui.group();
   {
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
     if (gui.button("Push")) {
       keys.append();
     };
@@ -120,11 +120,11 @@ void edit_list_2(datagui::Gui& gui) {
 }
 
 int main() {
-  datagui::Gui gui;
+  dgui::Gui gui;
 
   while (gui.poll()) {
     gui.group();
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     edit_list_1(gui);
     edit_list_2(gui);

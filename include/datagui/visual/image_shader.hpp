@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class ImageShader {
 public:
@@ -59,4 +59,4 @@ private:
   unsigned int VBO;
 };
 
-} // namespace datagui
+} // namespace dgui

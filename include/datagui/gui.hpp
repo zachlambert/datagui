@@ -21,7 +21,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class Plotter;
 class Canvas2d;
@@ -41,7 +41,7 @@ public:
 
   void end();
 
-  // DATAGUI_SCOPE(gui) will create a DeferEnd() variable
+  // DGUI_SCOPE(gui) will create a DeferEnd() variable
   // to automatically call gui.end() when exiting the scope
   class DeferEnd {
   public:
@@ -254,7 +254,7 @@ private:
   void move_down();
 
   void render();
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
   void debug_render();
 #endif
   void calculate_sizes();
@@ -277,7 +277,7 @@ private:
   Window window;
   Tree tree;
 
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
   bool debug_mode_ = false;
 #endif
 
@@ -349,6 +349,6 @@ private:
   }
 };
 
-#define DATAGUI_SCOPE(gui_name) auto defer_end = gui_name.defer_end()
+#define DGUI_SCOPE(gui_name) auto defer_end = gui_name.defer_end()
 
-} // namespace datagui
+} // namespace dgui

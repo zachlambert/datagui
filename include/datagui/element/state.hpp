@@ -3,7 +3,7 @@
 #include "datagui/geometry.hpp"
 #include "datagui/layout.hpp"
 
-namespace datagui {
+namespace dgui {
 
 struct State {
   // Layout input
@@ -47,4 +47,4 @@ struct State {
   bool hovered = false;
 };
 
-} // namespace datagui
+} // namespace dgui

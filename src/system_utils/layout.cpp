@@ -1,6 +1,6 @@
 #include "datagui/system_utils/layout.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void layout_set_input_state(
     ElementPtr element,
@@ -398,4 +398,4 @@ bool layout_scroll_event(
   return changed;
 }
 
-} // namespace datagui
+} // namespace dgui

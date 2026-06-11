@@ -7,7 +7,7 @@
 #include <functional>
 #include <optional>
 
-namespace datagui {
+namespace dgui {
 
 class Canvas2d : public Viewport {
 public:
@@ -95,4 +95,4 @@ private:
   ImageShader image_shader;
 };
 
-} // namespace datagui
+} // namespace dgui

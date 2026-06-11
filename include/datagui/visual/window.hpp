@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class Window {
 public:
@@ -80,4 +80,4 @@ private:
   friend void glfw_char_callback(GLFWwindow*, unsigned int);
 };
 
-} // namespace datagui
+} // namespace dgui

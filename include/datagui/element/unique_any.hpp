@@ -2,7 +2,7 @@
 
 #include <memory>
 
-namespace datagui {
+namespace dgui {
 
 class UniqueAny {
   class ValueBase {
@@ -56,4 +56,4 @@ private:
   std::unique_ptr<ValueBase> value;
 };
 
-} // namespace datagui
+} // namespace dgui

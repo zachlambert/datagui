@@ -36,7 +36,7 @@ struct Foo {
   Shape shape;
   std::optional<std::array<double, 3>> points;
   std::vector<std::string> names;
-  datagui::Color color = datagui::Color::Black();
+  dgui::Color color = dgui::Color::Black();
   double scale;
 };
 
@@ -79,16 +79,16 @@ inline void write(Writer& writer, const Foo& foo) {
 } // namespace dpack
 
 int main() {
-  datagui::Gui gui;
+  dgui::Gui gui;
 
   while (gui.poll()) {
     gui.args().width_expand();
     gui.group();
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     auto& value = gui.variable<Foo>();
 
-    gui.args().text_size(20).text_color(datagui::Color::Blue());
+    gui.args().text_size(20).text_color(dgui::Color::Blue());
     gui.text_box("Edit Foo");
     if (gui.edit_v("foo", value)) {
       std::cout << dpack::debug(value) << std::endl;
@@ -97,7 +97,7 @@ int main() {
       value = Foo();
     }
 
-    gui.args().text_size(20).text_color(datagui::Color::Blue());
+    gui.args().text_size(20).text_color(dgui::Color::Blue());
     gui.text_box("Edit Foo List");
     if (auto value = gui.edit<std::vector<Foo>>("foo list")) {
       std::cout << dpack::debug(*value) << std::endl;

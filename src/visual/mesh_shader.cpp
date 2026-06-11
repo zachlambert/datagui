@@ -2,7 +2,7 @@
 #include "datagui/visual/shader_utils.hpp"
 #include <GL/glew.h>
 
-namespace datagui {
+namespace dgui {
 
 const static std::string vertex_shader = R"(
 #version 330 core
@@ -113,4 +113,4 @@ void MeshShader::clear() {
   commands.clear();
 }
 
-} // namespace datagui
+} // namespace dgui

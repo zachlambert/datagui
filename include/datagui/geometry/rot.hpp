@@ -2,7 +2,7 @@
 
 #include "datagui/geometry/mat.hpp"
 
-namespace datagui {
+namespace dgui {
 
 struct Quat {
   union {
@@ -113,4 +113,4 @@ inline Vec3 operator*(const Rot3& lhs, const Vec3& rhs) {
   return lhs.mat() * rhs;
 }
 
-} // namespace datagui
+} // namespace dgui

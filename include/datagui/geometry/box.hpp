@@ -2,7 +2,7 @@
 
 #include "datagui/geometry/vec.hpp"
 
-namespace datagui {
+namespace dgui {
 
 struct Box2 {
   Vec2 lower;
@@ -80,8 +80,8 @@ inline bool contains(const Box2& outer_box, const Box2& inner_box) {
          inner_box.upper <= outer_box.upper;
 }
 
-#ifdef DATAGUI_DEBUG
+#ifdef DGUI_DEBUG
 std::ostream& operator<<(std::ostream& os, const Box2& box);
 #endif
 
-} // namespace datagui
+} // namespace dgui

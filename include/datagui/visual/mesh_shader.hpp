@@ -7,7 +7,7 @@
 #include "datagui/geometry/rot.hpp"
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class MeshShader {
 public:
@@ -40,4 +40,4 @@ private:
   unsigned int uniform_mesh_color;
 };
 
-} // namespace datagui
+} // namespace dgui

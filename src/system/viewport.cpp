@@ -1,6 +1,6 @@
 #include "datagui/system/viewport_ptr.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void ViewportPtrSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -45,4 +45,4 @@ bool ViewportPtrSystem::scroll_event(
   return viewport.viewport->scroll_event(remapped);
 }
 
-} // namespace datagui
+} // namespace dgui

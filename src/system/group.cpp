@@ -1,7 +1,7 @@
 #include "datagui/system/group.hpp"
 #include "datagui/system_utils/layout.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void GroupSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -74,4 +74,4 @@ bool GroupSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
   return layout_scroll_event(group.content_box, group.layout_state, event);
 }
 
-} // namespace datagui
+} // namespace dgui

@@ -5,7 +5,7 @@
 #include <datapack/datapack.hpp>
 #include <stack>
 
-namespace datagui {
+namespace dgui {
 
 class GuiReader : public dpack::Reader {
 public:
@@ -101,4 +101,4 @@ private:
   Color color;
 };
 
-} // namespace datagui
+} // namespace dgui

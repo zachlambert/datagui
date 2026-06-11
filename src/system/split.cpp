@@ -1,6 +1,6 @@
 #include "datagui/system/split.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void SplitSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -202,4 +202,4 @@ void SplitSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
   }
 }
 
-} // namespace datagui
+} // namespace dgui

@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 
 TEST(VectorMap, EmplaceAndPop) {
-  using namespace datagui;
+  using namespace dgui;
 
   VectorMap<int> map;
   int a = map.emplace(2);
@@ -19,7 +19,7 @@ TEST(VectorMap, EmplaceAndPop) {
 }
 
 TEST(VectorMap, String) {
-  using namespace datagui;
+  using namespace dgui;
 
   {
     VectorMap<std::string> map;

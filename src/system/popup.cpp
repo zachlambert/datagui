@@ -1,7 +1,7 @@
 #include "datagui/system/popup.hpp"
 #include "datagui/system_utils/layout.hpp"
 
-namespace datagui {
+namespace dgui {
 
 void PopupSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -113,4 +113,4 @@ bool PopupSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
   return layout_scroll_event(popup.content_box, popup.layout_state, event);
 }
 
-} // namespace datagui
+} // namespace dgui

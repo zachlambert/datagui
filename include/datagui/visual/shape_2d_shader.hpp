@@ -4,7 +4,7 @@
 #include "datagui/geometry.hpp"
 #include <vector>
 
-namespace datagui {
+namespace dgui {
 
 class Shape2dShader {
 public:
@@ -83,4 +83,4 @@ private:
   std::size_t static_vertex_count = 0;
 };
 
-} // namespace datagui
+} // namespace dgui

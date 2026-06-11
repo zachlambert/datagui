@@ -8,7 +8,7 @@
 #include <vector>
 #include <optional>
 
-namespace datagui {
+namespace dgui {
 
 extern std::vector<Color> default_plot_colors;
 
@@ -238,4 +238,4 @@ private:
   ImageShader plot_image_shader;
 };
 
-}; // namespace datagui
+}; // namespace dgui

@@ -1,33 +1,33 @@
 #include <datagui/gui.hpp>
 
 int main() {
-  datagui::Gui gui;
-  using datagui::Color;
+  dgui::Gui gui;
+  using dgui::Color;
 
   while (gui.poll()) {
     gui.vsplit(0.3);
-    DATAGUI_SCOPE(gui);
+    DGUI_SCOPE(gui);
 
     gui.group();
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
 
       auto& counter = gui.variable<int>(0);
       gui.tabs(1);
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         if (gui.tab_group("Display")) {
-          DATAGUI_SCOPE(gui);
+          DGUI_SCOPE(gui);
           gui.text_box(std::to_string(counter));
         }
         if (gui.tab_group("Increment")) {
-          DATAGUI_SCOPE(gui);
+          DGUI_SCOPE(gui);
           if (gui.button("Increment")) {
             counter++;
           };
         }
         if (gui.tab_group("Decrement")) {
-          DATAGUI_SCOPE(gui);
+          DGUI_SCOPE(gui);
           if (gui.button("Decrement")) {
             counter--;
           };
@@ -37,7 +37,7 @@ int main() {
       gui.args().grid(-1, 3);
       gui.group();
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         gui.text_box("aaa");
         gui.text_box("bbb");
         gui.text_box("ccc");
@@ -52,12 +52,12 @@ int main() {
     gui.args().width_expand();
     gui.hsplit(0.5);
     {
-      DATAGUI_SCOPE(gui);
+      DGUI_SCOPE(gui);
 
       auto& popup_open = gui.variable<bool>(false);
       gui.args().retain();
       if (gui.popup(popup_open, "Popup", 200, 200)) {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         auto& counter = gui.variable<int>(0);
         gui.text_box("Popup " + std::to_string(counter));
         if (gui.button("Increment")) {
@@ -67,12 +67,12 @@ int main() {
 
       gui.args().tight();
       if (gui.dropdown("Third")) {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
         gui.text_box("One");
 
         gui.args().dropdown_horizontal().tight();
         if (gui.dropdown("Two - Click!")) {
-          DATAGUI_SCOPE(gui);
+          DGUI_SCOPE(gui);
           gui.text_box("Item 0");
           gui.text_box("Item 1");
           if (gui.button("Spawn popup")) {
@@ -87,12 +87,12 @@ int main() {
       gui.args().split_fixed();
       gui.vsplit(0.6);
       {
-        DATAGUI_SCOPE(gui);
+        DGUI_SCOPE(gui);
 
         gui.args().width_expand();
         gui.group();
         {
-          DATAGUI_SCOPE(gui);
+          DGUI_SCOPE(gui);
           gui.text_box("Fourth");
           for (std::size_t i = 0; i < 20; i++) {
             gui.text_box("Fourth [" + std::to_string(i) + "]");
