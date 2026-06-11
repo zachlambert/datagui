@@ -90,27 +90,17 @@ int main() {
 
     gui.args().text_size(20).text_color(datagui::Color::Blue());
     gui.text_box("Edit Foo");
-    if (gui.edit_v(value, "Edit Foo")) {
+    if (gui.edit_v("foo", value)) {
       std::cout << dpack::debug(value) << std::endl;
     }
     if (gui.button("Reset foo")) {
       value = Foo();
     }
 
-#if 0
-    gui.args().text_size(20).text_color(datagui::Color::Blue());
-    gui.text_box("Edit + Overwritten by above");
-    gui.edit<Foo>("Foo 2", value);
-
-    gui.args().text_size(20).text_color(datagui::Color::Blue());
-    gui.text_box("List");
-    gui.edit<std::vector<std::string>>(
-        "Test",
-        [](const std::vector<std::string>&) {},
-        {"first", "second"});
-
-    std::cout << "Revisit: " << revisit++ << std::endl;
-#endif
+    gui.text_box("Edit Foo List");
+    if (auto value = gui.edit<std::vector<Foo>>("foo list")) {
+      std::cout << dpack::debug(*value) << std::endl;
+    }
   }
   return 0;
 }

@@ -304,7 +304,10 @@ void GuiWriter::tuple_end() {
 }
 
 void GuiWriter::list_begin(size_t size) {
-  enter_container(-1, 3);
+  enter_container(2, 1);
+  // Contains:
+  // <items group>
+  // <add button>
 
   auto var = node.parent().var();
   if (!var) {
@@ -326,11 +329,15 @@ void GuiWriter::list_begin(size_t size) {
 
   list_stack.emplace(list_var);
 
-  at_object_begin = true;
-
+  // Enter items group
   node.expect(Type::Group);
-  node.group().layout.tight = true;
+  auto& group = node.group();
+  group.layout.tight = true;
+  group.layout.rows = -1;
+  group.layout.cols = 3;
   node = node.child();
+
+  at_object_begin = true;
 }
 
 void GuiWriter::list_next() {
@@ -340,21 +347,12 @@ void GuiWriter::list_next() {
     node = node.next();
     list_remove_button();
     list_state.pos++;
-    node = node.parent().next();
+    node = node.next();
   }
   at_object_begin = false;
 
-  std::uint64_t expected_id = list_state.var->ids[list_state.pos];
-  while (node && node.id() != expected_id) {
-    node = node.erase();
-  }
-
-  node.expect(Type::Group, expected_id);
-  auto& group = node.group();
-  group.layout.tight = true;
-  group.layout.rows = 1;
-  group.layout.cols = 2;
-  node = node.child();
+  list_item_label();
+  node = node.next();
 }
 
 void GuiWriter::list_end() {
@@ -365,11 +363,12 @@ void GuiWriter::list_end() {
     list_remove_button();
     list_state.pos++;
     assert(list_state.pos == list_state.var->ids.size());
-    node = node.parent().next();
+    node = node.next();
   }
 
   while (node) {
-    node = node.erase();
+    // Skip the Label, value, remove button
+    node = node.erase().erase().erase();
   }
   at_object_begin = false;
 
@@ -380,6 +379,19 @@ void GuiWriter::list_end() {
   list_stack.pop();
   assert(!node.next());
   node = node.parent();
+}
+
+void GuiWriter::list_item_label() {
+  auto& list_state = list_stack.top();
+
+  std::uint64_t expected_id = list_state.var->ids[list_state.pos];
+  while (node && node.id() != expected_id) {
+    // Skip the Label, value, remove button
+    node = node.erase().erase().erase();
+  }
+
+  node.expect(Type::TextBox, expected_id);
+  node.text_box().text = "Item " + std::to_string(list_state.pos);
 }
 
 void GuiWriter::list_remove_button() {

@@ -176,14 +176,12 @@ public:
     }
 
     T& var = variable<T>(initial_value);
-#if 0
     if (is_new) {
       edit_write(var, label);
       current = current.next();
       end();
       return nullptr;
     }
-#endif
     bool changed = edit_read(var, label);
     current = current.next();
     end();
@@ -205,14 +203,12 @@ public:
     }
 
     bool has_changed = GuiReader::peek_changed(current);
-#if 0
     if (is_new || !has_changed) {
       edit_write(value, label);
       current = current.next();
       end();
       return false;
     }
-#endif
     edit_read(value, label);
     current = current.next();
     end();
