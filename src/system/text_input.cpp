@@ -171,7 +171,7 @@ bool TextInputSystem::scroll_event(
   }
 
   const std::string& text = state.focused ? active_text : text_input.text;
-  double value;
+  double value = 0;
   text_to_number(text, value);
   value += scroll_amount;
   if (state.focused) {

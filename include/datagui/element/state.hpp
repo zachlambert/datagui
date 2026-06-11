@@ -19,6 +19,9 @@ struct State {
   bool float_only = false;
   FloatingType floating_type = FloatingTypeRelative(Vec2(), Vec2());
 
+  // Used when the element is inserted into a layout
+  bool force_hidden = false;
+
   // Layout output
   // Define in set_dependent_state(...)
 

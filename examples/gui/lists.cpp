@@ -101,7 +101,7 @@ void edit_list_2(datagui::Gui& gui) {
       gui.group();
       {
         DATAGUI_SCOPE(gui);
-        gui.text_input("");
+        std::ignore = gui.text_input("");
         if (gui.button("Remove")) {
           keys.remove(keys[i]);
         } else {

@@ -3,7 +3,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "datagui/datapack/edit.hpp"
+#include "datagui/datapack/reader.hpp"
+#include "datagui/datapack/writer.hpp"
 #include "datagui/element/args.hpp"
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
@@ -83,7 +84,7 @@ public:
   [[nodiscard]] std::optional<bool> checkbox(bool initial_value);
   bool checkbox_v(bool& value);
 
-  bool collapsable(const std::string& label);
+  [[nodiscard]] bool collapsable(const std::string& label);
 
   [[nodiscard]] std::optional<Color> color_picker(const Color& initial_value);
   bool color_picker_v(Color& value);
@@ -92,7 +93,11 @@ public:
 
   void group();
 
-  [[nodiscard]] bool popup(bool& open, const std::string& title, float width, float height);
+  [[nodiscard]] bool popup(
+      bool& open,
+      const std::string& title,
+      float width,
+      float height);
 
   [[nodiscard]] std::optional<int> select(
       int initial_choice,
@@ -160,82 +165,55 @@ public:
     }
   }
 
-#if 0
-  template <typename T>
-  requires std::is_default_constructible_v<T>
-  void edit(
-      const std::string& label,
-      const std::function<void(const T&)>& callback,
-      const T& initial_value = T()) {
-    bool is_new = !current;
-    args_.tight();
-    if (!group()) {
-      return;
+  template <dpack::serializable T>
+  const T* edit(const std::string& label, const T& initial_value = T()) {
+    bool is_new = current.expect(Type::Group, read_key());
+    current.group().layout.tight = true;
+    move_down();
+
+    if (edit_skip()) {
+      return nullptr;
     }
-    auto schema = variable<dpack::Schema>([]() {
-      return dpack::Schema::make<T>();
-    });
+
+    T& var = variable<T>(initial_value);
     if (is_new) {
-      datapack_write(*this, label, initial_value);
-    } else {
-      datapack_edit(*this, label, *schema);
-      auto node_capture = current.prev();
-      T result;
-      datapack_read<T>(node_capture, result);
-      callback(result);
+      edit_write(var, label);
+      current = current.next();
+      end();
+      return nullptr;
     }
+    bool changed = edit_read(var, label);
+    current = current.next();
     end();
+
+    if (changed) {
+      return &var;
+    }
+    return nullptr;
   }
 
-  template <typename T>
-  void edit(const std::string& label, const Var<T>& var) {
-    bool is_new = !current;
-    args_.tight();
-    if (!group()) {
-      return;
+  template <dpack::serializable T>
+  bool edit_v(const std::string& label, T& value) {
+    bool is_new = current.expect(Type::Group, read_key());
+    current.group().layout.tight = true;
+    move_down();
+
+    if (edit_skip()) {
+      return false;
     }
 
-    auto var_version = variable<int>(0);
-    auto schema = variable<dpack::Schema>([]() {
-      return dpack::Schema::make<T>();
-    });
-
-    if (var.version() != var_version.mut_internal() || is_new) {
-      var_version.mut_internal() = var.version();
-      overwrite = true;
-      datapack_write(*this, label, *var);
-      overwrite = false;
-    } else {
-      datapack_edit(*this, label, *schema);
-      if (!is_new) {
-        auto node_capture = current.prev();
-        datapack_read<T>(node_capture, var.mut());
-      }
+    bool has_changed = GuiReader::peek_changed(current);
+    if (is_new || !has_changed) {
+      edit_write(value, label);
+      current = current.next();
+      end();
+      return false;
     }
+    edit_read(value, label);
+    current = current.next();
     end();
+    return true;
   }
-
-  template <typename T>
-  requires dpack::supported<T>
-  void edit(const std::string& label, T& value) {
-    bool is_new = !current;
-    args_.tight();
-    if (!group()) {
-      return;
-    }
-    auto schema = variable<dpack::Schema>([&]() {
-      return dpack::Schema::make<T>();
-    });
-    if (is_new) {
-      datapack_write(*this, label, value);
-    } else {
-      datapack_edit(*this, label, *schema);
-      auto node_capture = current.prev();
-      datapack_read<T>(node_capture, value);
-    }
-    end();
-  }
-#endif
 
   Args& args() {
     return args_;
@@ -252,6 +230,27 @@ public:
   }
 
 private:
+  template <dpack::serializable T>
+  bool edit_read(T& value, const std::string& label) {
+    GuiReader reader(current, label);
+    reader.value(value);
+    return reader.changed();
+  }
+  template <dpack::serializable T>
+  void edit_write(const T& value, const std::string& label) {
+    GuiWriter writer(current, label);
+    writer.value(value);
+  }
+  bool edit_skip() {
+    bool can_skip = current && current.type() == Type::Collapsable &&
+                    !current.collapsable().open;
+    if (can_skip) {
+      current = current.next();
+      end();
+    }
+    return can_skip;
+  }
+
   void move_down();
 
   void render();

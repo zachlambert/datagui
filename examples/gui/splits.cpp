@@ -45,7 +45,7 @@ int main() {
         gui.text_box("ddddddddddddddd");
         gui.text_box("ee");
         gui.args().num_cells(3).text_input_wrap();
-        gui.text_input("fffffffffffff");
+        std::ignore = gui.text_input("fffffffffffff");
       }
     }
 

@@ -40,14 +40,14 @@ struct Foo {
   double scale;
 };
 
-namespace datapack {
+namespace dpack {
 
-DATAPACK_LABELLED_VARIANT(Shape, 2);
-DATAPACK_LABELLED_VARIANT_DEF(Shape) = {"point", "line"};
+DPACK_LABELLED_VARIANT(Shape, 2);
+DPACK_LABELLED_VARIANT_DEF(Shape) = {"point", "line"};
 
-DATAPACK_INLINE(Point, x, y)
-DATAPACK_INLINE(Line, x1, y1, x2, y2)
-DATAPACK_INLINE(Person, name, age)
+DPACK_INLINE(Point, x, y)
+DPACK_INLINE(Line, x1, y1, x2, y2)
+DPACK_INLINE(Person, name, age)
 
 inline void read(Reader& reader, Foo& foo) {
   reader.object_begin();
@@ -58,7 +58,7 @@ inline void read(Reader& reader, Foo& foo) {
   reader.value("points", foo.points);
   reader.value("names", foo.names);
   reader.value("color", foo.color);
-  reader.constraint(ConstraintNumberRange(-1, 1));
+  reader.hint(HintRange(-1, 1));
   reader.value("scale", foo.scale);
   reader.object_end();
 }
@@ -71,43 +71,37 @@ inline void write(Writer& writer, const Foo& foo) {
   writer.value("points", foo.points);
   writer.value("names", foo.names);
   writer.value("color", foo.color);
+  writer.hint(HintRange(-1, 1));
   writer.value("scale", foo.scale);
   writer.object_end();
 }
 
-} // namespace datapack
+} // namespace dpack
 
 int main() {
   datagui::Gui gui;
 
-  int revisit = 0;
-  while (gui.running()) {
+  while (gui.poll()) {
     gui.args().width_expand();
-    if (gui.group()) {
-      auto value = gui.variable<Foo>();
+    gui.group();
+    DATAGUI_SCOPE(gui);
 
-      gui.args().text_size(20).text_color(datagui::Color::Blue());
-      gui.text_box("Edit");
-      gui.edit<Foo>("Foo 1", [=](const Foo& new_value) {
-        std::cout << datapack::debug(new_value) << std::endl;
-        value.set(new_value);
-      });
+    auto& value = gui.variable<Foo>();
 
-      gui.args().text_size(20).text_color(datagui::Color::Blue());
-      gui.text_box("Edit + Overwritten by above");
-      gui.edit<Foo>("Foo 2", value);
-
-      gui.args().text_size(20).text_color(datagui::Color::Blue());
-      gui.text_box("List");
-      gui.edit<std::vector<std::string>>(
-          "Test",
-          [](const std::vector<std::string>&) {},
-          {"first", "second"});
-
-      std::cout << "Revisit: " << revisit++ << std::endl;
-      gui.end();
+    gui.args().text_size(20).text_color(datagui::Color::Blue());
+    gui.text_box("Edit Foo");
+    if (gui.edit_v("foo", value)) {
+      std::cout << dpack::debug(value) << std::endl;
     }
-    gui.poll();
+    if (gui.button("Reset foo")) {
+      value = Foo();
+    }
+
+    gui.args().text_size(20).text_color(datagui::Color::Blue());
+    gui.text_box("Edit Foo List");
+    if (auto value = gui.edit<std::vector<Foo>>("foo list")) {
+      std::cout << dpack::debug(*value) << std::endl;
+    }
   }
   return 0;
 }

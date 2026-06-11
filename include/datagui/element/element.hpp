@@ -45,7 +45,7 @@ struct Button {
 
 struct Checkbox {
   // Dependent
-  float checkbox_size;
+  float checkbox_size = 0;
 
   // State
   bool checked = false;
@@ -55,13 +55,12 @@ struct Checkbox {
 struct Collapsable {
   // Args
   Layout layout;
-  Length width;
-  Length height;
+  Length width = LengthWrap();
+  Length height = LengthWrap();
   std::string label;
   std::optional<Color> header_color;
   std::optional<Color> bg_color;
   bool border = false;
-  bool tight = false;
 
   // Dependent
   Vec2 header_size;
@@ -108,11 +107,10 @@ struct Dropdown {
 struct Group {
   // Args
   Layout layout;
-  Length width;
-  Length height;
+  Length width = LengthWrap();
+  Length height = LengthWrap();
   std::optional<Color> bg_color;
   bool border = false;
-  bool tight = false;
 
   // Dependent
   Box2 content_box;

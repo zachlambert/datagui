@@ -50,9 +50,9 @@ void Tree::reset_element(int element, std::size_t id, Type type) {
   remove_element(element, true);
 }
 
-void Tree::remove_element(int element, bool children_only) {
+void Tree::remove_element(int root, bool children_only) {
   std::stack<int> stack;
-  stack.push(element);
+  stack.push(root);
 
   while (!stack.empty()) {
     int element = stack.top();
@@ -63,6 +63,8 @@ void Tree::remove_element(int element, bool children_only) {
       if (children_only && stack.empty()) {
         return;
       }
+
+      removed_elements.push_back(element);
 
       if (node.prev != -1) {
         elements[node.prev].next = node.next;

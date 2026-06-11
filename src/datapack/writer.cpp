@@ -1,191 +1,249 @@
 #include "datagui/datapack/writer.hpp"
-#include "datagui/gui.hpp"
+#include "datagui/datapack/common.hpp"
+#include <array>
+#include <charconv>
 #include <datapack/encode/base64.hpp>
 
 namespace datagui {
 
+template <typename T>
+std::string number_to_string(T value) {
+  std::array<char, 64> buffer;
+  auto result =
+      std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
+  if (result.ec != std::errc{}) {
+    return "0";
+  }
+  return std::string(buffer.data(), result.ptr);
+}
+
 void GuiWriter::number(dpack::NumberType type, const void* value) {
   if (in_color) {
     float& output = color.data[color_i - 1];
-    std::string value_str;
     switch (type) {
     case dpack::NumberType::I32:
-      output = double(*(std::int32_t*)value) / 255;
+      output = double(*(const std::int32_t*)value) / 255;
       break;
     case dpack::NumberType::I64:
-      output = double(*(std::int64_t*)value) / 255;
+      output = double(*(const std::int64_t*)value) / 255;
       break;
     case dpack::NumberType::U32:
-      output = double(*(std::uint32_t*)value) / 255;
+      output = double(*(const std::uint32_t*)value) / 255;
       break;
     case dpack::NumberType::U64:
-      output = double(*(std::uint64_t*)value) / 255;
+      output = double(*(const std::uint64_t*)value) / 255;
       break;
     case dpack::NumberType::U8:
-      output = double(*(std::uint8_t*)value) / 255;
+      output = double(*(const std::uint8_t*)value) / 255;
       break;
     case dpack::NumberType::F32:
-      output = *(float*)value;
+      output = *(const float*)value;
       break;
     case dpack::NumberType::F64:
-      output = *(double*)value;
+      output = *(const double*)value;
       break;
     }
     return;
   }
 
-  make_label();
+  enter_primitive();
 
-#if 0
-  if (auto constraint = get_constraint<dpack::ConstraintNumber>()) {
-    if (auto range =
-            std::get_if<dpack::ConstraintNumberRange>(&(*constraint))) {
+  auto hint = consume_hint();
+  auto hint_range = hint ? std::get_if<dpack::HintRange>(&*hint) : nullptr;
+  if (hint_range) {
+    node.expect(Type::Slider, read_id());
+    auto& slider = node.slider();
+    slider.lower = hint_range->lower;
+    slider.upper = hint_range->upper;
+    slider.type = convert_type(type);
 
-      switch (type) {
-      case dpack::NumberType::I32:
-        gui.slider<std::int32_t>(
-            *(std::int32_t*)value,
-            range->lower,
-            range->upper,
-            {});
-        break;
-      case dpack::NumberType::I64:
-        gui.slider<std::int64_t>(
-            *(std::int64_t*)value,
-            range->lower,
-            range->upper,
-            {});
-        break;
-      case dpack::NumberType::U32:
-        gui.slider<std::uint32_t>(
-            *(std::uint32_t*)value,
-            range->lower,
-            range->upper,
-            {});
-        break;
-      case dpack::NumberType::U64:
-        gui.slider<std::uint64_t>(
-            *(std::uint64_t*)value,
-            range->lower,
-            range->upper,
-            {});
-        break;
-      case dpack::NumberType::F32:
-        gui.slider<float>(*(float*)value, range->lower, range->upper, {});
-        break;
-      case dpack::NumberType::F64:
-        gui.slider<double>(*(double*)value, range->lower, range->upper, {});
-        break;
-      case dpack::NumberType::U8:
-        gui.slider<std::uint8_t>(
-            *(std::uint8_t*)value,
-            range->lower,
-            range->upper,
-            {});
-        break;
-      }
-      return;
+    switch (type) {
+    case dpack::NumberType::I32:
+      slider.value = *(const std::int32_t*)value;
+      break;
+    case dpack::NumberType::I64:
+      slider.value = *(const std::int64_t*)value;
+      break;
+    case dpack::NumberType::U32:
+      slider.value = *(const std::uint32_t*)value;
+      break;
+    case dpack::NumberType::U64:
+      slider.value = *(const std::uint64_t*)value;
+      break;
+    case dpack::NumberType::U8:
+      slider.value = *(const std::uint8_t*)value;
+      break;
+    case dpack::NumberType::F32:
+      slider.value = *(const float*)value;
+      break;
+    case dpack::NumberType::F64:
+      slider.value = *(const double*)value;
+      break;
     }
+    slider.changed = false;
+    return;
   }
-#endif
+
+  node.expect(Type::TextInput, read_id());
+  auto& text_input = node.text_input();
 
   switch (type) {
   case dpack::NumberType::I32:
-    gui.number_input<std::int32_t>(*(std::int32_t*)value, {});
+    text_input.text = number_to_string(*(const std::int32_t*)value);
     break;
   case dpack::NumberType::I64:
-    gui.number_input<std::int64_t>(*(std::int64_t*)value, {});
+    text_input.text = number_to_string(*(const std::int64_t*)value);
     break;
   case dpack::NumberType::U32:
-    gui.number_input<std::uint32_t>(*(std::uint32_t*)value, {});
+    text_input.text = number_to_string(*(const std::uint32_t*)value);
     break;
   case dpack::NumberType::U64:
-    gui.number_input<std::uint64_t>(*(std::uint64_t*)value, {});
+    text_input.text = number_to_string(*(const std::uint64_t*)value);
     break;
   case dpack::NumberType::U8:
-    gui.number_input<std::uint8_t>(*(std::uint8_t*)value, {});
+    text_input.text = number_to_string(*(const std::uint8_t*)value);
     break;
   case dpack::NumberType::F32:
-    gui.number_input<float>(*(float*)value, {});
+    text_input.text = number_to_string(*(const float*)value);
     break;
   case dpack::NumberType::F64:
-    gui.number_input<double>(*(double*)value, {});
+    text_input.text = number_to_string(*(const double*)value);
     break;
   }
+  text_input.changed = false;
 }
 
 void GuiWriter::boolean(bool value) {
-  make_label();
-  gui.checkbox(value, {});
+  enter_primitive();
+  node.expect(Type::Checkbox, read_id());
+  auto& checkbox = node.checkbox();
+  checkbox.checked = value;
+  checkbox.changed = false;
 }
 
 void GuiWriter::string(const char* value) {
-  make_label();
-  gui.text_input(std::string(value), {});
+  enter_primitive();
+  node.expect(Type::TextInput, read_id());
+  auto& text_input = node.text_input();
+  text_input.text = value;
+  text_input.changed = false;
 }
 
 void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
-  make_label();
-  std::vector<std::string> labels_str;
+  enter_primitive();
+  node.expect(Type::Select, read_id());
+  auto& select = node.select();
+  select.choices.clear();
   for (auto label : labels) {
-    labels_str.emplace_back(label);
+    select.choices.emplace_back(label);
   }
-  gui.select(labels_str, value, {});
+  select.choice = value;
+  select.changed = false;
 }
 
 void GuiWriter::binary(const std::span<const std::uint8_t>& data) {
-  make_label();
-  std::string text = dpack::base64_encode(data);
-  gui.text_input(text, {});
+  enter_primitive();
+  node.expect(Type::TextInput, read_id());
+  auto& text_input = node.text_input();
+  text_input.text = dpack::base64_encode(data);
+  text_input.changed = false;
 }
 
 void GuiWriter::optional_begin(bool has_value) {
-  make_collapsable();
-  auto has_value_var = gui.variable<bool>(has_value);
-  has_value_var.mut_internal() = has_value; // Overwrite if exists
-  gui.checkbox(has_value_var);
-  if (!*has_value_var) {
-    gui.end();
+  enter_container(-1, 1);
+
+  node.expect(Type::Group);
+  {
+    auto& group = node.group();
+    group.layout.rows = 1;
+    group.layout.cols = 2;
+    group.layout.tight = true;
   }
-  next_label = "value";
+  node = node.child();
+
+  node.expect(Type::TextBox);
+  node.text_box().text = "Has value?";
+  node = node.next();
+
+  node.expect(Type::Checkbox);
+  {
+    auto& checkbox = node.checkbox();
+    checkbox.checked = has_value;
+    checkbox.changed = false;
+  }
+
+  node = node.parent().next();
+  if (node) {
+    node.state().force_hidden = !has_value;
+  }
+
+  if (!has_value) {
+    // optional_end() is not called when there is no value
+    node = node.parent();
+    return;
+  }
+  in_composite_ = true;
 }
 
 void GuiWriter::optional_end() {
-  gui.end();
+  in_composite_ = false;
+  assert(!node.next());
+  node = node.parent();
 }
 
-void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
-  std::vector<std::string> labels_str;
+void GuiWriter::variant_begin(
+    int value,
+    const std::span<const char*>& labels) {
+  enter_container(-1, 1);
+
+  node.expect(Type::Select, read_id());
+  auto& select = node.select();
+  select.choices.clear();
   for (auto label : labels) {
-    labels_str.emplace_back(label);
+    select.choices.emplace_back(label);
   }
+  select.choice = value;
+  select.changed = false;
 
-  make_collapsable();
-  auto choice_var = gui.variable<int>(value);
-  choice_var.mut_internal() = value; // Ovewrite if exists
-  gui.select(labels_str, choice_var);
-  gui.key(*choice_var);
+  node = node.next();
+  while (node && node.id() != value) {
+    node.state().force_hidden = true;
+    node = node.next();
+  }
+  if (node) {
+    node.state().force_hidden = false;
+  }
+  next_id_ = value;
 
-  next_label = "value";
+  in_composite_ = true;
 }
 
 void GuiWriter::variant_end() {
-  gui.end();
+  in_composite_ = false;
+  if (node) {
+    node = node.next();
+    while (node) {
+      node.state().force_hidden = true;
+      node = node.next();
+    }
+  }
+  node = node.parent();
 }
 
 void GuiWriter::object_begin() {
-#if 0
-  if (auto constraint = get_constraint<dpack::ConstraintObject>()) {
-    if (std::get_if<dpack::ConstraintObjectColor>(&(*constraint))) {
-      in_color = true;
-      color = Color::Black();
-      color_i = 0;
-      return;
-    }
+  auto hint = consume_hint();
+  auto hint_color = hint ? std::get_if<dpack::HintColor>(&*hint) : nullptr;
+  if (hint_color) {
+    enter_primitive();
+    node.expect(Type::ColorPicker, read_id());
+    in_color = true;
+    color = Color::Black();
+    color_i = 0;
+    return;
   }
-#endif
-  gui.args().grid(-1, 2);
-  make_collapsable();
+
+  enter_container(-1, 2);
+  at_object_begin = true;
 }
 
 void GuiWriter::object_next(const char* key) {
@@ -194,115 +252,201 @@ void GuiWriter::object_next(const char* key) {
     color_i++;
     return;
   }
-  next_label = key;
-  label_from_object = true;
+  if (!at_object_begin) {
+    node = node.next();
+  }
+  at_object_begin = false;
+  next_label_ = key;
 }
 
 void GuiWriter::object_end() {
   if (in_color) {
     assert(color_i == 4);
-    make_label();
-    gui.color_picker(color, {});
+    auto& color_picker = node.color_picker();
+    color_picker.value = color;
+    color_picker.changed = false;
     in_color = false;
     return;
   }
-  gui.end();
+
+  if (at_object_begin) {
+    assert(!node);
+  } else {
+    assert(!node.next());
+  }
+  at_object_begin = false;
+
+  node = node.parent();
 }
 
 void GuiWriter::tuple_begin() {
-  make_collapsable();
+  enter_container(-1, 1);
+  at_object_begin = true;
 }
 
 void GuiWriter::tuple_next() {
-  // Do nothing
+  if (!at_object_begin) {
+    node = node.next();
+  }
+  at_object_begin = false;
+  next_label_ = "";
 }
 
 void GuiWriter::tuple_end() {
-  gui.end();
+  if (at_object_begin) {
+    assert(!node);
+  } else {
+    assert(!node.next());
+  }
+  at_object_begin = false;
+
+  node = node.parent();
 }
 
 void GuiWriter::list_begin(size_t size) {
-  (void)size;
+  enter_container(2, 1);
+  // Contains:
+  // <items group>
+  // <add button>
 
-  make_collapsable();
+  auto var = node.parent().var();
+  if (!var) {
+    var.create(ListVar());
+  }
+  auto list_var = var.as<ListVar>();
 
-  auto key_list = gui.variable<KeyList>();
-  ListState state = {key_list, 0};
-  list_stack.push(state);
+  // Resize the key list to exactly match the value being written, reusing
+  // existing keys (and therefore widgets) where possible.
+  while (list_var->ids.size() < size) {
+    list_var->ids.append();
+  }
+  while (list_var->ids.size() > size) {
+    list_var->ids.remove(list_var->ids[list_var->ids.size() - 1]);
+  }
+  // Writing overwrites widget state authoritatively, so there is no pending
+  // add/remove to reconcile.
+  list_var->dirty = false;
 
-  gui.args().tight();
-  gui.group();
+  list_stack.emplace(list_var);
 
-  // Hack to force gui to depend on key list here
-  *key_list;
+  // Enter items group
+  node.expect(Type::Group);
+  auto& group = node.group();
+  group.layout.tight = true;
+  group.layout.rows = -1;
+  group.layout.cols = 3;
+  node = node.child();
+
+  at_object_begin = true;
 }
 
 void GuiWriter::list_next() {
-  assert(!list_stack.empty());
-  auto& state = list_stack.top();
+  auto& list_state = list_stack.top();
 
-  if (state.index != 0) {
-    auto keys = state.keys;
-    std::size_t key = (*keys)[state.index - 1];
-    gui.button("Remove", [=]() {
-      keys.mut().remove(key);
-    });
-    gui.end();
+  if (!at_object_begin) {
+    node = node.next();
+    list_remove_button();
+    list_state.pos++;
+    node = node.next();
   }
+  at_object_begin = false;
 
-  if (state.index == state.keys->size()) {
-    state.keys.mut_internal().append();
-  }
-
-  gui.key((*state.keys)[state.index]);
-  gui.args().horizontal().align_top();
-  gui.group();
-
-  state.index++;
+  list_item_label();
+  node = node.next();
 }
 
 void GuiWriter::list_end() {
-  assert(!list_stack.empty());
-  const auto& state = list_stack.top();
-  auto keys = state.keys;
+  auto& list_state = list_stack.top();
 
-  if (state.index != 0) {
-    std::size_t key = (*keys)[state.index - 1];
-    gui.button("Remove", [=]() {
-      keys.mut().remove(key);
-    });
-    gui.end();
+  if (!at_object_begin) {
+    node = node.next();
+    list_remove_button();
+    list_state.pos++;
+    assert(list_state.pos == list_state.var->ids.size());
+    node = node.next();
   }
 
-  gui.end();
-
-  while (state.index < keys->size()) {
-    keys.mut_internal().remove((*keys)[state.index]);
+  while (node) {
+    // Skip the Label, value, remove button
+    node = node.erase().erase().erase();
   }
+  at_object_begin = false;
 
-  gui.button("new", [=]() {
-    keys.mut().append();
-  });
-  gui.end();
+  node = node.parent().next();
+  node.expect(Type::Button);
+  node.button().text = "Add";
 
   list_stack.pop();
+  assert(!node.next());
+  node = node.parent();
 }
 
-void GuiWriter::make_label() {
-  if (label_from_object) {
-    gui.text_box(next_label);
-    next_label.clear();
+void GuiWriter::list_item_label() {
+  auto& list_state = list_stack.top();
+
+  std::uint64_t expected_id = list_state.var->ids[list_state.pos];
+  while (node && node.id() != expected_id) {
+    // Skip the Label, value, remove button
+    node = node.erase().erase().erase();
   }
-  label_from_object = false;
+
+  node.expect(Type::TextBox, expected_id);
+  node.text_box().text = "Item " + std::to_string(list_state.pos);
 }
 
-void GuiWriter::make_collapsable() {
-  if (label_from_object) {
-    gui.args().num_cells(2);
+void GuiWriter::list_remove_button() {
+  node.expect(Type::Button);
+  node.button().text = "Remove";
+}
+
+void GuiWriter::enter_primitive() {
+  if (is_root_) {
+    is_root_ = false;
+    node.expect(Type::Group);
+    root = node;
+    node.group().layout.tight = true;
+    node = node.child();
+    return;
   }
-  gui.collapsable(next_label);
-  label_from_object = false;
-  next_label.clear();
+
+  // No special handling for composites, only used by enter_container
+  in_composite_ = false;
+  if (!next_label_.empty()) {
+    node.expect(Type::TextBox);
+    node.text_box().text = next_label_;
+    node = node.next();
+  }
+  next_label_.clear();
+}
+
+void GuiWriter::enter_container(size_t rows, size_t cols) {
+  if (in_composite_) {
+    assert(!is_root_);
+    in_composite_ = false;
+    node.expect(Type::Group, read_id());
+    auto& group = node.group();
+    group.layout.tight = true;
+    group.layout.rows = rows;
+    group.layout.cols = cols;
+    node = node.child();
+    return;
+  }
+
+  node.expect(Type::Collapsable, read_id());
+  auto& collapsable = node.collapsable();
+  collapsable.label = next_label_;
+  collapsable.layout.rows = rows;
+  collapsable.layout.cols = cols;
+
+  if (!next_label_.empty() && !is_root_) {
+    node.state().num_cells = 2;
+  }
+  if (is_root_) {
+    is_root_ = false;
+    root = node;
+  }
+  next_label_.clear();
+  node = node.child();
 }
 
 } // namespace datagui

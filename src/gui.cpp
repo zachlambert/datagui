@@ -71,6 +71,11 @@ void Gui::end() {
 }
 
 bool Gui::poll() {
+  if (element_focus && tree.has_removed(element_focus)) {
+    element_focus = ElementPtr();
+  }
+  tree.clear_removed();
+
   assert(stack.empty());
   calculate_sizes();
   render();
@@ -170,14 +175,6 @@ bool Gui::color_picker_v(Color& value) {
   args_.apply(current);
   current = current.next();
 
-  if (color_picker.modified) {
-    if (color_picker.always) {
-      value = color_picker.value;
-      return true;
-    } else {
-      return false;
-    }
-  }
   if (color_picker.changed) {
     color_picker.changed = false;
     value = color_picker.value;
@@ -252,7 +249,8 @@ std::optional<int> Gui::select(
     select.choice = initial_choice;
   }
   select.choices = choices;
-  if (select.choice >= choices.size()) {
+  if (select.choice >= 0 &&
+      static_cast<size_t>(select.choice) >= choices.size()) {
     select.choice = std::max(1ul, choices.size()) - 1;
   }
   args_.apply(current);
@@ -272,7 +270,7 @@ bool Gui::select_v(int& choice, const std::vector<std::string>& choices) {
   current = current.next();
 
   if (select.changed) {
-    select.changed = true;
+    select.changed = false;
     choice = select.choice;
     return true;
   } else {
@@ -624,6 +622,7 @@ void Gui::debug_render() {
        << focused.state().dynamic_size.y;
     ss << "\nsize: " << focused.state().size.x << ", "
        << focused.state().size.y;
+    ss << "\nhidden: " << (focused.state().hidden ? "true" : "false");
     if (focused.state().floating) {
       ss << "\nfloating priority: " << focused.state().float_priority;
     }

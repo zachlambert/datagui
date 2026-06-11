@@ -102,7 +102,7 @@ Color Color::Random() {
 }
 
 bool Color::equals(const Color& other, float max_error) const {
-  float error = 1;
+  float error = 0;
   error = std::max(error, std::abs(r - other.r));
   error = std::max(error, std::abs(g - other.g));
   error = std::max(error, std::abs(b - other.b));
@@ -118,6 +118,14 @@ Color Color::multiply(float factor) const {
 
 namespace dpack {
 
-DPACK_DEF(datagui::Color, r, g, b, a)
+DPACK_DEF_CUSTOM(datagui::Color, {
+  packer.hint(HintColor());
+  packer.object_begin();
+  packer.value("r", value.r);
+  packer.value("g", value.g);
+  packer.value("b", value.b);
+  packer.value("a", value.a);
+  packer.object_end();
+})
 
 } // namespace dpack

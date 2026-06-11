@@ -22,7 +22,7 @@ int main() {
     gui.args().bg_color(datagui::Color::Hsl(180, 0.7, 0.7)).retain();
     if (gui.popup(window_1_open, "Floating 1", 700, 100)) {
       DATAGUI_SCOPE(gui);
-      gui.text_input("Input");
+      std::ignore = gui.text_input("Input");
       gui.text_box("Here is some text");
       gui.text_box("Foo");
       gui.text_box("Bar");
@@ -50,7 +50,7 @@ int main() {
     if (auto choice = gui.select(-1, choices)) {
       std::cout << "Selected '" << choices[*choice] << "'" << std::endl;
     };
-    gui.select(-1, {});
+    std::ignore = gui.select(-1, {});
     gui.text_box("Text below");
   }
   return 0;

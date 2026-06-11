@@ -41,6 +41,11 @@ void layout_set_input_state(
       child = child.next();
       continue;
     }
+    if (child.state().force_hidden) {
+      child = child.next();
+      continue;
+    }
+
     if (j == 0 && row_major) {
       state.row_input_sizes.push_back({0, 0});
     } else if (i == 0 && !row_major) {
@@ -86,7 +91,7 @@ void layout_set_input_state(
   }
 
   float outer_padding = layout.tight ? 0.f : theme->layout_outer_padding;
-  float inner_padding = layout.tight ? 0.f : theme->layout_inner_padding;
+  float inner_padding = theme->layout_inner_padding;
 
   for (const auto& [i, j, child] : multi_cells) {
     std::size_t n = child.state().num_cells;
@@ -170,7 +175,7 @@ void layout_set_dependent_state(
     float size = content_box.size().y;
     float content_size = state.content_fixed_size.y;
     float available = std::max(size - content_size, 0.f);
-    float dynamic_size = state.content_dynamic_size.x;
+    float dynamic_size = state.content_dynamic_size.y;
     state.content_overrun.y = std::max(content_size - size, 0.f);
 
     for (std::size_t i = 0; i < row_sizes.size(); i++) {
@@ -185,7 +190,7 @@ void layout_set_dependent_state(
   bool row_major = (layout.cols > 0);
 
   float outer_padding = layout.tight ? 0.f : theme->layout_outer_padding;
-  float inner_padding = layout.tight ? 0.f : theme->layout_inner_padding;
+  float inner_padding = theme->layout_inner_padding;
 
   auto child = element.child();
   std::size_t i = 0;
@@ -197,6 +202,11 @@ void layout_set_dependent_state(
   while (child) {
     if (child.state().float_only) {
       child.state().position = content_box.lower;
+      child = child.next();
+      continue;
+    }
+    if (child.state().force_hidden) {
+      child.state().hidden = true;
       child = child.next();
       continue;
     }

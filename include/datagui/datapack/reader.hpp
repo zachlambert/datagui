@@ -1,13 +1,16 @@
 #pragma once
 
+#include "datagui/datapack/common.hpp"
 #include "datagui/element/tree.hpp"
 #include <datapack/datapack.hpp>
+#include <stack>
 
 namespace datagui {
 
 class GuiReader : public dpack::Reader {
 public:
-  GuiReader(ConstElementPtr node) : node(node) {}
+  GuiReader(ElementPtr& root, const std::string& root_label) :
+      root(root), node(root), next_label_(root_label) {}
 
   void number(dpack::NumberType type, void* value) override;
   bool boolean() override;
@@ -33,8 +36,63 @@ public:
   void list_next() override;
   void list_end() override;
 
+  void hint(const dpack::Hint& hint) override {
+    hint_ = hint;
+  }
+  void description(const std::string& description) override {
+    description_ = description;
+  }
+
+  bool changed() const {
+    return changed_;
+  }
+
+  static bool peek_changed(ConstElementPtr root);
+
 private:
-  ConstElementPtr node;
+  void enter_primitive();
+  void enter_container(size_t rows, size_t cols);
+  void list_item_label();
+  bool list_remove_button();
+
+  std::uint64_t read_id() {
+    std::int64_t id = next_id_;
+    next_id_ = 0;
+    return id;
+  }
+  std::optional<dpack::Hint> consume_hint() {
+    if (hint_) {
+      return std::move(hint_);
+    }
+    return std::nullopt;
+  }
+  std::optional<std::string> consume_description() {
+    if (description_) {
+      return std::move(description_);
+    }
+    return std::nullopt;
+  }
+
+  bool changed_ = false;
+
+  ElementPtr& root;
+  ElementPtr node;
+  std::uint64_t next_id_ = 0;
+  std::string next_label_ = "";
+  bool is_root_ = true;
+  bool in_composite_ = false;
+
+  std::optional<dpack::Hint> hint_;
+  std::optional<std::string> description_;
+
+  struct ListState {
+    Var<ListVar> var;
+    int pos = 0;
+    bool current_dirty = false;
+    ListState(Var<ListVar> var) : var(var) {}
+  };
+  std::stack<ListState> list_stack;
+
   std::vector<std::uint8_t> binary_temp;
   bool at_object_begin = false;
 
@@ -42,12 +100,5 @@ private:
   std::size_t color_i;
   Color color;
 };
-
-template <typename T>
-void dpack_read(ConstElementPtr node, T& value) {
-  GuiReader reader(node);
-  reader.value(value);
-  assert(reader.valid());
-}
 
 } // namespace datagui
