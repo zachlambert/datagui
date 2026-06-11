@@ -317,20 +317,28 @@ void GuiReader::tuple_end() {
 }
 
 size_t GuiReader::list_begin() {
-  enter_container(-1, 1);
+  enter_container(2, 1);
+  // Contains:
+  // <items group>
+  // <add button>
 
   auto var = node.parent().var();
   if (!var) {
     var.create(ListVar());
   }
   list_stack.emplace(var.as<ListVar>());
+  auto& list_state = list_stack.top();
+
+  // Enter items group
+  node.expect(Type::Group);
+  auto& group = node.group();
+  group.layout.tight = true;
+  group.layout.rows = -1;
+  group.layout.cols = 3;
+  node = node.child();
 
   at_object_begin = true;
-
-  node.expect(Type::Group);
-  node.group().layout.tight = true;
-  node = node.child();
-  return list_stack.top().var->ids.size();
+  return list_state.var->ids.size();
 }
 
 void GuiReader::list_next() {
@@ -341,34 +349,12 @@ void GuiReader::list_next() {
     if (!list_remove_button()) {
       list_state.pos++;
     }
-    node = node.parent().next();
+    node = node.next();
   }
   at_object_begin = false;
 
-  // The value of state.var->ids.size() should inform the external datapack code
-  // how many times to call list_next()
-  // If this isn't followed, then it will go out of bounds here
-  assert(list_state.pos < list_state.var->ids.size());
-
-  std::uint64_t expected_id = list_state.var->ids[list_state.pos];
-  while (node && node.id() != expected_id) {
-    // Remove has been pressed on the previous cycle, should have dirty=true
-    assert(list_state.var->dirty);
-    node = node.erase();
-    changed_ = true;
-  }
-  if (!node) {
-    // Add has been pressed on the previous cycle, should have dirty=true
-    assert(list_state.var->dirty);
-    changed_ = true;
-  }
-
-  node.expect(Type::Group, expected_id);
-  auto& group = node.group();
-  group.layout.tight = true;
-  group.layout.rows = 1;
-  group.layout.cols = 2;
-  node = node.child();
+  list_item_label();
+  node = node.next();
 }
 
 void GuiReader::list_end() {
@@ -380,13 +366,13 @@ void GuiReader::list_end() {
       list_state.pos++;
     }
     assert(list_state.pos == list_state.var->ids.size());
-    node = node.parent().next();
+    node = node.next();
   }
 
   while (node) {
     // Remove has been pressed on the previous cycle, should have dirty=true
     assert(list_state.var->dirty);
-    node = node.erase();
+    node = node.erase().erase().erase();
     changed_ = true;
   }
   at_object_begin = false;
@@ -407,6 +393,32 @@ void GuiReader::list_end() {
 
   assert(!node.next());
   node = node.parent();
+}
+
+void GuiReader::list_item_label() {
+  auto& list_state = list_stack.top();
+
+  // The value of state.var->ids.size() should inform the external datapack code
+  // how many times to call list_next()
+  // If this isn't followed, then it will go out of bounds here
+  assert(list_state.pos < list_state.var->ids.size());
+
+  std::uint64_t expected_id = list_state.var->ids[list_state.pos];
+  while (node && node.id() != expected_id) {
+    // Remove has been pressed on the previous cycle, should have dirty=true
+    assert(list_state.var->dirty);
+    // Skip the Label, value, remove button
+    node = node.erase().erase().erase();
+    changed_ = true;
+  }
+  if (!node) {
+    // Add has been pressed on the previous cycle, should have dirty=true
+    assert(list_state.var->dirty);
+    changed_ = true;
+  }
+
+  node.expect(Type::TextBox, expected_id);
+  node.text_box().text = "Item " + std::to_string(list_state.pos);
 }
 
 bool GuiReader::list_remove_button() {

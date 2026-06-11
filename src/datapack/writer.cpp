@@ -304,7 +304,7 @@ void GuiWriter::tuple_end() {
 }
 
 void GuiWriter::list_begin(size_t size) {
-  enter_container(-1, 1);
+  enter_container(-1, 3);
 
   auto var = node.parent().var();
   if (!var) {

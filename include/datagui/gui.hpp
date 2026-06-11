@@ -166,7 +166,7 @@ public:
   }
 
   template <dpack::serializable T>
-  const T* edit(const T& initial_value, const std::string& label) {
+  const T* edit(const std::string& label, const T& initial_value = T()) {
     bool is_new = current.expect(Type::Group, read_key());
     current.group().layout.tight = true;
     move_down();
@@ -176,12 +176,14 @@ public:
     }
 
     T& var = variable<T>(initial_value);
+#if 0
     if (is_new) {
       edit_write(var, label);
       current = current.next();
       end();
       return nullptr;
     }
+#endif
     bool changed = edit_read(var, label);
     current = current.next();
     end();
@@ -193,7 +195,7 @@ public:
   }
 
   template <dpack::serializable T>
-  bool edit_v(T& value, const std::string& label) {
+  bool edit_v(const std::string& label, T& value) {
     bool is_new = current.expect(Type::Group, read_key());
     current.group().layout.tight = true;
     move_down();
@@ -203,12 +205,14 @@ public:
     }
 
     bool has_changed = GuiReader::peek_changed(current);
+#if 0
     if (is_new || !has_changed) {
       edit_write(value, label);
       current = current.next();
       end();
       return false;
     }
+#endif
     edit_read(value, label);
     current = current.next();
     end();

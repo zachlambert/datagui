@@ -52,6 +52,7 @@ public:
 private:
   void enter_primitive();
   void enter_container(size_t rows, size_t cols);
+  void list_item_label();
   bool list_remove_button();
 
   std::uint64_t read_id() {
