@@ -32,6 +32,7 @@ DPACK_LABELLED_VARIANT_DEF(Shape) = {"Point", "Circle"};
 
 int main() {
   dgui::Gui gui;
+  gui.open();
 
   Shape shape;
 

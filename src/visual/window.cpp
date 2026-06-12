@@ -181,46 +181,36 @@ void glfw_char_callback(GLFWwindow* glfw_window, unsigned int codepoint) {
   window->text_events_.push_back(event);
 }
 
-Window::Window(
-    const std::string& title,
-    std::size_t width,
-    std::size_t height) :
-    title(title),
-    default_width(width),
-    default_height(height),
+Window::Window() :
+    title("datagui"),
+    default_width(900),
+    default_height(600),
     window(nullptr),
-    size_(width, height) {
+    size_(900, 600) {
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     mouse_button_down_[i] = false;
     mouse_down_mod_[i].ctrl = false;
     mouse_down_mod_[i].shift = false;
   }
-  open();
-  std::scoped_lock<std::shared_mutex> lock(windows_mutex);
-  windows.emplace_back(window, this);
 }
 
 Window::~Window() {
-  if (window) {
-    {
-      std::scoped_lock<std::shared_mutex> lock(windows_mutex);
-      for (auto iter = windows.begin(); iter != windows.end(); iter++) {
-        if (iter->second == this) {
-          assert(iter->first == window);
-          windows.erase(iter);
-          break;
-        }
-      }
-    }
-    close();
-  }
+  close();
 }
 
 bool Window::running() const {
   return window && !glfwWindowShouldClose(window);
 }
 
-void Window::open() {
+void Window::open(
+    const std::string& title,
+    std::size_t width,
+    std::size_t height) {
+  this->title = title;
+  default_width = width;
+  default_height = height;
+  size_ = Vec2(width, height);
+
   if (!glfwInit()) {
     throw std::runtime_error("Failed to initialize glfw");
   }
@@ -256,11 +246,25 @@ void Window::open() {
   glfwSetScrollCallback(window, glfw_scroll_callback);
   glfwSetKeyCallback(window, glfw_key_callback);
   glfwSetCharCallback(window, glfw_char_callback);
+
+  std::scoped_lock<std::shared_mutex> lock(windows_mutex);
+  windows.emplace_back(window, this);
 }
 
 void Window::close() {
   if (!window) {
     return;
+  }
+
+  {
+    std::scoped_lock<std::shared_mutex> lock(windows_mutex);
+    for (auto iter = windows.begin(); iter != windows.end(); iter++) {
+      if (iter->second == this) {
+        assert(iter->first == window);
+        windows.erase(iter);
+        break;
+      }
+    }
   }
 
   glfwMakeContextCurrent(window);

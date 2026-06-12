@@ -5,6 +5,7 @@ int main() {
   using namespace dgui;
 
   Window window;
+  window.open();
   while (window.running()) {
     window.render_begin();
     window.render_end();

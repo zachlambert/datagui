@@ -41,6 +41,7 @@ int main() {
   using namespace dgui;
 
   Window window;
+  window.open();
   ImageShader shader;
   shader.init();
 

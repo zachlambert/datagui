@@ -2,6 +2,7 @@
 
 int main() {
   dgui::Gui gui;
+  gui.open();
   using dgui::Color;
 
   while (gui.poll()) {

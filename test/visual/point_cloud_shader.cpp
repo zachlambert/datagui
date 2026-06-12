@@ -4,7 +4,8 @@
 int main() {
   using namespace dgui;
 
-  Window window("point_cloud_shader", 800, 800);
+  Window window;
+  window.open("point_cloud_shader", 800, 800);
   PointCloudShader point_cloud_shader;
   point_cloud_shader.init();
 

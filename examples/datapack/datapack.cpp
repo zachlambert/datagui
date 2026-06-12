@@ -80,6 +80,7 @@ inline void write(Writer& writer, const Foo& foo) {
 
 int main() {
   dgui::Gui gui;
+  gui.open();
 
   while (gui.poll()) {
     gui.args().width_expand();

@@ -3,6 +3,7 @@
 
 int main() {
   dgui::Gui gui;
+  gui.open();
 
   while (gui.poll()) {
     gui.group();

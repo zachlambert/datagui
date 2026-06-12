@@ -4,6 +4,7 @@
 
 int main() {
   dgui::Gui gui;
+  gui.open();
 
   std::vector<double> xs;
   std::vector<double> ys;
