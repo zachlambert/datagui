@@ -23,4 +23,13 @@ int main() {
       }
     }
   }
+
+  // Can re-open ?
+  window.close();
+  window.open();
+  while (window.running()) {
+    window.render_begin();
+    window.render_end();
+    window.poll_events();
+  }
 }
