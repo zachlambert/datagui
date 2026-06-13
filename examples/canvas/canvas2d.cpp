@@ -3,6 +3,7 @@
 
 int main() {
   dgui::Gui gui;
+  gui.open();
   using dgui::Box2;
   using dgui::Color;
   using dgui::Vec2;

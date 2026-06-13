@@ -4,6 +4,7 @@
 
 int main() {
   dgui::Gui gui;
+  gui.open();
 
   int timer = 0;
   bool timer_paused = false;

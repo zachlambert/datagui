@@ -121,6 +121,7 @@ void edit_list_2(dgui::Gui& gui) {
 
 int main() {
   dgui::Gui gui;
+  gui.open();
 
   while (gui.poll()) {
     gui.group();

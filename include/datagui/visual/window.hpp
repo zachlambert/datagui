@@ -13,11 +13,14 @@ namespace dgui {
 
 class Window {
 public:
-  Window(
+  Window();
+  ~Window();
+
+  void open(
       const std::string& title = "datagui",
       std::size_t width = 900,
       std::size_t height = 600);
-  ~Window();
+  void close();
 
   bool running() const;
   void render_begin();
@@ -51,9 +54,6 @@ public:
   }
 
 private:
-  void open();
-  void close();
-
   std::string title;
   std::size_t default_width;
   std::size_t default_height;

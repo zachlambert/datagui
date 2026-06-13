@@ -3,6 +3,7 @@
 
 int main() {
   dgui::Gui gui;
+  gui.open();
 
   std::vector<std::string> choices;
   for (std::size_t i = 0; i < 20; i++) {

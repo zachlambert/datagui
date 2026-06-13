@@ -21,8 +21,18 @@ namespace dgui {
 
 using namespace std::placeholders;
 
-Gui::Gui(const std::string& title, std::size_t width, std::size_t height) :
-    window(title, width, height) {
+Gui::Gui() {}
+
+Gui::~Gui() {
+  close();
+}
+
+void Gui::open(
+    const std::string& title,
+    std::size_t width,
+    std::size_t height) {
+  window.open(title, width, height);
+
   fm = std::make_shared<FontManager>();
   theme = std::make_shared<Theme>(theme_default());
   renderer.init(fm);
@@ -51,6 +61,10 @@ Gui::Gui(const std::string& title, std::size_t width, std::size_t height) :
   for (const auto& system : systems) {
     assert(system);
   }
+}
+
+void Gui::close() {
+  window.close();
 }
 
 void Gui::move_down() {

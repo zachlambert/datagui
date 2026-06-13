@@ -5,6 +5,7 @@ int main() {
   using namespace dgui;
 
   Window window;
+  window.open();
   Text2dShader shader;
   auto fm = std::make_shared<FontManager>();
   shader.init(fm);

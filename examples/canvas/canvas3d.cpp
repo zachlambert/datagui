@@ -3,6 +3,7 @@
 
 int main() {
   dgui::Gui gui;
+  gui.open();
   using dgui::Color;
   using dgui::Euler;
   using dgui::Rot3;

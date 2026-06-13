@@ -4,7 +4,8 @@
 int main() {
   using namespace dgui;
 
-  Window window("mesh_shader", 800, 800);
+  Window window;
+  window.open("mesh_shader", 800, 800);
   MeshShader mesh_shader;
   mesh_shader.init();
 

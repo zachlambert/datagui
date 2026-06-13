@@ -5,6 +5,7 @@ int main() {
   using namespace dgui;
 
   Window window;
+  window.open();
   Shape2dShader shader;
   shader.init();
 

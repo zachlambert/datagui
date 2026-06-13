@@ -29,11 +29,16 @@ class Canvas3d;
 
 class Gui {
 public:
-  Gui(const std::string& title = "datagui",
-      std::size_t width = 900,
-      std::size_t height = 600);
+  Gui();
+  ~Gui();
 
   // Setup
+
+  void open(
+      const std::string& title = "datagui",
+      std::size_t width = 900,
+      std::size_t height = 600);
+  void close();
 
   bool poll();
 

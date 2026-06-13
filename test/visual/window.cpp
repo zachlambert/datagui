@@ -5,6 +5,7 @@ int main() {
   using namespace dgui;
 
   Window window;
+  window.open();
   while (window.running()) {
     window.render_begin();
     window.render_end();
@@ -21,5 +22,14 @@ int main() {
         break;
       }
     }
+  }
+
+  // Can re-open ?
+  window.close();
+  window.open();
+  while (window.running()) {
+    window.render_begin();
+    window.render_end();
+    window.poll_events();
   }
 }

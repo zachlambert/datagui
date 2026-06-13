@@ -10,7 +10,8 @@ inline void plot(
     std::size_t width,
     std::size_t height,
     const std::function<void(Plotter&)> plot) {
-  Gui gui(title);
+  Gui gui;
+  gui.open(title);
   while (gui.running()) {
     if (auto plotter = gui.plotter(width, height)) {
       plot(*plotter);

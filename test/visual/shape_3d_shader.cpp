@@ -4,7 +4,8 @@
 int main() {
   using namespace dgui;
 
-  Window window("shape_3d_shader", 800, 800);
+  Window window;
+  window.open("shape_3d_shader", 800, 800);
   Shape3dShader shape_shader;
   shape_shader.init();
 
