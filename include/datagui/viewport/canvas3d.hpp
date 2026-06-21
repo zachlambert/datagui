@@ -92,13 +92,12 @@ public:
   }
 
 private:
-  void begin() override;
-  void end() override;
-  void redraw();
-
-  void impl_init(
+  void init(
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm) override;
+  void begin() override;
+  void draw(const Box2& viewport, const Box2& mask) override;
+
   void mouse_event(const MouseEvent& event) override;
   bool scroll_event(const ScrollEvent& event) override;
   void reset_camera();

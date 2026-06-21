@@ -85,9 +85,15 @@ void Args::apply(ElementPtr element) {
     break;
   }
   case Type::ViewportPtr: {
+    auto& viewport = element.viewport();
+    viewport_width_.consume(viewport.width);
+    viewport_height_.consume(viewport.height);
     break;
   }
   }
+
+  // Reset
+  (*this) = {};
 }
 
 } // namespace dgui

@@ -62,7 +62,7 @@ public:
       std::size_t width = 256,
       std::size_t height = 256);
 
-  void view_size(float width, float height = 0);
+  void view_width(float width);
 
   void bg_color(const Color& color) {
     bg_color_ = color;
@@ -71,13 +71,11 @@ public:
   std::optional<MouseEvent> mouse_event();
 
 private:
-  void begin() override;
-  void end() override;
-
-  void impl_init(
+  void init(
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontManager>& fm) override;
-  void redraw();
+  void begin() override;
+  void draw(const Box2& viewport, const Box2& mask) override;
 
   void mouse_event(const MouseEvent& event) override;
   bool scroll_event(const ScrollEvent& event) override;
@@ -86,8 +84,9 @@ private:
   Camera2d click_camera;
   std::optional<MouseEvent> mouse_event_;
 
-  Vec2 nominal_camera_size;
+  std::optional<float> nominal_view_width_ = 0;
   float zoom = 1;
+  std::optional<Box2> prev_viewport_;
 
   Camera2d camera;
   Shape2dShader shape_shader;

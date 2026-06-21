@@ -25,7 +25,7 @@ class Args {
     }
 
   private:
-    const T default_value;
+    T default_value;
     T value;
   };
 
@@ -178,6 +178,15 @@ public:
     return *this;
   }
 
+  Args& viewport_width(float width) {
+    *viewport_width_ = LengthFixed(width);
+    return *this;
+  }
+  Args& viewport_height(float height) {
+    *viewport_height_ = LengthFixed(height);
+    return *this;
+  }
+
 private:
   void apply(ElementPtr element);
 
@@ -199,6 +208,9 @@ private:
   Arg<bool> split_fixed_ = false;
   ArgOpt<Length> text_input_width_;
   Arg<Direction> dropdown_direction_ = Direction::Vertical;
+
+  Arg<Length> viewport_width_ = Length(LengthDynamic());
+  Arg<Length> viewport_height_ = Length(LengthDynamic());
 
   friend class Gui;
 };

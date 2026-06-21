@@ -5,8 +5,7 @@
 #include "datagui/input/number_input.hpp"
 #include "datagui/layout.hpp"
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/image_shader.hpp"
-#include <functional>
+#include "datagui/asset/image.hpp"
 #include <optional>
 #include <vector>
 
@@ -224,8 +223,8 @@ struct TextBox {
 };
 
 struct ViewportPtr {
-  float width;
-  float height;
+  Length width = LengthDynamic();
+  Length height = LengthDynamic();
   std::unique_ptr<Viewport> viewport;
 };
 

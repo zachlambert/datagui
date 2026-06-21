@@ -43,7 +43,7 @@ int main() {
     gui.group();
     DGUI_SCOPE(gui);
 
-    auto& canvas = gui.canvas3d(512, 512);
+    auto& canvas = gui.canvas3d();
     {
       DGUI_SCOPE(gui);
       canvas.bg_color(bg_color);

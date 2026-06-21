@@ -1049,26 +1049,22 @@ void Gui::focus_next(bool reverse) {
 
 template <typename T>
 requires std::is_base_of_v<Viewport, T>
-T& Gui::viewport(float width, float height) {
+T& Gui::viewport() {
   current.expect(Type::ViewportPtr, read_key());
+  args_.apply(current);
   auto& viewport = current.viewport();
   if (!viewport.viewport) {
     viewport.viewport = std::make_unique<T>();
-    viewport.viewport->init(width, height, theme, fm);
+    viewport.viewport->init(theme, fm);
   }
-  // Renderered width/height can differ to the initial width/height
-  // above - this defines the size used for the framebuffer
-  viewport.width = width;
-  viewport.height = height;
-
   move_down();
   viewport.viewport->begin();
   T* ptr = dynamic_cast<T*>(viewport.viewport.get());
   assert(ptr);
   return *ptr;
 }
-template Canvas2d& Gui::viewport<Canvas2d>(float, float);
-template Canvas3d& Gui::viewport<Canvas3d>(float, float);
-template Plotter& Gui::viewport<Plotter>(float, float);
+template Canvas2d& Gui::viewport<Canvas2d>();
+template Canvas3d& Gui::viewport<Canvas3d>();
+template Plotter& Gui::viewport<Plotter>();
 
 } // namespace dgui

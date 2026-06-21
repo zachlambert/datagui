@@ -6,8 +6,20 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   const auto& viewport = element.viewport();
 
-  state.fixed_size = Vec2(viewport.width, viewport.height);
-  state.dynamic_size = Vec2();
+  auto apply_length = [](const Length& length, float& fixed, float& dynamic) {
+    if (auto value = std::get_if<LengthFixed>(&length)) {
+      fixed = value->value;
+      dynamic = 0;
+    } else if (auto value = std::get_if<LengthDynamic>(&length)) {
+      fixed = 0;
+      dynamic = value->weight;
+    } else {
+      throw std::runtime_error("Cannot set wrap height or width for viewport");
+    }
+  };
+
+  apply_length(viewport.width, state.fixed_size.x, state.fixed_size.y);
+  apply_length(viewport.height, state.fixed_size.x, state.fixed_size.y);
   state.floating = false;
 }
 
@@ -16,7 +28,7 @@ void ViewportPtrSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& viewport = element.viewport();
   renderer.queue_viewport(
       Box2(state.position, state.position + state.fixed_size),
-      viewport.viewport->texture());
+      viewport.viewport.get());
 }
 
 void ViewportPtrSystem::mouse_event(

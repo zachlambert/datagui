@@ -157,27 +157,21 @@ void Canvas3d::begin() {
   click_callback_ = {};
 }
 
-void Canvas3d::end() {
-  redraw();
-}
-
-void Canvas3d::redraw() {
-  bind_framebuffer(bg_color_);
-  camera.fov.y = camera.fov.x * viewport().ratio_yx();
-  shape_shader.draw(viewport(), camera);
-  mesh_shader.draw(viewport(), camera);
-  uv_mesh_shader.draw(viewport(), camera);
-  point_cloud_shader.draw(viewport(), camera);
-  unbind_framebuffer();
-}
-
-void Canvas3d::impl_init(
+void Canvas3d::init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
   shape_shader.init();
   mesh_shader.init();
   uv_mesh_shader.init();
   point_cloud_shader.init();
+}
+
+void Canvas3d::draw(const Box2& viewport, const Box2& mask) {
+  camera.fov.y = camera.fov.x * viewport.ratio_yx();
+  shape_shader.draw(mask, camera);
+  mesh_shader.draw(mask, camera);
+  uv_mesh_shader.draw(mask, camera);
+  point_cloud_shader.draw(mask, camera);
 }
 
 void Canvas3d::mouse_event(const MouseEvent& event) {
@@ -195,7 +189,6 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
   if (event.action == MouseAction::Press) {
     if (event.mod.ctrl) {
       reset_camera();
-      redraw();
     }
     click_camera = camera;
     return;
@@ -231,8 +224,6 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
     camera.position =
         click_camera.position + click_camera.rotation() * delta_cs;
   }
-
-  redraw();
 }
 
 bool Canvas3d::scroll_event(const ScrollEvent& event) {
@@ -244,7 +235,6 @@ bool Canvas3d::scroll_event(const ScrollEvent& event) {
     distance *= 10;
   }
   camera.position += camera.direction_world(event.position) * distance;
-  redraw();
   return true;
 }
 
@@ -254,7 +244,6 @@ void Canvas3d::reset_camera() {
   camera.position.y = -7;
   camera.position.z = 5;
   camera.fov.x = M_PI * 70 / 180;
-  // Set fov.y during redraw since window size may change
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
 }
