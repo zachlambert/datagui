@@ -18,8 +18,19 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
     }
   };
 
-  apply_length(viewport.width, state.fixed_size.x, state.dynamic_size.x);
-  apply_length(viewport.height, state.fixed_size.y, state.dynamic_size.y);
+  state.fixed_size = Vec2();
+  state.dynamic_size = Vec2();
+
+  if (auto value = std::get_if<LengthFixed>(&viewport.width)) {
+    state.fixed_size.x = value->value;
+  } else if (auto value = std::get_if<LengthDynamic>(&viewport.width)) {
+    state.dynamic_size.x = value->weight;
+  } else {
+    throw std::runtime_error("Cannot set wrap length for viewport width");
+  }
+
+  state.dynamic_y_size = 1.f / viewport.viewport->get_aspect_ratio();
+
   state.floating = false;
 }
 

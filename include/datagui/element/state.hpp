@@ -13,6 +13,11 @@ struct State {
   Vec2 dynamic_size;
   int num_cells = 1; // Used in layout
 
+  // If > 0, then for a given dynamic_size.x, whatever the contribution to size.x
+  // is, there is an additional fixed_size.y of <contribution> * dynamic_y_size
+  // This is only applied if dynamic_size.y is zero, otherwise that takes priority
+  float dynamic_y_size = 0;
+
   // If true, then the element will have an additional floating component
   bool floating = false;
   // If true, then the element has no effect on it's parent layout

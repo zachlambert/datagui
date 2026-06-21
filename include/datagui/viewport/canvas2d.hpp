@@ -78,6 +78,10 @@ public:
 
   std::optional<MouseEvent> mouse_event();
 
+  float get_aspect_ratio() const override {
+    return aspect_ratio_;
+  }
+
 private:
   void init(
       const std::shared_ptr<Theme>& theme,

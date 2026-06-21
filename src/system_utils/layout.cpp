@@ -37,19 +37,15 @@ void layout_set_input_state(
   std::size_t i = 0;
   std::size_t j = 0;
   while (child) {
-    if (child.state().float_only) {
-      child = child.next();
-      continue;
-    }
-    if (child.state().force_hidden) {
+    if (child.state().float_only || child.state().force_hidden) {
       child = child.next();
       continue;
     }
 
     if (j == 0 && row_major) {
-      state.row_input_sizes.push_back({0, 0});
+      state.row_input_sizes.emplace_back();
     } else if (i == 0 && !row_major) {
-      state.col_input_sizes.push_back({0, 0});
+      state.col_input_sizes.emplace_back();
     }
 
     const auto& c_state = child.state();
@@ -144,6 +140,30 @@ void layout_set_input_state(
     state.content_fixed_size.y +=
         (state.row_input_sizes.size() - 1) * inner_padding;
   }
+
+  // Apply dynamic_y_size
+  // NOTE: Currently only supported for single column layouts
+  state.content_dynamic_y_size = 0;
+  if (layout.cols == 1) {
+    auto child = element.child();
+    size_t j = 0;
+    while (child) {
+      if (child.state().float_only || child.state().force_hidden) {
+        child = child.next();
+        continue;
+      }
+      const auto& c_state = child.state();
+      if (c_state.dynamic_y_size > 0) {
+        assert(c_state.dynamic_size.x > 0);
+        assert(c_state.fixed_size.y == 0);
+        assert(c_state.dynamic_size.y == 0);
+        state.content_dynamic_y_size += c_state.dynamic_y_size;
+        state.row_input_sizes[j].dynamic_y_size = c_state.dynamic_y_size;
+      }
+      j++;
+      child = child.next();
+    }
+  }
 }
 
 void layout_set_dependent_state(
@@ -170,15 +190,25 @@ void layout_set_dependent_state(
     }
   }
 
+  const float dynamic_y_fixed_size =
+      std::max(state.content_fixed_size.x, content_box.size().x) *
+      state.content_dynamic_y_size;
   std::vector<float> row_sizes(state.row_input_sizes.size());
   {
     float size = content_box.size().y;
-    float content_size = state.content_fixed_size.y;
+    float content_size = state.content_fixed_size.y + dynamic_y_fixed_size;
     float available = std::max(size - content_size, 0.f);
     float dynamic_size = state.content_dynamic_size.y;
     state.content_overrun.y = std::max(content_size - size, 0.f);
 
     for (std::size_t i = 0; i < row_sizes.size(); i++) {
+      float dynamic_y_size = state.row_input_sizes[i].dynamic_y_size;
+      if (dynamic_y_size > 0) {
+        assert(col_sizes.size() == 1);
+        row_sizes[i] = (dynamic_y_size / state.content_dynamic_y_size) *
+                       dynamic_y_fixed_size;
+        continue;
+      }
       row_sizes[i] = state.row_input_sizes[i].fixed;
       if (dynamic_size > 0) {
         row_sizes[i] +=
@@ -234,6 +264,7 @@ void layout_set_dependent_state(
 
     const Vec2& fixed_size = child.state().fixed_size;
     const Vec2& dynamic_size = child.state().dynamic_size;
+    const float dynamic_y_size = child.state().dynamic_y_size;
     Vec2& size = child.state().size;
 
     if (dynamic_size.x > 0) {
@@ -241,7 +272,10 @@ void layout_set_dependent_state(
     } else {
       size.x = fixed_size.x;
     }
-    if (dynamic_size.y > 0) {
+
+    if (dynamic_y_size > 0) {
+      size.y = std::min(cell_size.y, dynamic_y_size * size.x);
+    } else if (dynamic_size.y > 0) {
       size.y = cell_size.y;
     } else {
       size.y = fixed_size.y;

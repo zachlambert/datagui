@@ -91,6 +91,10 @@ public:
     click_callback_ = callback;
   }
 
+  float get_aspect_ratio() const override {
+    return 1; // TODO: Set proper value
+  }
+
 private:
   void init(
       const std::shared_ptr<Theme>& theme,

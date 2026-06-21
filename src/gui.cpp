@@ -154,12 +154,12 @@ bool Gui::checkbox_v(bool& value) {
 }
 
 bool Gui::collapsable(const std::string& label) {
-  current.expect(Type::Collapsable, read_key());
+  bool is_new = current.expect(Type::Collapsable, read_key());
   args_.apply(current);
   auto& collapsable = current.collapsable();
   collapsable.label = label;
 
-  if (collapsable.open) {
+  if (collapsable.open || is_new) {
     move_down();
     return true;
   }

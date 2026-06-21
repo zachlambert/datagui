@@ -61,14 +61,31 @@ void Canvas2d::text(
     Font font,
     Color text_color,
     Length width) {
-  Vec2 text_scale = Vec2::ones(); // camera.size / prev_viewport_->size();
+  if (!prev_viewport_) {
+    return;
+  }
+  float text_scale = camera.size.x / prev_viewport_->size().x;
+
+  static constexpr int max_font_size = 80;
+  static constexpr int min_font_size = 12;
+  // Avoid generating too many fonts, choose font sizes at multiples of 4
+  // and adjust zoom appropriately
+  static constexpr int font_size_modulo = 4;
+
+  const int scaled_font_size = static_cast<int>(font_size * zoom);
+  const int font_size_used = std::clamp(
+      scaled_font_size - (scaled_font_size % font_size_modulo),
+      min_font_size,
+      max_font_size);
+  const float zoom_used = (font_size * zoom) / font_size_used;
+
   text_shader.queue_text(
       origin,
       angle,
-      text_scale,
+      Vec2::uniform(text_scale * zoom_used),
       text,
       font,
-      font_size,
+      font_size_used,
       text_color,
       width);
 }
@@ -149,13 +166,12 @@ void Canvas2d::begin() {
   image_shader.clear();
   bg_color_ = Color::Gray(0.95);
   default_position_ = Vec2();
-  default_view_width_ = 0;
+  default_view_width_ = 1;
   aspect_ratio_ = 1;
 }
 
 void Canvas2d::draw(const Box2& viewport, const Box2& mask) {
   prev_viewport_ = viewport;
-
   camera.size.x = default_view_width_ / zoom;
   camera.size.y = camera.size.x / aspect_ratio_;
 
@@ -167,18 +183,20 @@ void Canvas2d::draw(const Box2& viewport, const Box2& mask) {
   normalized_area.upper =
       normalized_area.lower + masked_area.size() / viewport.size();
 
-  camera.position +=
+  Camera2d cropped_camera;
+  cropped_camera.position =
+      camera.position +
       camera.size * (normalized_area.center() - Vec2::uniform(0.5));
-  camera.size *= normalized_area.size();
+  cropped_camera.size = camera.size * normalized_area.size();
 
   bg_shader
-      .queue_rect(camera.position, 0, camera.size, bg_color_);
-  bg_shader.draw(masked_area, camera);
+      .queue_rect(cropped_camera.position, 0, cropped_camera.size, bg_color_);
+  bg_shader.draw(masked_area, cropped_camera);
   bg_shader.clear();
 
-  image_shader.draw(masked_area, camera);
-  shape_shader.draw(masked_area, camera);
-  text_shader.draw(masked_area, camera);
+  image_shader.draw(masked_area, cropped_camera);
+  shape_shader.draw(masked_area, cropped_camera);
+  text_shader.draw(masked_area, cropped_camera);
 }
 
 void Canvas2d::mouse_event(const MouseEvent& event) {
