@@ -18,8 +18,8 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
     }
   };
 
-  apply_length(viewport.width, state.fixed_size.x, state.fixed_size.y);
-  apply_length(viewport.height, state.fixed_size.x, state.fixed_size.y);
+  apply_length(viewport.width, state.fixed_size.x, state.dynamic_size.x);
+  apply_length(viewport.height, state.fixed_size.y, state.dynamic_size.y);
   state.floating = false;
 }
 
@@ -27,7 +27,7 @@ void ViewportPtrSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const auto& state = element.state();
   const auto& viewport = element.viewport();
   renderer.queue_viewport(
-      Box2(state.position, state.position + state.fixed_size),
+      Box2(state.position, state.position + state.size),
       viewport.viewport.get());
 }
 

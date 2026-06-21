@@ -127,11 +127,6 @@ void Canvas2d::heatmap(
   image_shader.queue_image(image, lower, 0, upper - lower);
 }
 
-void Canvas2d::view_width(float width) {
-  nominal_view_width_ = width;
-  camera.size = Vec2::uniform(width) / zoom;
-}
-
 std::optional<MouseEvent> Canvas2d::mouse_event() {
   if (mouse_event_) {
     return std::move(mouse_event_);
@@ -142,6 +137,7 @@ std::optional<MouseEvent> Canvas2d::mouse_event() {
 void Canvas2d::init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
+  bg_shader.init();
   shape_shader.init();
   text_shader.init(fm);
   image_shader.init();
@@ -152,19 +148,37 @@ void Canvas2d::begin() {
   text_shader.clear();
   image_shader.clear();
   bg_color_ = Color::Gray(0.95);
-  nominal_view_width_ = prev_viewport_ ? prev_viewport_->size().x : 1;
+  default_position_ = Vec2();
+  default_view_width_ = 0;
+  aspect_ratio_ = 1;
 }
 
 void Canvas2d::draw(const Box2& viewport, const Box2& mask) {
   prev_viewport_ = viewport;
-  if (nominal_view_width_) {
-    camera.size = Vec2::uniform(*nominal_view_width_) / zoom;
-  } else {
-    camera.size = Vec2::uniform(viewport.size().x) / zoom;
-  }
-  image_shader.draw(mask, camera);
-  shape_shader.draw(mask, camera);
-  text_shader.draw(mask, camera);
+
+  camera.size.x = default_view_width_ / zoom;
+  camera.size.y = camera.size.x / aspect_ratio_;
+
+  // Now modify the camera so it fits the masked area instead
+  Box2 masked_area = intersection(viewport, mask);
+  Box2 normalized_area;
+  normalized_area.lower =
+      (masked_area.lower - viewport.lower) / viewport.size();
+  normalized_area.upper =
+      normalized_area.lower + masked_area.size() / viewport.size();
+
+  camera.position +=
+      camera.size * (normalized_area.center() - Vec2::uniform(0.5));
+  camera.size *= normalized_area.size();
+
+  bg_shader
+      .queue_rect(camera.position, 0, camera.size, bg_color_);
+  bg_shader.draw(masked_area, camera);
+  bg_shader.clear();
+
+  image_shader.draw(masked_area, camera);
+  shape_shader.draw(masked_area, camera);
+  text_shader.draw(masked_area, camera);
 }
 
 void Canvas2d::mouse_event(const MouseEvent& event) {

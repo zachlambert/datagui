@@ -513,6 +513,10 @@ void Gui::text_box(const std::string& text) {
 }
 
 void Gui::render() {
+  if (!tree.root()) {
+    return;
+  }
+
   auto render_tree = [this](ConstElementPtr root) {
     if (!root) {
       return;
@@ -553,7 +557,7 @@ void Gui::render() {
   };
 
   window.render_begin();
-  renderer.begin(Box2(Vec2(), window.size()));
+  renderer.begin(tree.root().state().box());
 
   render_tree(tree.root());
   renderer.render();
@@ -630,7 +634,8 @@ void Gui::debug_render() {
   if (focused) {
     std::stringstream ss;
 
-    ss << "fixed: " << focused.state().fixed_size.x << ", "
+    ss << "mouse pos: " << window.mouse_pos().x << ", " << window.mouse_pos().y;
+    ss << "\nfixed: " << focused.state().fixed_size.x << ", "
        << focused.state().fixed_size.y;
     ss << "\ndynamic: " << focused.state().dynamic_size.x << ", "
        << focused.state().dynamic_size.y;

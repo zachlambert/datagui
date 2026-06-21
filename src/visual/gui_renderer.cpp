@@ -56,7 +56,7 @@ void GuiRenderer::queue_image(const Box2& box, const Image& image) {
 }
 
 void GuiRenderer::queue_viewport(const Box2& box, Viewport* viewport) {
-  viewports.push_back({box, masks.top(), viewport});
+  viewports.push_back({flip_box(box), flip_box(masks.top()), viewport});
 }
 
 void GuiRenderer::begin(const Box2& viewport) {

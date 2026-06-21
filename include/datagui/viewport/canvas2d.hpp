@@ -62,7 +62,15 @@ public:
       std::size_t width = 256,
       std::size_t height = 256);
 
-  void view_width(float width);
+  void default_view_position(const Vec2& position) {
+    default_position_ = position;
+  }
+  void default_view_width(float view_width) {
+    default_view_width_ = view_width;
+  }
+  void aspect_ratio(float aspect_ratio) {
+    aspect_ratio_ = aspect_ratio;
+  }
 
   void bg_color(const Color& color) {
     bg_color_ = color;
@@ -84,11 +92,15 @@ private:
   Camera2d click_camera;
   std::optional<MouseEvent> mouse_event_;
 
-  std::optional<float> nominal_view_width_ = 0;
+  Vec2 default_position_;
+  float default_view_width_;
+  float aspect_ratio_;
+
   float zoom = 1;
   std::optional<Box2> prev_viewport_;
 
   Camera2d camera;
+  Shape2dShader bg_shader;
   Shape2dShader shape_shader;
   Text2dShader text_shader;
   ImageShader image_shader;
