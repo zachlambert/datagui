@@ -4,6 +4,7 @@
 #include "datagui/visual/mesh_shader.hpp"
 #include "datagui/visual/point_cloud_shader.hpp"
 #include "datagui/visual/shape_3d_shader.hpp"
+#include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/uv_mesh_shader.hpp"
 #include <functional>
 
@@ -87,12 +88,16 @@ public:
     bg_color_ = color;
   }
 
+  void aspect_ratio(float aspect_ratio) {
+    aspect_ratio_ = aspect_ratio;
+  }
+
   void click_callback(const std::function<void(const MouseEvent&)>& callback) {
     click_callback_ = callback;
   }
 
   float get_aspect_ratio() const override {
-    return 1; // TODO: Set proper value
+    return aspect_ratio_;
   }
 
 private:
@@ -107,12 +112,14 @@ private:
   void reset_camera();
 
   Camera3d camera;
+  Shape2dShader bg_shader;
   Shape3dShader shape_shader;
   MeshShader mesh_shader;
   UvMeshShader uv_mesh_shader;
   PointCloudShader point_cloud_shader;
 
   Color bg_color_ = Color::Gray(0.95);
+  float aspect_ratio_ = 1;
   Camera3d click_camera;
   std::function<void(const MouseEvent& event)> click_callback_;
 };

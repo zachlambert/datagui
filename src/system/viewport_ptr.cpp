@@ -6,20 +6,9 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   const auto& viewport = element.viewport();
 
-  auto apply_length = [](const Length& length, float& fixed, float& dynamic) {
-    if (auto value = std::get_if<LengthFixed>(&length)) {
-      fixed = value->value;
-      dynamic = 0;
-    } else if (auto value = std::get_if<LengthDynamic>(&length)) {
-      fixed = 0;
-      dynamic = value->weight;
-    } else {
-      throw std::runtime_error("Cannot set wrap height or width for viewport");
-    }
-  };
-
   state.fixed_size = Vec2();
   state.dynamic_size = Vec2();
+  state.dynamic_y_size = 0;
 
   if (auto value = std::get_if<LengthFixed>(&viewport.width)) {
     state.fixed_size.x = value->value;
@@ -29,7 +18,17 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
     throw std::runtime_error("Cannot set wrap length for viewport width");
   }
 
-  state.dynamic_y_size = 1.f / viewport.viewport->get_aspect_ratio();
+  if (auto value = std::get_if<LengthFixed>(&viewport.height)) {
+    state.fixed_size.y = value->value;
+  } else if (auto value = std::get_if<LengthDynamic>(&viewport.height)) {
+    if (state.dynamic_size.x > 0) {
+      state.dynamic_y_size = 1.f / viewport.viewport->get_aspect_ratio();
+    } else {
+      state.dynamic_size.y = value->weight;
+    }
+  } else {
+    throw std::runtime_error("Cannot set wrap length for viewport height");
+  }
 
   state.floating = false;
 }

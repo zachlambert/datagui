@@ -43,6 +43,8 @@ int main() {
     gui.group();
     DGUI_SCOPE(gui);
 
+    gui.args().viewport_height(500);
+    gui.args().viewport_width(500);
     auto& canvas = gui.canvas3d();
     {
       DGUI_SCOPE(gui);

@@ -154,12 +154,14 @@ void Canvas3d::begin() {
   uv_mesh_shader.clear();
   point_cloud_shader.clear();
   bg_color_ = Color::Gray(0.95);
+  aspect_ratio_ = 1;
   click_callback_ = {};
 }
 
 void Canvas3d::init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
+  bg_shader.init();
   shape_shader.init();
   mesh_shader.init();
   uv_mesh_shader.init();
@@ -167,11 +169,34 @@ void Canvas3d::init(
 }
 
 void Canvas3d::draw(const Box2& viewport, const Box2& mask) {
-  camera.fov.y = camera.fov.x * viewport.ratio_yx();
-  shape_shader.draw(mask, camera);
-  mesh_shader.draw(mask, camera);
-  uv_mesh_shader.draw(mask, camera);
-  point_cloud_shader.draw(mask, camera);
+  // Now modify the camera so it fits the masked area instead
+  Box2 masked_area = intersection(viewport, mask);
+#if 0
+  Box2 normalized_area;
+  normalized_area.lower =
+      (masked_area.lower - viewport.lower) / viewport.size();
+  normalized_area.upper =
+      normalized_area.lower + masked_area.size() / viewport.size();
+
+  Camera2d cropped_camera;
+  cropped_camera.position =
+      camera.position +
+      camera.size * (normalized_area.center() - Vec2::uniform(0.5));
+  cropped_camera.size = camera.size * normalized_area.size();
+#endif
+
+  Camera2d bg_camera;
+  bg_camera.position = masked_area.center();
+  bg_camera.size = masked_area.size();
+  bg_shader.queue_rect(bg_camera.position, 0, bg_camera.size, bg_color_);
+  bg_shader.draw(masked_area, bg_camera);
+  bg_shader.clear();
+
+  camera.fov.y = camera.fov.x * masked_area.ratio_yx();
+  shape_shader.draw(masked_area, camera);
+  mesh_shader.draw(masked_area, camera);
+  uv_mesh_shader.draw(masked_area, camera);
+  point_cloud_shader.draw(masked_area, camera);
 }
 
 void Canvas3d::mouse_event(const MouseEvent& event) {

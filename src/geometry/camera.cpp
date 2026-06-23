@@ -75,7 +75,15 @@ Mat4 Camera3d::projection_mat() const {
       -2 * clipping_min * clipping_max / (clipping_max - clipping_min);
   projection(3, 2) = -1;
 
-  return projection;
+  Mat4 to_crop;
+  to_crop(0, 0) = 1.0 / crop.size().x;
+  to_crop(0, 3) = 2 * (crop.center().x - 0.5);
+  to_crop(1, 1) = crop.size().y;
+  to_crop(1, 3) = 2 * (crop.center().y - 0.5);
+  to_crop(2, 2) = 1;
+  to_crop(3, 3) = 1;
+
+  return to_crop * projection;
 }
 
 Vec2 Camera3d::to_camera(const Vec3& world_pos) const {
