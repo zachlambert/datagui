@@ -194,7 +194,6 @@ void glfw_resize_callback(GLFWwindow* glfw_window, int width, int height) {
 
   // Wait an arbitrary short period of time before re-enabling vsync
   window->reenable_vsync_time_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
-  printf("Disable\n");
 }
 
 Window::Window() :
@@ -309,7 +308,6 @@ void Window::render_end() {
   if (reenable_vsync_time_ && std::chrono::steady_clock::now() > *reenable_vsync_time_) {
     reenable_vsync_time_.reset();
     glfwSwapInterval(1);
-    printf("Enable\n");
   }
   glfwSwapBuffers(window);
 }

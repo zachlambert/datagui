@@ -121,26 +121,6 @@ void layout_set_input_state(
     }
   }
 
-  state.content_fixed_size = Vec2::uniform(outer_padding * 2);
-  state.content_dynamic_size = Vec2();
-  for (const auto& sizes : state.col_input_sizes) {
-    state.content_fixed_size.x += sizes.fixed;
-    state.content_dynamic_size.x += sizes.dynamic;
-  }
-  for (const auto& sizes : state.row_input_sizes) {
-    state.content_fixed_size.y += sizes.fixed;
-    state.content_dynamic_size.y += sizes.dynamic;
-  }
-
-  if (state.col_input_sizes.size() > 0) {
-    state.content_fixed_size.x +=
-        (state.col_input_sizes.size() - 1) * inner_padding;
-  }
-  if (state.row_input_sizes.size() > 0) {
-    state.content_fixed_size.y +=
-        (state.row_input_sizes.size() - 1) * inner_padding;
-  }
-
   // Apply dynamic_y_size
   // NOTE: Currently only supported for single column layouts
   state.content_dynamic_y_size = 0;
@@ -163,6 +143,26 @@ void layout_set_input_state(
       j++;
       child = child.next();
     }
+  }
+
+  state.content_fixed_size = Vec2::uniform(outer_padding * 2);
+  state.content_dynamic_size = Vec2();
+  for (const auto& sizes : state.col_input_sizes) {
+    state.content_fixed_size.x += sizes.fixed;
+    state.content_dynamic_size.x += sizes.dynamic;
+  }
+  for (const auto& sizes : state.row_input_sizes) {
+    state.content_fixed_size.y += sizes.fixed;
+    state.content_dynamic_size.y += sizes.dynamic;
+  }
+
+  if (state.col_input_sizes.size() > 0) {
+    state.content_fixed_size.x +=
+        (state.col_input_sizes.size() - 1) * inner_padding;
+  }
+  if (state.row_input_sizes.size() > 0) {
+    state.content_fixed_size.y +=
+        (state.row_input_sizes.size() - 1) * inner_padding;
   }
 }
 
@@ -191,7 +191,8 @@ void layout_set_dependent_state(
   }
 
   const float dynamic_y_fixed_size =
-      std::max(state.content_fixed_size.x, content_box.size().x) *
+      (std::max(state.content_fixed_size.x, content_box.size().x) -
+       2 * theme->layout_outer_padding) *
       state.content_dynamic_y_size;
   std::vector<float> row_sizes(state.row_input_sizes.size());
   {
