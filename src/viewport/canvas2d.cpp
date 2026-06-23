@@ -200,25 +200,24 @@ void Canvas2d::draw(const Box2& viewport, const Box2& mask) {
 }
 
 void Canvas2d::mouse_event(const MouseEvent& event) {
-  if (event.button != MouseButton::Middle) {
-    MouseEvent remapped = event;
-    remapped.press_position = camera.from_camera(event.press_position);
-    remapped.position = camera.from_camera(event.position);
-    mouse_event_ = remapped;
-    return;
-  }
-  if (event.action == MouseAction::Press) {
-    if (event.mod.ctrl) {
-      camera.position = Vec2();
-      zoom = 1;
+  if (event.button == MouseButton::Right) {
+    if (event.action == MouseAction::Press) {
+      if (event.mod.ctrl) {
+        camera.position = Vec2();
+        zoom = 1;
+      }
+      click_camera = camera;
+    } else {
+      camera.position = click_camera.position +
+                        click_camera.from_camera(event.press_position) -
+                        click_camera.from_camera(event.position);
     }
-    click_camera = camera;
-    return;
   }
 
-  camera.position = click_camera.position +
-                    click_camera.from_camera(event.press_position) -
-                    click_camera.from_camera(event.position);
+  MouseEvent remapped = event;
+  remapped.press_position = camera.from_camera(event.press_position);
+  remapped.position = camera.from_camera(event.position);
+  mouse_event_ = remapped;
 }
 
 bool Canvas2d::scroll_event(const ScrollEvent& event) {
