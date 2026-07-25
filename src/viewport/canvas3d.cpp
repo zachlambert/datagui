@@ -169,35 +169,7 @@ void Canvas3d::init(
 }
 
 void Canvas3d::draw(const Box2& viewport, const Box2& mask) {
-
-  // Now modify the camera so it fits the masked area instead
-  Box2 masked_area = intersection(viewport, mask);
-#if 0
-  Box2 normalized_area;
-  normalized_area.lower =
-      (masked_area.lower - viewport.lower) / viewport.size();
-  normalized_area.upper =
-      normalized_area.lower + masked_area.size() / viewport.size();
-
-  Camera2d cropped_camera;
-  cropped_camera.position =
-      camera.position +
-      camera.size * (normalized_area.center() - Vec2::uniform(0.5));
-  cropped_camera.size = camera.size * normalized_area.size();
-#endif
-
-  Camera2d bg_camera;
-  bg_camera.position = masked_area.center();
-  bg_camera.size = masked_area.size();
-  bg_shader.queue_rect(bg_camera.position, 0, bg_camera.size, bg_color_);
-  bg_shader.draw(masked_area, bg_camera);
-  bg_shader.clear();
-
-  camera.crop = Box2(
-      (masked_area.lower - viewport.lower) / viewport.size(),
-      (masked_area.upper - viewport.lower) / viewport.size());
-
-  camera.fov.y = std::atan(std::tan(camera.fov.x) * viewport.ratio_yx());
+  camera.fov.y = 2.f * std::atan(std::tan(0.5f * camera.fov.x) * viewport.ratio_yx());
   shape_shader.draw(viewport, camera);
   mesh_shader.draw(viewport, camera);
   uv_mesh_shader.draw(viewport, camera);
@@ -274,7 +246,6 @@ void Canvas3d::reset_camera() {
   camera.fov.x = M_PI * 70 / 180;
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
-  camera.crop = Box2(Vec2(0, 0), Vec2(1, 1));
 }
 
 }; // namespace dgui

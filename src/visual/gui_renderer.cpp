@@ -61,9 +61,11 @@ void GuiRenderer::queue_viewport(const Box2& box, Viewport* viewport) {
 
 void GuiRenderer::begin(const Box2& viewport) {
   this->viewport = viewport;
+  #if 0
   if (masks.size() == 1) {
     masks.pop();
   }
+  #endif
   masks.push(viewport);
 }
 

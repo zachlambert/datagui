@@ -42,7 +42,6 @@ struct Camera3d {
   float clipping_min;
   float clipping_max;
   Vec2 fov;
-  Box2 crop;
 
   Rot3 rotation() const;
   Mat4 view_mat() const;
