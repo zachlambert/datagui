@@ -86,8 +86,10 @@ void Args::apply(ElementPtr element) {
   }
   case Type::ViewportPtr: {
     auto& viewport = element.viewport();
-    viewport_width_.consume(viewport.width);
-    viewport_height_.consume(viewport.height);
+    border_.consume(viewport.border);
+    layout_.consume(viewport.layout);
+    width_.consume_if_modified(viewport.width);
+    height_.consume_if_modified(viewport.height);
     break;
   }
   }

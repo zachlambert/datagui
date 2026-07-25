@@ -55,7 +55,7 @@ void Gui::open(
   REGISTER(Tabs, TabsSystem, fm, theme);
   REGISTER(TextBox, TextBoxSystem, fm, theme);
   REGISTER(TextInput, TextInputSystem, fm, theme);
-  REGISTER(ViewportPtr, ViewportPtrSystem);
+  REGISTER(ViewportPtr, ViewportPtrSystem, theme);
 
 #undef REGISTER
   for (const auto& system : systems) {

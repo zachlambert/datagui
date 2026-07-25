@@ -96,11 +96,11 @@ struct Dropdown {
   Layout layout;
 
   // Args
-  LayoutState layout_state;
   bool retain = false; // Retain state after closing
 
   // State
   bool open = false;
+  LayoutState layout_state;
 };
 
 struct Group {
@@ -223,9 +223,18 @@ struct TextBox {
 };
 
 struct ViewportPtr {
+  // Args
+  Layout layout;
   Length width = LengthDynamic();
   Length height = LengthDynamic();
+  bool border = false;
+
+  // Dependent
+  Box2 content_box;
+
+  // State
   std::unique_ptr<Viewport> viewport;
+  LayoutState layout_state;
 };
 
 } // namespace dgui

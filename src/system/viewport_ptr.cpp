@@ -1,36 +1,60 @@
 #include "datagui/system/viewport_ptr.hpp"
+#include "datagui/system_utils/layout.hpp"
 
 namespace dgui {
 
 void ViewportPtrSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
-  const auto& viewport = element.viewport();
+  auto& viewport = element.viewport();
 
-  state.fixed_size = Vec2();
-  state.dynamic_size = Vec2();
-  state.dynamic_y_size = 0;
+  // NOTE: Copy of group layout logic
 
-  if (auto value = std::get_if<LengthFixed>(&viewport.width)) {
-    state.fixed_size.x = value->value;
-  } else if (auto value = std::get_if<LengthDynamic>(&viewport.width)) {
-    state.dynamic_size.x = value->weight;
-  } else {
-    throw std::runtime_error("Cannot set wrap length for viewport width");
+  layout_set_input_state(
+      element,
+      theme,
+      viewport.layout,
+      viewport.layout_state);
+
+  state.fixed_size = viewport.layout_state.content_fixed_size;
+  state.dynamic_size = viewport.layout_state.content_dynamic_size;
+  state.floating = false;
+  if (viewport.border) {
+    state.fixed_size += Vec2::uniform(2 * theme->layout_border_width);
   }
 
-  if (auto value = std::get_if<LengthFixed>(&viewport.height)) {
-    state.fixed_size.y = value->value;
-  } else if (auto value = std::get_if<LengthDynamic>(&viewport.height)) {
-    if (state.dynamic_size.x > 0) {
-      state.dynamic_y_size = 1.f / viewport.viewport->get_aspect_ratio();
-    } else {
-      state.dynamic_size.y = value->weight;
-    }
-  } else {
-    throw std::runtime_error("Cannot set wrap length for viewport height");
+  if (auto width = std::get_if<LengthFixed>(&viewport.width)) {
+    state.fixed_size.x = width->value;
+    state.dynamic_size.x = 0;
+  } else if (auto width = std::get_if<LengthDynamic>(&viewport.width)) {
+    state.dynamic_size.x = std::max(state.dynamic_size.x, width->weight);
+  }
+  if (auto height = std::get_if<LengthFixed>(&viewport.height)) {
+    state.fixed_size.y = height->value;
+    state.dynamic_size.y = 0;
+  } else if (auto height = std::get_if<LengthDynamic>(&viewport.height)) {
+    state.dynamic_size.y = std::max(state.dynamic_size.y, height->weight);
   }
 
   state.floating = false;
+}
+
+void ViewportPtrSystem::set_dependent_state(ElementPtr element) {
+  auto& state = element.state();
+  auto& viewport = element.viewport();
+
+  viewport.content_box = state.box();
+  if (viewport.border) {
+    viewport.content_box.lower += Vec2::uniform(theme->layout_border_width);
+    viewport.content_box.upper -= Vec2::uniform(theme->layout_border_width);
+  }
+  state.child_mask = viewport.content_box;
+
+  layout_set_dependent_state(
+      element,
+      viewport.content_box,
+      theme,
+      viewport.layout,
+      viewport.layout_state);
 }
 
 void ViewportPtrSystem::render(ConstElementPtr element, GuiRenderer& renderer) {

@@ -169,6 +169,7 @@ void Canvas3d::init(
 }
 
 void Canvas3d::draw(const Box2& viewport, const Box2& mask) {
+
   // Now modify the camera so it fits the masked area instead
   Box2 masked_area = intersection(viewport, mask);
 #if 0
@@ -192,62 +193,64 @@ void Canvas3d::draw(const Box2& viewport, const Box2& mask) {
   bg_shader.draw(masked_area, bg_camera);
   bg_shader.clear();
 
-  camera.fov.y = camera.fov.x * masked_area.ratio_yx();
-  shape_shader.draw(masked_area, camera);
-  mesh_shader.draw(masked_area, camera);
-  uv_mesh_shader.draw(masked_area, camera);
-  point_cloud_shader.draw(masked_area, camera);
+  camera.crop = Box2(
+      (masked_area.lower - viewport.lower) / viewport.size(),
+      (masked_area.upper - viewport.lower) / viewport.size());
+
+  camera.fov.y = std::atan(std::tan(camera.fov.x) * viewport.ratio_yx());
+  shape_shader.draw(viewport, camera);
+  mesh_shader.draw(viewport, camera);
+  uv_mesh_shader.draw(viewport, camera);
+  point_cloud_shader.draw(viewport, camera);
 }
 
 void Canvas3d::mouse_event(const MouseEvent& event) {
-  if (event.button != MouseButton::Middle) {
-    if (click_callback_) {
-      Vec3 press_ray = camera.ray_camera(event.press_position);
-      Vec3 ray = camera.ray_camera(event.position);
-      MouseEvent remapped = event;
-      remapped.press_position = Vec2(press_ray.x, press_ray.y);
-      remapped.position = Vec2(ray.x, ray.y);
-      click_callback_(remapped);
+  if (event.button == MouseButton::Right) {
+    if (event.action == MouseAction::Press) {
+      if (event.mod.ctrl) {
+        reset_camera();
+      }
+      click_camera = camera;
     }
-    return;
-  }
-  if (event.action == MouseAction::Press) {
-    if (event.mod.ctrl) {
-      reset_camera();
+    if (event.mod.shift) {
+      Vec3 delta_cs =
+          (click_camera.ray_camera(event.position) -
+           click_camera.ray_camera(event.press_position));
+      float yaw_change = std::atan2(delta_cs.x, 1);
+      float pitch_change = std::atan2(delta_cs.y, 1);
+      float click_yaw =
+          std::atan2(click_camera.direction.y, click_camera.direction.x);
+      float click_pitch = std::atan2(
+          -click_camera.direction.z,
+          std::hypot(click_camera.direction.x, click_camera.direction.y));
+
+      float yaw = click_yaw + yaw_change;
+      float pitch = click_pitch + pitch_change;
+      pitch = std::clamp(pitch, -M_PIf * 0.48f, M_PIf * 0.48f);
+
+      camera.direction = {
+          std::cos(yaw) * std::cos(pitch),
+          std::sin(yaw) * std::cos(pitch),
+          -std::sin(pitch),
+      };
+    } else {
+      float distance = click_camera.position.z /
+                       click_camera.direction_world(event.press_position).z;
+      Vec3 delta_cs = (click_camera.ray_camera(event.position) -
+                       click_camera.ray_camera(event.press_position)) *
+                      distance;
+      camera.position =
+          click_camera.position + click_camera.rotation() * delta_cs;
     }
-    click_camera = camera;
-    return;
   }
 
-  if (event.mod.shift) {
-    Vec3 delta_cs =
-        (click_camera.ray_camera(event.position) -
-         click_camera.ray_camera(event.press_position));
-    float yaw_change = std::atan2(delta_cs.x, 1);
-    float pitch_change = std::atan2(delta_cs.y, 1);
-    float click_yaw =
-        std::atan2(click_camera.direction.y, click_camera.direction.x);
-    float click_pitch = std::atan2(
-        -click_camera.direction.z,
-        std::hypot(click_camera.direction.x, click_camera.direction.y));
-
-    float yaw = click_yaw + yaw_change;
-    float pitch = click_pitch + pitch_change;
-    pitch = std::clamp(pitch, -M_PIf * 0.48f, M_PIf * 0.48f);
-
-    camera.direction = {
-        std::cos(yaw) * std::cos(pitch),
-        std::sin(yaw) * std::cos(pitch),
-        -std::sin(pitch),
-    };
-  } else {
-    float distance = click_camera.position.z /
-                     click_camera.direction_world(event.press_position).z;
-    Vec3 delta_cs = (click_camera.ray_camera(event.position) -
-                     click_camera.ray_camera(event.press_position)) *
-                    distance;
-    camera.position =
-        click_camera.position + click_camera.rotation() * delta_cs;
+  if (click_callback_) {
+    Vec3 press_ray = camera.ray_camera(event.press_position);
+    Vec3 ray = camera.ray_camera(event.position);
+    MouseEvent remapped = event;
+    remapped.press_position = Vec2(press_ray.x, press_ray.y);
+    remapped.position = Vec2(ray.x, ray.y);
+    click_callback_(remapped);
   }
 }
 
@@ -271,6 +274,7 @@ void Canvas3d::reset_camera() {
   camera.fov.x = M_PI * 70 / 180;
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
+  camera.crop = Box2(Vec2(0, 0), Vec2(1, 1));
 }
 
 }; // namespace dgui
