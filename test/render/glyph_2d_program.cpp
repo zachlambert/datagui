@@ -79,6 +79,10 @@ int main() {
   while (window.running()) {
     window.render_begin();
 
+    glViewport(0, 0, (int)window.size().x, (int)window.size().y);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     Mat3 PV = Mat3{
         {2.f / window.size().x, 0.f, -1.f},
         {0.f, 2.f / window.size().y, -1.f},

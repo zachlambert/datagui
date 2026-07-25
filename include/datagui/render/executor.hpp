@@ -7,6 +7,7 @@ namespace dgui {
 class ProgramRegistry;
 
 class Executor {
+public:
   void draw(const Vec2& size, ProgramRegistry& registry, const DrawList& dl);
 };
 

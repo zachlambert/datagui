@@ -3,17 +3,19 @@
 namespace dgui {
 
 void DrawBuilder::begin_group(int z_index, const Box2& mask) {
-  add_batch(z_index, mask);
   in_scene_2d_ = false;
+  prev_call_type_.reset();
+  add_batch(z_index, mask);
 }
 
 void DrawBuilder::begin_scene_2d(
     int z_index,
     const Color& bg_color,
     const Box2& mask) {
-  add_batch(z_index, mask);
   in_scene_2d_ = true;
   prev_call_type_.reset();
+  add_batch(z_index, mask);
+  queue_box(mask, bg_color, 0, Color::Black(), 0);
 }
 
 void DrawBuilder::queue_scene_3d(
@@ -27,22 +29,35 @@ void DrawBuilder::queue_scene_3d(
 }
 
 DrawList DrawBuilder::flush() {
+  batch_z_index = 0;
+  batch = nullptr;
+  prev_call_type_.reset();
+  in_scene_2d_ = false;
   return std::move(dl);
 }
 
 void DrawBuilder::add_batch(int z_index, const Box2& mask) {
-  batch_z_index = z_index;
   auto& batch_list = dl.batches.try_emplace(z_index).first->second;
-  auto& batch = batch_list.emplace_back();
-  batch.mask = mask;
-  batch.shape_count = dl.shape_2d_instances.size();
-  this->batch = &batch;
+
+  DrawList::Batch new_batch;
+  if (batch_list.empty()) {
+    new_batch.mask = mask;
+  } else {
+    new_batch.mask = intersection(mask, batch_list.back().mask);
+  }
+  new_batch.shape_offset = dl.shape_2d_instances.size();
+
+  batch_list.push_back(new_batch);
+
+  batch_z_index = z_index;
+  this->batch = &batch_list.back();
 }
 
 void DrawBuilder::queue_shape_2d() {
   if (in_scene_2d_ &&
       (prev_call_type_ && *prev_call_type_ != CallType::Geometry)) {
-    add_batch(batch_z_index, batch->mask);
+    Box2 prev_mask(batch->mask);
+    add_batch(batch_z_index, prev_mask);
   }
   prev_call_type_ = CallType::Geometry;
   batch->shape_count++;
@@ -125,9 +140,9 @@ void DrawBuilder::queue_box(
     float border_width,
     Color border_color,
     float radius) {
+  queue_shape_2d();
   dl.shape_2d_instances.push_back(
       Shape2dInstance::box(box, color, border_width, border_color, radius));
-  queue_shape_2d();
 }
 
 void DrawBuilder::queue_rect(
@@ -137,6 +152,7 @@ void DrawBuilder::queue_rect(
     const Color& color,
     float border_width,
     Color border_color) {
+  queue_shape_2d();
   dl.shape_2d_instances.push_back(
       Shape2dInstance::rect(
           position,
@@ -145,7 +161,6 @@ void DrawBuilder::queue_rect(
           color,
           border_width,
           border_color));
-  queue_shape_2d();
 }
 
 void DrawBuilder::queue_circle(
@@ -154,6 +169,7 @@ void DrawBuilder::queue_circle(
     const Color& color,
     float border_width,
     Color border_color) {
+  queue_shape_2d();
   dl.shape_2d_instances.push_back(
       Shape2dInstance::circle(
           position,
@@ -161,7 +177,6 @@ void DrawBuilder::queue_circle(
           color,
           border_width,
           border_color));
-  queue_shape_2d();
 }
 
 void DrawBuilder::queue_ellipse(
@@ -171,6 +186,7 @@ void DrawBuilder::queue_ellipse(
     const Color& color,
     float border_width,
     Color border_color) {
+  queue_shape_2d();
   dl.shape_2d_instances.push_back(
       Shape2dInstance::ellipse(
           position,
@@ -179,7 +195,6 @@ void DrawBuilder::queue_ellipse(
           color,
           border_width,
           border_color));
-  queue_shape_2d();
 }
 
 void DrawBuilder::queue_line(
@@ -188,9 +203,9 @@ void DrawBuilder::queue_line(
     float width,
     const Color& color,
     bool rounded_ends) {
+  queue_shape_2d();
   dl.shape_2d_instances.push_back(
       Shape2dInstance::line(a, b, width, color, rounded_ends));
-  queue_shape_2d();
 }
 
 void DrawBuilder::queue_capsule(
@@ -200,6 +215,7 @@ void DrawBuilder::queue_capsule(
     const Color& color,
     float border_width,
     Color border_color) {
+  queue_shape_2d();
   dl.shape_2d_instances.push_back(
       Shape2dInstance::capsule(
           start,
@@ -208,7 +224,6 @@ void DrawBuilder::queue_capsule(
           color,
           border_width,
           border_color));
-  queue_shape_2d();
 }
 
 } // namespace dgui
