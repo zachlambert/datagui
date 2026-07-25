@@ -68,19 +68,12 @@ public:
   void default_view_width(float view_width) {
     default_view_width_ = view_width;
   }
-  void aspect_ratio(float aspect_ratio) {
-    aspect_ratio_ = aspect_ratio;
-  }
 
   void bg_color(const Color& color) {
     bg_color_ = color;
   }
 
   std::optional<MouseEvent> mouse_event();
-
-  float get_aspect_ratio() const override {
-    return aspect_ratio_;
-  }
 
 private:
   void init(
@@ -98,7 +91,6 @@ private:
 
   Vec2 default_position_;
   float default_view_width_;
-  float aspect_ratio_;
 
   float zoom = 1;
   std::optional<Box2> prev_viewport_;

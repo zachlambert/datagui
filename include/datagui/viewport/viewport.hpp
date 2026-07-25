@@ -22,8 +22,6 @@ public:
   virtual bool scroll_event(const ScrollEvent& event) {
     return false;
   }
-
-  virtual float get_aspect_ratio() const = 0;
 };
 
 } // namespace dgui

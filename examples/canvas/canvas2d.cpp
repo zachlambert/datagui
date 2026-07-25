@@ -24,7 +24,6 @@ int main() {
     {
       DGUI_SCOPE(gui);
       canvas.default_view_width(5);
-      canvas.aspect_ratio(5.0 / 2);
       canvas.bg_color(Color::Hsl(300, 0.4, 0.8));
       canvas.rect(Vec2(), 0, Vec2::uniform(width), color, border_size);
       canvas.text(std::to_string(width), Vec2(width / 2, width / 2));

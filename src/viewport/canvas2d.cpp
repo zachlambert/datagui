@@ -167,13 +167,12 @@ void Canvas2d::begin() {
   bg_color_ = Color::Gray(0.95);
   default_position_ = Vec2();
   default_view_width_ = 1;
-  aspect_ratio_ = 1;
 }
 
 void Canvas2d::draw(const Box2& viewport, const Box2& mask) {
   prev_viewport_ = viewport;
   camera.size.x = default_view_width_ / zoom;
-  camera.size.y = camera.size.x / aspect_ratio_;
+  camera.size.y = viewport.ratio_yx() * camera.size.x;
 
   // Now modify the camera so it fits the masked area instead
   Box2 masked_area = intersection(viewport, mask);
