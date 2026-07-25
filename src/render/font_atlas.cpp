@@ -15,21 +15,30 @@ namespace dgui {
 static constexpr int CHAR_BEGIN = ' ';
 static constexpr int CHAR_END = '~' + 1;
 
+static constexpr float GLYPH_PADDING_H = 2;
+static constexpr float GLYPH_PADDING_V = 2;
+
 FontAtlas::FontAtlas(
     FontProgram& program,
     const std::string& font_path,
     int font_size) {
-  // Keep track of these values to restore afterwards
 
-  int original_fb;
+  // Save the GL state so that this can be restored afterwards
+  // Otherwise it can break other render code if a font is generated mid-render
+  GLint original_fb;
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &original_fb);
-
-  int original_fb_w, original_fb_h;
-  int original_viewport[4];
+  GLint original_viewport[4];
   glGetIntegerv(GL_VIEWPORT, original_viewport);
-
-  unsigned char original_blend;
-  glGetBooleanv(GL_BLEND, &original_blend);
+  GLint original_program;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &original_program);
+  GLint original_vao;
+  glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &original_vao);
+  GLint original_unpack_alignment;
+  glGetIntegerv(GL_UNPACK_ALIGNMENT, &original_unpack_alignment);
+  GLboolean original_blend = glIsEnabled(GL_BLEND);
+  GLint original_blend_src, original_blend_dst;
+  glGetIntegerv(GL_BLEND_SRC_RGB, &original_blend_src);
+  glGetIntegerv(GL_BLEND_DST_RGB, &original_blend_dst);
 
   // Initialise ft_library
 
@@ -61,11 +70,11 @@ FontAtlas::FontAtlas(
   // -> Read properties and find required texture height
 
   texture_width_ = 512;
-  texture_height_ = line_height_; // Initial value, at least 1 line needed
+  texture_height_ = line_height_ + GLYPH_PADDING_V; // Initial value, at least 1 line needed
 
   glyphs_.reserve(CHAR_END - CHAR_BEGIN);
 
-  float texture_row_width = 0;
+  float texture_row_width = GLYPH_PADDING_H;
   for (int i = CHAR_BEGIN; i < CHAR_END; i++) {
     if (FT_Load_Char(ft_face, char(i), 0) != 0) {
       throw std::runtime_error(
@@ -80,12 +89,13 @@ FontAtlas::FontAtlas(
         float(ft_face->glyph->bitmap_top) - ft_face->glyph->bitmap.rows);
     glyph.advance = float(ft_face->glyph->advance.x) / 64;
 
-    if (texture_row_width + glyph.advance > texture_width_) {
-      texture_height_ += line_height_;
-      texture_row_width = 0;
+    if (texture_row_width + (glyph.size.x + GLYPH_PADDING_H) > texture_width_) {
+      texture_height_ += line_height_ + GLYPH_PADDING_V;
+      texture_row_width = GLYPH_PADDING_H;
     }
-    texture_row_width += glyph.advance;
+    texture_row_width += glyph.size.x + GLYPH_PADDING_H;
   }
+  texture_height_ += GLYPH_PADDING_V;
 
   // Create the atlas texture
 
@@ -94,15 +104,17 @@ FontAtlas::FontAtlas(
   glTexImage2D(
       GL_TEXTURE_2D,
       0,
-      GL_RGB,
+      GL_R8,
       texture_width_,
       texture_height_,
       0,
-      GL_RGB,
+      GL_RED,
       GL_UNSIGNED_BYTE,
       0);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glBindTexture(GL_TEXTURE_2D, 0);
 
   // Bind the texture to a framebuffer to draw to
@@ -123,8 +135,8 @@ FontAtlas::FontAtlas(
 
   program.bind();
 
-  float char_x = 0;
-  float char_y = 0;
+  float char_x = GLYPH_PADDING_H;
+  float char_y = GLYPH_PADDING_V;
   for (int i = CHAR_BEGIN; i < CHAR_END; i++) {
     if (FT_Load_Char(ft_face, char(i), FT_LOAD_RENDER) != 0) {
       throw std::runtime_error(
@@ -135,12 +147,14 @@ FontAtlas::FontAtlas(
 
     // Calculate where the character should be drawn on the texture
 
-    if (char_x + glyph.advance > texture_width_) {
-      char_x = 0;
-      char_y += line_height_;
+    if (char_x + (glyph.size.x + GLYPH_PADDING_H) > texture_width_) {
+      char_x = GLYPH_PADDING_H;
+      char_y += line_height_ + GLYPH_PADDING_V;
     }
 
-    float x_lower = char_x + glyph.offset.x;
+    // Pack tight to char_x; glyph.offset.x is a rendering bearing applied in
+    // add_glyphs, not an atlas position.
+    float x_lower = char_x;
     float x_upper = x_lower + ft_face->glyph->bitmap.width;
     float y_lower = char_y + descender_ + glyph.offset.y;
     float y_upper = y_lower + ft_face->glyph->bitmap.rows;
@@ -155,7 +169,7 @@ FontAtlas::FontAtlas(
         Vec2(x_lower / texture_width_, y_lower / texture_height_),
         Vec2(x_upper / texture_width_, y_upper / texture_height_));
 
-    char_x += glyph.advance;
+    char_x += (glyph.size.x + GLYPH_PADDING_H);
 
     program.draw_bitmap(
         box,
@@ -169,6 +183,24 @@ FontAtlas::FontAtlas(
   glDeleteFramebuffers(1, &framebuffer);
   FT_Done_Face(ft_face);
   FT_Done_FreeType(ft_library);
+
+  // Restore GL state
+
+  glBindFramebuffer(GL_FRAMEBUFFER, original_fb);
+  glViewport(
+      original_viewport[0],
+      original_viewport[1],
+      original_viewport[2],
+      original_viewport[3]);
+  glUseProgram(original_program);
+  glBindVertexArray(original_vao);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, original_unpack_alignment);
+  if (original_blend) {
+    glEnable(GL_BLEND);
+  } else {
+    glDisable(GL_BLEND);
+  }
+  glBlendFunc(original_blend_src, original_blend_dst);
 }
 
 Vec2 FontAtlas::text_size(const std::string& text, Length width) {
@@ -244,10 +276,10 @@ size_t FontAtlas::add_glyphs(
     Box2 box(position, position + glyph.size);
 
     Rot2 rot(angle);
-    Vec2 lower_left = origin + rot * scale * box.lower_left();
-    Vec2 lower_right = origin + rot * scale * box.lower_right();
-    Vec2 upper_left = origin + rot * scale * box.upper_left();
-    Vec2 upper_right = origin + rot * scale * box.upper_right();
+    Vec2 lower_left = origin + rot * (scale * box.lower_left());
+    Vec2 lower_right = origin + rot * (scale * box.lower_right());
+    Vec2 upper_left = origin + rot * (scale * box.upper_left());
+    Vec2 upper_right = origin + rot * (scale * box.upper_right());
 
     vertices.emplace_back(lower_left, glyph.uv.lower_left());
     vertices.emplace_back(lower_right, glyph.uv.lower_right());
