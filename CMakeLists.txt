@@ -52,6 +52,10 @@ add_library(datagui SHARED
   src/input/number_input.cpp
   src/input/text_selection.cpp
 
+  src/render/program_registry.cpp
+  src/render/shape_2d_instance.cpp
+  src/render/shape_2d_program.cpp
+
   src/system_utils/layout.cpp
 
   src/system/button.cpp
