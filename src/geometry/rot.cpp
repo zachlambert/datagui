@@ -73,7 +73,7 @@ Rot3 Rot3::line_rot(const Vec3& direction) {
   u2 /= u2.length();
   Vec3 u3 = u1.cross(u2);
 
-  return Mat3(u1, u2, u3);
+  return Mat3::from_cols(u1, u2, u3);
 }
 
 } // namespace dgui

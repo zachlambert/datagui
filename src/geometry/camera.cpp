@@ -43,7 +43,7 @@ Rot3 Camera3d::rotation() const {
   Vec3 n1 = Vec3(0, 0, 1).cross(n3);
   n1 /= n1.length();
   Vec3 n2 = n3.cross(n1);
-  return Rot3(Mat3(n1, n2, n3));
+  return Rot3(Mat3::from_cols(n1, n2, n3));
 }
 
 Mat4 Camera3d::view_mat() const {

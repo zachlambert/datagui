@@ -5,12 +5,16 @@
 #include <cmath>
 #include <cstddef>
 #include <initializer_list>
+#include <utility>
 
 namespace dgui {
 
 class Rot3;
 
-// All matrices are column-major to be compatible with glsl
+// Storage is column-major to be compatible with glsl.
+// Initializer-list construction and the Vec constructors take values in row-major
+// (natural reading) order
+// Use from_cols(...) to build from column vectors.
 
 struct Mat2 {
   float data[4];
@@ -22,19 +26,28 @@ struct Mat2 {
       this->data[i] = data[i];
     }
   }
-  Mat2(const std::initializer_list<float>& list) {
-    assert(list.size() == 4);
+  Mat2(const std::initializer_list<float>& list_row_major) {
+    assert(list_row_major.size() == 4);
     std::size_t i = 0;
-    for (float value : list) {
+    for (float value : list_row_major) {
       data[i] = value;
       i++;
     }
+    transpose_in_place();
   }
-  Mat2(const Vec2& u1, const Vec2& u2) {
+  Mat2(const Vec2& row1, const Vec2& row2) {
     for (std::size_t k = 0; k < 2; k++) {
-      (*this)(k, 0) = u1(k);
-      (*this)(k, 1) = u2(k);
+      (*this)(0, k) = row1(k);
+      (*this)(1, k) = row2(k);
     }
+  }
+  static Mat2 from_cols(const Vec2& u1, const Vec2& u2) {
+    Mat2 result;
+    for (std::size_t k = 0; k < 2; k++) {
+      result(k, 0) = u1(k);
+      result(k, 1) = u2(k);
+    }
+    return result;
   }
   Mat2 transpose() const {
     Mat2 result;
@@ -44,6 +57,13 @@ struct Mat2 {
       }
     }
     return result;
+  }
+  void transpose_in_place() {
+    for (std::size_t i = 0; i < 1; i++) {
+      for (std::size_t j = i + 1; j < 2; j++) {
+        std::swap((*this)(i, j), (*this)(j, i));
+      }
+    }
   }
 
   float& operator()(std::size_t i, std::size_t j) {
@@ -91,21 +111,41 @@ struct Mat3 {
       this->data[i] = data[i];
     }
   }
-  Mat3(const std::initializer_list<float>& list) {
-    assert(list.size() == 9);
+
+  Mat3(const std::initializer_list<float>& list_row_major) {
+    assert(list_row_major.size() == 9);
     std::size_t i = 0;
-    for (float value : list) {
+    for (float value : list_row_major) {
       data[i] = value;
       i++;
     }
+    transpose_in_place();
   }
-  Mat3(const Vec3& u1, const Vec3& u2, const Vec3& u3) {
+  Mat3(const Vec3& row1, const Vec3& row2, const Vec3& row3) {
     for (std::size_t k = 0; k < 3; k++) {
-      (*this)(k, 0) = u1(k);
-      (*this)(k, 1) = u2(k);
-      (*this)(k, 2) = u3(k);
+      (*this)(0, k) = row1(k);
+      (*this)(1, k) = row2(k);
+      (*this)(2, k) = row3(k);
     }
   }
+
+  static Mat3 from_cols(const Vec3& u1, const Vec3& u2, const Vec3& u3) {
+    Mat3 result;
+    for (std::size_t k = 0; k < 3; k++) {
+      result(k, 0) = u1(k);
+      result(k, 1) = u2(k);
+      result(k, 2) = u3(k);
+    }
+    return result;
+  }
+  static Mat3 identity() {
+    Mat3 result;
+    for (std::size_t i = 0; i < 3; i++) {
+      result(i, i) = 1;
+    }
+    return result;
+  }
+
   Mat3 transpose() const {
     Mat3 result;
     for (std::size_t i = 0; i < 3; i++) {
@@ -115,6 +155,13 @@ struct Mat3 {
     }
     return result;
   }
+  void transpose_in_place() {
+    for (std::size_t i = 0; i < 2; i++) {
+      for (std::size_t j = i+1; j < 3; j++) {
+        std::swap((*this)(i, j), (*this)(j, i));
+      }
+    }
+  }
 
   float& operator()(std::size_t i, std::size_t j) {
     assert(i < 3 && j < 3);
@@ -123,14 +170,6 @@ struct Mat3 {
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 3 && j < 3);
     return data[j * 3 + i];
-  }
-
-  static Mat3 identity() {
-    Mat3 result;
-    for (std::size_t i = 0; i < 3; i++) {
-      result(i, i) = 1;
-    }
-    return result;
   }
 };
 
@@ -165,13 +204,14 @@ struct Mat4 {
       this->data[i] = data[i];
     }
   }
-  Mat4(const std::initializer_list<float>& list) {
-    assert(list.size() == 16);
+  Mat4(const std::initializer_list<float>& list_row_major) {
+    assert(list_row_major.size() == 16);
     std::size_t i = 0;
-    for (float value : list) {
+    for (float value : list_row_major) {
       data[i] = value;
       i++;
     }
+    transpose_in_place();
   }
   static Mat4 Transform(const Vec3& position, const Rot3& orientation);
   static Mat4 Transform(
@@ -187,6 +227,13 @@ struct Mat4 {
       }
     }
     return result;
+  }
+  void transpose_in_place() {
+    for (std::size_t i = 0; i < 3; i++) {
+      for (std::size_t j = i + 1; j < 4; j++) {
+        std::swap((*this)(i, j), (*this)(j, i));
+      }
+    }
   }
 
   float& operator()(std::size_t i, std::size_t j) {
