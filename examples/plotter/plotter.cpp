@@ -28,7 +28,7 @@ int main() {
     {
       DGUI_SCOPE(gui);
 
-      auto& plotter = gui.plotter(400, 400);
+      auto& plotter = gui.plotter();
       {
         DGUI_SCOPE(gui);
 
@@ -85,7 +85,7 @@ int main() {
     {
       DGUI_SCOPE(gui);
 
-      auto& plotter = gui.plotter(400, 400);
+      auto& plotter = gui.plotter();
       {
         DGUI_SCOPE(gui);
         auto f = [&](const Vec2& pos) {

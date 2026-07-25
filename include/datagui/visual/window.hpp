@@ -8,6 +8,7 @@
 #include <chrono>
 #include <string>
 #include <vector>
+#include <optional>
 
 namespace dgui {
 
@@ -60,6 +61,7 @@ private:
 
   GLFWwindow* window;
   Vec2 size_;
+  std::optional<std::chrono::steady_clock::time_point> reenable_vsync_time_;
 
   std::vector<MouseEvent> mouse_events_;
   std::vector<ScrollEvent> scroll_events_;
@@ -78,6 +80,7 @@ private:
   friend void glfw_scroll_callback(GLFWwindow*, double, double);
   friend void glfw_key_callback(GLFWwindow*, int, int, int, int);
   friend void glfw_char_callback(GLFWwindow*, unsigned int);
+  friend void glfw_resize_callback(GLFWwindow*, int, int);
 };
 
 } // namespace dgui

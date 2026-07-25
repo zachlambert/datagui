@@ -113,7 +113,7 @@ HeatmapHandle Plotter::heatmap(
   return HeatmapHandle(item.args);
 }
 
-void Plotter::impl_init(
+void Plotter::init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
   this->theme = theme;
@@ -136,31 +136,25 @@ void Plotter::begin() {
   default_color_i = 0;
 }
 
-void Plotter::end() {
-  redraw();
-}
-
-void Plotter::redraw() {
-  queue_commands();
-  bind_framebuffer();
+void Plotter::draw(const Box2& viewport, const Box2& mask) {
+  queue_commands(viewport);
 
   Camera2d fixed_camera;
-  fixed_camera.position = viewport().center();
+  fixed_camera.position = viewport.center();
   fixed_camera.angle = 0;
-  fixed_camera.size = viewport().size();
+  fixed_camera.size = viewport.size();
 
   Camera2d plot_camera;
   plot_camera.position = plot_area.center();
   plot_camera.angle = 0;
   plot_camera.size = plot_area.size();
 
-  fixed_shape_shader.draw(viewport(), fixed_camera);
-  fixed_text_shader.draw(viewport(), fixed_camera);
-  fixed_image_shader.draw(viewport(), fixed_camera);
-  plot_image_shader.draw(plot_area, plot_camera);
-  plot_shape_shader.draw(plot_area, plot_camera);
+  fixed_shape_shader.draw(mask, fixed_camera);
+  fixed_text_shader.draw(mask, fixed_camera);
+  fixed_image_shader.draw(mask, fixed_camera);
+  plot_image_shader.draw(intersection(plot_area, mask), plot_camera);
+  plot_shape_shader.draw(intersection(plot_area, mask), plot_camera);
 
-  unbind_framebuffer();
   fixed_shape_shader.clear();
   fixed_text_shader.clear();
   fixed_image_shader.clear();
@@ -168,10 +162,10 @@ void Plotter::redraw() {
   plot_image_shader.clear();
 }
 
-void Plotter::queue_commands() {
+void Plotter::queue_commands(const Box2& viewport) {
   Box2 bounds;
   float text_height = fm->text_height(theme->text_font, theme->text_size);
-  Vec2 size = viewport().size();
+  Vec2 size = viewport.size();
 
   float header_size = 0;
   float title_width = 0;
@@ -247,9 +241,9 @@ void Plotter::queue_commands() {
   }
 
   fixed_shape_shader.queue_rect(
-      viewport().size() / 2,
+      viewport.size() / 2,
       0,
-      viewport().size(),
+      viewport.size(),
       Color::Clear(),
       2,
       Color::Gray(0.5));
@@ -301,7 +295,7 @@ void Plotter::queue_commands() {
     bounds.upper.y = ylimit_->second;
   }
   if (undistorted_) {
-    double target_ratio = viewport().size().y / viewport().size().x;
+    double target_ratio = viewport.size().y / viewport.size().x;
     double ratio = bounds.size().y / bounds.size().x;
     if (ratio > target_ratio) {
       double width = bounds.size().y / target_ratio;
@@ -679,8 +673,6 @@ void Plotter::mouse_event(const MouseEvent& event) {
                plot_area.size();
   subview =
       Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
-
-  redraw();
 }
 
 bool Plotter::scroll_event(const ScrollEvent& event) {
@@ -699,7 +691,6 @@ bool Plotter::scroll_event(const ScrollEvent& event) {
   Vec2 size = subview.size() * size_ratio;
   subview = Box2(centre - size / 2, centre + size / 2);
 
-  redraw();
   return true;
 }
 

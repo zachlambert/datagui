@@ -5,6 +5,7 @@
 #include "datagui/visual/image_shader.hpp"
 #include "datagui/visual/shape_2d_shader.hpp"
 #include "datagui/visual/text_2d_shader.hpp"
+#include "datagui/viewport/viewport.hpp"
 #include <assert.h>
 #include <memory>
 #include <stack>
@@ -31,7 +32,7 @@ public:
       Length width = LengthWrap());
 
   void queue_image(const Box2& box, const Image& image);
-  void queue_viewport(const Box2& box, int texture);
+  void queue_viewport(const Box2& box, Viewport* viewport);
 
   void begin(const Box2& viewport);
   void end();
@@ -50,6 +51,13 @@ private:
   Shape2dShader shape_shader;
   Text2dShader text_shader;
   ImageShader image_shader;
+
+  struct ViewportCommand {
+    Box2 viewport;
+    Box2 mask;
+    Viewport* viewport_ptr;
+  };
+  std::vector<ViewportCommand> viewports;
 
   std::shared_ptr<FontManager> fm;
   std::stack<Box2> masks;

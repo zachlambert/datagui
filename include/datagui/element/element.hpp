@@ -5,8 +5,7 @@
 #include "datagui/input/number_input.hpp"
 #include "datagui/layout.hpp"
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/image_shader.hpp"
-#include <functional>
+#include "datagui/asset/image.hpp"
 #include <optional>
 #include <vector>
 
@@ -97,11 +96,11 @@ struct Dropdown {
   Layout layout;
 
   // Args
-  LayoutState layout_state;
   bool retain = false; // Retain state after closing
 
   // State
   bool open = false;
+  LayoutState layout_state;
 };
 
 struct Group {
@@ -224,9 +223,18 @@ struct TextBox {
 };
 
 struct ViewportPtr {
-  float width;
-  float height;
+  // Args
+  Layout layout;
+  Length width = LengthDynamic();
+  Length height = LengthDynamic();
+  bool border = false;
+
+  // Dependent
+  Box2 content_box;
+
+  // State
   std::unique_ptr<Viewport> viewport;
+  LayoutState layout_state;
 };
 
 } // namespace dgui

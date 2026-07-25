@@ -55,15 +55,17 @@ void GuiRenderer::queue_image(const Box2& box, const Image& image) {
       box.size());
 }
 
-void GuiRenderer::queue_viewport(const Box2& box, int texture) {
-  image_shader.queue_viewport(flip_box(masks.top()), flip_box(box), texture);
+void GuiRenderer::queue_viewport(const Box2& box, Viewport* viewport) {
+  viewports.push_back({flip_box(box), flip_box(masks.top()), viewport});
 }
 
 void GuiRenderer::begin(const Box2& viewport) {
   this->viewport = viewport;
+  #if 0
   if (masks.size() == 1) {
     masks.pop();
   }
+  #endif
   masks.push(viewport);
 }
 
@@ -79,9 +81,13 @@ void GuiRenderer::render() {
   shape_shader.draw(viewport, camera);
   text_shader.draw(viewport, camera);
   image_shader.draw(viewport, camera);
+  for (const auto& command : viewports) {
+    command.viewport_ptr->draw(command.viewport, command.mask);
+  }
   shape_shader.clear();
   text_shader.clear();
   image_shader.clear();
+  viewports.clear();
 }
 
 void GuiRenderer::push_mask(const Box2& mask) {

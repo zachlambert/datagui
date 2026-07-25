@@ -55,7 +55,7 @@ void Gui::open(
   REGISTER(Tabs, TabsSystem, fm, theme);
   REGISTER(TextBox, TextBoxSystem, fm, theme);
   REGISTER(TextInput, TextInputSystem, fm, theme);
-  REGISTER(ViewportPtr, ViewportPtrSystem);
+  REGISTER(ViewportPtr, ViewportPtrSystem, theme);
 
 #undef REGISTER
   for (const auto& system : systems) {
@@ -154,12 +154,12 @@ bool Gui::checkbox_v(bool& value) {
 }
 
 bool Gui::collapsable(const std::string& label) {
-  current.expect(Type::Collapsable, read_key());
+  bool is_new = current.expect(Type::Collapsable, read_key());
   args_.apply(current);
   auto& collapsable = current.collapsable();
   collapsable.label = label;
 
-  if (collapsable.open) {
+  if (collapsable.open || is_new) {
     move_down();
     return true;
   }
@@ -513,6 +513,10 @@ void Gui::text_box(const std::string& text) {
 }
 
 void Gui::render() {
+  if (!tree.root()) {
+    return;
+  }
+
   auto render_tree = [this](ConstElementPtr root) {
     if (!root) {
       return;
@@ -553,7 +557,7 @@ void Gui::render() {
   };
 
   window.render_begin();
-  renderer.begin(Box2(Vec2(), window.size()));
+  renderer.begin(tree.root().state().box());
 
   render_tree(tree.root());
   renderer.render();
@@ -630,7 +634,8 @@ void Gui::debug_render() {
   if (focused) {
     std::stringstream ss;
 
-    ss << "fixed: " << focused.state().fixed_size.x << ", "
+    ss << "mouse pos: " << window.mouse_pos().x << ", " << window.mouse_pos().y;
+    ss << "\nfixed: " << focused.state().fixed_size.x << ", "
        << focused.state().fixed_size.y;
     ss << "\ndynamic: " << focused.state().dynamic_size.x << ", "
        << focused.state().dynamic_size.y;
@@ -1049,26 +1054,22 @@ void Gui::focus_next(bool reverse) {
 
 template <typename T>
 requires std::is_base_of_v<Viewport, T>
-T& Gui::viewport(float width, float height) {
+T& Gui::viewport() {
   current.expect(Type::ViewportPtr, read_key());
+  args_.apply(current);
   auto& viewport = current.viewport();
   if (!viewport.viewport) {
     viewport.viewport = std::make_unique<T>();
-    viewport.viewport->init(width, height, theme, fm);
+    viewport.viewport->init(theme, fm);
   }
-  // Renderered width/height can differ to the initial width/height
-  // above - this defines the size used for the framebuffer
-  viewport.width = width;
-  viewport.height = height;
-
   move_down();
   viewport.viewport->begin();
   T* ptr = dynamic_cast<T*>(viewport.viewport.get());
   assert(ptr);
   return *ptr;
 }
-template Canvas2d& Gui::viewport<Canvas2d>(float, float);
-template Canvas3d& Gui::viewport<Canvas3d>(float, float);
-template Plotter& Gui::viewport<Plotter>(float, float);
+template Canvas2d& Gui::viewport<Canvas2d>();
+template Canvas3d& Gui::viewport<Canvas3d>();
+template Plotter& Gui::viewport<Plotter>();
 
 } // namespace dgui

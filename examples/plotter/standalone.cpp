@@ -15,7 +15,7 @@ int main() {
   }
 
   while (gui.poll()) {
-    auto& plotter = gui.plotter(400, 400);
+    auto& plotter = gui.plotter();
     DGUI_SCOPE(gui);
 
     plotter.plot(xs, ys);

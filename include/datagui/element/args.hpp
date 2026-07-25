@@ -13,20 +13,32 @@ class Args {
         default_value(default_value), value(default_value) {}
 
     T& operator*() {
+      modified = true;
       return value;
     }
     T* operator->() {
+      modified = true;
       return &value;
     }
 
     void consume(T& output) {
       output = value;
       value = default_value;
+      modified = false;
+    }
+
+    void consume_if_modified(T& output) {
+      if (modified) {
+        output = value;
+        value = default_value;
+        modified = false;
+      }
     }
 
   private:
-    const T default_value;
+    T default_value;
     T value;
+    bool modified;
   };
 
   template <typename T>

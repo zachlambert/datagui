@@ -224,14 +224,14 @@ public:
     return args_;
   }
 
-  Canvas2d& canvas2d(float width, float height) {
-    return viewport<Canvas2d>(width, height);
+  Canvas2d& canvas2d() {
+    return viewport<Canvas2d>();
   }
-  Canvas3d& canvas3d(float width, float height) {
-    return viewport<Canvas3d>(width, height);
+  Canvas3d& canvas3d() {
+    return viewport<Canvas3d>();
   }
-  Plotter& plotter(float width, float height) {
-    return viewport<Plotter>(width, height);
+  Plotter& plotter() {
+    return viewport<Plotter>();
   }
 
 private:
@@ -277,7 +277,7 @@ private:
 
   template <typename T>
   requires std::is_base_of_v<Viewport, T>
-  T& viewport(float width, float height);
+  T& viewport();
 
   Window window;
   Tree tree;

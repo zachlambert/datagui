@@ -2,6 +2,7 @@
 
 #include "datagui/geometry/mat.hpp"
 #include "datagui/geometry/rot.hpp"
+#include "datagui/geometry/box.hpp"
 
 namespace dgui {
 

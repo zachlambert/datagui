@@ -61,14 +61,31 @@ void Canvas2d::text(
     Font font,
     Color text_color,
     Length width) {
-  Vec2 text_scale = camera.size / viewport().size();
+  if (!prev_viewport_) {
+    return;
+  }
+  float text_scale = camera.size.x / prev_viewport_->size().x;
+
+  static constexpr int max_font_size = 80;
+  static constexpr int min_font_size = 12;
+  // Avoid generating too many fonts, choose font sizes at multiples of 4
+  // and adjust zoom appropriately
+  static constexpr int font_size_modulo = 4;
+
+  const int scaled_font_size = static_cast<int>(font_size * zoom);
+  const int font_size_used = std::clamp(
+      scaled_font_size - (scaled_font_size % font_size_modulo),
+      min_font_size,
+      max_font_size);
+  const float zoom_used = (font_size * zoom) / font_size_used;
+
   text_shader.queue_text(
       origin,
       angle,
-      text_scale,
+      Vec2::uniform(text_scale * zoom_used),
       text,
       font,
-      font_size,
+      font_size_used,
       text_color,
       width);
 }
@@ -83,7 +100,6 @@ void Canvas2d::heatmap(
     std::size_t height) {
   struct Pixel {
     std::uint8_t r, g, b, a;
-    ;
   };
   std::vector<Pixel> pixels(width * height);
   for (std::size_t i = 0; i < height; i++) {
@@ -128,16 +144,6 @@ void Canvas2d::heatmap(
   image_shader.queue_image(image, lower, 0, upper - lower);
 }
 
-void Canvas2d::view_size(float width, float height) {
-  nominal_camera_size.x = width;
-  if (height <= 0) {
-    nominal_camera_size.y = width * viewport().size().y / viewport().size().x;
-  } else {
-    nominal_camera_size.y = height;
-  }
-  camera.size = nominal_camera_size / zoom;
-}
-
 std::optional<MouseEvent> Canvas2d::mouse_event() {
   if (mouse_event_) {
     return std::move(mouse_event_);
@@ -145,58 +151,72 @@ std::optional<MouseEvent> Canvas2d::mouse_event() {
   return std::nullopt;
 }
 
-void Canvas2d::begin() {
-  shape_shader.clear();
-  text_shader.clear();
-  image_shader.clear();
-  bg_color_ = Color::Gray(0.95);
-  nominal_camera_size = viewport().size();
-  camera.size = nominal_camera_size / zoom;
-}
-
-void Canvas2d::end() {
-  redraw();
-}
-
-void Canvas2d::impl_init(
+void Canvas2d::init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontManager>& fm) {
+  bg_shader.init();
   shape_shader.init();
   text_shader.init(fm);
   image_shader.init();
 }
 
-void Canvas2d::redraw() {
-  bind_framebuffer(bg_color_);
-  camera.size = nominal_camera_size / zoom;
-  image_shader.draw(viewport(), camera);
-  shape_shader.draw(viewport(), camera);
-  text_shader.draw(viewport(), camera);
-  unbind_framebuffer();
+void Canvas2d::begin() {
+  shape_shader.clear();
+  text_shader.clear();
+  image_shader.clear();
+  bg_color_ = Color::Gray(0.95);
+  default_position_ = Vec2();
+  default_view_width_ = 1;
+}
+
+void Canvas2d::draw(const Box2& viewport, const Box2& mask) {
+  prev_viewport_ = viewport;
+  camera.size.x = default_view_width_ / zoom;
+  camera.size.y = viewport.ratio_yx() * camera.size.x;
+
+  // Now modify the camera so it fits the masked area instead
+  Box2 masked_area = intersection(viewport, mask);
+  Box2 normalized_area;
+  normalized_area.lower =
+      (masked_area.lower - viewport.lower) / viewport.size();
+  normalized_area.upper =
+      normalized_area.lower + masked_area.size() / viewport.size();
+
+  Camera2d cropped_camera;
+  cropped_camera.position =
+      camera.position +
+      camera.size * (normalized_area.center() - Vec2::uniform(0.5));
+  cropped_camera.size = camera.size * normalized_area.size();
+
+  bg_shader
+      .queue_rect(cropped_camera.position, 0, cropped_camera.size, bg_color_);
+  bg_shader.draw(masked_area, cropped_camera);
+  bg_shader.clear();
+
+  image_shader.draw(masked_area, cropped_camera);
+  shape_shader.draw(masked_area, cropped_camera);
+  text_shader.draw(masked_area, cropped_camera);
 }
 
 void Canvas2d::mouse_event(const MouseEvent& event) {
-  if (event.button != MouseButton::Middle) {
-    MouseEvent remapped = event;
-    remapped.press_position = camera.from_camera(event.press_position);
-    remapped.position = camera.from_camera(event.position);
-    mouse_event_ = remapped;
-    return;
-  }
-  if (event.action == MouseAction::Press) {
-    if (event.mod.ctrl) {
-      camera.position = Vec2();
-      zoom = 1;
-      redraw();
+  if (event.button == MouseButton::Right) {
+    if (event.action == MouseAction::Press) {
+      if (event.mod.ctrl) {
+        camera.position = Vec2();
+        zoom = 1;
+      }
+      click_camera = camera;
+    } else {
+      camera.position = click_camera.position +
+                        click_camera.from_camera(event.press_position) -
+                        click_camera.from_camera(event.position);
     }
-    click_camera = camera;
-    return;
   }
 
-  camera.position = click_camera.position +
-                    click_camera.from_camera(event.press_position) -
-                    click_camera.from_camera(event.position);
-  redraw();
+  MouseEvent remapped = event;
+  remapped.press_position = camera.from_camera(event.press_position);
+  remapped.position = camera.from_camera(event.position);
+  mouse_event_ = remapped;
 }
 
 bool Canvas2d::scroll_event(const ScrollEvent& event) {
@@ -205,7 +225,6 @@ bool Canvas2d::scroll_event(const ScrollEvent& event) {
   zoom *= change_factor;
   camera.position +=
       (event.position - Vec2::uniform(0.5)) * (change_factor - 1) * camera.size;
-  redraw();
   return true;
 }
 
