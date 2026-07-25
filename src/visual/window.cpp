@@ -230,10 +230,8 @@ void Window::open(
     throw std::runtime_error("Failed to initialize glfw");
   }
 
-  // GL 3.0 + GLSL 130
-  const char* glsl_version = "#version 130";
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
   // Create window with graphics context

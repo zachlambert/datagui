@@ -1,4 +1,3 @@
-const static std::string fragment_shader = R"(
 #version 330 core
 
 in vec2 fs_uv;
