@@ -52,6 +52,7 @@ add_library(datagui SHARED
   src/input/number_input.cpp
   src/input/text_selection.cpp
 
+  src/render/glyph_2d_program.cpp
   src/render/program_registry.cpp
   src/render/shape_2d_instance.cpp
   src/render/shape_2d_program.cpp
@@ -99,8 +100,10 @@ endif()
 # Embed shader sources into the library at build time
 
 include(cmake/EmbedShaders.cmake)
-embed_shader(datagui ${CMAKE_CURRENT_SOURCE_DIR}/src/render/shaders/shape_2d.vert shape_2d_vs)
-embed_shader(datagui ${CMAKE_CURRENT_SOURCE_DIR}/src/render/shaders/shape_2d.frag shape_2d_fs)
+embed_shader(shape_2d.vert shape_2d_vs)
+embed_shader(shape_2d.frag shape_2d_fs)
+embed_shader(glyph_2d.vert glyph_2d_vs)
+embed_shader(glyph_2d.frag glyph_2d_fs)
 
 # Additional targets
 

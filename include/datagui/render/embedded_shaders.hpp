@@ -1,12 +1,11 @@
 #pragma once
 
-namespace dgui {
-namespace shaders {
+namespace dgui::shaders {
 
-// Shader sources embedded at build time from src/render/shaders/*.
-// See cmake/EmbedShaders.cmake.
 extern const char shape_2d_vs[];
 extern const char shape_2d_fs[];
 
-} // namespace shaders
-} // namespace dgui
+extern const char glyph_2d_vs[];
+extern const char glyph_2d_fs[];
+
+} // namespace dgui::shaders

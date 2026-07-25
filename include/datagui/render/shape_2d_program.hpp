@@ -7,6 +7,7 @@ namespace dgui {
 class Shape2dProgram {
 public:
   void init();
+  void bind();
   void draw(const Shape2dInstance* data, size_t count, const Mat3& PV);
 
 private:
