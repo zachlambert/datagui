@@ -96,6 +96,12 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   target_compile_definitions(datagui PUBLIC -DDGUI_DEBUG)
 endif()
 
+# Embed shader sources into the library at build time
+
+include(cmake/EmbedShaders.cmake)
+embed_shader(datagui ${CMAKE_CURRENT_SOURCE_DIR}/src/render/shaders/shape_2d.vert shape_2d_vs)
+embed_shader(datagui ${CMAKE_CURRENT_SOURCE_DIR}/src/render/shaders/shape_2d.frag shape_2d_fs)
+
 # Additional targets
 
 if (NOT BUILD_ADDITIONAL_TARGETS)
