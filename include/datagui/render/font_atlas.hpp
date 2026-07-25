@@ -29,7 +29,7 @@ public:
       double angle,
       const Vec2& scale,
       const std::string& text,
-      Length width = LengthWrap());
+      Length width = LengthWrap()) const;
 
   int texture() const {
     return texture_;

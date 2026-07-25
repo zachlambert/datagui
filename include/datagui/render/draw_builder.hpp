@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/render/draw_list.hpp"
-#include "datagui/visual/font_manager.hpp"
+#include "datagui/render/font_atlas.hpp"
 #include <memory>
 #include <optional>
 
@@ -9,8 +9,6 @@ namespace dgui {
 
 class DrawBuilder {
 public:
-  DrawBuilder(const std::shared_ptr<FontManager>& fm) : fm(fm) {}
-
   void begin_group(int z_index, const Box2& mask);
   void begin_scene_2d(int z_index, const Color& bg_color, const Box2& mask);
   void queue_scene_3d(
@@ -21,11 +19,10 @@ public:
   DrawList flush();
 
   void queue_text(
+      const FontAtlas& font_atlas,
       const Vec2& origin,
       double angle,
       const Vec2& scale,
-      Font font,
-      int font_size,
       const Color& color,
       Length width,
       const std::string& text);
@@ -84,8 +81,6 @@ public:
 private:
   void add_batch(int z_index, const Box2& mask);
   void queue_shape_2d();
-
-  std::shared_ptr<FontManager> fm;
 
   DrawList dl;
   int batch_z_index = 0;

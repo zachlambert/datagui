@@ -281,7 +281,7 @@ size_t FontAtlas::add_glyphs(
     double angle,
     const Vec2& scale,
     const std::string& text,
-    Length width) {
+    Length width) const {
 
   auto fixed_width = std::get_if<LengthFixed>(&width);
 

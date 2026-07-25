@@ -49,11 +49,10 @@ void DrawBuilder::queue_shape_2d() {
 }
 
 void DrawBuilder::queue_text(
+    const FontAtlas& font_atlas,
     const Vec2& origin,
     double angle,
     const Vec2& scale,
-    Font font,
-    int font_size,
     const Color& color,
     Length width,
     const std::string& text) {
@@ -62,36 +61,18 @@ void DrawBuilder::queue_text(
   }
   prev_call_type_ = CallType::Text;
 
-  auto& fs = fm->font_structure(font, font_size);
-
   if (batch->glyph_groups.empty() ||
-      !batch->glyph_groups.back().matches(fs.font_texture, color)) {
+      !batch->glyph_groups.back().matches(font_atlas.texture(), color)) {
     auto& group = batch->glyph_groups.emplace_back();
-    group.font_texture = fs.font_texture;
+    group.font_texture = font_atlas.texture();
     group.color = color;
     group.offset = dl.glyph_2d_vertices.size();
   }
   auto& group = batch->glyph_groups.back();
 
-  auto characters = fm->text_characters(text, font, font_size, width);
-  auto& vertices = dl.glyph_2d_vertices;
-  const size_t initial_vertex_count = vertices.size();
-
-  for (auto& [box, uv] : characters) {
-    Mat2 rot = Rot2(angle).mat();
-    Vec2 lower_left = origin + scale * (rot * box.lower_left());
-    Vec2 lower_right = origin + scale * (rot * box.lower_right());
-    Vec2 upper_left = origin + scale * (rot * box.upper_left());
-    Vec2 upper_right = origin + scale * (rot * box.upper_right());
-
-    vertices.emplace_back(lower_left, uv.lower_left());
-    vertices.emplace_back(lower_right, uv.lower_right());
-    vertices.emplace_back(upper_left, uv.upper_left());
-    vertices.emplace_back(lower_right, uv.lower_right());
-    vertices.emplace_back(upper_right, uv.upper_right());
-    vertices.emplace_back(upper_left, uv.upper_left());
-  }
-  group.count = dl.glyph_2d_vertices.size() - initial_vertex_count;
+  group.count +=
+      font_atlas
+          .add_glyphs(dl.glyph_2d_vertices, origin, angle, scale, text, width);
 }
 
 void DrawBuilder::queue_image(
