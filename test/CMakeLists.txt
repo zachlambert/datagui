@@ -33,6 +33,8 @@ create_test(geometry vec)
 create_test(geometry mat)
 create_test(geometry rot)
 
+create_test_program(render shape_program)
+
 create_test_program(visual window)
 create_test_program(visual shape_2d_shader)
 create_test_program(visual text_2d_shader)

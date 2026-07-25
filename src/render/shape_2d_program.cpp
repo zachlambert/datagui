@@ -123,7 +123,7 @@ void Shape2dProgram::draw(
       GL_ARRAY_BUFFER,
       count * sizeof(Shape2dInstance),
       data,
-      GL_STATIC_DRAW);
+      GL_STREAM_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);

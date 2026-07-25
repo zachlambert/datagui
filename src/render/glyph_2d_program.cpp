@@ -69,7 +69,7 @@ void Glyph2dProgram::draw(
       GL_ARRAY_BUFFER,
       count * sizeof(Glyph2dVertex),
       data,
-      GL_STATIC_DRAW);
+      GL_STREAM_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUniform4f(uniform_text_color, color.r, color.g, color.b, color.a);

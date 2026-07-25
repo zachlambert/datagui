@@ -52,6 +52,8 @@ add_library(datagui SHARED
   src/input/number_input.cpp
   src/input/text_selection.cpp
 
+  src/render/draw_builder.cpp
+  src/render/executor.cpp
   src/render/glyph_2d_program.cpp
   src/render/program_registry.cpp
   src/render/shape_2d_instance.cpp

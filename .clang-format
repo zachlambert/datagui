@@ -1,5 +1,6 @@
 ---
 Language: Cpp
+IndentWidth: 2
 PointerAlignment: Left
 ReferenceAlignment: Left
 PackConstructorInitializers: NextLine
@@ -17,3 +18,4 @@ ColumnLimit: 80
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortLambdasOnASingleLine: Empty
 AlignEscapedNewlines: DontAlign
+IndentCaseLabels: true
