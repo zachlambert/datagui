@@ -30,6 +30,12 @@ public:
       Length width,
       const std::string& text);
 
+  void queue_image(
+      const Image& image,
+      const Vec2& position,
+      float angle,
+      const Vec2& size);
+
   void queue_box(
       const Box2& box,
       const Color& color,

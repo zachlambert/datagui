@@ -12,6 +12,10 @@ public:
     return bool(data);
   }
 
+  unsigned int texture() const {
+    return data ? data->texture : 0;
+  }
+
 private:
   struct Data {
     std::size_t width;
@@ -28,6 +32,7 @@ private:
   };
   std::shared_ptr<Data> data;
 
+  // TODO: Remove friend
   friend class ImageShader;
 };
 

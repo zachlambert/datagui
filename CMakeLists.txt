@@ -58,6 +58,7 @@ add_library(datagui SHARED
   src/render/font_atlas.cpp
   src/render/font_program.cpp
   src/render/glyph_2d_program.cpp
+  src/render/image_2d_program.cpp
   src/render/program_registry.cpp
   src/render/shape_2d_instance.cpp
   src/render/shape_2d_program.cpp
@@ -109,6 +110,8 @@ embed_shader(shape_2d.vert shape_2d_vs)
 embed_shader(shape_2d.frag shape_2d_fs)
 embed_shader(glyph_2d.vert glyph_2d_vs)
 embed_shader(glyph_2d.frag glyph_2d_fs)
+embed_shader(image_2d.vert image_2d_vs)
+embed_shader(image_2d.frag image_2d_fs)
 embed_shader(font.vert font_vs)
 embed_shader(font.frag font_fs)
 

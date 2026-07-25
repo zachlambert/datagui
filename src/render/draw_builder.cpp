@@ -94,6 +94,48 @@ void DrawBuilder::queue_text(
   group.count = dl.glyph_2d_vertices.size() - initial_vertex_count;
 }
 
+void DrawBuilder::queue_image(
+    const Image& image,
+    const Vec2& position,
+    float angle,
+    const Vec2& size) {
+  if (!image.is_loaded()) {
+    return;
+  }
+  if (in_scene_2d_ &&
+      (prev_call_type_ && *prev_call_type_ != CallType::Image)) {
+    add_batch(batch_z_index, batch->mask);
+  }
+  prev_call_type_ = CallType::Image;
+
+  if (batch->image_groups.empty() ||
+      !batch->image_groups.back().matches(image)) {
+    auto& group = batch->image_groups.emplace_back();
+    group.image = image;
+    group.offset = dl.image_2d_vertices.size();
+  }
+  auto& group = batch->image_groups.back();
+
+  Mat2 rot = Rot2(angle).mat();
+  Vec2 lower_left = position;
+  Vec2 lower_right = position + rot * Vec2(size.x, 0);
+  Vec2 upper_left = position + rot * Vec2(0, size.y);
+  Vec2 upper_right = position + rot * size;
+
+  auto& vertices = dl.image_2d_vertices;
+  const size_t initial_vertex_count = vertices.size();
+
+  // UV V is flipped so the image's top row maps to the top of the quad.
+  vertices.emplace_back(lower_left, Vec2(0, 1));
+  vertices.emplace_back(lower_right, Vec2(1, 1));
+  vertices.emplace_back(upper_left, Vec2(0, 0));
+  vertices.emplace_back(lower_right, Vec2(1, 1));
+  vertices.emplace_back(upper_right, Vec2(1, 0));
+  vertices.emplace_back(upper_left, Vec2(0, 0));
+
+  group.count = dl.image_2d_vertices.size() - initial_vertex_count;
+}
+
 // Shape2d
 
 void DrawBuilder::queue_box(

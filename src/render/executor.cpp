@@ -30,6 +30,16 @@ void Executor::draw(
             batch.shape_count,
             PV);
       }
+      if (!batch.image_groups.empty()) {
+        registry.image_2d_program.bind();
+        for (const auto& group : batch.image_groups) {
+          registry.image_2d_program.draw(
+              group.image.texture(),
+              &dl.image_2d_vertices[group.offset],
+              group.count,
+              PV);
+        }
+      }
       if (!batch.glyph_groups.empty()) {
         registry.glyph_2d_program.bind();
         for (const auto& group : batch.glyph_groups) {
