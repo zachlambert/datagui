@@ -106,11 +106,11 @@ void Glyph2dProgram::bind() {
 }
 
 void Glyph2dProgram::draw(
+    const Mat3& PV,
     unsigned int font_texture,
     const Color& color,
     const Glyph2dInstance* data,
-    size_t count,
-    const Mat3& PV) {
+    size_t count) {
 
   // Stream data to instance buffer
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);

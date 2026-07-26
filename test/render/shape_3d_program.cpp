@@ -82,6 +82,9 @@ int main() {
   add(Shape3dType::Cylinder, arrow.cylinder);
   add(Shape3dType::Cone, arrow.cone);
 
+  const Mat4 view = camera.view_mat();
+  const Mat4 projection = camera.projection_mat();
+
   while (window.running()) {
     window.render_begin();
 
@@ -90,14 +93,12 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    Mat4 V = camera.view_mat();
-    Mat4 P = camera.projection_mat();
-
     program.bind();
     for (std::size_t i = 0; i < Shape3dTypeCount; i++) {
       const auto& list = instances[i];
       if (!list.empty()) {
-        program.draw((Shape3dType)i, list.data(), list.size(), P, V);
+        program
+            .draw(view, projection, (Shape3dType)i, list.data(), list.size());
       }
     }
 

@@ -128,10 +128,9 @@ void Shape2dProgram::bind() {
 }
 
 void Shape2dProgram::draw(
+    const Mat3& PV,
     const Shape2dInstance* data,
-    size_t count,
-    const Mat3& PV) {
-
+    size_t count) {
   // Stream data to instance buffer
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
   glBufferData(

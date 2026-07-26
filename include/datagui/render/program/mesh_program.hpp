@@ -12,10 +12,10 @@ public:
   void bind();
 
   void draw(
+      const Mat4& view,
+      const Mat4& projection,
       const Mesh& mesh,
-      const Mat4& model,
-      const Mat4& P,
-      const Mat4& V,
+      const Mat4& transform,
       const Color& base_color = Color::White());
 
 private:

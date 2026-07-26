@@ -9,7 +9,10 @@ public:
   void init();
   void bind();
 
-  void draw(const Shape2dInstance* data, size_t count, const Mat3& PV);
+  void draw(
+      const Mat3& PV,
+      const Shape2dInstance* data,
+      size_t count);
 
 private:
   unsigned int program_id;

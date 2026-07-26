@@ -25,18 +25,18 @@ void MeshProgram::bind() {
 }
 
 void MeshProgram::draw(
+    const Mat4& view,
+    const Mat4& projection,
     const Mesh& mesh,
-    const Mat4& model,
-    const Mat4& P,
-    const Mat4& V,
+    const Mat4& transform,
     const Color& base_color) {
   if (!mesh.is_loaded()) {
     return;
   }
 
-  glUniformMatrix4fv(uniform_P, 1, GL_FALSE, P.data);
-  glUniformMatrix4fv(uniform_V, 1, GL_FALSE, V.data);
-  glUniformMatrix4fv(uniform_M, 1, GL_FALSE, model.data);
+  glUniformMatrix4fv(uniform_P, 1, GL_FALSE, projection.data);
+  glUniformMatrix4fv(uniform_V, 1, GL_FALSE, view.data);
+  glUniformMatrix4fv(uniform_M, 1, GL_FALSE, transform.data);
   glUniform4fv(uniform_mesh_color, 1, base_color.data);
   glVertexAttrib4f(2, 1.f, 1.f, 1.f, 1.f);
 

@@ -76,8 +76,8 @@ int main() {
         {0.f, 0.f, 1.f}};
 
     program.bind();
-    program.draw(image_1.texture(), M1, PV);
-    program.draw(image_2.texture(), M2, PV);
+    program.draw(PV, image_1.texture(), M1);
+    program.draw(PV, image_2.texture(), M2);
 
     window.render_end();
     window.poll_events();

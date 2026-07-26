@@ -43,31 +43,31 @@ void Executor::draw(
       if (batch.shape_count > 0) {
         registry.shape_2d_program.bind();
         registry.shape_2d_program.draw(
+            PV,
             &dl.shape_2d_instances[batch.shape_offset],
-            batch.shape_count,
-            PV);
+            batch.shape_count);
       }
       if (!batch.image_groups.empty()) {
         registry.image_2d_program.bind();
-        #if 0
+#if 0
         for (const auto& group : batch.image_groups) {
           registry.image_2d_program.draw(
+            PV,
               group.image.texture(),
               &dl.image_2d_vertices[group.offset],
-              group.count,
-              PV);
+              group.count);
         }
-        #endif
+#endif
       }
       if (!batch.glyph_groups.empty()) {
         registry.glyph_2d_program.bind();
         for (const auto& group : batch.glyph_groups) {
           registry.glyph_2d_program.draw(
+              PV,
               group.font_texture,
               group.color,
               &dl.glyph_2d_instances[group.offset],
-              group.count,
-              PV);
+              group.count);
         }
       }
     }

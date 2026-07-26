@@ -72,18 +72,22 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    Mat4 V = camera.view_mat();
-    Mat4 P = camera.projection_mat();
+    const Mat4 view = camera.view_mat();
+    const Mat4 projection = camera.projection_mat();
 
     program.bind();
     program.draw(
-        colored_cloud, Mat4::transform(Vec3(0, 2, 0), Rot3()), 0.05, P, V);
+        view,
+        projection,
+        colored_cloud,
+        Mat4::transform(Vec3(0, 2, 0), Rot3()),
+        0.05);
     program.draw(
+        view,
+        projection,
         fixed_cloud,
         Mat4::transform(Vec3(0, -2, 0), Rot3()),
         0.05,
-        P,
-        V,
         Color(1, 0.6, 0.2));
 
     window.render_end();

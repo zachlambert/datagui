@@ -12,11 +12,11 @@ public:
   void bind();
 
   void draw(
+      const Mat3& PV,
       unsigned int font_texture,
       const Color& color,
       const Glyph2dInstance* data,
-      size_t count,
-      const Mat3& PV);
+      size_t count);
 
 private:
   // Shader

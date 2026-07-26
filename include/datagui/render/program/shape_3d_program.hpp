@@ -13,11 +13,11 @@ public:
   void bind();
 
   void draw(
+      const Mat4& view,
+      const Mat4& projection,
       Shape3dType type,
       const Shape3dInstance* data,
-      size_t count,
-      const Mat4& P,
-      const Mat4& V);
+      size_t count);
 
 private:
   struct Shape {

@@ -91,11 +91,11 @@ int main() {
     for (const auto& item : items) {
       program.bind();
       program.draw(
+          PV,
           item.texture,
           item.color,
           item.instances.data(),
-          item.instances.size(),
-          PV);
+          item.instances.size());
     }
 
     window.render_end();

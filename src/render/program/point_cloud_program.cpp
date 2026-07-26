@@ -21,20 +21,19 @@ void PointCloudProgram::bind() {
 }
 
 void PointCloudProgram::draw(
+    const Mat4& view,
+    const Mat4& projection,
     const PointCloud& point_cloud,
-    const Mat4& model,
+    const Mat4& transform,
     float point_size,
-    const Mat4& P,
-    const Mat4& V,
     const Color& base_color) {
-
   if (!point_cloud.is_loaded()) {
     return;
   }
 
-  glUniformMatrix4fv(uniform_P, 1, GL_FALSE, P.data);
-  glUniformMatrix4fv(uniform_V, 1, GL_FALSE, V.data);
-  glUniformMatrix4fv(uniform_M, 1, GL_FALSE, model.data);
+  glUniformMatrix4fv(uniform_P, 1, GL_FALSE, projection.data);
+  glUniformMatrix4fv(uniform_V, 1, GL_FALSE, view.data);
+  glUniformMatrix4fv(uniform_M, 1, GL_FALSE, transform.data);
   glUniform1f(uniform_point_size, point_size);
   // Default vertex color if buffer attribute not enabled
   glVertexAttrib3f(1, base_color.r, base_color.g, base_color.b);

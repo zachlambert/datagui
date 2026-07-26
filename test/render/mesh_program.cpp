@@ -198,24 +198,32 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    Mat4 V = camera.view_mat();
-    Mat4 P = camera.projection_mat();
+    const Mat4 view = camera.view_mat();
+    const Mat4 projection = camera.projection_mat();
 
     program.bind();
     program.draw(
+        view,
+        projection,
         fixed_mesh,
         Mat4::transform(Vec3(0, 2, 0), Rot3()),
-        P,
-        V,
         Color::Red());
-    program.draw(colored_mesh, Mat4::transform(Vec3(0, -2, 0), Rot3()), P, V);
-    program.draw(textured_mesh, Mat4::transform(Vec3(0, 0, 3), Rot3()), P, V);
+    program.draw(
+        view,
+        projection,
+        colored_mesh,
+        Mat4::transform(Vec3(0, -2, 0), Rot3()));
+    program.draw(
+        view,
+        projection,
+        textured_mesh,
+        Mat4::transform(Vec3(0, 0, 3), Rot3()));
     // Translucent textured draw to exercise the opacity (mesh_color.a) path.
     program.draw(
+        view,
+        projection,
         textured_mesh,
         Mat4::transform(Vec3(3, 0, 0), Rot3()),
-        P,
-        V,
         Color(1.f, 1.f, 0.f, 0.8f));
 
     window.render_end();

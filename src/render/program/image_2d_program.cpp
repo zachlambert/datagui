@@ -74,8 +74,11 @@ void Image2dProgram::bind() {
   glBindVertexArray(VAO);
 }
 
-void Image2dProgram::draw(unsigned int texture, const Mat3& M, const Mat3& PV) {
-  Mat3 PVM = PV * M;
+void Image2dProgram::draw(
+    const Mat3& PV,
+    unsigned int texture,
+    const Mat3& transform) {
+  const Mat3 PVM = PV * transform;
   glUniformMatrix3fv(uniform_PVM, 1, GL_FALSE, PVM.data);
   glBindTexture(GL_TEXTURE_2D, texture);
   glDrawArrays(GL_TRIANGLES, 0, quad_vertex_count);

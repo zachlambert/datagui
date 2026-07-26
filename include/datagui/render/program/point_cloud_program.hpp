@@ -12,11 +12,11 @@ public:
   void bind();
 
   void draw(
+      const Mat4& view,
+      const Mat4& projection,
       const PointCloud& point_cloud,
-      const Mat4& model,
+      const Mat4& transform,
       float point_size,
-      const Mat4& P,
-      const Mat4& V,
       const Color& base_color = Color::White());
 
 private:

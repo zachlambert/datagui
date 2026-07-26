@@ -115,7 +115,7 @@ int main() {
         {0.f, 0.f, 1.f}};
 
     program.bind();
-    program.draw(instances.data(), instances.size(), PV);
+    program.draw(PV, instances.data(), instances.size());
 
     window.render_end();
     window.poll_events();

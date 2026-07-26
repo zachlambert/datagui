@@ -114,18 +114,18 @@ void Shape3dProgram::bind() {
 }
 
 void Shape3dProgram::draw(
+    const Mat4& view,
+    const Mat4& projection,
     Shape3dType type,
     const Shape3dInstance* data,
-    size_t count,
-    const Mat4& P,
-    const Mat4& V) {
+    size_t count) {
   if (count == 0) {
     return;
   }
   const auto& shape = shapes[(std::size_t)type];
 
-  glUniformMatrix4fv(uniform_P, 1, GL_FALSE, P.data);
-  glUniformMatrix4fv(uniform_V, 1, GL_FALSE, V.data);
+  glUniformMatrix4fv(uniform_P, 1, GL_FALSE, projection.data);
+  glUniformMatrix4fv(uniform_V, 1, GL_FALSE, view.data);
 
   // Stream data to instance buffer
   glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);

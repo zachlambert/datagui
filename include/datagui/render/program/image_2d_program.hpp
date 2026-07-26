@@ -8,7 +8,10 @@ class Image2dProgram {
 public:
   void init();
   void bind();
-  void draw(unsigned int texture, const Mat3& M, const Mat3& PV);
+  void draw(
+      const Mat3& PV,
+      unsigned int texture,
+      const Mat3& transform);
 
 private:
   unsigned int program_id;
