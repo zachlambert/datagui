@@ -7,39 +7,96 @@ namespace dgui {
 
 void Glyph2dProgram::init() {
   program_id = compile_program_vf(shaders::glyph_2d_vs, shaders::glyph_2d_fs);
+
   uniform_PV = glGetUniformLocation(program_id, "PV");
   uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
   glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
+  glGenBuffers(1, &static_VBO);
+  glGenBuffers(1, &instance_VBO);
+
+  struct Vertex {
+    Vec2 pos;
+  };
+
+  // Configure static and instance arrays
 
   glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  {
+    GLuint index = 0;
 
-  GLuint index = 0;
+    // Assign static array attributes
+    glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
 
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Glyph2dVertex),
-      (void*)offsetof(Glyph2dVertex, pos));
-  glEnableVertexAttribArray(index);
-  index++;
+    glVertexAttribPointer(
+        index,
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(Vertex),
+        (void*)offsetof(Vertex, pos));
+    glEnableVertexAttribArray(index);
+    index++;
 
-  glVertexAttribPointer(
-      index,
-      2,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Glyph2dVertex),
-      (void*)offsetof(Glyph2dVertex, uv));
-  glEnableVertexAttribArray(index);
-  index++;
+    // Assign instance array attributes
+    glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
 
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+    for (std::size_t i = 0; i < 3; i++) {
+      glVertexAttribPointer(
+          index,
+          3,
+          GL_FLOAT,
+          GL_FALSE,
+          sizeof(Glyph2dInstance),
+          (void*)(offsetof(Glyph2dInstance, M) + sizeof(float) * 3 * i));
+      glVertexAttribDivisor(index, 1);
+      glEnableVertexAttribArray(index);
+      index++;
+    }
+
+    glVertexAttribPointer(
+        index,
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(Glyph2dInstance),
+        (void*)offsetof(Glyph2dInstance, uv_offset));
+    glVertexAttribDivisor(index, 1);
+    glEnableVertexAttribArray(index);
+    index++;
+
+    glVertexAttribPointer(
+        index,
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(Glyph2dInstance),
+        (void*)offsetof(Glyph2dInstance, uv_size));
+    glVertexAttribDivisor(index, 1);
+    glEnableVertexAttribArray(index);
+    index++;
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+  }
   glBindVertexArray(0);
+
+  const std::vector<Vertex> static_vertices = {
+      {Vec2(0.f, 0.f)},
+      {Vec2(1.f, 0.f)},
+      {Vec2(0.f, 1.f)},
+      {Vec2(1.f, 0.f)},
+      {Vec2(1.f, 1.f)},
+      {Vec2(0.f, 1.f)}};
+  static_vertex_count = static_vertices.size();
+
+  // Bind and configure buffer for vertex attributes
+  glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
+  glBufferData(
+      GL_ARRAY_BUFFER,
+      static_vertices.size() * sizeof(Vertex),
+      static_vertices.data(),
+      GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void Glyph2dProgram::bind() {
@@ -50,23 +107,24 @@ void Glyph2dProgram::bind() {
 void Glyph2dProgram::draw(
     unsigned int font_texture,
     const Color& color,
-    const Glyph2dVertex* data,
+    const Glyph2dInstance* data,
     size_t count,
     const Mat3& PV) {
-  glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
 
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  // Stream data to instance buffer
+  glBindBuffer(GL_ARRAY_BUFFER, instance_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
-      count * sizeof(Glyph2dVertex),
+      count * sizeof(Glyph2dInstance),
       data,
       GL_STREAM_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+  glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
   glUniform4f(uniform_text_color, color.r, color.g, color.b, color.a);
 
   glBindTexture(GL_TEXTURE_2D, font_texture);
-  glDrawArrays(GL_TRIANGLES, 0, count);
+  glDrawArraysInstanced(GL_TRIANGLES, 0, static_vertex_count, count);
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 

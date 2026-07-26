@@ -76,7 +76,6 @@ void Image2dProgram::bind() {
 
 void Image2dProgram::draw(unsigned int texture, const Mat3& M, const Mat3& PV) {
   Mat3 PVM = PV * M;
-  std::cout << PVM << std::endl;
   glUniformMatrix3fv(uniform_PVM, 1, GL_FALSE, PVM.data);
   glBindTexture(GL_TEXTURE_2D, texture);
   glDrawArrays(GL_TRIANGLES, 0, static_vertex_count);

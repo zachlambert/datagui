@@ -68,7 +68,7 @@ void MeshShader::queue_mesh(
     const Color& color) {
   auto& command = commands.emplace_back();
   command.mesh = mesh;
-  command.model_mat = Mat4::Transform(position, orientation);
+  command.model_mat = Mat4::transform(position, orientation);
   command.color = color;
 }
 

@@ -77,7 +77,7 @@ void UvMeshShader::queue_mesh(
     float opacity) {
   auto& command = commands.emplace_back();
   command.uv_mesh = uv_mesh;
-  command.model_mat = Mat4::Transform(position, orientation);
+  command.model_mat = Mat4::transform(position, orientation);
   command.opacity = opacity;
 }
 

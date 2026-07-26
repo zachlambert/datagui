@@ -2,7 +2,7 @@
 
 #include "datagui/geometry.hpp"
 #include "datagui/layout.hpp"
-#include "datagui/render/state/glyph_2d_vertex.hpp"
+#include "datagui/render/state/glyph_2d_instance.hpp"
 #include <string>
 #include <vector>
 
@@ -24,7 +24,7 @@ public:
   Vec2 text_size(const std::string& text, Length width = LengthWrap());
   float text_height();
   size_t add_glyphs(
-      std::vector<Glyph2dVertex>& vertices,
+      std::vector<Glyph2dInstance>& instances,
       const Vec2& origin,
       double angle,
       const Vec2& scale,

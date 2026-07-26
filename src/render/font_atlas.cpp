@@ -210,8 +210,6 @@ FontAtlas::FontAtlas(
       char_y += line_height_ + GLYPH_PADDING_V;
     }
 
-    // Pack tight to char_x; glyph.offset.x is a rendering bearing applied in
-    // add_glyphs, not an atlas position.
     float x_lower = char_x;
     float x_upper = x_lower + temp.face->glyph->bitmap.width;
     float y_lower = char_y + descender_ + glyph.offset.y;
@@ -276,7 +274,7 @@ float FontAtlas::text_height() {
 }
 
 size_t FontAtlas::add_glyphs(
-    std::vector<Glyph2dVertex>& vertices,
+    std::vector<Glyph2dInstance>& instances,
     const Vec2& origin,
     double angle,
     const Vec2& scale,
@@ -288,7 +286,7 @@ size_t FontAtlas::add_glyphs(
   Vec2 offset;
   offset.y -= line_height_;
 
-  size_t vertex_count = 0;
+  size_t instance_count = 0;
   for (char c : text) {
     if (c == '\n') {
       offset.x = 0;
@@ -307,26 +305,19 @@ size_t FontAtlas::add_glyphs(
     }
 
     Vec2 position = offset + glyph.offset + Vec2(0, descender_);
-    Box2 box(position, position + glyph.size);
 
-    Rot2 rot(angle);
-    Vec2 lower_left = origin + rot * (scale * box.lower_left());
-    Vec2 lower_right = origin + rot * (scale * box.lower_right());
-    Vec2 upper_left = origin + rot * (scale * box.upper_left());
-    Vec2 upper_right = origin + rot * (scale * box.upper_right());
+    Rot2 rotation(angle);
+    Mat3 M = Mat3::transform(
+        origin + rotation * (scale * position),
+        rotation,
+        scale * glyph.size);
 
-    vertices.emplace_back(lower_left, glyph.uv.lower_left());
-    vertices.emplace_back(lower_right, glyph.uv.lower_right());
-    vertices.emplace_back(upper_left, glyph.uv.upper_left());
-    vertices.emplace_back(lower_right, glyph.uv.lower_right());
-    vertices.emplace_back(upper_right, glyph.uv.upper_right());
-    vertices.emplace_back(upper_left, glyph.uv.upper_left());
-
-    vertex_count += 6;
+    instances.push_back(Glyph2dInstance{M, glyph.uv.lower, glyph.uv.size()});
+    instance_count++;
 
     offset.x += glyph.advance;
   }
-  return vertex_count;
+  return instance_count;
 }
 
 } // namespace dgui

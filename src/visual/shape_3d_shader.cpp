@@ -552,7 +552,7 @@ void Shape3dShader::queue_box(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::Box].emplace_back();
-  element.transform = Mat4::Transform(position, orientation, scale);
+  element.transform = Mat4::transform(position, orientation, scale);
   element.color = color;
 }
 
@@ -566,7 +566,7 @@ void Shape3dShader::queue_cylinder(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::Cylinder].emplace_back();
-  element.transform = Mat4::Transform(
+  element.transform = Mat4::transform(
       base_position,
       Rot3::line_rot(direction),
       Vec3(length, radius, radius));
@@ -581,7 +581,7 @@ void Shape3dShader::queue_sphere(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::Sphere].emplace_back();
-  element.transform = Mat4::Transform(position, Rot3(), Vec3::uniform(radius));
+  element.transform = Mat4::transform(position, Rot3(), Vec3::uniform(radius));
   element.color = color;
 }
 
@@ -594,7 +594,7 @@ void Shape3dShader::queue_half_sphere(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::HalfSphere].emplace_back();
-  element.transform = Mat4::Transform(
+  element.transform = Mat4::transform(
       position,
       Rot3::line_rot(direction),
       Vec3::uniform(radius));
@@ -611,7 +611,7 @@ void Shape3dShader::queue_cone(
     return;
   }
   auto& element = elements[(std::size_t)ShapeType::Cone].emplace_back();
-  element.transform = Mat4::Transform(
+  element.transform = Mat4::transform(
       base_position,
       Rot3::line_rot(direction),
       Vec3(length, radius, radius));
@@ -676,7 +676,7 @@ void Shape3dShader::queue_plane(
   }
   auto& element = elements[(std::size_t)ShapeType::Plane].emplace_back();
   element.transform =
-      Mat4::Transform(position, orientation, Vec3(scale.x, scale.y, 1));
+      Mat4::transform(position, orientation, Vec3(scale.x, scale.y, 1));
   element.color = color;
 }
 

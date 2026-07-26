@@ -9,12 +9,13 @@
 
 namespace dgui {
 
+class Rot2;
 class Rot3;
 
 // Storage is column-major to be compatible with glsl.
-// Initializer-list construction and the Vec constructors take values in row-major
-// (natural reading) order
-// Use from_cols(...) to build from column vectors.
+// Initializer-list construction and the Vec constructors take values in
+// row-major (natural reading) order Use from_cols(...) to build from column
+// vectors.
 
 struct Mat2 {
   float data[4];
@@ -41,6 +42,7 @@ struct Mat2 {
       (*this)(1, k) = row2(k);
     }
   }
+
   static Mat2 from_cols(const Vec2& u1, const Vec2& u2) {
     Mat2 result;
     for (std::size_t k = 0; k < 2; k++) {
@@ -49,6 +51,17 @@ struct Mat2 {
     }
     return result;
   }
+  static Mat2 identity() {
+    return Mat2(1, 0, 0, 1);
+  }
+  static Mat2 diagonal(const Vec2& diag) {
+    Mat2 result;
+    for (std::size_t i = 0; i < 2; i++) {
+      result(i, i) = diag(i);
+    }
+    return result;
+  }
+
   Mat2 transpose() const {
     Mat2 result;
     for (std::size_t i = 0; i < 2; i++) {
@@ -73,10 +86,6 @@ struct Mat2 {
   float operator()(std::size_t i, std::size_t j) const {
     assert(i < 2 && j < 2);
     return data[j * 2 + i];
-  }
-
-  static Mat2 identity() {
-    return Mat2(1, 0, 0, 1);
   }
 };
 
@@ -145,6 +154,11 @@ struct Mat3 {
     }
     return result;
   }
+  static Mat3 transform(const Vec2& position, const Rot2& orientation);
+  static Mat3 transform(
+      const Vec2& position,
+      const Rot2& orientation,
+      const Vec2& scale);
 
   Mat3 transpose() const {
     Mat3 result;
@@ -157,7 +171,7 @@ struct Mat3 {
   }
   void transpose_in_place() {
     for (std::size_t i = 0; i < 2; i++) {
-      for (std::size_t j = i+1; j < 3; j++) {
+      for (std::size_t j = i + 1; j < 3; j++) {
         std::swap((*this)(i, j), (*this)(j, i));
       }
     }
@@ -213,8 +227,8 @@ struct Mat4 {
     }
     transpose_in_place();
   }
-  static Mat4 Transform(const Vec3& position, const Rot3& orientation);
-  static Mat4 Transform(
+  static Mat4 transform(const Vec3& position, const Rot3& orientation);
+  static Mat4 transform(
       const Vec3& position,
       const Rot3& orientation,
       const Vec3& scale);

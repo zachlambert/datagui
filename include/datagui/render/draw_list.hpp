@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/asset/image.hpp"
-#include "datagui/render/state/glyph_2d_vertex.hpp"
+#include "datagui/render/state/glyph_2d_instance.hpp"
 #include "datagui/render/state/shape_2d_instance.hpp"
 #include <map>
 
@@ -55,7 +55,7 @@ class Scene3d;
 
 struct DrawList {
   std::vector<Shape2dInstance> shape_2d_instances;
-  std::vector<Glyph2dVertex> glyph_2d_vertices;
+  std::vector<Glyph2dInstance> glyph_2d_instances;
 
   struct GlyphGroup {
     size_t font_texture;

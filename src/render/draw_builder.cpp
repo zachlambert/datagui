@@ -81,13 +81,13 @@ void DrawBuilder::queue_text(
     auto& group = batch->glyph_groups.emplace_back();
     group.font_texture = font_atlas.texture();
     group.color = color;
-    group.offset = dl.glyph_2d_vertices.size();
+    group.offset = dl.glyph_2d_instances.size();
   }
   auto& group = batch->glyph_groups.back();
 
   group.count +=
       font_atlas
-          .add_glyphs(dl.glyph_2d_vertices, origin, angle, scale, text, width);
+          .add_glyphs(dl.glyph_2d_instances, origin, angle, scale, text, width);
 }
 
 void DrawBuilder::queue_image(

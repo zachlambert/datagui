@@ -26,7 +26,7 @@ int main() {
   struct TextItem {
     unsigned int texture;
     Color color;
-    std::vector<Glyph2dVertex> vertices;
+    std::vector<Glyph2dInstance> instances;
   };
   std::vector<TextItem> items;
 
@@ -40,7 +40,7 @@ int main() {
     TextItem& item = items.emplace_back();
     item.texture = atlas.texture();
     item.color = color;
-    atlas.add_glyphs(item.vertices, origin, angle, scale, text, width);
+    atlas.add_glyphs(item.instances, origin, angle, scale, text, width);
   };
 
   // Multiple fonts, one color each
@@ -93,8 +93,8 @@ int main() {
       program.draw(
           item.texture,
           item.color,
-          item.vertices.data(),
-          item.vertices.size(),
+          item.instances.data(),
+          item.instances.size(),
           PV);
     }
 

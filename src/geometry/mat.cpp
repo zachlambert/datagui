@@ -3,7 +3,7 @@
 
 namespace dgui {
 
-Mat4 Mat4::Transform(const Vec3& position, const Rot3& orientation) {
+Mat4 Mat4::transform(const Vec3& position, const Rot3& orientation) {
   Mat4 result;
   result(3, 3) = 1;
   for (std::size_t i = 0; i < 3; i++) {
@@ -17,7 +17,7 @@ Mat4 Mat4::Transform(const Vec3& position, const Rot3& orientation) {
   return result;
 }
 
-Mat4 Mat4::Transform(
+Mat4 Mat4::transform(
     const Vec3& position,
     const Rot3& orientation,
     const Vec3& scale) {
@@ -36,6 +36,43 @@ Mat4 Mat4::Transform(
   }
   for (std::size_t i = 0; i < 3; i++) {
     result(i, 3) = position(i);
+  }
+  return result;
+}
+
+Mat3 Mat3::transform(const Vec2& position, const Rot2& orientation) {
+  Mat3 result;
+  result(2, 2) = 1;
+  for (std::size_t i = 0; i < 2; i++) {
+    for (std::size_t j = 0; j < 2; j++) {
+      result(i, j) = orientation.mat()(i, j);
+    }
+  }
+  for (std::size_t i = 0; i < 2; i++) {
+    result(i, 2) = position(i);
+  }
+  return result;
+}
+
+Mat3 Mat3::transform(
+    const Vec2& position,
+    const Rot2& orientation,
+    const Vec2& scale) {
+  Mat2 scale_mat;
+  for (std::size_t i = 0; i < 2; i++) {
+    scale_mat(i, i) = scale(i);
+  }
+  Mat2 top_left = orientation.mat() * scale_mat;
+
+  Mat3 result;
+  result(2, 2) = 1;
+  for (std::size_t i = 0; i < 2; i++) {
+    for (std::size_t j = 0; j < 2; j++) {
+      result(i, j) = top_left(i, j);
+    }
+  }
+  for (std::size_t i = 0; i < 2; i++) {
+    result(i, 2) = position(i);
   }
   return result;
 }

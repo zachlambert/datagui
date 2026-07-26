@@ -96,7 +96,7 @@ void PointCloudShader::queue_point_cloud(
     float point_size) {
   auto& command = commands.emplace_back();
   command.point_cloud = point_cloud;
-  command.model_mat = Mat4::Transform(position, orientation);
+  command.model_mat = Mat4::transform(position, orientation);
   command.point_size = point_size;
 }
 
