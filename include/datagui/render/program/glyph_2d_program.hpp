@@ -2,7 +2,7 @@
 
 #include "datagui/color.hpp"
 #include "datagui/geometry.hpp"
-#include "datagui/render/glyph_2d_vertex.hpp"
+#include "datagui/render/state/glyph_2d_vertex.hpp"
 
 namespace dgui {
 

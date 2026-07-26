@@ -2,7 +2,7 @@
 
 #include "datagui/geometry.hpp"
 #include "datagui/layout.hpp"
-#include "datagui/render/glyph_2d_vertex.hpp"
+#include "datagui/render/state/glyph_2d_vertex.hpp"
 #include <string>
 #include <vector>
 

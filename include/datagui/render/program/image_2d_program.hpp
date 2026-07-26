@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/geometry.hpp"
-#include "datagui/render/image_2d_vertex.hpp"
+#include "datagui/render/state/image_2d_vertex.hpp"
 
 namespace dgui {
 
@@ -19,13 +19,8 @@ public:
       const Mat3& PV);
 
 private:
-  // Shader
   unsigned int program_id;
-
-  // Uniforms
   unsigned int uniform_PV;
-
-  // Array/buffer objects
   unsigned int VAO, VBO;
 };
 

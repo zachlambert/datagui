@@ -1,8 +1,8 @@
 #pragma once
 
-#include "datagui/render/shape_2d_program.hpp"
-#include "datagui/render/glyph_2d_program.hpp"
-#include "datagui/render/image_2d_program.hpp"
+#include "datagui/render/program/shape_2d_program.hpp"
+#include "datagui/render/program/glyph_2d_program.hpp"
+#include "datagui/render/program/image_2d_program.hpp"
 
 namespace dgui {
 

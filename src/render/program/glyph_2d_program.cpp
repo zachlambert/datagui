@@ -1,16 +1,14 @@
-#include "datagui/render/image_2d_program.hpp"
-#include "datagui/render/embedded_shaders.hpp"
-#include "datagui/visual/shader_utils.hpp"
+#include "datagui/render/program/glyph_2d_program.hpp"
+#include "datagui/render/shaders.hpp"
 #include <GL/glew.h>
-#include <string>
+#include <assert.h>
 
 namespace dgui {
 
-void Image2dProgram::init() {
-  // Configure shader program and buffers
-
-  program_id = create_program(shaders::image_2d_vs, shaders::image_2d_fs);
+void Glyph2dProgram::init() {
+  program_id = compile_program_vf(shaders::glyph_2d_vs, shaders::glyph_2d_fs);
   uniform_PV = glGetUniformLocation(program_id, "PV");
+  uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
@@ -25,8 +23,8 @@ void Image2dProgram::init() {
       2,
       GL_FLOAT,
       GL_FALSE,
-      sizeof(Image2dVertex),
-      (void*)offsetof(Image2dVertex, pos));
+      sizeof(Glyph2dVertex),
+      (void*)offsetof(Glyph2dVertex, pos));
   glEnableVertexAttribArray(index);
   index++;
 
@@ -35,8 +33,8 @@ void Image2dProgram::init() {
       2,
       GL_FLOAT,
       GL_FALSE,
-      sizeof(Image2dVertex),
-      (void*)offsetof(Image2dVertex, uv));
+      sizeof(Glyph2dVertex),
+      (void*)offsetof(Glyph2dVertex, uv));
   glEnableVertexAttribArray(index);
   index++;
 
@@ -44,19 +42,20 @@ void Image2dProgram::init() {
   glBindVertexArray(0);
 }
 
-void Image2dProgram::bind() {
+void Glyph2dProgram::bind() {
   glUseProgram(program_id);
   glBindVertexArray(VAO);
 }
 
-void Image2dProgram::unbind() {
+void Glyph2dProgram::unbind() {
   glBindVertexArray(0);
   glUseProgram(0);
 }
 
-void Image2dProgram::draw(
-    unsigned int texture,
-    const Image2dVertex* data,
+void Glyph2dProgram::draw(
+    unsigned int font_texture,
+    const Color& color,
+    const Glyph2dVertex* data,
     size_t count,
     const Mat3& PV) {
   glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
@@ -64,12 +63,14 @@ void Image2dProgram::draw(
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
-      count * sizeof(Image2dVertex),
+      count * sizeof(Glyph2dVertex),
       data,
       GL_STREAM_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-  glBindTexture(GL_TEXTURE_2D, texture);
+  glUniform4f(uniform_text_color, color.r, color.g, color.b, color.a);
+
+  glBindTexture(GL_TEXTURE_2D, font_texture);
   glDrawArrays(GL_TRIANGLES, 0, count);
   glBindTexture(GL_TEXTURE_2D, 0);
 

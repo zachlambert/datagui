@@ -1,4 +1,4 @@
-#include "datagui/render/shape_2d_program.hpp"
+#include "datagui/render/program/shape_2d_program.hpp"
 #include "datagui/visual/window.hpp"
 
 int main() {

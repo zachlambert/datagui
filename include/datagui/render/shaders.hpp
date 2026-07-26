@@ -1,6 +1,8 @@
 #pragma once
 
-namespace dgui::shaders {
+namespace dgui {
+
+namespace shaders {
 
 extern const char shape_2d_vs[];
 extern const char shape_2d_fs[];
@@ -14,4 +16,13 @@ extern const char image_2d_fs[];
 extern const char font_vs[];
 extern const char font_fs[];
 
-} // namespace dgui::shaders
+} // namespace shaders
+
+unsigned int compile_program_vf(const char* vs_code, const char* fs_code);
+
+unsigned int compile_program_vfg(
+    const char* vs_code,
+    const char* fs_code,
+    const char* gs_code);
+
+} // namespace dgui

@@ -53,15 +53,16 @@ add_library(datagui SHARED
   src/input/number_input.cpp
   src/input/text_selection.cpp
 
+  src/render/program/font_program.cpp
+  src/render/program/glyph_2d_program.cpp
+  src/render/program/image_2d_program.cpp
+  src/render/program/shape_2d_program.cpp
+  src/render/state/shape_2d_instance.cpp
   src/render/draw_builder.cpp
   src/render/executor.cpp
   src/render/font_atlas.cpp
-  src/render/font_program.cpp
-  src/render/glyph_2d_program.cpp
-  src/render/image_2d_program.cpp
   src/render/program_registry.cpp
-  src/render/shape_2d_instance.cpp
-  src/render/shape_2d_program.cpp
+  src/render/shaders.cpp
 
   src/system_utils/layout.cpp
 

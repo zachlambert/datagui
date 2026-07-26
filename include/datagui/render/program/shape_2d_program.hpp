@@ -1,6 +1,6 @@
 #pragma once
 
-#include "datagui/render/shape_2d_instance.hpp"
+#include "datagui/render/state/shape_2d_instance.hpp"
 
 namespace dgui {
 
@@ -12,11 +12,7 @@ public:
 
 private:
   unsigned int program_id;
-
-  // Uniforms
   unsigned int uniform_PV;
-
-  // Array/buffer objects
   unsigned int VAO;
   unsigned int static_VBO;
   unsigned int instance_VBO;

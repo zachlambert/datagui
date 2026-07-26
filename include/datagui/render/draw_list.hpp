@@ -1,9 +1,9 @@
 #pragma once
 
 #include "datagui/asset/image.hpp"
-#include "datagui/render/glyph_2d_vertex.hpp"
-#include "datagui/render/image_2d_vertex.hpp"
-#include "datagui/render/shape_2d_instance.hpp"
+#include "datagui/render/state/glyph_2d_vertex.hpp"
+#include "datagui/render/state/image_2d_vertex.hpp"
+#include "datagui/render/state/shape_2d_instance.hpp"
 #include <map>
 
 namespace dgui {

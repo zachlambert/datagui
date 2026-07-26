@@ -1,5 +1,5 @@
 #include "datagui/render/font_atlas.hpp"
-#include "datagui/render/font_program.hpp"
+#include "datagui/render/program/font_program.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <string>

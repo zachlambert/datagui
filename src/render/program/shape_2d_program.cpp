@@ -1,13 +1,12 @@
-#include "datagui/render/shape_2d_program.hpp"
-#include "datagui/render/embedded_shaders.hpp"
-#include "datagui/visual/shader_utils.hpp"
+#include "datagui/render/program/shape_2d_program.hpp"
+#include "datagui/render/shaders.hpp"
 #include <GL/glew.h>
 #include <assert.h>
 
 namespace dgui {
 
 void Shape2dProgram::init() {
-  program_id = create_program(shaders::shape_2d_vs, shaders::shape_2d_fs);
+  program_id = compile_program_vf(shaders::shape_2d_vs, shaders::shape_2d_fs);
 
   uniform_PV = glGetUniformLocation(program_id, "PV");
 

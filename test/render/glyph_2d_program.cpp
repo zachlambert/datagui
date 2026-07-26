@@ -1,7 +1,7 @@
-#include "datagui/render/glyph_2d_program.hpp"
+#include "datagui/render/program/glyph_2d_program.hpp"
 #include "datagui/font.hpp"
 #include "datagui/render/font_atlas.hpp"
-#include "datagui/render/font_program.hpp"
+#include "datagui/render/program/font_program.hpp"
 #include "datagui/visual/window.hpp"
 
 int main() {

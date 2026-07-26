@@ -1,8 +1,8 @@
-#include "datagui/render/font_program.hpp"
-#include "datagui/render/embedded_shaders.hpp"
-#include "datagui/visual/shader_utils.hpp"
+#include "datagui/render/program/font_program.hpp"
+#include "datagui/render/shaders.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <vector>
 
 namespace dgui {
 
@@ -14,7 +14,7 @@ struct Vertex {
 } // namespace
 
 void FontProgram::init() {
-  program_id = create_program(shaders::font_vs, shaders::font_fs);
+  program_id = compile_program_vf(shaders::font_vs, shaders::font_fs);
 
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
