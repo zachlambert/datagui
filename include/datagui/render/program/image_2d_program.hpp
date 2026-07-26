@@ -1,27 +1,21 @@
 #pragma once
 
 #include "datagui/geometry.hpp"
-#include "datagui/render/state/image_2d_vertex.hpp"
 
 namespace dgui {
 
 class Image2dProgram {
 public:
   void init();
-
   void bind();
-  void unbind();
-
-  void draw(
-      unsigned int texture,
-      const Image2dVertex* data,
-      size_t count,
-      const Mat3& PV);
+  void draw(unsigned int texture, const Mat3& M, const Mat3& PV);
 
 private:
   unsigned int program_id;
-  unsigned int uniform_PV;
-  unsigned int VAO, VBO;
+  unsigned int uniform_PVM;
+  unsigned int VAO;
+  unsigned int static_VBO;
+  unsigned int static_vertex_count;
 };
 
 } // namespace dgui

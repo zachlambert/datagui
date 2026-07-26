@@ -43,28 +43,6 @@ dgui::Image make_image(
   return image;
 }
 
-// Build the 6 vertices for an image quad, mirroring DrawBuilder::queue_image.
-std::vector<dgui::Image2dVertex> image_quad(
-    const dgui::Vec2& position,
-    float angle,
-    const dgui::Vec2& size) {
-  using namespace dgui;
-  Mat2 rot = Rot2(angle).mat();
-  Vec2 lower_left = position;
-  Vec2 lower_right = position + rot * Vec2(size.x, 0);
-  Vec2 upper_left = position + rot * Vec2(0, size.y);
-  Vec2 upper_right = position + rot * size;
-
-  // UV V flipped so the image's top row maps to the top of the quad.
-  return {
-      {lower_left, Vec2(0, 1)},
-      {lower_right, Vec2(1, 1)},
-      {upper_left, Vec2(0, 0)},
-      {lower_right, Vec2(1, 1)},
-      {upper_right, Vec2(1, 0)},
-      {upper_left, Vec2(0, 0)}};
-}
-
 int main() {
   using namespace dgui;
 
@@ -82,11 +60,8 @@ int main() {
       Color::Hsl(160, 1, 0.5),
       Color::Hsl(200, 1, 0.5, 0.4));
 
-  auto verts_1 = image_quad(Vec2(100, 100), 0, Vec2(200, 200));
-  auto verts_2 = image_quad(Vec2(150, 150), 0, Vec2(200, 200));
-
-  // The old queue_masked_image is now expressed as scissor-based clipping.
-  const Box2 mask(Vec2(400, 300), Vec2(600, 500));
+  Mat3 M1 = {{100.f, 0.f, 100.f}, {0.f, 100.f, 100.f}, {0.f, 0.f, 1.f}};
+  Mat3 M2 = {{100.f, 0.f, 300.f}, {0.f, 100.f, 100.f}, {0.f, 0.f, 1.f}};
 
   while (window.running()) {
     window.render_begin();
@@ -101,9 +76,8 @@ int main() {
         {0.f, 0.f, 1.f}};
 
     program.bind();
-    program.draw(image_1.texture(), verts_1.data(), verts_1.size(), PV);
-    program.bind();
-    program.draw(image_2.texture(), verts_2.data(), verts_2.size(), PV);
+    program.draw(image_1.texture(), M1, PV);
+    program.draw(image_2.texture(), M2, PV);
 
     window.render_end();
     window.poll_events();

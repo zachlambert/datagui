@@ -3,7 +3,6 @@
 #include "datagui/color.hpp"
 #include "datagui/render/draw_list.hpp"
 #include "datagui/render/font_atlas.hpp"
-#include <memory>
 #include <optional>
 
 namespace dgui {

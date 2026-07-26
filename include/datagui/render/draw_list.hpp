@@ -2,7 +2,6 @@
 
 #include "datagui/asset/image.hpp"
 #include "datagui/render/state/glyph_2d_vertex.hpp"
-#include "datagui/render/state/image_2d_vertex.hpp"
 #include "datagui/render/state/shape_2d_instance.hpp"
 #include <map>
 
@@ -57,7 +56,6 @@ class Scene3d;
 struct DrawList {
   std::vector<Shape2dInstance> shape_2d_instances;
   std::vector<Glyph2dVertex> glyph_2d_vertices;
-  std::vector<Image2dVertex> image_2d_vertices;
 
   struct GlyphGroup {
     size_t font_texture;
@@ -70,8 +68,6 @@ struct DrawList {
   };
 
   struct ImageGroup {
-    // The image is retained so its texture stays alive until the draw list is
-    // executed; texture() also serves as the grouping key.
     Image image;
     size_t offset = 0;
     size_t count = 0;

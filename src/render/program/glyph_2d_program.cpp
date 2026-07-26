@@ -47,11 +47,6 @@ void Glyph2dProgram::bind() {
   glBindVertexArray(VAO);
 }
 
-void Glyph2dProgram::unbind() {
-  glBindVertexArray(0);
-  glUseProgram(0);
-}
-
 void Glyph2dProgram::draw(
     unsigned int font_texture,
     const Color& color,
@@ -73,9 +68,6 @@ void Glyph2dProgram::draw(
   glBindTexture(GL_TEXTURE_2D, font_texture);
   glDrawArrays(GL_TRIANGLES, 0, count);
   glBindTexture(GL_TEXTURE_2D, 0);
-
-  glBindVertexArray(0);
-  glUseProgram(0);
 }
 
 } // namespace dgui

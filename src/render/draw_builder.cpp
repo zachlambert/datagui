@@ -104,6 +104,7 @@ void DrawBuilder::queue_image(
   }
   prev_call_type_ = CallType::Image;
 
+  #if 0
   if (batch->image_groups.empty() ||
       !batch->image_groups.back().matches(image)) {
     auto& group = batch->image_groups.emplace_back();
@@ -130,6 +131,7 @@ void DrawBuilder::queue_image(
   vertices.emplace_back(upper_left, Vec2(0, 0));
 
   group.count = dl.image_2d_vertices.size() - initial_vertex_count;
+  #endif
 }
 
 // Shape2d

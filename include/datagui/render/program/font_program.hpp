@@ -7,7 +7,6 @@ namespace dgui {
 class FontProgram {
 public:
   void init();
-
   void bind();
 
   void draw_bitmap(

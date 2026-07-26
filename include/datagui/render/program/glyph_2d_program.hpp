@@ -9,9 +9,7 @@ namespace dgui {
 class Glyph2dProgram {
 public:
   void init();
-
   void bind();
-  void unbind();
 
   void draw(
       unsigned int font_texture,

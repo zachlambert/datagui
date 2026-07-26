@@ -49,6 +49,7 @@ void Executor::draw(
       }
       if (!batch.image_groups.empty()) {
         registry.image_2d_program.bind();
+        #if 0
         for (const auto& group : batch.image_groups) {
           registry.image_2d_program.draw(
               group.image.texture(),
@@ -56,6 +57,7 @@ void Executor::draw(
               group.count,
               PV);
         }
+        #endif
       }
       if (!batch.glyph_groups.empty()) {
         registry.glyph_2d_program.bind();
