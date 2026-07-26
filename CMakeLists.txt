@@ -37,21 +37,21 @@ add_library(datagui SHARED
   src/asset/point_cloud.cpp
   src/asset/uv_mesh.cpp
 
-  src/visual/color_map.cpp
-  src/visual/font_manager.cpp
-  src/visual/image_shader.cpp
-  src/visual/mesh_shader.cpp
-  src/visual/point_cloud_shader.cpp
-  src/visual/gui_renderer.cpp
-  src/visual/shader_utils.cpp
-  src/visual/shape_2d_shader.cpp
-  src/visual/shape_3d_shader.cpp
-  src/visual/text_2d_shader.cpp
-  src/visual/uv_mesh_shader.cpp
+  # src/visual/color_map.cpp
+  # src/visual/font_manager.cpp
+  # src/visual/image_shader.cpp
+  # src/visual/mesh_shader.cpp
+  # src/visual/point_cloud_shader.cpp
+  # src/visual/gui_renderer.cpp
+  # src/visual/shader_utils.cpp
+  # src/visual/shape_2d_shader.cpp
+  # src/visual/shape_3d_shader.cpp
+  # src/visual/text_2d_shader.cpp
+  # src/visual/uv_mesh_shader.cpp
   src/visual/window.cpp
 
-  src/input/number_input.cpp
-  src/input/text_selection.cpp
+  # src/input/number_input.cpp
+  # src/input/text_selection.cpp
 
   src/render/program/font_program.cpp
   src/render/program/glyph_2d_program.cpp
@@ -60,7 +60,6 @@ add_library(datagui SHARED
   src/render/program/point_cloud_program.cpp
   src/render/program/shape_2d_program.cpp
   src/render/program/shape_3d_program.cpp
-  src/render/program/uv_mesh_program.cpp
   src/render/state/shape_2d_instance.cpp
   src/render/state/shape_3d_instance.cpp
   src/render/state/shape_3d_vertex.cpp
@@ -70,28 +69,28 @@ add_library(datagui SHARED
   src/render/program_registry.cpp
   src/render/shaders.cpp
 
-  src/system_utils/layout.cpp
+  # src/system_utils/layout.cpp
 
-  src/system/button.cpp
-  src/system/checkbox.cpp
-  src/system/collapsable.cpp
-  src/system/color_picker.cpp
-  src/system/dropdown.cpp
-  src/system/group.cpp
-  src/system/popup.cpp
-  src/system/select.cpp
-  src/system/slider.cpp
-  src/system/split.cpp
-  src/system/tabs.cpp
-  src/system/text_box.cpp
-  src/system/text_input.cpp
-  src/system/viewport_ptr.cpp
+  # src/system/button.cpp
+  # src/system/checkbox.cpp
+  # src/system/collapsable.cpp
+  # src/system/color_picker.cpp
+  # src/system/dropdown.cpp
+  # src/system/group.cpp
+  # src/system/popup.cpp
+  # src/system/select.cpp
+  # src/system/slider.cpp
+  # src/system/split.cpp
+  # src/system/tabs.cpp
+  # src/system/text_box.cpp
+  # src/system/text_input.cpp
+  # src/system/viewport_ptr.cpp
 
-  src/viewport/canvas2d.cpp
-  src/viewport/canvas3d.cpp
-  src/viewport/plotter.cpp
+  # src/viewport/canvas2d.cpp
+  # src/viewport/canvas3d.cpp
+  # src/viewport/plotter.cpp
 
-  src/gui.cpp
+  # src/gui.cpp
 
   # src/datapack/edit.cpp
   src/datapack/common.cpp
@@ -123,8 +122,6 @@ embed_shader(font.vert font_vs)
 embed_shader(font.frag font_fs)
 embed_shader(mesh.vert mesh_vs)
 embed_shader(mesh.frag mesh_fs)
-embed_shader(uv_mesh.vert uv_mesh_vs)
-embed_shader(uv_mesh.frag uv_mesh_fs)
 embed_shader(point_cloud.vert point_cloud_vs)
 embed_shader(point_cloud.geom point_cloud_gs)
 embed_shader(point_cloud.frag point_cloud_fs)
@@ -137,7 +134,7 @@ if (NOT BUILD_ADDITIONAL_TARGETS)
     return()
 endif()
 
-add_subdirectory(examples)
+# add_subdirectory(examples)
 add_subdirectory(test)
 
 # Create install target

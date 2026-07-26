@@ -1,51 +1,43 @@
 #pragma once
 
-#include "datagui/color.hpp"
-#include "datagui/geometry/vec.hpp"
 #include <memory>
 
 namespace dgui {
 
 class PointCloud {
 public:
-  void load_colored_points(
+  void load(
       void* points,
-      std::size_t num_points,
-      std::size_t positions_offset,
-      std::size_t colors_offset,
-      std::size_t stride);
+      size_t point_count,
+      size_t position_offset,
+      size_t stride);
 
-  void load_points(
+  void load_colored(
       void* points,
-      std::size_t num_points,
-      std::size_t positions_offset,
-      std::size_t stride,
-      const Color& color);
+      size_t point_count,
+      size_t position_offset,
+      size_t color_offset,
+      size_t stride);
 
   bool is_loaded() const {
     return bool(data);
   }
 
 private:
-  void init();
-
-  struct Vertex {
-    Vec3 position;
-    Vec3 color;
-  };
+  void load_impl(void* points, size_t point_count, size_t position_offset, size_t color_offset, size_t stride);
 
   struct Data {
-    unsigned int VAO;
-    unsigned int VBO;
-    std::size_t vertex_count;
+    unsigned int VAO = 0;
+    unsigned int VBO = 0;
+    size_t vertex_count = 0;
+    bool has_color = false;
 
-    Data() : VAO(0), VBO(0), vertex_count(0) {}
+    Data() = default;
     ~Data();
     Data(Data&&);
-    Data& operator=(const Data&);
-
+    Data& operator=(Data&&);
     Data(const Data&) = delete;
-    Data& operator=(Data&&) = delete;
+    Data& operator=(const Data&) = delete;
   };
   std::shared_ptr<Data> data;
 

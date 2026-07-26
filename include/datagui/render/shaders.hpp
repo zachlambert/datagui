@@ -19,9 +19,6 @@ extern const char font_fs[];
 extern const char mesh_vs[];
 extern const char mesh_fs[];
 
-extern const char uv_mesh_vs[];
-extern const char uv_mesh_fs[];
-
 extern const char point_cloud_vs[];
 extern const char point_cloud_gs[];
 extern const char point_cloud_fs[];

@@ -1,39 +1,68 @@
 #pragma once
 
-#include "datagui/geometry/vec.hpp"
+#include "datagui/asset/image.hpp"
 #include <memory>
 
 namespace dgui {
 
 class Mesh {
 public:
-  void load_vertices(
+  void load(
+      const unsigned int* indices,
+      size_t index_count,
       const void* vertices,
-      std::size_t num_vertices,
-      std::size_t positions_offset,
-      std::size_t normals_offset,
-      std::size_t stride);
+      size_t vertex_count,
+      size_t pos_offset,
+      size_t normal_offset,
+      size_t stride);
 
-  void load_indices(const unsigned int* const indices, std::size_t num_indices);
+  void load_colored(
+      const unsigned int* indices,
+      size_t index_count,
+      const void* vertices,
+      size_t vertex_count,
+      size_t pos_offset,
+      size_t normal_offset,
+      size_t color_offset,
+      size_t stride);
+
+  void load_textured(
+      const unsigned int* indices,
+      size_t index_count,
+      const void* vertices,
+      size_t vertex_count,
+      size_t pos_offset,
+      size_t normal_offset,
+      size_t uv_offset,
+      size_t stride,
+      Image texture);
 
   bool is_loaded() const {
-    return bool(data) && data->VBO > 0 && data->EBO > 0;
+    return bool(data);
   }
 
 private:
-  struct Vertex {
-    Vec3 position;
-    Vec3 normal;
-  };
-  void init();
+  void load_impl(
+      const unsigned int* indices,
+      size_t index_count,
+      const void* vertices,
+      size_t vertex_count,
+      size_t pos_offset,
+      size_t normal_offset,
+      size_t color_offset,
+      size_t uv_offset,
+      int stride);
 
   struct Data {
-    unsigned int VAO;
-    unsigned int VBO;
-    unsigned int EBO;
-    std::size_t index_count;
+    unsigned int VAO = 0;
+    unsigned int VBO = 0;
+    unsigned int EBO = 0;
+    std::size_t index_count = 0;
+    bool has_color = false;
+    bool has_uv = false;
+    Image texture;
 
-    Data() : VAO(0), VBO(0), EBO(0), index_count(0) {}
+    Data() = default;
     ~Data();
     Data(Data&&);
     Data& operator=(Data&&);

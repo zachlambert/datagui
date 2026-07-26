@@ -8,7 +8,6 @@ void ProgramRegistry::init() {
   image_2d_program.init();
 
   mesh_program.init();
-  uv_mesh_program.init();
   point_cloud_program.init();
   shape_3d_program.init();
 }

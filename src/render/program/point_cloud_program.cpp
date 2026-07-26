@@ -25,7 +25,9 @@ void PointCloudProgram::draw(
     const Mat4& model,
     float point_size,
     const Mat4& P,
-    const Mat4& V) {
+    const Mat4& V,
+    const Color& base_color) {
+
   if (!point_cloud.is_loaded()) {
     return;
   }
@@ -34,6 +36,8 @@ void PointCloudProgram::draw(
   glUniformMatrix4fv(uniform_V, 1, GL_FALSE, V.data);
   glUniformMatrix4fv(uniform_M, 1, GL_FALSE, model.data);
   glUniform1f(uniform_point_size, point_size);
+  // Default vertex color if buffer attribute not enabled
+  glVertexAttrib3f(1, base_color.r, base_color.g, base_color.b);
 
   glBindVertexArray(point_cloud.data->VAO);
   glDrawArrays(GL_POINTS, 0, point_cloud.data->vertex_count);

@@ -14,9 +14,9 @@ public:
   void draw(
       const Mesh& mesh,
       const Mat4& model,
-      const Color& color,
       const Mat4& P,
-      const Mat4& V);
+      const Mat4& V,
+      const Color& base_color = Color::White());
 
 private:
   // Shader
@@ -27,6 +27,8 @@ private:
   unsigned int uniform_V;
   unsigned int uniform_M;
   unsigned int uniform_mesh_color;
+  unsigned int uniform_use_texture;
+  unsigned int uniform_mesh_texture;
 };
 
 } // namespace dgui

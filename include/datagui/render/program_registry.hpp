@@ -6,7 +6,6 @@
 #include "datagui/render/program/mesh_program.hpp"
 #include "datagui/render/program/point_cloud_program.hpp"
 #include "datagui/render/program/shape_3d_program.hpp"
-#include "datagui/render/program/uv_mesh_program.hpp"
 
 namespace dgui {
 
@@ -16,7 +15,6 @@ struct ProgramRegistry {
   Image2dProgram image_2d_program;
 
   MeshProgram mesh_program;
-  UvMeshProgram uv_mesh_program;
   PointCloudProgram point_cloud_program;
   Shape3dProgram shape_3d_program;
 

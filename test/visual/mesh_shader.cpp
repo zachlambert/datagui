@@ -56,13 +56,14 @@ int main() {
   }
 
   Mesh mesh;
-  mesh.load_vertices(
+  mesh.load(
+      indices.data(),
+      indices.size(),
       vertices.data(),
       vertices.size(),
       offsetof(Vertex, position),
       offsetof(Vertex, normal),
       sizeof(Vertex));
-  mesh.load_indices(indices.data(), indices.size());
 
   while (window.running()) {
     window.render_begin();

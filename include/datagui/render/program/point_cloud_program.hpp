@@ -1,6 +1,7 @@
 #pragma once
 
 #include "datagui/asset/point_cloud.hpp"
+#include "datagui/color.hpp"
 #include "datagui/geometry/mat.hpp"
 
 namespace dgui {
@@ -15,7 +16,8 @@ public:
       const Mat4& model,
       float point_size,
       const Mat4& P,
-      const Mat4& V);
+      const Mat4& V,
+      const Color& base_color = Color::White());
 
 private:
   // Shader
