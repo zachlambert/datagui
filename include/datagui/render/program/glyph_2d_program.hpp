@@ -28,9 +28,9 @@ private:
 
   // Array/buffer objects
   unsigned int VAO;
-  unsigned int static_VBO;
+  unsigned int quad_VBO;
+  std::size_t quad_vertex_count = 0;
   unsigned int instance_VBO;
-  std::size_t static_vertex_count = 0;
 };
 
 } // namespace dgui

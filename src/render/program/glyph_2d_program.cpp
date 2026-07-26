@@ -12,10 +12,10 @@ void Glyph2dProgram::init() {
   uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
   glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &static_VBO);
+  glGenBuffers(1, &quad_VBO);
   glGenBuffers(1, &instance_VBO);
 
-  struct Vertex {
+  struct QuadVertex {
     Vec2 pos;
   };
 
@@ -26,15 +26,15 @@ void Glyph2dProgram::init() {
     GLuint index = 0;
 
     // Assign static array attributes
-    glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, quad_VBO);
 
     glVertexAttribPointer(
         index,
         2,
         GL_FLOAT,
         GL_FALSE,
-        sizeof(Vertex),
-        (void*)offsetof(Vertex, pos));
+        sizeof(QuadVertex),
+        (void*)offsetof(QuadVertex, pos));
     glEnableVertexAttribArray(index);
     index++;
 
@@ -80,21 +80,22 @@ void Glyph2dProgram::init() {
   }
   glBindVertexArray(0);
 
-  const std::vector<Vertex> static_vertices = {
+  // Write static data to quad vertex buffer
+
+  const std::vector<QuadVertex> quad_vertices = {
       {Vec2(0.f, 0.f)},
       {Vec2(1.f, 0.f)},
       {Vec2(0.f, 1.f)},
       {Vec2(1.f, 0.f)},
       {Vec2(1.f, 1.f)},
       {Vec2(0.f, 1.f)}};
-  static_vertex_count = static_vertices.size();
+  quad_vertex_count = quad_vertices.size();
 
-  // Bind and configure buffer for vertex attributes
-  glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
+  glBindBuffer(GL_ARRAY_BUFFER, quad_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
-      static_vertices.size() * sizeof(Vertex),
-      static_vertices.data(),
+      quad_vertices.size() * sizeof(QuadVertex),
+      quad_vertices.data(),
       GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -124,7 +125,7 @@ void Glyph2dProgram::draw(
   glUniform4f(uniform_text_color, color.r, color.g, color.b, color.a);
 
   glBindTexture(GL_TEXTURE_2D, font_texture);
-  glDrawArraysInstanced(GL_TRIANGLES, 0, static_vertex_count, count);
+  glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertex_count, count);
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 

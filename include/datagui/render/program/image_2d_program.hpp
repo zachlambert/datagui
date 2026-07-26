@@ -14,8 +14,8 @@ private:
   unsigned int program_id;
   unsigned int uniform_PVM;
   unsigned int VAO;
-  unsigned int static_VBO;
-  unsigned int static_vertex_count;
+  unsigned int quad_VBO;
+  unsigned int quad_vertex_count;
 };
 
 } // namespace dgui

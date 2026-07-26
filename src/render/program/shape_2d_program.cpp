@@ -11,10 +11,10 @@ void Shape2dProgram::init() {
   uniform_PV = glGetUniformLocation(program_id, "PV");
 
   glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &static_VBO);
+  glGenBuffers(1, &quad_VBO);
   glGenBuffers(1, &instance_VBO);
 
-  struct Vertex {
+  struct QuadVertex {
     Vec2 pos;
   };
 
@@ -25,15 +25,15 @@ void Shape2dProgram::init() {
     GLuint index = 0;
 
     // Assign static array attributes
-    glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, quad_VBO);
 
     glVertexAttribPointer(
         index,
         2,
         GL_FLOAT,
         GL_FALSE,
-        sizeof(Vertex),
-        (void*)offsetof(Vertex, pos));
+        sizeof(QuadVertex),
+        (void*)offsetof(QuadVertex, pos));
     glEnableVertexAttribArray(index);
     index++;
 
@@ -101,21 +101,23 @@ void Shape2dProgram::init() {
   }
   glBindVertexArray(0);
 
-  const std::vector<Vertex> static_vertices = {
+  // Write static data to quad vertex buffer
+
+  const std::vector<QuadVertex> quad_vertices = {
       {Vec2(-0.5f, 0.5f)},
       {Vec2(0.5f, -0.5f)},
       {Vec2(-0.5f, -0.5f)},
       {Vec2(-0.5f, 0.5f)},
       {Vec2(0.5f, -0.5f)},
       {Vec2(0.5f, 0.5f)}};
-  static_vertex_count = static_vertices.size();
+  quad_vertex_count = quad_vertices.size();
 
   // Bind and configure buffer for vertex attributes
-  glBindBuffer(GL_ARRAY_BUFFER, static_VBO);
+  glBindBuffer(GL_ARRAY_BUFFER, quad_VBO);
   glBufferData(
       GL_ARRAY_BUFFER,
-      static_vertices.size() * sizeof(Vertex),
-      static_vertices.data(),
+      quad_vertices.size() * sizeof(QuadVertex),
+      quad_vertices.data(),
       GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -140,7 +142,7 @@ void Shape2dProgram::draw(
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
-  glDrawArraysInstanced(GL_TRIANGLES, 0, static_vertex_count, count);
+  glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertex_count, count);
 }
 
 } // namespace dgui
