@@ -3,27 +3,6 @@
 
 namespace dgui {
 
-namespace {
-
-Mat3 make_transform(const Vec2& position, double angle, const Vec2& size) {
-  Mat2 scale;
-  scale(0, 0) = size.x;
-  scale(1, 1) = size.y;
-  Mat2 top_left = Rot2(angle).mat() * scale;
-
-  Mat3 result;
-  for (std::size_t i = 0; i < 2; i++) {
-    for (std::size_t j = 0; j < 2; j++) {
-      result(i, j) = top_left(i, j);
-    }
-  }
-  result(0, 2) = position.x;
-  result(1, 2) = position.y;
-  result(2, 2) = 1;
-  return result;
-}
-} // namespace
-
 Shape2dInstance Shape2dInstance::box(
     const Box2& box,
     const Color& color,
@@ -31,7 +10,7 @@ Shape2dInstance Shape2dInstance::box(
     Color border_color,
     float radius) {
   Shape2dInstance instance;
-  instance.M = make_transform(box.center(), 0, box.size());
+  instance.M = Mat3::transform(box.center(), Rot2(0.f), box.size());
   instance.color = color;
   instance.border_color = border_color;
   instance.border_width = Vec2::uniform(border_width) / box.size();
@@ -47,7 +26,7 @@ Shape2dInstance Shape2dInstance::rect(
     float border_width,
     Color border_color) {
   Shape2dInstance instance;
-  instance.M = make_transform(position, angle, size);
+  instance.M = Mat3::transform(position, Rot2(angle), size);
   instance.color = color;
   instance.border_color = border_color;
   instance.border_width = Vec2::uniform(border_width) / size;
@@ -62,7 +41,7 @@ Shape2dInstance Shape2dInstance::circle(
     float border_width,
     Color border_color) {
   Shape2dInstance instance;
-  instance.M = make_transform(position, 0, Vec2::uniform(2 * radius));
+  instance.M = Mat3::transform(position, Rot2(0.f), Vec2::uniform(2 * radius));
   instance.color = color;
   instance.border_width = Vec2::uniform(border_width / (2 * radius));
   instance.border_color = border_color;
@@ -78,7 +57,7 @@ Shape2dInstance Shape2dInstance::ellipse(
     float border_width,
     Color border_color) {
   Shape2dInstance instance;
-  instance.M = make_transform(position, angle, 2 * radii);
+  instance.M = Mat3::transform(position, Rot2(angle), 2 * radii);
   instance.color = color;
   instance.border_width = Vec2::uniform(border_width) / (2 * radii);
   instance.border_color = border_color;
@@ -105,7 +84,7 @@ Shape2dInstance Shape2dInstance::line(
     radius = Vec2();
   }
 
-  instance.M = make_transform(position, angle, size);
+  instance.M = Mat3::transform(position, Rot2(angle), size);
   instance.color = color;
   instance.border_width = Vec2();
   instance.radius = radius / size;
@@ -125,7 +104,7 @@ Shape2dInstance Shape2dInstance::capsule(
   float angle = std::atan2(end.y - start.y, end.x - start.x);
   Vec2 size = Vec2((start - end).length() + 2 * radius, 2 * radius);
 
-  instance.M = make_transform(position, angle, size);
+  instance.M = Mat3::transform(position, Rot2(angle), size);
   instance.color = color;
   instance.border_width = Vec2::uniform(border_width) / size;
   instance.radius = Vec2::uniform(radius) / size;
