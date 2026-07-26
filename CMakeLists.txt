@@ -56,8 +56,14 @@ add_library(datagui SHARED
   src/render/program/font_program.cpp
   src/render/program/glyph_2d_program.cpp
   src/render/program/image_2d_program.cpp
+  src/render/program/mesh_program.cpp
+  src/render/program/point_cloud_program.cpp
   src/render/program/shape_2d_program.cpp
+  src/render/program/shape_3d_program.cpp
+  src/render/program/uv_mesh_program.cpp
   src/render/state/shape_2d_instance.cpp
+  src/render/state/shape_3d_instance.cpp
+  src/render/state/shape_3d_vertex.cpp
   src/render/draw_builder.cpp
   src/render/executor.cpp
   src/render/font_atlas.cpp
@@ -115,6 +121,15 @@ embed_shader(image_2d.vert image_2d_vs)
 embed_shader(image_2d.frag image_2d_fs)
 embed_shader(font.vert font_vs)
 embed_shader(font.frag font_fs)
+embed_shader(mesh.vert mesh_vs)
+embed_shader(mesh.frag mesh_fs)
+embed_shader(uv_mesh.vert uv_mesh_vs)
+embed_shader(uv_mesh.frag uv_mesh_fs)
+embed_shader(point_cloud.vert point_cloud_vs)
+embed_shader(point_cloud.geom point_cloud_gs)
+embed_shader(point_cloud.frag point_cloud_fs)
+embed_shader(shape_3d.vert shape_3d_vs)
+embed_shader(shape_3d.frag shape_3d_fs)
 
 # Additional targets
 

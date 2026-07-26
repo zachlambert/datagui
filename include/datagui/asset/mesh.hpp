@@ -43,6 +43,7 @@ private:
   std::shared_ptr<Data> data;
 
   friend class MeshShader;
+  friend class MeshProgram;
 };
 
 } // namespace dgui

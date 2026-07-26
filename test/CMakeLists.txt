@@ -36,6 +36,7 @@ create_test(geometry rot)
 create_test_program(render glyph_2d_program)
 create_test_program(render image_program)
 create_test_program(render shape_2d_program)
+create_test_program(render shape_3d_program)
 create_test_program(render render)
 
 create_test_program(visual window)

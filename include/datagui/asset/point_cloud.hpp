@@ -50,6 +50,7 @@ private:
   std::shared_ptr<Data> data;
 
   friend class PointCloudShader;
+  friend class PointCloudProgram;
 };
 
 } // namespace dgui

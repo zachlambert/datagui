@@ -48,6 +48,7 @@ private:
   std::shared_ptr<Data> data;
 
   friend class UvMeshShader;
+  friend class UvMeshProgram;
 };
 
 } // namespace dgui
