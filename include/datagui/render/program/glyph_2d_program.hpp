@@ -1,6 +1,5 @@
 #pragma once
 
-#include "datagui/color.hpp"
 #include "datagui/geometry.hpp"
 #include "datagui/render/state/glyph_2d_instance.hpp"
 
@@ -14,7 +13,6 @@ public:
   void draw(
       const Mat3& PV,
       unsigned int font_texture,
-      const Color& color,
       const Glyph2dInstance* data,
       size_t count);
 
@@ -24,7 +22,6 @@ private:
 
   // Uniforms
   unsigned int uniform_PV;
-  unsigned int uniform_text_color;
 
   // Array/buffer objects
   unsigned int VAO;

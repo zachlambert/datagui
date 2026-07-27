@@ -59,11 +59,10 @@ struct DrawList {
 
   struct GlyphGroup {
     size_t font_texture;
-    Color color;
     size_t offset = 0;
     size_t count = 0;
-    bool matches(int font_texture, const Color& color) {
-      return font_texture == this->font_texture && color.equals(this->color);
+    bool matches(int font_texture) {
+      return font_texture == this->font_texture;
     }
   };
 

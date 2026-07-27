@@ -65,7 +65,6 @@ void Executor::draw(
           registry.glyph_2d_program.draw(
               PV,
               group.font_texture,
-              group.color,
               &dl.glyph_2d_instances[group.offset],
               group.count);
         }

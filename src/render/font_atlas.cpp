@@ -278,6 +278,7 @@ size_t FontAtlas::add_glyphs(
     const Vec2& origin,
     double angle,
     const Vec2& scale,
+    const Color& color,
     const std::string& text,
     Length width) const {
 
@@ -312,7 +313,8 @@ size_t FontAtlas::add_glyphs(
         rotation,
         scale * glyph.size);
 
-    instances.push_back(Glyph2dInstance{M, glyph.uv.lower, glyph.uv.size()});
+    instances.push_back(
+        Glyph2dInstance{M, glyph.uv.lower, glyph.uv.size(), color});
     instance_count++;
 
     offset.x += glyph.advance;

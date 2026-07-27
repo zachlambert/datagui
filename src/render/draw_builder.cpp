@@ -77,17 +77,21 @@ void DrawBuilder::queue_text(
   prev_call_type_ = CallType::Text;
 
   if (batch->glyph_groups.empty() ||
-      !batch->glyph_groups.back().matches(font_atlas.texture(), color)) {
+      !batch->glyph_groups.back().matches(font_atlas.texture())) {
     auto& group = batch->glyph_groups.emplace_back();
     group.font_texture = font_atlas.texture();
-    group.color = color;
     group.offset = dl.glyph_2d_instances.size();
   }
   auto& group = batch->glyph_groups.back();
 
-  group.count +=
-      font_atlas
-          .add_glyphs(dl.glyph_2d_instances, origin, angle, scale, text, width);
+  group.count += font_atlas.add_glyphs(
+      dl.glyph_2d_instances,
+      origin,
+      angle,
+      scale,
+      color,
+      text,
+      width);
 }
 
 void DrawBuilder::queue_image(

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/color.hpp"
 #include "datagui/geometry/mat.hpp"
 #include "datagui/geometry/vec.hpp"
 
@@ -9,6 +10,7 @@ struct Glyph2dInstance {
   Mat3 M;
   Vec2 uv_offset;
   Vec2 uv_size;
+  Color color;
 };
 
 } // namespace dgui

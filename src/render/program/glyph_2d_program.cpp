@@ -9,7 +9,6 @@ void Glyph2dProgram::init() {
   program_id = compile_program_vf(shaders::glyph_2d_vs, shaders::glyph_2d_fs);
 
   uniform_PV = glGetUniformLocation(program_id, "PV");
-  uniform_text_color = glGetUniformLocation(program_id, "text_color");
 
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &quad_VBO);
@@ -76,6 +75,17 @@ void Glyph2dProgram::init() {
     glEnableVertexAttribArray(index);
     index++;
 
+    glVertexAttribPointer(
+        index,
+        4,
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(Glyph2dInstance),
+        (void*)offsetof(Glyph2dInstance, color));
+    glVertexAttribDivisor(index, 1);
+    glEnableVertexAttribArray(index);
+    index++;
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
   glBindVertexArray(0);
@@ -108,7 +118,6 @@ void Glyph2dProgram::bind() {
 void Glyph2dProgram::draw(
     const Mat3& PV,
     unsigned int font_texture,
-    const Color& color,
     const Glyph2dInstance* data,
     size_t count) {
 
@@ -122,7 +131,6 @@ void Glyph2dProgram::draw(
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glUniformMatrix3fv(uniform_PV, 1, GL_FALSE, PV.data);
-  glUniform4f(uniform_text_color, color.r, color.g, color.b, color.a);
 
   glBindTexture(GL_TEXTURE_2D, font_texture);
   glDrawArraysInstanced(GL_TRIANGLES, 0, quad_vertex_count, count);

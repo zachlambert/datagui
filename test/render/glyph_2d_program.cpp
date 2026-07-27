@@ -40,7 +40,7 @@ int main() {
     TextItem& item = items.emplace_back();
     item.texture = atlas.texture();
     item.color = color;
-    atlas.add_glyphs(item.instances, origin, angle, scale, text, width);
+    atlas.add_glyphs(item.instances, origin, angle, scale, color, text, width);
   };
 
   // Multiple fonts, one color each
@@ -90,12 +90,8 @@ int main() {
 
     for (const auto& item : items) {
       program.bind();
-      program.draw(
-          PV,
-          item.texture,
-          item.color,
-          item.instances.data(),
-          item.instances.size());
+      program
+          .draw(PV, item.texture, item.instances.data(), item.instances.size());
     }
 
     window.render_end();
