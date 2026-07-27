@@ -28,7 +28,7 @@ public:
       const Vec2& origin,
       double angle,
       const Vec2& scale,
-      const Color& color,
+      const Color& default_color,
       const std::string& text,
       Length width = LengthWrap()) const;
 

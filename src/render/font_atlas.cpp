@@ -1,4 +1,5 @@
 #include "datagui/render/font_atlas.hpp"
+#include "datagui/render/lookup/ansi_colors.hpp"
 #include "datagui/render/program/font_program.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -278,20 +279,30 @@ size_t FontAtlas::add_glyphs(
     const Vec2& origin,
     double angle,
     const Vec2& scale,
-    const Color& color,
+    const Color& default_color,
     const std::string& text,
     Length width) const {
 
+  Color color = default_color;
   auto fixed_width = std::get_if<LengthFixed>(&width);
 
   Vec2 offset;
   offset.y -= line_height_;
 
   size_t instance_count = 0;
-  for (char c : text) {
+  for (size_t i = 0; i < text.size(); i++) {
+    char c = text[i];
     if (c == '\n') {
       offset.x = 0;
       offset.y -= line_height_;
+      continue;
+    }
+    if (int n = ansi_sequence_match(
+            &text[i],
+            text.size() - i,
+            default_color,
+            color)) {
+      i += (n-1);
       continue;
     }
     if (int(c) < CHAR_BEGIN || int(c) >= CHAR_END) {

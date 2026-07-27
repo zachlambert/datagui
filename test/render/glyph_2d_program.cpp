@@ -73,7 +73,7 @@ int main() {
       Vec2(30, 170),
       0,
       Vec2::ones(),
-      "wrapped mono text",
+      "wrapped \e[31mmono\e[0m text",
       LengthFixed(120));
 
   while (window.running()) {

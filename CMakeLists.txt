@@ -53,6 +53,7 @@ add_library(datagui SHARED
   # src/input/number_input.cpp
   # src/input/text_selection.cpp
 
+  src/render/lookup/ansi_colors.cpp
   src/render/program/font_program.cpp
   src/render/program/glyph_2d_program.cpp
   src/render/program/image_2d_program.cpp
