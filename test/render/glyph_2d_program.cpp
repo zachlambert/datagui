@@ -40,7 +40,7 @@ int main() {
     TextItem& item = items.emplace_back();
     item.texture = atlas.texture();
     item.color = color;
-    atlas.add_glyphs(item.instances, origin, angle, scale, color, text, width);
+    atlas.add_glyphs(item.instances, origin, angle, scale, false, color, text, width);
   };
 
   // Multiple fonts, one color each

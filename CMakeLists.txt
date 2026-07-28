@@ -64,7 +64,7 @@ add_library(datagui SHARED
   src/render/state/shape_2d_instance.cpp
   src/render/state/shape_3d_instance.cpp
   src/render/state/shape_3d_vertex.cpp
-  src/render/draw_builder.cpp
+  src/render/draw_queue.cpp
   src/render/executor.cpp
   src/render/font_atlas.cpp
   src/render/program_registry.cpp

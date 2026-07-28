@@ -239,16 +239,21 @@ FontAtlas::FontAtlas(
 Vec2 FontAtlas::text_size(const std::string& text, Length width) {
   auto fixed_width = std::get_if<LengthFixed>(&width);
 
-  Vec2 pos;
-  pos.y += line_height_;
+  Vec2 size;
+  size.y += line_height_;
 
   float line_break_max_x = 0;
 
-  for (char c : text) {
+  for (size_t i = 0; i < text.size(); i++) {
+    char c = text[i];
     if (c == '\n') {
-      line_break_max_x = std::max(pos.x, line_break_max_x);
-      pos.x = 0;
-      pos.y += line_height_;
+      line_break_max_x = std::max(size.x, line_break_max_x);
+      size.x = 0;
+      size.y += line_height_;
+      continue;
+    }
+    if (size_t n = ansi_sequence_match(&text[i], text.size() - i)) {
+      i += (n - 1);
       continue;
     }
     if (int(c) < CHAR_BEGIN || int(c) >= CHAR_END) {
@@ -256,17 +261,17 @@ Vec2 FontAtlas::text_size(const std::string& text, Length width) {
       continue;
     }
     const auto& glyph = glyphs_[int(c) - CHAR_BEGIN];
-    if (fixed_width && pos.x + glyph.advance > fixed_width->value) {
-      pos.x = 0;
-      pos.y += line_height_;
+    if (fixed_width && size.x + glyph.advance > fixed_width->value) {
+      size.x = 0;
+      size.y += line_height_;
     }
-    pos.x += glyph.advance;
+    size.x += glyph.advance;
   }
 
   if (fixed_width) {
-    return Vec2(fixed_width->value, pos.y);
+    return Vec2(fixed_width->value, size.y);
   } else {
-    return Vec2(std::max(line_break_max_x, pos.x), pos.y);
+    return Vec2(std::max(line_break_max_x, size.x), size.y);
   }
 }
 
@@ -279,6 +284,7 @@ size_t FontAtlas::add_glyphs(
     const Vec2& origin,
     double angle,
     const Vec2& scale,
+    bool y_flipped,
     const Color& default_color,
     const std::string& text,
     Length width) const {
@@ -297,12 +303,12 @@ size_t FontAtlas::add_glyphs(
       offset.y -= line_height_;
       continue;
     }
-    if (int n = ansi_sequence_match(
+    if (size_t n = ansi_sequence_match(
             &text[i],
             text.size() - i,
             default_color,
             color)) {
-      i += (n-1);
+      i += (n - 1);
       continue;
     }
     if (int(c) < CHAR_BEGIN || int(c) >= CHAR_END) {
@@ -317,12 +323,15 @@ size_t FontAtlas::add_glyphs(
     }
 
     Vec2 position = offset + glyph.offset + Vec2(0, descender_);
+    if (y_flipped) {
+      position.y *= -1;
+    }
 
     Rot2 rotation(angle);
     Mat3 M = Mat3::transform(
         origin + rotation * (scale * position),
         rotation,
-        scale * glyph.size);
+        scale * glyph.size * Vec2(1, y_flipped ? -1.f : 1.f));
 
     instances.push_back(
         Glyph2dInstance{M, glyph.uv.lower, glyph.uv.size(), color});

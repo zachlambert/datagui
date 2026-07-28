@@ -62,6 +62,18 @@ void apply_code(int code, const Color& fg_color_default, Color& fg_color) {
 
 } // namespace
 
+size_t ansi_sequence_match(const char* text, size_t length) {
+  if (length < 2 || std::strncmp(text, "\e[", 2) != 0) {
+    return 0;
+  }
+  size_t i = 2;
+  while (i < length && text[i] != 'm') {
+    i++;
+  }
+  i++;
+  return i;
+}
+
 size_t ansi_sequence_match(
     const char* text,
     size_t length,

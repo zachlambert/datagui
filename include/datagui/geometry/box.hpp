@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/geometry/mat.hpp"
 #include "datagui/geometry/vec.hpp"
 
 namespace dgui {
@@ -19,9 +20,21 @@ struct Box2 {
   Vec2 center() const {
     return Vec2((lower.x + upper.x) / 2, (lower.y + upper.y) / 2);
   }
+  float center_x() const {
+    return (upper.x + lower.x) / 2;
+  }
+  float center_y() const {
+    return (upper.y + lower.y) / 2;
+  }
 
   Vec2 size() const {
     return Vec2((upper.x - lower.x), (upper.y - lower.y));
+  }
+  float size_x() const {
+    return upper.x - lower.x;
+  }
+  float size_y() const {
+    return upper.y - lower.y;
   }
 
   float area() const {
@@ -59,6 +72,14 @@ struct Box2 {
   }
   float ratio_yx() const {
     return (upper.y - lower.y) / (upper.x - lower.x);
+  }
+
+  // Maps [-1, +1] within the box to the [lower, upper]
+  Mat3 viewport_transform() const {
+    return Mat3{
+        {(upper.x - lower.x) / 2, 0.f, (lower.x + upper.x) / 2},
+        {0.f, (upper.y - lower.y) / 2, (lower.y + upper.y) / 2},
+        {0.f, 0.f, 1.f}};
   }
 };
 

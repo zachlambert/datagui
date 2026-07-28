@@ -28,11 +28,12 @@ public:
       const Vec2& origin,
       double angle,
       const Vec2& scale,
+      bool y_flipped,
       const Color& default_color,
       const std::string& text,
       Length width = LengthWrap()) const;
 
-  int texture() const {
+  unsigned int texture() const {
     return texture_;
   }
 

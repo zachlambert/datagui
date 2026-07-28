@@ -5,6 +5,9 @@
 
 namespace dgui {
 
+// Just skip over the sequence
+size_t ansi_sequence_match(const char* text, size_t length);
+
 size_t ansi_sequence_match(
     const char* text,
     size_t length,

@@ -9,13 +9,15 @@ void Executor::draw(
     ProgramRegistry& registry,
     const DrawList& dl) {
 
-  const Mat3 PV = Mat3{
+  const Mat3 screen_PV = Mat3{
       {1 / (0.5f * size.x), 0, -1.f},
       {0, -1 / (0.5f * size.y), 1.f},
       {0, 0, 1.f},
   };
+  Mat3 PV = screen_PV;
 
   glViewport(0, 0, (int)size.x, (int)size.y);
+  glScissor(0, 0, (int)size.x, (int)size.y);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -23,52 +25,52 @@ void Executor::draw(
   glDisable(GL_CULL_FACE);
   glEnable(GL_SCISSOR_TEST);
 
-  for (const auto& [_, batches] : dl.batches) {
-    for (const auto& batch : batches) {
-      const int scissor_x = std::max<int>(std::floor(batch.mask.lower.x), 0);
-      const int scissor_y = std::max<int>(std::floor(batch.mask.lower.y), 0);
-      const int scissor_w = std::min<int>(
-          std::ceil(batch.mask.upper.x - batch.mask.lower.x),
-          size.x);
-      const int scissor_h = std::min<int>(
-          std::ceil(batch.mask.upper.y - batch.mask.lower.y),
-          size.y);
+  auto set_mask = [&](const Box2& mask) {
+    const int scissor_x = std::max<int>(std::floor(mask.lower.x), 0);
+    const float scissor_y_float = size.y - mask.upper.y;
+    const int scissor_y = std::max<int>(scissor_y_float, 0);
+    const int scissor_w = std::min<int>(std::ceil(mask.size_x()), size.x);
+    const int scissor_h = std::min<int>(std::ceil(mask.size_y()), size.y);
+    glScissor(scissor_x, scissor_y, scissor_w, scissor_h);
+  };
 
-      glScissor(
-          scissor_x,
-          size.y - scissor_y - scissor_h,
-          scissor_w,
-          scissor_h);
-
-      if (batch.shape_count > 0) {
-        registry.shape_2d_program.bind();
-        registry.shape_2d_program.draw(
-            PV,
-            &dl.shape_2d_instances[batch.shape_offset],
-            batch.shape_count);
-      }
-      if (!batch.image_groups.empty()) {
-        registry.image_2d_program.bind();
-#if 0
-        for (const auto& group : batch.image_groups) {
-          registry.image_2d_program.draw(
-            PV,
-              group.image.texture(),
-              &dl.image_2d_vertices[group.offset],
-              group.count);
-        }
-#endif
-      }
-      if (!batch.glyph_groups.empty()) {
-        registry.glyph_2d_program.bind();
-        for (const auto& group : batch.glyph_groups) {
-          registry.glyph_2d_program.draw(
-              PV,
-              group.font_texture,
-              &dl.glyph_2d_instances[group.offset],
-              group.count);
-        }
-      }
+  for (const auto& action : dl.actions) {
+    if (auto begin_group = std::get_if<DrawList::BeginGroup>(&action)) {
+      set_mask(begin_group->mask);
+      PV = screen_PV;
+    } else if (
+        auto begin_scene_2d = std::get_if<DrawList::BeginScene2d>(&action)) {
+      const Box2& mask = begin_scene_2d->viewport;
+      set_mask(mask);
+      const Mat3 viewport_to_screen = Mat3{
+          {mask.size_x() / 2, 0.f, mask.center_x()},
+          {0.f, -mask.size_y() / 2, mask.center_y()},
+          {0.f, 0.f, 1.f}};
+      const auto& camera = begin_scene_2d->camera;
+      const Mat3 camera_PV = camera.projection_mat() * camera.view_mat();
+      PV = screen_PV * viewport_to_screen * camera_PV;
+    } else if (
+        auto draw_shape_2d = std::get_if<DrawList::DrawShape2d>(&action)) {
+      registry.shape_2d_program.bind();
+      registry.shape_2d_program.draw(
+          PV,
+          &dl.shape_2d_instances[draw_shape_2d->offset],
+          draw_shape_2d->count);
+    } else if (
+        auto draw_glyph_2d = std::get_if<DrawList::DrawGlyph2d>(&action)) {
+      registry.glyph_2d_program.bind();
+      registry.glyph_2d_program.draw(
+          PV,
+          draw_glyph_2d->font_texture,
+          &dl.glyph_2d_instances[draw_glyph_2d->offset],
+          draw_glyph_2d->count);
+    } else if (
+        auto draw_image_2d = std::get_if<DrawList::DrawImage2d>(&action)) {
+      registry.image_2d_program.bind();
+      registry.image_2d_program.draw(
+          PV,
+          draw_image_2d->image_texture,
+          draw_image_2d->transform);
     }
   }
 
