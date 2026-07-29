@@ -54,6 +54,7 @@ add_library(datagui SHARED
   # src/input/text_selection.cpp
 
   src/render/lookup/ansi_colors.cpp
+
   src/render/program/font_program.cpp
   src/render/program/glyph_2d_program.cpp
   src/render/program/image_2d_program.cpp
@@ -61,10 +62,14 @@ add_library(datagui SHARED
   src/render/program/point_cloud_program.cpp
   src/render/program/shape_2d_program.cpp
   src/render/program/shape_3d_program.cpp
+
+  src/render/state/draw_list.cpp
+  src/render/state/scene_2d.cpp
+  src/render/state/scene_3d.cpp
   src/render/state/shape_2d_instance.cpp
   src/render/state/shape_3d_instance.cpp
   src/render/state/shape_3d_vertex.cpp
-  src/render/draw_queue.cpp
+
   src/render/executor.cpp
   src/render/font_atlas.cpp
   src/render/program_registry.cpp

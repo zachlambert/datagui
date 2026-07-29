@@ -70,7 +70,7 @@ Shape3dInstance Shape3dInstance::plane(
       color};
 }
 
-CapsuleInstance CapsuleInstance::make(
+Capsule3dInstance Capsule3dInstance::make(
     const Vec3& start,
     const Vec3& end,
     float radius,
@@ -78,7 +78,7 @@ CapsuleInstance CapsuleInstance::make(
   float length = (end - start).length();
   Vec3 direction = length > 0 ? (end - start) / length : Vec3(1, 0, 0);
 
-  CapsuleInstance capsule;
+  Capsule3dInstance capsule;
   capsule.cylinder =
       Shape3dInstance::cylinder(start, direction, radius, length, color);
   capsule.half_sphere_1 =
@@ -88,7 +88,7 @@ CapsuleInstance CapsuleInstance::make(
   return capsule;
 }
 
-ArrowInstance ArrowInstance::make(
+Arrow3dInstance Arrow3dInstance::make(
     const Vec3& start,
     const Vec3& end,
     float radius,
@@ -103,7 +103,7 @@ ArrowInstance ArrowInstance::make(
   float head_length = std::min(length, head_length_scale * 2 * radius);
   float line_length = std::max(length - head_length, 0.f);
 
-  ArrowInstance arrow;
+  Arrow3dInstance arrow;
   arrow.cylinder =
       Shape3dInstance::cylinder(start, direction, radius, line_length, color),
   arrow.cone = Shape3dInstance::cone(

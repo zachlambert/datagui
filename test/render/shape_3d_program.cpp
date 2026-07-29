@@ -65,7 +65,7 @@ int main() {
           Vec2(10, 10),
           Color::Hsl(150, 0.3, 0.8)));
 
-  auto capsule = CapsuleInstance::make(
+  auto capsule = Capsule3dInstance::make(
       Vec3(-2, -4, 2),
       Vec3(-1, -4, 3),
       0.5,
@@ -74,7 +74,7 @@ int main() {
   add(Shape3dType::HalfSphere, capsule.half_sphere_1);
   add(Shape3dType::HalfSphere, capsule.half_sphere_2);
 
-  auto arrow = ArrowInstance::make(
+  auto arrow = Arrow3dInstance::make(
       Vec3(-4, -2, 0),
       Vec3(-2, 2, 0),
       0.4,

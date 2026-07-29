@@ -60,23 +60,23 @@ struct Shape3dInstance {
       const Color& color);
 };
 
-struct CapsuleInstance {
+struct Capsule3dInstance {
   Shape3dInstance half_sphere_1;
   Shape3dInstance half_sphere_2;
   Shape3dInstance cylinder;
 
-  static CapsuleInstance make(
+  static Capsule3dInstance make(
       const Vec3& start,
       const Vec3& end,
       float radius,
       const Color& color);
 };
 
-struct ArrowInstance {
+struct Arrow3dInstance {
   Shape3dInstance cylinder;
   Shape3dInstance cone;
 
-  static ArrowInstance make(
+  static Arrow3dInstance make(
       const Vec3& start,
       const Vec3& end,
       float radius,
