@@ -6,7 +6,6 @@
 #include "datagui/render/state/scene_2d.hpp"
 #include "datagui/render/state/scene_3d.hpp"
 #include "datagui/render/state/shape_2d_instance.hpp"
-#include <variant>
 
 namespace dgui {
 
@@ -58,15 +57,13 @@ struct DrawList {
   void draw_box(
       const Box2& box,
       const Color& color,
-      float border_width,
-      Color border_color,
-      float radius);
+      float border_width = 0,
+      Color border_color = Color::Black(),
+      float radius = 0);
 
   void draw_text(
       const FontAtlas& font_atlas,
       const Vec2& origin,
-      double angle,
-      const Vec2& scale,
       const Color& color,
       Length width,
       const std::string& text);

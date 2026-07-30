@@ -65,30 +65,29 @@ add_library(datagui SHARED
   src/render/window.cpp
 
 
-  # src/system_utils/layout.cpp
+  src/system_utils/layout.cpp
 
-  # src/system/button.cpp
-  # src/system/checkbox.cpp
-  # src/system/collapsable.cpp
-  # src/system/color_picker.cpp
-  # src/system/dropdown.cpp
-  # src/system/group.cpp
-  # src/system/popup.cpp
-  # src/system/select.cpp
-  # src/system/slider.cpp
-  # src/system/split.cpp
-  # src/system/tabs.cpp
-  # src/system/text_box.cpp
-  # src/system/text_input.cpp
-  # src/system/viewport_ptr.cpp
+  src/system/button.cpp
+  src/system/checkbox.cpp
+  src/system/collapsable.cpp
+  src/system/color_picker.cpp
+  src/system/dropdown.cpp
+  src/system/group.cpp
+  src/system/popup.cpp
+  src/system/select.cpp
+  src/system/slider.cpp
+  src/system/split.cpp
+  src/system/tabs.cpp
+  src/system/text_box.cpp
+  src/system/text_input.cpp
+  src/system/viewport_ptr.cpp
 
-  # src/viewport/canvas2d.cpp
-  # src/viewport/canvas3d.cpp
-  # src/viewport/plotter.cpp
+  src/viewport/canvas2d.cpp
+  src/viewport/canvas3d.cpp
+  src/viewport/plotter.cpp
 
-  # src/gui.cpp
+  src/gui.cpp
 
-  # src/datapack/edit.cpp
   src/datapack/common.cpp
   src/datapack/reader.cpp
   src/datapack/writer.cpp

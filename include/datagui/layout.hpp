@@ -38,16 +38,15 @@ struct Layout {
 struct InputSizes {
   float fixed = 0;
   float dynamic = 0;
-  float dynamic_y_size = 0; // row_input_sizes only
 };
 
 struct LayoutState {
   std::vector<InputSizes> row_input_sizes;
   std::vector<InputSizes> col_input_sizes;
-
   Vec2 content_fixed_size;
   Vec2 content_dynamic_size;
-  float content_dynamic_y_size;
+
+  Box2 content_box;
   Vec2 content_overrun;
   Vec2 scroll_pos;
 };

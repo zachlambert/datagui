@@ -30,8 +30,6 @@ void DrawList::draw_box(
 void DrawList::draw_text(
     const FontAtlas& font_atlas,
     const Vec2& origin,
-    double angle,
-    const Vec2& scale,
     const Color& color,
     Length width,
     const std::string& text) {
@@ -51,8 +49,8 @@ void DrawList::draw_text(
   glyph_group->count += font_atlas.add_glyphs(
       glyph_instances,
       origin,
-      angle,
-      scale,
+      0,
+      Vec2::ones(),
       true,
       color,
       text,

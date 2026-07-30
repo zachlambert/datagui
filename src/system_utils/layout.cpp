@@ -1,4 +1,5 @@
 #include "datagui/system_utils/layout.hpp"
+#include <algorithm>
 
 namespace dgui {
 
@@ -148,14 +149,13 @@ void layout_set_input_state(
 
 void layout_set_dependent_state(
     ElementPtr element,
-    const Box2& content_box,
     const std::shared_ptr<Theme>& theme,
     const Layout& layout,
     LayoutState& state) {
 
   std::vector<float> col_sizes(state.col_input_sizes.size());
   {
-    float size = content_box.size().x;
+    float size = state.content_box.size().x;
     float content_size = state.content_fixed_size.x;
     float available = std::max(size - content_size, 0.f);
     float dynamic_size = state.content_dynamic_size.x;
@@ -172,7 +172,7 @@ void layout_set_dependent_state(
 
   std::vector<float> row_sizes(state.row_input_sizes.size());
   {
-    float size = content_box.size().y;
+    float size = state.content_box.size().y;
     float content_size = state.content_fixed_size.y;
     float available = std::max(size - content_size, 0.f);
     float dynamic_size = state.content_dynamic_size.y;
@@ -196,12 +196,12 @@ void layout_set_dependent_state(
   std::size_t i = 0;
   std::size_t j = 0;
   Vec2 origin =
-      content_box.lower - state.scroll_pos + Vec2::uniform(outer_padding);
+      state.content_box.lower - state.scroll_pos + Vec2::uniform(outer_padding);
   Vec2 offset;
 
   while (child) {
     if (child.state().float_only) {
-      child.state().position = content_box.lower;
+      child.state().position = state.content_box.lower;
       child = child.next();
       continue;
     }
@@ -250,26 +250,26 @@ void layout_set_dependent_state(
     Vec2& position = child.state().position;
 
     switch (layout.x_alignment) {
-    case XAlignment::Left:
-      position.x = offset.x;
-      break;
-    case XAlignment::Center:
-      position.x = offset.x + (cell_size.x - size.x) / 2;
-      break;
-    case XAlignment::Right:
-      position.x = offset.x + (cell_size.x - size.x);
-      break;
+      case XAlignment::Left:
+        position.x = offset.x;
+        break;
+      case XAlignment::Center:
+        position.x = offset.x + (cell_size.x - size.x) / 2;
+        break;
+      case XAlignment::Right:
+        position.x = offset.x + (cell_size.x - size.x);
+        break;
     }
     switch (layout.y_alignment) {
-    case YAlignment::Top:
-      position.y = offset.y;
-      break;
-    case YAlignment::Center:
-      position.y = offset.y + (cell_size.y - size.y) / 2;
-      break;
-    case YAlignment::Bottom:
-      position.y = offset.y + (cell_size.y - size.y);
-      break;
+      case YAlignment::Top:
+        position.y = offset.y;
+        break;
+      case YAlignment::Center:
+        position.y = offset.y + (cell_size.y - size.y) / 2;
+        break;
+      case YAlignment::Bottom:
+        position.y = offset.y + (cell_size.y - size.y);
+        break;
     }
     position += origin;
 
@@ -318,15 +318,14 @@ void layout_set_dependent_state(
       std::max(state.content_overrun.y, 0.f));
 }
 
-void layout_render_scroll(
-    const Box2& content_box,
+void layout_render(
     const LayoutState& state,
     const std::shared_ptr<Theme>& theme,
-    GuiRenderer& renderer) {
+    DrawList& dl) {
 
   if (state.content_overrun.x > 0) {
-    Vec2 origin = content_box.lower;
-    Vec2 size = content_box.size();
+    Vec2 origin = state.content_box.lower;
+    Vec2 size = state.content_box.size();
     Box2 bg;
     Box2 fg;
 
@@ -342,13 +341,13 @@ void layout_render_scroll(
     fg.lower.x = origin.x + location * size.x;
     fg.upper.x = origin.x + (location + ratio) * size.x;
 
-    renderer.queue_box(bg, theme->scroll_bar_bg);
-    renderer.queue_box(fg, theme->scroll_bar_fg);
+    dl.draw_box(bg, theme->scroll_bar_bg);
+    dl.draw_box(fg, theme->scroll_bar_fg);
   }
 
   if (state.content_overrun.y > 0) {
-    Vec2 origin = content_box.lower;
-    Vec2 size = content_box.size();
+    Vec2 origin = state.content_box.lower;
+    Vec2 size = state.content_box.size();
     Box2 bg;
     Box2 fg;
 
@@ -364,16 +363,17 @@ void layout_render_scroll(
     fg.lower.y = origin.y + location * size.y;
     fg.upper.y = origin.y + (location + ratio) * size.y;
 
-    renderer.queue_box(bg, theme->scroll_bar_bg);
-    renderer.queue_box(fg, theme->scroll_bar_fg);
+    dl.draw_box(bg, theme->scroll_bar_bg);
+    dl.draw_box(fg, theme->scroll_bar_fg);
+  }
+
+  if (state.content_overrun.x > 0 || state.content_overrun.y > 0) {
+    dl.new_group(state.content_box);
   }
 }
 
-bool layout_scroll_event(
-    const Box2& content_box,
-    LayoutState& state,
-    const ScrollEvent& event) {
-  if (!content_box.contains(event.position)) {
+bool layout_scroll_event(LayoutState& state, const ScrollEvent& event) {
+  if (!state.content_box.contains(event.position)) {
     return false;
   }
 

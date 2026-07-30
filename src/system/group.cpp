@@ -36,22 +36,18 @@ void GroupSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& group = element.group();
 
-  group.content_box = state.box();
+  group.layout_state.content_box = state.box();
   if (group.border) {
-    group.content_box.lower += Vec2::uniform(theme->layout_border_width);
-    group.content_box.upper -= Vec2::uniform(theme->layout_border_width);
+    group.layout_state.content_box.lower +=
+        Vec2::uniform(theme->layout_border_width);
+    group.layout_state.content_box.upper -=
+        Vec2::uniform(theme->layout_border_width);
   }
-  state.child_mask = group.content_box;
 
-  layout_set_dependent_state(
-      element,
-      group.content_box,
-      theme,
-      group.layout,
-      group.layout_state);
+  layout_set_dependent_state(element, theme, group.layout, group.layout_state);
 }
 
-void GroupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void GroupSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& group = element.group();
 
@@ -59,19 +55,19 @@ void GroupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
     Color bg_color = group.bg_color ? *group.bg_color : Color::Clear();
     int border_width =
         group.border ? theme->layout_border_width : theme->layout_border_width;
-    renderer.queue_box(
+    dl.draw_box(
         state.box(),
         bg_color,
         border_width,
         theme->layout_border_color);
   }
 
-  layout_render_scroll(group.content_box, group.layout_state, theme, renderer);
+  layout_render(group.layout_state, theme, dl);
 }
 
 bool GroupSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
   auto& group = element.group();
-  return layout_scroll_event(group.content_box, group.layout_state, event);
+  return layout_scroll_event(group.layout_state, event);
 }
 
 } // namespace dgui

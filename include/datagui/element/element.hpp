@@ -63,11 +63,10 @@ struct Collapsable {
 
   // Dependent
   Vec2 header_size;
-  Box2 content_box;
+  LayoutState layout_state;
 
   // State
   bool open = false;
-  LayoutState layout_state;
 };
 
 struct ColorPicker {
@@ -112,9 +111,6 @@ struct Group {
   bool border = false;
 
   // Dependent
-  Box2 content_box;
-
-  // State
   LayoutState layout_state;
 };
 
@@ -134,12 +130,11 @@ struct Popup {
   Box2 header_box;
   float header_text_width;
   Box2 close_button_box;
-  Box2 content_box;
+  LayoutState layout_state;
 
   // State
   bool open = false;
   bool close_button_released = false;
-  LayoutState layout_state;
 };
 
 struct Select {
@@ -230,11 +225,10 @@ struct ViewportPtr {
   bool border = false;
 
   // Dependent
-  Box2 content_box;
+  LayoutState layout_state;
 
   // State
   std::unique_ptr<Viewport> viewport;
-  LayoutState layout_state;
 };
 
 } // namespace dgui

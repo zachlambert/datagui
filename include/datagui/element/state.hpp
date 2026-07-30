@@ -25,9 +25,6 @@ struct State {
   // Layout output
   // Define in set_dependent_state(...)
 
-  // Set on parent
-  Box2 child_mask;
-
   Vec2 position;
   Vec2 size;
   Box2 box() const {

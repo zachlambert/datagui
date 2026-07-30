@@ -20,9 +20,15 @@ class FontProgram;
 class FontAtlas {
 public:
   FontAtlas(FontProgram& program, const std::string& font_path, int font_size);
+  ~FontAtlas();
 
-  Vec2 text_size(const std::string& text, Length width = LengthWrap());
-  float text_height();
+  FontAtlas(FontAtlas&& other) noexcept;
+  FontAtlas& operator=(FontAtlas&& other) noexcept;
+  FontAtlas(const FontAtlas& other) = delete;
+  FontAtlas& operator=(const FontAtlas& other) = delete;
+
+  Vec2 text_size(const std::string& text, Length width = LengthWrap()) const;
+  float text_height() const;
   size_t add_glyphs(
       std::vector<Glyph2dInstance>& instances,
       const Vec2& origin,

@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <string>
+#include <utility>
 
 extern "C" {
 #include <ft2build.h>
@@ -18,9 +19,13 @@ static constexpr int CHAR_END = '~' + 1;
 static constexpr float GLYPH_PADDING_H = 2;
 static constexpr float GLYPH_PADDING_V = 2;
 
-namespace {
+FontAtlas::FontAtlas(
+    FontProgram& program,
+    const std::string& font_path,
+    int font_size) {
 
-struct CachedGlState {
+  // Cache the GL state, so it can be restored on exit
+
   GLint original_fb;
   GLint original_viewport[4];
   GLint original_program;
@@ -29,17 +34,40 @@ struct CachedGlState {
   GLboolean original_blend = glIsEnabled(GL_BLEND);
   GLint original_blend_src, original_blend_dst;
 
-  CachedGlState() {
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &original_fb);
-    glGetIntegerv(GL_VIEWPORT, original_viewport);
-    glGetIntegerv(GL_CURRENT_PROGRAM, &original_program);
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &original_vao);
-    glGetIntegerv(GL_UNPACK_ALIGNMENT, &original_unpack_alignment);
-    glGetIntegerv(GL_BLEND_SRC_RGB, &original_blend_src);
-    glGetIntegerv(GL_BLEND_DST_RGB, &original_blend_dst);
-  }
+  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &original_fb);
+  glGetIntegerv(GL_VIEWPORT, original_viewport);
+  glGetIntegerv(GL_CURRENT_PROGRAM, &original_program);
+  glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &original_vao);
+  glGetIntegerv(GL_UNPACK_ALIGNMENT, &original_unpack_alignment);
+  glGetIntegerv(GL_BLEND_SRC_RGB, &original_blend_src);
+  glGetIntegerv(GL_BLEND_DST_RGB, &original_blend_dst);
 
-  ~CachedGlState() {
+  // Temporary state used for the FT_Library / framebuffer
+
+  FT_Library library = nullptr;
+  FT_Face face = nullptr;
+  unsigned int framebuffer = 0;
+
+  // Must be called on every exit path from the constructor. On failure, the
+  // atlas texture is also freed, since the destructor isn't called for a
+  // partially constructed object.
+  auto cleanup = [&](bool success) {
+    // The face is owned by the library, so it must be destroyed first;
+    // FT_Done_FreeType would otherwise already have freed it.
+    if (face) {
+      FT_Done_Face(face);
+    }
+    if (library) {
+      FT_Done_FreeType(library);
+    }
+    if (framebuffer) {
+      glDeleteFramebuffers(1, &framebuffer);
+    }
+    if (!success && texture_) {
+      glDeleteTextures(1, &texture_);
+      texture_ = 0;
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, original_fb);
     glViewport(
         original_viewport[0],
@@ -55,69 +83,25 @@ struct CachedGlState {
       glDisable(GL_BLEND);
     }
     glBlendFunc(original_blend_src, original_blend_dst);
-  }
-
-  CachedGlState(const CachedGlState& other) = delete;
-  CachedGlState(CachedGlState&& other) = delete;
-  CachedGlState& operator=(const CachedGlState& other) = delete;
-  CachedGlState& operator=(CachedGlState&& other) = delete;
-};
-
-struct FtState {
-  FT_Library library = nullptr;
-  FT_Face face = nullptr;
-  unsigned int framebuffer = 0;
-
-  FtState() = default;
-  ~FtState() {
-    // The face is owned by the library, so it must be destroyed first;
-    // FT_Done_FreeType would otherwise already have freed it.
-    if (face) {
-      FT_Done_Face(face);
-    }
-    if (library) {
-      FT_Done_FreeType(library);
-    }
-    if (framebuffer) {
-      glDeleteFramebuffers(1, &framebuffer);
-    }
-  }
-
-  FtState(const FtState& other) = delete;
-  FtState(FtState&& other) = delete;
-  FtState& operator=(const FtState& other) = delete;
-  FtState& operator=(FtState&& other) = delete;
-};
-
-} // namespace
-
-FontAtlas::FontAtlas(
-    FontProgram& program,
-    const std::string& font_path,
-    int font_size) {
-
-  // Will restore GL state on destruction
-  CachedGlState cached_gl_state;
-
-  // Initialise temporary state used for the FT_Library / framebuffer
-
-  FtState temp;
+  };
 
   // Return zero for success, >0 for failure
-  if (FT_Init_FreeType(&temp.library)) {
+  if (FT_Init_FreeType(&library)) {
+    cleanup(false);
     throw std::runtime_error("Failed to initialize freetype library");
   }
-  if (FT_New_Face(temp.library, font_path.c_str(), 0, &temp.face)) {
+  if (FT_New_Face(library, font_path.c_str(), 0, &face)) {
+    cleanup(false);
     throw std::runtime_error("Failed to load font '" + font_path + "'");
   }
-  FT_Set_Pixel_Sizes(temp.face, 0, font_size);
+  FT_Set_Pixel_Sizes(face, 0, font_size);
 
-  glGenFramebuffers(1, &temp.framebuffer);
+  glGenFramebuffers(1, &framebuffer);
 
   // Initialize geometric properties
-  line_height_ = float(temp.face->height) / 128;
-  ascender_ = float(temp.face->ascender) / 128;
-  descender_ = -float(temp.face->descender) / 128;
+  line_height_ = float(face->height) / 128;
+  ascender_ = float(face->ascender) / 128;
+  descender_ = -float(face->descender) / 128;
 
   // For some reason, the ascender, descender and line_height values aren't
   // scaled to the requested font size, even though the glyphs are
@@ -137,18 +121,18 @@ FontAtlas::FontAtlas(
 
   float texture_row_width = GLYPH_PADDING_H;
   for (int i = CHAR_BEGIN; i < CHAR_END; i++) {
-    if (FT_Load_Char(temp.face, char(i), 0) != 0) {
+    if (FT_Load_Char(face, char(i), 0) != 0) {
+      cleanup(false);
       throw std::runtime_error(
           "Failed to load character: " + std::to_string(char(i)));
     }
 
     FontGlyph& glyph = glyphs_.emplace_back();
-    glyph.size =
-        Vec2(temp.face->glyph->bitmap.width, temp.face->glyph->bitmap.rows);
+    glyph.size = Vec2(face->glyph->bitmap.width, face->glyph->bitmap.rows);
     glyph.offset = Vec2(
-        temp.face->glyph->bitmap_left,
-        float(temp.face->glyph->bitmap_top) - temp.face->glyph->bitmap.rows);
-    glyph.advance = float(temp.face->glyph->advance.x) / 64;
+        face->glyph->bitmap_left,
+        float(face->glyph->bitmap_top) - face->glyph->bitmap.rows);
+    glyph.advance = float(face->glyph->advance.x) / 64;
 
     if (texture_row_width + (glyph.size.x + GLYPH_PADDING_H) > texture_width_) {
       texture_height_ += line_height_ + GLYPH_PADDING_V;
@@ -180,7 +164,7 @@ FontAtlas::FontAtlas(
 
   // Bind the texture to the temporary framebuffer
 
-  glBindFramebuffer(GL_FRAMEBUFFER, temp.framebuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture_, 0);
 
   // 2nd pass iterate through characters
@@ -197,7 +181,8 @@ FontAtlas::FontAtlas(
   float char_x = GLYPH_PADDING_H;
   float char_y = GLYPH_PADDING_V;
   for (int i = CHAR_BEGIN; i < CHAR_END; i++) {
-    if (FT_Load_Char(temp.face, char(i), FT_LOAD_RENDER) != 0) {
+    if (FT_Load_Char(face, char(i), FT_LOAD_RENDER) != 0) {
+      cleanup(false);
       throw std::runtime_error(
           "Failed to load character: " + std::to_string(char(i)));
     }
@@ -212,9 +197,9 @@ FontAtlas::FontAtlas(
     }
 
     float x_lower = char_x;
-    float x_upper = x_lower + temp.face->glyph->bitmap.width;
+    float x_upper = x_lower + face->glyph->bitmap.width;
     float y_lower = char_y + descender_ + glyph.offset.y;
-    float y_upper = y_lower + temp.face->glyph->bitmap.rows;
+    float y_upper = y_lower + face->glyph->bitmap.rows;
 
     Box2 box;
     box.lower.x = -1.f + 2 * x_lower / texture_width_;
@@ -230,13 +215,47 @@ FontAtlas::FontAtlas(
 
     program.draw_bitmap(
         box,
-        temp.face->glyph->bitmap.width,
-        temp.face->glyph->bitmap.rows,
-        temp.face->glyph->bitmap.buffer);
+        face->glyph->bitmap.width,
+        face->glyph->bitmap.rows,
+        face->glyph->bitmap.buffer);
+  }
+
+  cleanup(true);
+}
+
+FontAtlas::~FontAtlas() {
+  if (texture_) {
+    glDeleteTextures(1, &texture_);
   }
 }
 
-Vec2 FontAtlas::text_size(const std::string& text, Length width) {
+FontAtlas::FontAtlas(FontAtlas&& other) noexcept :
+    line_height_(other.line_height_),
+    ascender_(other.ascender_),
+    descender_(other.descender_),
+    texture_(std::exchange(other.texture_, 0)),
+    texture_width_(other.texture_width_),
+    texture_height_(other.texture_height_),
+    glyphs_(std::move(other.glyphs_)) {}
+
+FontAtlas& FontAtlas::operator=(FontAtlas&& other) noexcept {
+  if (this == &other) {
+    return *this;
+  }
+  if (texture_) {
+    glDeleteTextures(1, &texture_);
+  }
+  line_height_ = other.line_height_;
+  ascender_ = other.ascender_;
+  descender_ = other.descender_;
+  texture_ = std::exchange(other.texture_, 0);
+  texture_width_ = other.texture_width_;
+  texture_height_ = other.texture_height_;
+  glyphs_ = std::move(other.glyphs_);
+  return *this;
+}
+
+Vec2 FontAtlas::text_size(const std::string& text, Length width) const {
   auto fixed_width = std::get_if<LengthFixed>(&width);
 
   Vec2 size;
@@ -275,7 +294,7 @@ Vec2 FontAtlas::text_size(const std::string& text, Length width) {
   }
 }
 
-float FontAtlas::text_height() {
+float FontAtlas::text_height() const {
   return line_height_;
 }
 
