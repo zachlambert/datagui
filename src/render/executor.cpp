@@ -24,27 +24,27 @@ void Executor::draw(
   // clang-format on
 
   auto set_viewport = [&](const Box2& mask) {
-    const int x = std::floor(mask.lower.x);
-    const float y_float = size.y - mask.upper.y;
-    const int y = std::floor(size.y - mask.upper.y);
-    const int w = std::ceil(mask.size_x());
-    const int h = std::ceil(mask.size_y());
-    glViewport(x, y, w, h);
+    glViewport(
+        std::floor(mask.lower.x),
+        std::floor(size.y - mask.upper.y),
+        std::ceil(mask.size_x()),
+        std::ceil(mask.size_y()));
   };
   auto reset_viewport = [&]() {
     glViewport(0, 0, (int)size.x, (int)size.y);
   };
 
   auto set_mask = [&](const Box2& mask) {
-    const int x = std::max<int>(std::floor(mask.lower.x), 0);
-    const int y = std::max<int>(std::floor(size.y - mask.upper.y), 0);
-    const int w = std::min<int>(std::ceil(mask.size_x()), size.x);
-    const int h = std::min<int>(std::ceil(mask.size_y()), size.y);
-    glScissor(x, y, w, h);
+    glScissor(
+        std::floor(mask.lower.x),
+        std::floor(size.y - mask.upper.y),
+        std::ceil(mask.size_x()),
+        std::ceil(mask.size_y()));
   };
-  auto clear_mask = [&]() {
-    glScissor(0, 0, (int)size.x, (int)size.y);
-  };
+
+  glDisable(GL_SCISSOR_TEST);
+  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClear(GL_COLOR_BUFFER_BIT);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -87,6 +87,7 @@ void Executor::draw(
       }
     }
 
+#if 0
     // Draw scene backgrounds first to avoid changing the viewport
     if (group.scene_2d_count > 0 || group.scene_3d_count > 0) {
       registry.shape_2d_program.bind();
@@ -111,6 +112,7 @@ void Executor::draw(
         registry.shape_2d_program.draw(screen_PV, &shape, 1);
       }
     }
+#endif
 
     for (size_t i = 0; i < group.scene_2d_count; i++) {
       const auto& instance = dl.scene_2d_instances[group.scene_2d_offset + i];
@@ -119,6 +121,13 @@ void Executor::draw(
       set_mask(intersection(viewport, group.mask));
       set_viewport(viewport);
       const Mat3 PV = camera.projection_mat() * camera.view_mat();
+
+      glClearColor(
+          scene->bg_color.r,
+          scene->bg_color.g,
+          scene->bg_color.b,
+          scene->bg_color.a);
+      glClear(GL_COLOR_BUFFER_BIT);
 
       for (const auto& action : scene->actions) {
         if (auto draw_shape = std::get_if<Scene2d::DrawShape>(&action)) {
@@ -152,6 +161,13 @@ void Executor::draw(
       set_viewport(viewport);
       const Mat4 projection = camera.projection_mat();
       const Mat4 view = camera.view_mat();
+
+      glClearColor(
+          scene->bg_color.r,
+          scene->bg_color.g,
+          scene->bg_color.b,
+          scene->bg_color.a);
+      glClear(GL_COLOR_BUFFER_BIT);
 
       glDisable(GL_BLEND);
       glEnable(GL_DEPTH_TEST);
@@ -197,9 +213,6 @@ void Executor::draw(
       glDisable(GL_CULL_FACE);
     }
   }
-
-  // If kept enabled, then glClear will only clear within the scissor region
-  glDisable(GL_SCISSOR_TEST);
 }
 
 } // namespace dgui

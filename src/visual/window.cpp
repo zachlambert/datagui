@@ -293,9 +293,6 @@ void Window::render_begin() {
   int display_w, display_h;
   glfwGetFramebufferSize(window, &display_w, &display_h);
   size_ = Vec2(display_w, display_h);
-
-  glClearColor(1.f, 1.f, 1.f, 1.f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Window::render_end() {
