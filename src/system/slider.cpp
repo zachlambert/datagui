@@ -15,18 +15,19 @@ void SliderSystem::set_input_state(ElementPtr element) {
   state.dynamic_size = Vec2();
   state.floating = false;
 
-  Vec2 text_size = fm->text_size(
-      get_slider_text(slider),
-      theme->text_font,
-      theme->text_size,
-      LengthWrap());
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+  Vec2 text_size = font.text_size(get_slider_text(slider), LengthWrap());
   state.fixed_size.x += theme->text_padding +
                         std::max(text_size.x, theme->slider_default_text_size);
 }
 
-void SliderSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void SliderSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& slider = element.slider();
+
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
 
   Vec2 bg_position = state.position;
   bg_position.y += (state.size.y - theme->slider_height) / 2;
@@ -35,7 +36,7 @@ void SliderSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
       slider.length ? *slider.length : theme->slider_default_length;
   Vec2 bg_size(slider_length, theme->slider_height);
 
-  renderer.queue_box(
+  dl.draw_box(
       Box2(bg_position, bg_position + bg_size),
       theme->slider_bg_color,
       theme->slider_border_width,
@@ -62,19 +63,18 @@ void SliderSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   const Color& slider_color =
       slider.held ? theme->slider_color_active : theme->slider_color;
 
-  renderer.queue_box(Box2(slider_pos, slider_pos + slider_size), slider_color);
+  dl.draw_box(Box2(slider_pos, slider_pos + slider_size), slider_color);
 
   Vec2 text_pos = bg_position;
   text_pos.x += slider_length + theme->text_padding;
-  text_pos.y += (theme->slider_height / 2) -
-                (fm->text_height(theme->text_font, theme->text_size) / 2);
+  text_pos.y += (theme->slider_height / 2) - (font.text_height() / 2);
 
-  renderer.queue_text(
+  dl.draw_text(
+      font,
       text_pos,
-      get_slider_text(slider),
-      theme->text_font,
-      theme->text_size,
-      theme->text_color);
+      theme->text_color,
+      LengthWrap(),
+      get_slider_text(slider));
 }
 
 void SliderSystem::mouse_event(ElementPtr element, const MouseEvent& event) {

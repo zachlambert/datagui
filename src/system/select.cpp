@@ -6,11 +6,13 @@ void SelectSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& select = element.select();
 
-  float text_height = fm->text_height(theme->text_font, theme->text_size);
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+
+  float text_height = font.text_height();
   float max_item_width = theme->select_min_width;
   for (const auto& choice : select.choices) {
-    Vec2 choice_size =
-        fm->text_size(choice, theme->text_font, theme->text_size, LengthWrap());
+    Vec2 choice_size = font.text_size(choice, LengthWrap());
     max_item_width = std::max(max_item_width, choice_size.x);
   }
 
@@ -53,13 +55,16 @@ void SelectSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void SelectSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void SelectSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& select = element.select();
 
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+
   const Color& select_color =
       select.open ? theme->input_color_bg_active : theme->input_color_bg;
-  renderer.queue_box(
+  dl.draw_box(
       state.box(),
       select_color,
       theme->input_border_width,
@@ -68,13 +73,12 @@ void SelectSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   if (!select.choices.empty() && select.choice >= 0) {
     Vec2 offset =
         Vec2::uniform(theme->text_padding + theme->input_border_width);
-    renderer.queue_text(
+    dl.draw_text(
+        font,
         state.position + offset,
-        select.choices[select.choice],
-        theme->text_font,
-        theme->text_size,
         theme->text_color,
-        LengthWrap());
+        LengthWrap(),
+        select.choices[select.choice]);
   }
 
   if (!select.open) {
@@ -85,22 +89,21 @@ void SelectSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
     const auto& box = select.choice_boxes[i];
     const Color& bg_color = (i == select.choice) ? theme->input_color_bg_active
                                                  : theme->input_color_bg;
-    renderer.queue_box(
+    dl.draw_box(
         box,
         bg_color,
         theme->input_border_width,
         theme->input_color_border);
 
-    renderer.queue_text(
+    dl.draw_text(
+        font,
         box.lower +
             Vec2::uniform(theme->input_border_width + theme->text_padding),
-        select.choices[i],
-        theme->text_font,
-        theme->text_size,
         theme->text_color,
         LengthFixed(
             state.size.x -
-            2.f * (theme->input_border_width + theme->text_padding)));
+            2.f * (theme->input_border_width + theme->text_padding)),
+        select.choices[i]);
   }
 }
 

@@ -37,8 +37,8 @@ add_library(datagui SHARED
   src/asset/point_cloud.cpp
   src/asset/uv_mesh.cpp
 
-  # src/input/number_input.cpp
-  # src/input/text_selection.cpp
+  src/input/number_input.cpp
+  src/input/text_selection.cpp
 
   src/render/lookup/ansi_colors.cpp
   src/render/lookup/color_map.cpp
@@ -60,6 +60,7 @@ add_library(datagui SHARED
 
   src/render/executor.cpp
   src/render/font_atlas.cpp
+  src/render/font_registry.cpp
   src/render/program_registry.cpp
   src/render/shaders.cpp
   src/render/window.cpp

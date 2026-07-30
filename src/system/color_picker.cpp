@@ -3,9 +3,9 @@
 namespace dgui {
 
 ColorPickerSystem::ColorPickerSystem(
-    std::shared_ptr<FontManager> fm,
+    std::shared_ptr<FontRegistry> font_registry,
     std::shared_ptr<Theme> theme) :
-    fm(fm), theme(theme) {}
+    font_registry(font_registry), theme(theme) {}
 
 void ColorPickerSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -49,13 +49,13 @@ void ColorPickerSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void ColorPickerSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   auto& color_picker = element.color_picker();
 
   const auto& color = state.focused ? active_color : color_picker.value;
 
-  renderer.queue_box(state.box(), color, 2, theme->input_color_border);
+  dl.draw_box(state.box(), color, 2, theme->input_color_border);
 
   if (!state.floating) {
     return;
@@ -63,7 +63,7 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
 
   Color bg_color = color;
   bg_color.a = 0.5;
-  renderer.queue_box(state.float_box, bg_color, 2, theme->layout_border_color);
+  dl.draw_box(state.float_box, bg_color, 2, theme->layout_border_color);
 
   float lightness = color.lightness();
   struct Pixel {
@@ -113,9 +113,11 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
       }
     }
     color_picker.hue_wheel_image.load(n, n, pixels.data());
-    renderer.queue_image(
-        color_picker.hue_wheel_box,
-        color_picker.hue_wheel_image);
+    dl.draw_image(
+        color_picker.hue_wheel_image,
+        color_picker.hue_wheel_box.lower,
+        0,
+        color_picker.hue_wheel_box.size());
   }
   {
     const std::size_t h = 100;
@@ -142,9 +144,11 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
       }
     }
     color_picker.lightness_image.load(w, h, pixels.data());
-    renderer.queue_image(
-        color_picker.lightness_box,
-        color_picker.lightness_image);
+    dl.draw_image(
+        color_picker.lightness_image,
+        color_picker.lightness_box.lower,
+        0,
+        color_picker.lightness_box.size());
   }
 }
 

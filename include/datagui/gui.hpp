@@ -8,13 +8,16 @@
 #include "datagui/element/args.hpp"
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
+#include "datagui/render/executor.hpp"
+#include "datagui/render/font_registry.hpp"
+#include "datagui/render/program_registry.hpp"
+#include "datagui/render/state/draw_list.hpp"
+#include "datagui/render/window.hpp"
 #include "datagui/theme.hpp"
 #include "datagui/viewport/canvas2d.hpp"
 #include "datagui/viewport/canvas3d.hpp"
 #include "datagui/viewport/plotter.hpp"
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/gui_renderer.hpp"
-#include "datagui/visual/window.hpp"
 #include <memory>
 #include <optional>
 #include <set>
@@ -280,15 +283,17 @@ private:
   T& viewport();
 
   Window window;
+  ProgramRegistry program_registry;
   Tree tree;
+  Executor executor;
 
 #ifdef DGUI_DEBUG
   bool debug_mode_ = false;
 #endif
 
-  std::shared_ptr<FontManager> fm;
+  std::shared_ptr<FontRegistry> font_registry;
   std::shared_ptr<Theme> theme;
-  GuiRenderer renderer;
+  DrawList dl;
   std::vector<std::unique_ptr<System>> systems;
 
   std::stack<std::pair<ElementPtr, VarPtr>> stack;
@@ -326,7 +331,7 @@ private:
     system(element).set_dependent_state(element);
   };
   void render(ConstElementPtr element) {
-    system(element).render(element, renderer);
+    system(element).render(element, dl);
   }
   void mouse_event(ElementPtr element, const MouseEvent& event) {
     system(element).mouse_event(element, event);

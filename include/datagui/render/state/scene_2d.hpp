@@ -87,7 +87,7 @@ struct Scene2d {
       const Image& image,
       const Vec2& origin,
       double angle,
-      Vec2& scale);
+      const Vec2& scale);
 
 private:
   void draw_shape(const Shape2dInstance& instance);

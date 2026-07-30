@@ -3,6 +3,7 @@
 #include "datagui/render/program/font_program.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -255,7 +256,8 @@ FontAtlas& FontAtlas::operator=(FontAtlas&& other) noexcept {
   return *this;
 }
 
-Vec2 FontAtlas::text_size(const std::string& text, Length width) const {
+Vec2 FontAtlas::text_size(const std::string& text, Length width, bool editable)
+    const {
   auto fixed_width = std::get_if<LengthFixed>(&width);
 
   Vec2 size;
@@ -271,9 +273,11 @@ Vec2 FontAtlas::text_size(const std::string& text, Length width) const {
       size.y += line_height_;
       continue;
     }
-    if (size_t n = ansi_sequence_match(&text[i], text.size() - i)) {
-      i += (n - 1);
-      continue;
+    if (!editable) {
+      if (size_t n = ansi_sequence_match(&text[i], text.size() - i)) {
+        i += (n - 1);
+        continue;
+      }
     }
     if (int(c) < CHAR_BEGIN || int(c) >= CHAR_END) {
       // Invalid character
@@ -298,6 +302,13 @@ float FontAtlas::text_height() const {
   return line_height_;
 }
 
+float FontAtlas::advance(char c) const {
+  if (int(c) < CHAR_BEGIN || int(c) >= CHAR_END) {
+    return 0;
+  }
+  return glyphs_[int(c) - CHAR_BEGIN].advance;
+}
+
 size_t FontAtlas::add_glyphs(
     std::vector<Glyph2dInstance>& instances,
     const Vec2& origin,
@@ -306,7 +317,8 @@ size_t FontAtlas::add_glyphs(
     bool y_flipped,
     const Color& default_color,
     const std::string& text,
-    Length width) const {
+    Length width,
+    bool editable) const {
 
   Color color = default_color;
   auto fixed_width = std::get_if<LengthFixed>(&width);
@@ -322,13 +334,15 @@ size_t FontAtlas::add_glyphs(
       offset.y -= line_height_;
       continue;
     }
-    if (size_t n = ansi_sequence_match(
-            &text[i],
-            text.size() - i,
-            default_color,
-            color)) {
-      i += (n - 1);
-      continue;
+    if (!editable) {
+      if (size_t n = ansi_sequence_match(
+              &text[i],
+              text.size() - i,
+              default_color,
+              color)) {
+        i += (n - 1);
+        continue;
+      }
     }
     if (int(c) < CHAR_BEGIN || int(c) >= CHAR_END) {
       // Invalid character
@@ -359,6 +373,95 @@ size_t FontAtlas::add_glyphs(
     offset.x += glyph.advance;
   }
   return instance_count;
+}
+
+std::size_t FontAtlas::find_cursor(
+    const std::string& text,
+    Length text_width,
+    const Vec2& point) const {
+
+  auto fixed_width = std::get_if<LengthFixed>(&text_width);
+  Vec2 pos;
+  pos.y += line_height_;
+
+  std::size_t column = 0;
+  bool column_found = false;
+
+  for (std::size_t i = 0; i < text.size(); i++) {
+    char c = text[i];
+    if (c == '\n') {
+      pos.x = 0;
+      pos.y += line_height_;
+      continue;
+    }
+    if (size_t n = ansi_sequence_match(&text[i], text.size() - i)) {
+      i += (n - 1);
+      continue;
+    }
+    if (int(c) < CHAR_BEGIN || int(c) >= CHAR_END) {
+      // Invalid character
+      continue;
+    }
+    const auto& glyph = glyphs_[int(c) - CHAR_BEGIN];
+
+    if (!column_found && pos.x + glyph.advance / 2 > point.x) {
+      column_found = true;
+      column = i;
+      if (point.y < pos.y) {
+        return column;
+      }
+    }
+
+    if (fixed_width && pos.x + glyph.advance > fixed_width->value) {
+      if (!column_found) {
+        column = i + 1;
+      }
+      if (point.y < pos.y) {
+        return column;
+      }
+      pos.x = 0;
+      pos.y += line_height_;
+      column_found = false;
+    }
+    pos.x += glyph.advance;
+  }
+  if (!column_found) {
+    column = text.size();
+  }
+  return column;
+}
+
+Vec2 FontAtlas::cursor_offset(
+    const std::string& text,
+    Length text_width,
+    std::size_t cursor) const {
+  auto fixed_width = std::get_if<LengthFixed>(&text_width);
+  Vec2 offset;
+
+  for (std::size_t i = 0; i < cursor; i++) {
+    char c = text[i];
+    if (c == '\n') {
+      offset.x = 0;
+      offset.y += line_height_;
+      continue;
+    }
+    if (size_t n = ansi_sequence_match(&text[i], text.size() - i)) {
+      i += (n - 1);
+      continue;
+    }
+    if (int(c) < CHAR_BEGIN || int(c) >= CHAR_END) {
+      // Invalid character
+      continue;
+    }
+    const auto& glyph = glyphs_[int(c) - CHAR_BEGIN];
+
+    if (fixed_width && offset.x + glyph.advance > fixed_width->value) {
+      offset.x = 0;
+      offset.y += line_height_;
+    }
+    offset.x += glyph.advance;
+  }
+  return offset;
 }
 
 } // namespace dgui

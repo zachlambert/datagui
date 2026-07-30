@@ -21,7 +21,7 @@ private:
     }
   };
   struct FontHash {
-    std::int64_t hash(const FontKey& key) {
+    std::size_t operator()(const FontKey& key) const {
       return std::hash<int>{}(int(key.font) << 1) ^
              std::hash<int>{}(key.font_size);
     }

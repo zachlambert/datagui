@@ -42,27 +42,24 @@ void ViewportPtrSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& viewport = element.viewport();
 
-  viewport.content_box = state.box();
+  auto& content_box = viewport.layout_state.content_box;
+  content_box = state.box();
   if (viewport.border) {
-    viewport.content_box.lower += Vec2::uniform(theme->layout_border_width);
-    viewport.content_box.upper -= Vec2::uniform(theme->layout_border_width);
+    content_box.lower += Vec2::uniform(theme->layout_border_width);
+    content_box.upper -= Vec2::uniform(theme->layout_border_width);
   }
-  state.child_mask = viewport.content_box;
 
   layout_set_dependent_state(
       element,
-      viewport.content_box,
       theme,
       viewport.layout,
       viewport.layout_state);
 }
 
-void ViewportPtrSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
-  const auto& state = element.state();
-  const auto& viewport = element.viewport();
-  renderer.queue_viewport(
-      Box2(state.position, state.position + state.size),
-      viewport.viewport.get());
+void ViewportPtrSystem::render(ConstElementPtr element, DrawList& dl) {
+  // TODO: Viewport still renders itself via the old GuiRenderer path. It needs
+  // to produce a Scene2d/Scene3d before it can be queued with
+  // dl.draw_scene_2d(...) / dl.draw_scene_3d(...).
 }
 
 void ViewportPtrSystem::mouse_event(

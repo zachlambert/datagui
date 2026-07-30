@@ -27,8 +27,14 @@ public:
   FontAtlas(const FontAtlas& other) = delete;
   FontAtlas& operator=(const FontAtlas& other) = delete;
 
-  Vec2 text_size(const std::string& text, Length width = LengthWrap()) const;
+  Vec2 text_size(
+      const std::string& text,
+      Length width = LengthWrap(),
+      bool editable = true) const;
   float text_height() const;
+  // Advance width of a single character, or zero if it isn't in the atlas
+  float advance(char c) const;
+
   size_t add_glyphs(
       std::vector<Glyph2dInstance>& instances,
       const Vec2& origin,
@@ -37,7 +43,18 @@ public:
       bool y_flipped,
       const Color& default_color,
       const std::string& text,
-      Length width = LengthWrap()) const;
+      Length width = LengthWrap(),
+      bool editable = true) const;
+
+  std::size_t find_cursor(
+      const std::string& text,
+      Length text_width,
+      const Vec2& point) const;
+
+  Vec2 cursor_offset(
+      const std::string& text,
+      Length text_width,
+      std::size_t cursor) const;
 
   unsigned int texture() const {
     return texture_;

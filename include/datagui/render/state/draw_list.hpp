@@ -52,7 +52,8 @@ struct DrawList {
   };
   std::vector<Group> groups;
 
-  void new_group(const Box2& mask);
+  void clear_mask();
+  void new_group(const Box2& mask, bool floating=false);
 
   void draw_box(
       const Box2& box,
@@ -66,13 +67,14 @@ struct DrawList {
       const Vec2& origin,
       const Color& color,
       Length width,
-      const std::string& text);
+      const std::string& text,
+      bool editable = false);
 
   void draw_image(
       const Image& image,
       const Vec2& origin,
       double angle,
-      Vec2& scale);
+      const Vec2& scale);
 
   void draw_scene_2d(
       const Box2& viewport,

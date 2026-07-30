@@ -118,7 +118,7 @@ void Scene2d::draw_image(
     const Image& image,
     const Vec2& origin,
     double angle,
-    Vec2& scale) {
+    const Vec2& scale) {
   auto& draw_image = std::get<DrawImage>(actions.emplace_back(DrawImage()));
   draw_image.transform = Mat3::transform(origin, angle, scale);
   draw_image.image = image;

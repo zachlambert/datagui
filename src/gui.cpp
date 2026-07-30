@@ -33,28 +33,28 @@ void Gui::open(
     std::size_t height) {
   window.open(title, width, height);
 
-  fm = std::make_shared<FontManager>();
+  font_registry = std::make_shared<FontRegistry>();
   theme = std::make_shared<Theme>(theme_default());
-  renderer.init(fm);
+  program_registry.init();
 
   systems.resize(TypeCount);
 
 #define REGISTER(Name, System, args...) \
   systems[(std::size_t)Type::Name] = std::make_unique<System>(args);
 
-  REGISTER(Button, ButtonSystem, fm, theme);
-  REGISTER(Checkbox, CheckboxSystem, fm, theme);
-  REGISTER(Collapsable, CollapsableSystem, fm, theme);
-  REGISTER(ColorPicker, ColorPickerSystem, fm, theme);
-  REGISTER(Dropdown, DropdownSystem, fm, theme);
+  REGISTER(Button, ButtonSystem, font_registry, theme);
+  REGISTER(Checkbox, CheckboxSystem, font_registry, theme);
+  REGISTER(Collapsable, CollapsableSystem, font_registry, theme);
+  REGISTER(ColorPicker, ColorPickerSystem, font_registry, theme);
+  REGISTER(Dropdown, DropdownSystem, font_registry, theme);
   REGISTER(Group, GroupSystem, theme);
-  REGISTER(Popup, PopupSystem, fm, theme);
-  REGISTER(Select, SelectSystem, fm, theme);
-  REGISTER(Slider, SliderSystem, fm, theme);
+  REGISTER(Popup, PopupSystem, font_registry, theme);
+  REGISTER(Select, SelectSystem, font_registry, theme);
+  REGISTER(Slider, SliderSystem, font_registry, theme);
   REGISTER(Split, SplitSystem, theme);
-  REGISTER(Tabs, TabsSystem, fm, theme);
-  REGISTER(TextBox, TextBoxSystem, fm, theme);
-  REGISTER(TextInput, TextInputSystem, fm, theme);
+  REGISTER(Tabs, TabsSystem, font_registry, theme);
+  REGISTER(TextBox, TextBoxSystem, font_registry, theme);
+  REGISTER(TextInput, TextInputSystem, font_registry, theme);
   REGISTER(ViewportPtr, ViewportPtrSystem, theme);
 
 #undef REGISTER
@@ -541,14 +541,12 @@ void Gui::render() {
       }
 
       if (!state.first_visit) {
-        renderer.pop_mask();
         stack.pop();
         continue;
       }
       state.first_visit = false;
 
       render(element);
-      renderer.push_mask(element.state().child_mask);
 
       for (auto child = element.child(); child; child = child.next()) {
         stack.emplace(child);
@@ -556,24 +554,20 @@ void Gui::render() {
     }
   };
 
-  window.render_begin();
-  renderer.begin(tree.root().state().box());
-
+  dl.clear();
   render_tree(tree.root());
-  renderer.render();
-
   for (auto element : ordered_floating_elements) {
+    dl.new_group(element.state().float_box, true);
     render_tree(element);
-    renderer.render();
   }
 #ifdef DGUI_DEBUG
   if (debug_mode_) {
     debug_render();
-    renderer.render();
   }
 #endif
 
-  renderer.end();
+  window.render_begin();
+  executor.draw(window.size(), program_registry, dl);
   window.render_end();
 }
 
@@ -606,7 +600,7 @@ void Gui::debug_render() {
     Color debug_color = element.state().focused         ? Color::Blue()
                         : element.state().in_focus_tree ? Color::Red()
                                                         : Color::Green();
-    renderer.queue_box(
+    dl.draw_box(
         Box2(
             element.state().position,
             element.state().position + element.state().size),
@@ -615,7 +609,7 @@ void Gui::debug_render() {
         debug_color);
 
     if (element.state().floating) {
-      renderer.queue_box(
+      dl.draw_box(
           element.state().float_box,
           Color::Clear(),
           2,
@@ -647,22 +641,23 @@ void Gui::debug_render() {
     }
     std::string debug_text = ss.str();
 
-    auto text_size =
-        fm->text_size(debug_text, Font::DejaVuSans, 24, LengthWrap());
+    const auto& font =
+        font_registry->get_font(theme->text_font, theme->text_size);
+    auto text_size = font.text_size(debug_text, LengthWrap());
 
-    renderer.queue_box(
+    dl.draw_box(
         Box2(
             window.size() - text_size - Vec2::uniform(15),
             window.size() - Vec2::uniform(5)),
         Color::White(),
         2,
         Color::Black());
-    renderer.queue_text(
+    dl.draw_text(
+        font,
         window.size() - text_size - Vec2::uniform(10),
-        debug_text,
-        Font::DejaVuSans,
-        24,
-        Color::Black());
+        Color::Black(),
+        LengthWrap(),
+        debug_text);
   }
 }
 #endif
@@ -775,17 +770,17 @@ void Gui::event_handling() {
 
   for (const auto& event : window.mouse_events()) {
     switch (event.button) {
-    case MouseButton::Left:
-      event_handling_left_click(event);
-      break;
-    case MouseButton::Right:
-      event_handling_right_click(event);
-      break;
-    case MouseButton::Middle:
-      event_handling_middle_click(event);
-      break;
-    default:
-      break;
+      case MouseButton::Left:
+        event_handling_left_click(event);
+        break;
+      case MouseButton::Right:
+        event_handling_right_click(event);
+        break;
+      case MouseButton::Middle:
+        event_handling_middle_click(event);
+        break;
+      default:
+        break;
     }
   }
 
@@ -799,23 +794,23 @@ void Gui::event_handling() {
     bool handled = false;
     if (event.action == KeyAction::Press) {
       switch (event.key) {
-      case Key::Tab:
-        focus_next(event.mod.shift);
-        handled = true;
-        break;
-      case Key::Escape:
-        change_tree_focus(element_focus, ElementPtr());
-        handled = true;
-        break;
-#ifdef DGUI_DEBUG
-      case Key::D:
-        if (event.mod.ctrl) {
+        case Key::Tab:
+          focus_next(event.mod.shift);
           handled = true;
-          debug_mode_ = !debug_mode_;
-        }
+          break;
+        case Key::Escape:
+          change_tree_focus(element_focus, ElementPtr());
+          handled = true;
+          break;
+#ifdef DGUI_DEBUG
+        case Key::D:
+          if (event.mod.ctrl) {
+            handled = true;
+            debug_mode_ = !debug_mode_;
+          }
 #endif
-      default:
-        break;
+        default:
+          break;
       }
     }
 

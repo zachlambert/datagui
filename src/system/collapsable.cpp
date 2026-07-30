@@ -7,11 +7,9 @@ void CollapsableSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& collapsable = element.collapsable();
 
-  collapsable.header_size = fm->text_size(
-                                collapsable.label,
-                                theme->text_font,
-                                theme->text_size,
-                                LengthWrap()) +
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+  collapsable.header_size = font.text_size(collapsable.label, LengthWrap()) +
                             Vec2::uniform(2 * theme->text_padding);
   state.fixed_size = collapsable.header_size;
 
@@ -62,24 +60,22 @@ void CollapsableSystem::set_dependent_state(ElementPtr element) {
     return;
   }
 
-  collapsable.content_box = state.box();
+  auto& content_box = collapsable.layout_state.content_box;
+  content_box = state.box();
   if (collapsable.border) {
-    collapsable.content_box.lower += Vec2::uniform(theme->layout_border_width);
-    collapsable.content_box.upper -= Vec2::uniform(theme->layout_border_width);
+    content_box.lower += Vec2::uniform(theme->layout_border_width);
+    content_box.upper -= Vec2::uniform(theme->layout_border_width);
   }
-  collapsable.content_box.lower.y += collapsable.header_size.y;
+  content_box.lower.y += collapsable.header_size.y;
 
   layout_set_dependent_state(
       element,
-      collapsable.content_box,
       theme,
       collapsable.layout,
       collapsable.layout_state);
-
-  state.child_mask = collapsable.content_box;
 }
 
-void CollapsableSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void CollapsableSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& collapsable = element.collapsable();
 
@@ -93,10 +89,10 @@ void CollapsableSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   }
 
   if (collapsable.bg_color) {
-    renderer.queue_box(state.box(), *collapsable.bg_color);
+    dl.draw_box(state.box(), *collapsable.bg_color);
   }
 
-  renderer.queue_box(
+  dl.draw_box(
       Box2(
           state.position,
           state.position + Vec2(state.size.x, collapsable.header_size.y)),
@@ -107,19 +103,14 @@ void CollapsableSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   Vec2 text_origin =
       state.position + Vec2::uniform(theme->text_padding + border_width);
 
-  renderer.queue_text(
+  dl.draw_text(
+      font_registry->get_font(theme->text_font, theme->text_size),
       text_origin,
-      collapsable.label,
-      theme->text_font,
-      theme->text_size,
       theme->text_color,
-      LengthWrap());
+      LengthWrap(),
+      collapsable.label);
 
-  layout_render_scroll(
-      collapsable.content_box,
-      collapsable.layout_state,
-      theme,
-      renderer);
+  layout_render(collapsable.layout_state, theme, dl);
 }
 
 void CollapsableSystem::mouse_event(
@@ -146,10 +137,7 @@ bool CollapsableSystem::scroll_event(
     ElementPtr element,
     const ScrollEvent& event) {
   auto& collapsable = element.collapsable();
-  return layout_scroll_event(
-      collapsable.content_box,
-      collapsable.layout_state,
-      event);
+  return layout_scroll_event(collapsable.layout_state, event);
 }
 
 void CollapsableSystem::key_event(ElementPtr element, const KeyEvent& event) {

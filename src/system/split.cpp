@@ -72,8 +72,6 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& split = element.split();
 
-  state.child_mask = state.box();
-
   auto first = element.child();
   while (first && first.state().float_only) {
     first = first.next();
@@ -163,11 +161,11 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void SplitSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void SplitSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& split = element.split();
   const Color& color = split.held ? theme->split_divider_color_active
                                   : theme->split_divider_color;
-  renderer.queue_box(split.divider_box, color);
+  dl.draw_box(split.divider_box, color);
 }
 
 void SplitSystem::mouse_event(ElementPtr element, const MouseEvent& event) {

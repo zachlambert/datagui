@@ -7,12 +7,10 @@ void DropdownSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& dropdown = element.dropdown();
 
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
   state.fixed_size =
-      fm->text_size(
-          dropdown.label,
-          theme->text_font,
-          theme->text_size,
-          LengthWrap()) +
+      font.text_size(dropdown.label, LengthWrap()) +
       2 * Vec2::uniform(theme->input_border_width + theme->text_padding);
 
   state.dynamic_size.x = 0;
@@ -47,22 +45,21 @@ void DropdownSystem::set_dependent_state(ElementPtr element) {
     return;
   }
 
-  state.child_mask = state.float_box;
+  dropdown.layout_state.content_box = state.float_box;
   layout_set_dependent_state(
       element,
-      state.float_box,
       theme,
       dropdown.layout,
       dropdown.layout_state);
 }
 
-void DropdownSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void DropdownSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& dropdown = element.dropdown();
 
   const Color& bg_color =
       dropdown.open ? theme->input_color_bg_active : theme->input_color_bg;
-  renderer.queue_box(
+  dl.draw_box(
       state.box(),
       bg_color,
       theme->input_border_width,
@@ -70,20 +67,16 @@ void DropdownSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
 
   Vec2 text_offset =
       Vec2::uniform(theme->input_border_width + theme->text_padding);
-  renderer.queue_text(
+  dl.draw_text(
+      font_registry->get_font(theme->text_font, theme->text_size),
       state.position + text_offset,
-      dropdown.label,
-      theme->text_font,
-      theme->text_size,
-      theme->text_color);
+      theme->text_color,
+      LengthWrap(),
+      dropdown.label);
 
   if (dropdown.open) {
-    renderer.queue_box(state.float_box, theme->layout_color_bg);
-    layout_render_scroll(
-        state.float_box,
-        dropdown.layout_state,
-        theme,
-        renderer);
+    dl.draw_box(state.float_box, theme->layout_color_bg);
+    layout_render(dropdown.layout_state, theme, dl);
   }
 }
 
@@ -97,12 +90,11 @@ void DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
 bool DropdownSystem::scroll_event(
     ElementPtr element,
     const ScrollEvent& event) {
-  const auto& state = element.state();
   auto& dropdown = element.dropdown();
   if (!dropdown.open) {
     return false;
   }
-  return layout_scroll_event(state.float_box, dropdown.layout_state, event);
+  return layout_scroll_event(dropdown.layout_state, event);
 }
 
 void DropdownSystem::focus_enter(ElementPtr element) {

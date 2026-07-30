@@ -2,14 +2,19 @@
 
 namespace dgui {
 
-void DrawList::new_group(const Box2& mask) {
-  auto& group = groups.emplace_back();
-  group.mask = mask;
+void DrawList::clear_mask() {}
+
+void DrawList::new_group(const Box2& mask, bool floating) {
+  Group group;
+  group.mask = floating || groups.empty()
+                   ? mask
+                   : intersection(mask, groups.back().mask);
   group.shape_offset = shape_instances.size();
   group.glyph_group_offset = glyph_groups.size();
   group.image_offset = image_instances.size();
   group.scene_2d_offset = scene_2d_instances.size();
   group.scene_3d_offset = scene_3d_instances.size();
+  groups.push_back(group);
 }
 
 void DrawList::draw_box(
@@ -32,7 +37,8 @@ void DrawList::draw_text(
     const Vec2& origin,
     const Color& color,
     Length width,
-    const std::string& text) {
+    const std::string& text,
+    bool editable) {
   if (groups.empty()) {
     throw std::logic_error("Must call new_group() first");
   }
@@ -54,14 +60,15 @@ void DrawList::draw_text(
       true,
       color,
       text,
-      width);
+      width,
+      editable);
 }
 
 void DrawList::draw_image(
     const Image& image,
     const Vec2& origin,
     double angle,
-    Vec2& scale) {
+    const Vec2& scale) {
   if (groups.empty()) {
     throw std::logic_error("Must call new_group() first");
   }

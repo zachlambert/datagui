@@ -16,8 +16,9 @@ void PopupSystem::set_input_state(ElementPtr element) {
     return;
   }
 
-  popup.header_height = fm->text_height(theme->text_font, theme->text_size) +
-                        2 * theme->text_padding;
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+  popup.header_height = font.text_height() + 2 * theme->text_padding;
 
   layout_set_input_state(element, theme, popup.layout, popup.layout_state);
 
@@ -37,9 +38,10 @@ void PopupSystem::set_dependent_state(ElementPtr element) {
   popup.header_box.upper.x = state.float_box.upper.x;
   popup.header_box.upper.y = state.float_box.lower.y + popup.header_height;
 
-  Vec2 x_size =
-      fm->text_size("x", theme->text_font, theme->text_size, LengthWrap()) +
-      Vec2::uniform(2 * theme->text_padding);
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+  Vec2 x_size = font.text_size("x", LengthWrap()) +
+                Vec2::uniform(2 * theme->text_padding);
 
   popup.close_button_box.lower.x = state.float_box.upper.x - x_size.x;
   popup.close_button_box.lower.y = state.float_box.lower.y;
@@ -49,19 +51,14 @@ void PopupSystem::set_dependent_state(ElementPtr element) {
       state.float_box.size().x - x_size.x - 2.f * theme->text_padding,
       0.f);
 
-  popup.content_box = state.float_box;
-  popup.content_box.lower.y += popup.header_height;
-  state.child_mask = popup.content_box;
+  auto& content_box = popup.layout_state.content_box;
+  content_box = state.float_box;
+  content_box.lower.y += popup.header_height;
 
-  layout_set_dependent_state(
-      element,
-      popup.content_box,
-      theme,
-      popup.layout,
-      popup.layout_state);
+  layout_set_dependent_state(element, theme, popup.layout, popup.layout_state);
 }
 
-void PopupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void PopupSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& popup = element.popup();
 
@@ -69,34 +66,35 @@ void PopupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
     return;
   }
 
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+
   const Color& header_color =
       popup.header_color ? *popup.header_color : theme->layout_color_bg;
   const Color& bg_color =
       popup.bg_color ? *popup.bg_color : theme->layout_color_bg;
 
-  renderer.queue_box(state.float_box, bg_color);
-  renderer.queue_box(popup.header_box, header_color);
+  dl.draw_box(state.float_box, bg_color);
+  dl.draw_box(popup.header_box, header_color);
 
-  renderer.queue_text(
+  dl.draw_text(
+      font,
       state.float_box.lower +
           Vec2::uniform(theme->input_border_width + theme->text_padding),
-      popup.title,
-      theme->text_font,
-      theme->text_size,
       theme->text_color,
-      LengthFixed(popup.header_text_width));
+      LengthFixed(popup.header_text_width),
+      popup.title);
 
-  renderer.queue_box(popup.close_button_box, theme->input_color_bg);
+  dl.draw_box(popup.close_button_box, theme->input_color_bg);
 
-  renderer.queue_text(
+  dl.draw_text(
+      font,
       popup.close_button_box.lower + Vec2::uniform(theme->text_padding),
-      "x",
-      theme->text_font,
-      theme->text_size,
       theme->text_color,
-      LengthWrap());
+      LengthWrap(),
+      "x");
 
-  layout_render_scroll(popup.content_box, popup.layout_state, theme, renderer);
+  layout_render(popup.layout_state, theme, dl);
 }
 
 void PopupSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
@@ -110,7 +108,7 @@ void PopupSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
 
 bool PopupSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
   auto& popup = element.popup();
-  return layout_scroll_event(popup.content_box, popup.layout_state, event);
+  return layout_scroll_event(popup.layout_state, event);
 }
 
 } // namespace dgui
