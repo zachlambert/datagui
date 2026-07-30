@@ -6,9 +6,9 @@
 #include <GLFW/glfw3.h>
 #include <array>
 #include <chrono>
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 
 namespace dgui {
 

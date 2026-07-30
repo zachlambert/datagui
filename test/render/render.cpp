@@ -3,7 +3,7 @@
 #include "datagui/render/program/font_program.hpp"
 #include "datagui/render/program_registry.hpp"
 #include "datagui/render/state/draw_list.hpp"
-#include "datagui/visual/window.hpp"
+#include "datagui/render/window.hpp"
 
 int main() {
   using namespace dgui;

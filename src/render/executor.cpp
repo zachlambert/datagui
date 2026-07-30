@@ -42,10 +42,6 @@ void Executor::draw(
         std::ceil(mask.size_y()));
   };
 
-  glDisable(GL_SCISSOR_TEST);
-  glClearColor(1.f, 1.f, 1.f, 1.f);
-  glClear(GL_COLOR_BUFFER_BIT);
-
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_DEPTH_TEST);
@@ -86,33 +82,6 @@ void Executor::draw(
             instance.transform);
       }
     }
-
-#if 0
-    // Draw scene backgrounds first to avoid changing the viewport
-    if (group.scene_2d_count > 0 || group.scene_3d_count > 0) {
-      registry.shape_2d_program.bind();
-      for (size_t i = 0; i < group.scene_2d_count; i++) {
-        const auto& instance = dl.scene_2d_instances[group.scene_2d_offset + i];
-        auto shape = Shape2dInstance::box(
-            instance.viewport,
-            instance.scene_2d->bg_color,
-            0,
-            Color::Black(),
-            0);
-        registry.shape_2d_program.draw(screen_PV, &shape, 1);
-      }
-      for (size_t i = 0; i < group.scene_3d_count; i++) {
-        const auto& instance = dl.scene_3d_instances[group.scene_3d_offset + i];
-        auto shape = Shape2dInstance::box(
-            instance.viewport,
-            instance.scene_3d->bg_color,
-            0,
-            Color::Black(),
-            0);
-        registry.shape_2d_program.draw(screen_PV, &shape, 1);
-      }
-    }
-#endif
 
     for (size_t i = 0; i < group.scene_2d_count; i++) {
       const auto& instance = dl.scene_2d_instances[group.scene_2d_offset + i];

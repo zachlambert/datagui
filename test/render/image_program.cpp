@@ -1,8 +1,7 @@
 #include "datagui/asset/image.hpp"
 #include "datagui/color.hpp"
-#include "datagui/geometry/rot.hpp"
 #include "datagui/render/program/image_2d_program.hpp"
-#include "datagui/visual/window.hpp"
+#include "datagui/render/window.hpp"
 #include <GL/glew.h>
 #include <cmath>
 #include <cstdint>

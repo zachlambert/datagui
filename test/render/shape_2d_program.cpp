@@ -1,5 +1,5 @@
 #include "datagui/render/program/shape_2d_program.hpp"
-#include "datagui/visual/window.hpp"
+#include "datagui/render/window.hpp"
 
 int main() {
   using namespace dgui;

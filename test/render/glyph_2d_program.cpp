@@ -2,7 +2,7 @@
 #include "datagui/font.hpp"
 #include "datagui/render/font_atlas.hpp"
 #include "datagui/render/program/font_program.hpp"
-#include "datagui/visual/window.hpp"
+#include "datagui/render/window.hpp"
 
 int main() {
   using namespace dgui;

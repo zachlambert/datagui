@@ -37,23 +37,11 @@ add_library(datagui SHARED
   src/asset/point_cloud.cpp
   src/asset/uv_mesh.cpp
 
-  # src/visual/color_map.cpp
-  # src/visual/font_manager.cpp
-  # src/visual/image_shader.cpp
-  # src/visual/mesh_shader.cpp
-  # src/visual/point_cloud_shader.cpp
-  # src/visual/gui_renderer.cpp
-  # src/visual/shader_utils.cpp
-  # src/visual/shape_2d_shader.cpp
-  # src/visual/shape_3d_shader.cpp
-  # src/visual/text_2d_shader.cpp
-  # src/visual/uv_mesh_shader.cpp
-  src/visual/window.cpp
-
   # src/input/number_input.cpp
   # src/input/text_selection.cpp
 
   src/render/lookup/ansi_colors.cpp
+  src/render/lookup/color_map.cpp
 
   src/render/program/font_program.cpp
   src/render/program/glyph_2d_program.cpp
@@ -74,6 +62,8 @@ add_library(datagui SHARED
   src/render/font_atlas.cpp
   src/render/program_registry.cpp
   src/render/shaders.cpp
+  src/render/window.cpp
+
 
   # src/system_utils/layout.cpp
 

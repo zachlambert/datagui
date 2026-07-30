@@ -1,4 +1,4 @@
-#include "datagui/visual/window.hpp"
+#include "datagui/render/window.hpp"
 
 #include <GLFW/glfw3.h>
 #include <assert.h>
@@ -293,6 +293,10 @@ void Window::render_begin() {
   int display_w, display_h;
   glfwGetFramebufferSize(window, &display_w, &display_h);
   size_ = Vec2(display_w, display_h);
+
+  glDisable(GL_SCISSOR_TEST);
+  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Window::render_end() {
