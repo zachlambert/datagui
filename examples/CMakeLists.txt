@@ -18,5 +18,5 @@ create_example(datapack datapack_2)
 create_example(canvas canvas2d)
 create_example(canvas canvas3d)
 
-create_example(plotter plotter)
-create_example(plotter standalone)
+# create_example(plotter plotter)
+# create_example(plotter standalone)

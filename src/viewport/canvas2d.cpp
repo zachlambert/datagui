@@ -1,5 +1,5 @@
 #include "datagui/viewport/canvas2d.hpp"
-#include "datagui/visual/color_map.hpp"
+#include "datagui/render/lookup/color_map.hpp"
 
 namespace dgui {
 
@@ -10,8 +10,7 @@ void Canvas2d::rect(
     const Color& color,
     float border_width,
     const Color& border_color) {
-  shape_shader
-      .queue_rect(position, angle, size, color, border_width, border_color);
+  scene->draw_rect(position, angle, size, color, border_width, border_color);
 }
 
 void Canvas2d::circle(
@@ -20,8 +19,7 @@ void Canvas2d::circle(
     const Color& color,
     float border_width,
     const Color& border_color) {
-  shape_shader
-      .queue_circle(position, radius, color, border_width, border_color);
+  scene->draw_circle(position, radius, color, border_width, border_color);
 }
 
 void Canvas2d::ellipse(
@@ -31,8 +29,8 @@ void Canvas2d::ellipse(
     const Color& color,
     float border_width,
     const Color& border_color) {
-  shape_shader
-      .queue_ellipse(position, angle, radii, color, border_width, border_color);
+  scene
+      ->draw_ellipse(position, angle, radii, color, border_width, border_color);
 }
 
 void Canvas2d::line(
@@ -40,7 +38,7 @@ void Canvas2d::line(
     const Vec2& b,
     float width,
     const Color& color) {
-  shape_shader.queue_line(a, b, width, color);
+  scene->draw_line(a, b, width, color, false);
 }
 
 void Canvas2d::capsule(
@@ -50,7 +48,7 @@ void Canvas2d::capsule(
     const Color& color,
     float border_width,
     const Color& border_color) {
-  shape_shader.queue_capsule(a, b, radius, color, border_width, border_color);
+  scene->draw_capsule(a, b, radius, color, border_width, border_color);
 }
 
 void Canvas2d::text(
@@ -79,15 +77,14 @@ void Canvas2d::text(
       max_font_size);
   const float zoom_used = (font_size * zoom) / font_size_used;
 
-  text_shader.queue_text(
+  scene->draw_text(
+      font_registry->get_font(font, font_size_used),
       origin,
       angle,
       Vec2::uniform(text_scale * zoom_used),
-      text,
-      font,
-      font_size_used,
       text_color,
-      width);
+      width,
+      text);
 }
 
 void Canvas2d::heatmap(
@@ -141,7 +138,7 @@ void Canvas2d::heatmap(
 
   Image image;
   image.load(width, height, pixels.data());
-  image_shader.queue_image(image, lower, 0, upper - lower);
+  scene->draw_image(image, lower, 0, upper - lower);
 }
 
 std::optional<MouseEvent> Canvas2d::mouse_event() {
@@ -153,49 +150,22 @@ std::optional<MouseEvent> Canvas2d::mouse_event() {
 
 void Canvas2d::init(
     const std::shared_ptr<Theme>& theme,
-    const std::shared_ptr<FontManager>& fm) {
-  bg_shader.init();
-  shape_shader.init();
-  text_shader.init(fm);
-  image_shader.init();
+    const std::shared_ptr<FontRegistry>& font_registry) {
+  this->font_registry = font_registry;
 }
 
 void Canvas2d::begin() {
-  shape_shader.clear();
-  text_shader.clear();
-  image_shader.clear();
-  bg_color_ = Color::Gray(0.95);
+  scene = std::make_shared<Scene2d>();
+  scene->bg_color = Color::Gray(0.95);
   default_position_ = Vec2();
   default_view_width_ = 1;
 }
 
-void Canvas2d::draw(const Box2& viewport, const Box2& mask) {
+void Canvas2d::draw(const Box2& viewport, DrawList& dl) {
   prev_viewport_ = viewport;
   camera.size.x = default_view_width_ / zoom;
   camera.size.y = viewport.ratio_yx() * camera.size.x;
-
-  // Now modify the camera so it fits the masked area instead
-  Box2 masked_area = intersection(viewport, mask);
-  Box2 normalized_area;
-  normalized_area.lower =
-      (masked_area.lower - viewport.lower) / viewport.size();
-  normalized_area.upper =
-      normalized_area.lower + masked_area.size() / viewport.size();
-
-  Camera2d cropped_camera;
-  cropped_camera.position =
-      camera.position +
-      camera.size * (normalized_area.center() - Vec2::uniform(0.5));
-  cropped_camera.size = camera.size * normalized_area.size();
-
-  bg_shader
-      .queue_rect(cropped_camera.position, 0, cropped_camera.size, bg_color_);
-  bg_shader.draw(masked_area, cropped_camera);
-  bg_shader.clear();
-
-  image_shader.draw(masked_area, cropped_camera);
-  shape_shader.draw(masked_area, cropped_camera);
-  text_shader.draw(masked_area, cropped_camera);
+  dl.draw_scene_2d(viewport, camera, scene);
 }
 
 void Canvas2d::mouse_event(const MouseEvent& event) {

@@ -1,9 +1,8 @@
 #pragma once
 
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/image_shader.hpp"
-#include "datagui/visual/shape_2d_shader.hpp"
-#include "datagui/visual/text_2d_shader.hpp"
+#include "datagui/render/state/scene_2d.hpp"
+#include "datagui/render/font_registry.hpp"
 #include <functional>
 #include <optional>
 
@@ -70,7 +69,7 @@ public:
   }
 
   void bg_color(const Color& color) {
-    bg_color_ = color;
+    scene->bg_color = color;
   }
 
   std::optional<MouseEvent> mouse_event();
@@ -78,9 +77,9 @@ public:
 private:
   void init(
       const std::shared_ptr<Theme>& theme,
-      const std::shared_ptr<FontManager>& fm) override;
+      const std::shared_ptr<FontRegistry>& font_registry) override;
   void begin() override;
-  void draw(const Box2& viewport, const Box2& mask) override;
+  void draw(const Box2& viewport, DrawList& dl) override;
 
   void mouse_event(const MouseEvent& event) override;
   bool scroll_event(const ScrollEvent& event) override;
@@ -95,11 +94,9 @@ private:
   float zoom = 1;
   std::optional<Box2> prev_viewport_;
 
+  std::shared_ptr<FontRegistry> font_registry;
   Camera2d camera;
-  Shape2dShader bg_shader;
-  Shape2dShader shape_shader;
-  Text2dShader text_shader;
-  ImageShader image_shader;
+  std::shared_ptr<Scene2d> scene;
 };
 
 } // namespace dgui

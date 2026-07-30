@@ -46,10 +46,12 @@ void DrawList::draw_text(
   GlyphGroup* glyph_group =
       group.glyph_group_count == 0
           ? nullptr
-          : &glyph_groups[group.glyph_group_offset + group.glyph_group_count];
+          : &glyph_groups
+                [group.glyph_group_offset + group.glyph_group_count - 1];
   if (!glyph_group || glyph_group->font_texture != font_atlas.texture()) {
     glyph_group = &glyph_groups.emplace_back();
     glyph_group->font_texture = font_atlas.texture();
+    glyph_group->offset = glyph_instances.size();
     group.glyph_group_count++;
   }
   glyph_group->count += font_atlas.add_glyphs(
@@ -102,6 +104,14 @@ void DrawList::draw_scene_3d(
   scene_3d_instances.push_back(Scene3dInstance{viewport, camera, scene_3d});
 }
 
-void DrawList::clear() {}
+void DrawList::clear() {
+  shape_instances.clear();
+  glyph_instances.clear();
+  glyph_groups.clear();
+  image_instances.clear();
+  scene_2d_instances.clear();
+  scene_3d_instances.clear();
+  groups.clear();
+}
 
 } // namespace dgui

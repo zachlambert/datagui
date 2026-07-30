@@ -16,10 +16,10 @@ public:
       const void* bitmap_data);
 
 private:
-  unsigned int program_id;
-  unsigned int uniform_PV;
-  unsigned int uniform_text_color;
-  unsigned int VAO, VBO;
+  unsigned int program_id = 0;
+  unsigned int uniform_PV = 0;
+  unsigned int uniform_text_color = 0;
+  unsigned int VAO = 0, VBO = 0;
 };
 
 } // namespace dgui

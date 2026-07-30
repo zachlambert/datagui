@@ -36,6 +36,7 @@ void Gui::open(
   font_registry = std::make_shared<FontRegistry>();
   theme = std::make_shared<Theme>(theme_default());
   program_registry.init();
+  font_registry->init();
 
   systems.resize(TypeCount);
 
@@ -555,6 +556,7 @@ void Gui::render() {
   };
 
   dl.clear();
+  dl.new_group(tree.root().state().box(), false);
   render_tree(tree.root());
   for (auto element : ordered_floating_elements) {
     dl.new_group(element.state().float_box, true);
@@ -1055,7 +1057,7 @@ T& Gui::viewport() {
   auto& viewport = current.viewport();
   if (!viewport.viewport) {
     viewport.viewport = std::make_unique<T>();
-    viewport.viewport->init(theme, fm);
+    viewport.viewport->init(theme, font_registry);
   }
   move_down();
   viewport.viewport->begin();
@@ -1065,6 +1067,8 @@ T& Gui::viewport() {
 }
 template Canvas2d& Gui::viewport<Canvas2d>();
 template Canvas3d& Gui::viewport<Canvas3d>();
+#if 0
 template Plotter& Gui::viewport<Plotter>();
+#endif
 
 } // namespace dgui

@@ -39,16 +39,16 @@ struct DrawList {
 
   struct Group {
     Box2 mask;
-    size_t shape_offset;
-    size_t shape_count;
-    size_t glyph_group_offset;
-    size_t glyph_group_count;
-    size_t image_offset;
-    size_t image_count;
-    size_t scene_2d_offset;
-    size_t scene_2d_count;
-    size_t scene_3d_offset;
-    size_t scene_3d_count;
+    size_t shape_offset = 0;
+    size_t shape_count = 0;
+    size_t glyph_group_offset = 0;
+    size_t glyph_group_count = 0;
+    size_t image_offset = 0;
+    size_t image_count = 0;
+    size_t scene_2d_offset = 0;
+    size_t scene_2d_count = 0;
+    size_t scene_3d_offset = 0;
+    size_t scene_3d_count = 0;
   };
   std::vector<Group> groups;
 

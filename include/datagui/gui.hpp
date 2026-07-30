@@ -16,7 +16,7 @@
 #include "datagui/theme.hpp"
 #include "datagui/viewport/canvas2d.hpp"
 #include "datagui/viewport/canvas3d.hpp"
-#include "datagui/viewport/plotter.hpp"
+// #include "datagui/viewport/plotter.hpp"
 #include "datagui/viewport/viewport.hpp"
 #include <memory>
 #include <optional>
@@ -26,7 +26,7 @@
 
 namespace dgui {
 
-class Plotter;
+// class Plotter;
 class Canvas2d;
 class Canvas3d;
 
@@ -233,9 +233,11 @@ public:
   Canvas3d& canvas3d() {
     return viewport<Canvas3d>();
   }
+  #if 0
   Plotter& plotter() {
     return viewport<Plotter>();
   }
+  #endif
 
 private:
   template <dpack::serializable T>

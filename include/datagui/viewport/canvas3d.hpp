@@ -1,11 +1,8 @@
 #pragma once
 
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/mesh_shader.hpp"
-#include "datagui/visual/point_cloud_shader.hpp"
-#include "datagui/visual/shape_3d_shader.hpp"
-#include "datagui/visual/shape_2d_shader.hpp"
-#include "datagui/visual/uv_mesh_shader.hpp"
+#include "datagui/asset/uv_mesh.hpp"
+#include "datagui/render/state/scene_3d.hpp"
 #include <functional>
 
 namespace dgui {
@@ -85,7 +82,7 @@ public:
       float point_size);
 
   void bg_color(const Color& color) {
-    bg_color_ = color;
+    scene->bg_color = color;
   }
 
   void aspect_ratio(float aspect_ratio) {
@@ -99,22 +96,17 @@ public:
 private:
   void init(
       const std::shared_ptr<Theme>& theme,
-      const std::shared_ptr<FontManager>& fm) override;
+      const std::shared_ptr<FontRegistry>& font_registry) override;
   void begin() override;
-  void draw(const Box2& viewport, const Box2& mask) override;
+  void draw(const Box2& viewport, DrawList& dl) override;
 
   void mouse_event(const MouseEvent& event) override;
   bool scroll_event(const ScrollEvent& event) override;
   void reset_camera();
 
   Camera3d camera;
-  Shape2dShader bg_shader;
-  Shape3dShader shape_shader;
-  MeshShader mesh_shader;
-  UvMeshShader uv_mesh_shader;
-  PointCloudShader point_cloud_shader;
+  std::shared_ptr<Scene3d> scene;
 
-  Color bg_color_ = Color::Gray(0.95);
   float aspect_ratio_ = 1;
   Camera3d click_camera;
   std::function<void(const MouseEvent& event)> click_callback_;

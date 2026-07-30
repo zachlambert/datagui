@@ -85,7 +85,7 @@ add_library(datagui SHARED
 
   src/viewport/canvas2d.cpp
   src/viewport/canvas3d.cpp
-  src/viewport/plotter.cpp
+  # src/viewport/plotter.cpp
 
   src/gui.cpp
 
@@ -130,8 +130,8 @@ if (NOT BUILD_ADDITIONAL_TARGETS)
     return()
 endif()
 
-# add_subdirectory(examples)
 add_subdirectory(test)
+add_subdirectory(examples)
 
 # Create install target
 

@@ -57,9 +57,9 @@ void ViewportPtrSystem::set_dependent_state(ElementPtr element) {
 }
 
 void ViewportPtrSystem::render(ConstElementPtr element, DrawList& dl) {
-  // TODO: Viewport still renders itself via the old GuiRenderer path. It needs
-  // to produce a Scene2d/Scene3d before it can be queued with
-  // dl.draw_scene_2d(...) / dl.draw_scene_3d(...).
+  const auto& state = element.state();
+  auto& viewport = element.viewport();
+  viewport.viewport->draw(state.box(), dl);
 }
 
 void ViewportPtrSystem::mouse_event(

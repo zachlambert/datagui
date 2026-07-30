@@ -11,7 +11,7 @@ void Canvas3d::box(
     const Rot3& orientation,
     const Vec3& size,
     const Color& color) {
-  shape_shader.queue_box(position, orientation, size, color);
+  scene->draw_box(position, orientation, size, color);
 }
 
 void Canvas3d::cylinder(
@@ -20,11 +20,11 @@ void Canvas3d::cylinder(
     float radius,
     float length,
     const Color& color) {
-  shape_shader.queue_cylinder(base_position, direction, radius, length, color);
+  scene->draw_cylinder(base_position, direction, radius, length, color);
 }
 
 void Canvas3d::sphere(const Vec3& position, float radius, const Color& color) {
-  shape_shader.queue_sphere(position, radius, color);
+  scene->draw_sphere(position, radius, color);
 }
 
 void Canvas3d::cone(
@@ -33,7 +33,7 @@ void Canvas3d::cone(
     float radius,
     float length,
     const Color& color) {
-  shape_shader.queue_cone(base_position, direction, radius, length, color);
+  scene->draw_cone(base_position, direction, radius, length, color);
 }
 
 void Canvas3d::capsule(
@@ -41,7 +41,7 @@ void Canvas3d::capsule(
     const Vec3& end,
     float radius,
     const Color& color) {
-  shape_shader.queue_capsule(start, end, radius, color);
+  scene->draw_capsule(start, end, radius, color);
 }
 
 void Canvas3d::arrow(
@@ -51,7 +51,7 @@ void Canvas3d::arrow(
     const Color& color,
     float head_length_scale,
     float head_radius_scale) {
-  shape_shader.queue_arrow(
+  scene->draw_arrow(
       start,
       end,
       radius,
@@ -65,7 +65,7 @@ void Canvas3d::plane(
     const Rot3& orientation,
     const Vec2& scale,
     const Color& color) {
-  shape_shader.queue_plane(position, orientation, scale, color);
+  scene->draw_plane(position, orientation, scale, color);
 }
 
 void Canvas3d::axes(
@@ -75,7 +75,7 @@ void Canvas3d::axes(
     float line_radius,
     float head_length_scale,
     float head_radius_scale) {
-  shape_shader.queue_arrow(
+  scene->draw_arrow(
       position,
       position + orientation.mat() * (scale * Vec3::unit_x()),
       line_radius,
@@ -83,7 +83,7 @@ void Canvas3d::axes(
       head_length_scale,
       head_radius_scale);
 
-  shape_shader.queue_arrow(
+  scene->draw_arrow(
       position,
       position + orientation.mat() * (scale * Vec3::unit_y()),
       line_radius,
@@ -91,7 +91,7 @@ void Canvas3d::axes(
       head_length_scale,
       head_radius_scale);
 
-  shape_shader.queue_arrow(
+  scene->draw_arrow(
       position,
       position + orientation.mat() * (scale * Vec3::unit_z()),
       line_radius,
@@ -99,7 +99,7 @@ void Canvas3d::axes(
       head_length_scale,
       head_radius_scale);
 
-  shape_shader.queue_sphere(position, line_radius, Color::Gray(0.5));
+  scene->draw_sphere(position, line_radius, Color::Gray(0.5));
 }
 
 void Canvas3d::grid(std::size_t size, float width) {
@@ -107,7 +107,7 @@ void Canvas3d::grid(std::size_t size, float width) {
   float line_width = 0.02;
   for (std::size_t i = 0; i <= size; i++) {
     float x = -width / 2 + i * width / size;
-    shape_shader.queue_plane(
+    scene->draw_plane(
         Vec3(x, 0, 0),
         Rot3(),
         Vec2(line_width, width + line_width),
@@ -115,7 +115,7 @@ void Canvas3d::grid(std::size_t size, float width) {
   }
   for (std::size_t i = 0; i <= size; i++) {
     float y = -width / 2 + i * width / size;
-    shape_shader.queue_plane(
+    scene->draw_plane(
         Vec3(0, y, 0),
         Rot3(),
         Vec2(width + line_width, line_width),
@@ -128,7 +128,7 @@ void Canvas3d::mesh(
     const Vec3& position,
     const Rot3& orientation,
     const Color& color) {
-  mesh_shader.queue_mesh(mesh, position, orientation, color);
+  scene->draw_mesh(mesh, position, orientation, Vec3::ones(), color);
 }
 
 void Canvas3d::uv_mesh(
@@ -136,7 +136,8 @@ void Canvas3d::uv_mesh(
     const Vec3& position,
     const Rot3& orientation,
     float opacity) {
-  uv_mesh_shader.queue_mesh(uv_mesh, position, orientation, opacity);
+  // TODO: Scene3d has no textured mesh support, and there is no uv mesh
+  // program in the registry, so this can't be queued yet
 }
 
 void Canvas3d::point_cloud(
@@ -144,36 +145,29 @@ void Canvas3d::point_cloud(
     const Vec3& position,
     const Rot3& orientation,
     float point_size) {
-  point_cloud_shader
-      .queue_point_cloud(point_cloud, position, orientation, point_size);
+  scene->draw_point_cloud(
+      point_cloud,
+      position,
+      orientation,
+      Vec3::ones(),
+      point_size);
 }
 
 void Canvas3d::begin() {
-  shape_shader.clear();
-  mesh_shader.clear();
-  uv_mesh_shader.clear();
-  point_cloud_shader.clear();
-  bg_color_ = Color::Gray(0.95);
+  scene = std::make_shared<Scene3d>();
+  scene->bg_color = Color::Gray(0.95);
   aspect_ratio_ = 1;
   click_callback_ = {};
 }
 
 void Canvas3d::init(
     const std::shared_ptr<Theme>& theme,
-    const std::shared_ptr<FontManager>& fm) {
-  bg_shader.init();
-  shape_shader.init();
-  mesh_shader.init();
-  uv_mesh_shader.init();
-  point_cloud_shader.init();
-}
+    const std::shared_ptr<FontRegistry>& font_registry) {}
 
-void Canvas3d::draw(const Box2& viewport, const Box2& mask) {
-  camera.fov.y = 2.f * std::atan(std::tan(0.5f * camera.fov.x) * viewport.ratio_yx());
-  shape_shader.draw(viewport, camera);
-  mesh_shader.draw(viewport, camera);
-  uv_mesh_shader.draw(viewport, camera);
-  point_cloud_shader.draw(viewport, camera);
+void Canvas3d::draw(const Box2& viewport, DrawList& dl) {
+  camera.fov.y =
+      2.f * std::atan(std::tan(0.5f * camera.fov.x) * viewport.ratio_yx());
+  dl.draw_scene_3d(viewport, camera, scene);
 }
 
 void Canvas3d::mouse_event(const MouseEvent& event) {

@@ -35,8 +35,6 @@ int main() {
   dl.draw_text(
       font_atlas,
       Vec2(150, 200),
-      0,
-      Vec2::ones(),
       Color::Black(),
       LengthWrap(),
       "Hello there");
