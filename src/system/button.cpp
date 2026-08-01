@@ -8,8 +8,6 @@ void ButtonSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size =
       2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
-  state.dynamic_size = Vec2();
-  state.floating = false;
 
   const auto& font =
       font_registry->get_font(theme->text_font, theme->text_size);

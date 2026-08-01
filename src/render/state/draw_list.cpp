@@ -4,11 +4,9 @@ namespace dgui {
 
 void DrawList::clear_mask() {}
 
-void DrawList::new_group(const Box2& mask, bool floating) {
+void DrawList::new_group(const Box2& mask) {
   Group group;
-  group.mask = floating || groups.empty()
-                   ? mask
-                   : intersection(mask, groups.back().mask);
+  group.mask = mask;
   group.shape_offset = shape_instances.size();
   group.glyph_group_offset = glyph_groups.size();
   group.image_offset = image_instances.size();

@@ -17,7 +17,6 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size = viewport.layout_state.content_fixed_size;
   state.dynamic_size = viewport.layout_state.content_dynamic_size;
-  state.floating = false;
   if (viewport.border) {
     state.fixed_size += Vec2::uniform(2 * theme->layout_border_width);
   }
@@ -35,18 +34,19 @@ void ViewportPtrSystem::set_input_state(ElementPtr element) {
     state.dynamic_size.y = std::max(state.dynamic_size.y, height->weight);
   }
 
-  state.floating = false;
+  // NOTE: Currently setting this to true so it always forces a new group
+  // for drawing the content (scene)
+  // The executor will draw scenes before any geometry/text/image
+  state.content_overflowed = true;
 }
 
 void ViewportPtrSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& viewport = element.viewport();
 
-  auto& content_box = viewport.layout_state.content_box;
-  content_box = state.box();
+  state.content_box = state.box();
   if (viewport.border) {
-    content_box.lower += Vec2::uniform(theme->layout_border_width);
-    content_box.upper -= Vec2::uniform(theme->layout_border_width);
+    state.content_box.shrink(theme->layout_border_width);
   }
 
   layout_set_dependent_state(
@@ -59,7 +59,19 @@ void ViewportPtrSystem::set_dependent_state(ElementPtr element) {
 void ViewportPtrSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   auto& viewport = element.viewport();
-  viewport.viewport->draw(state.box(), dl);
+  if (viewport.border) {
+    dl.draw_box(
+        state.box(),
+        Color::Clear(),
+        theme->layout_border_width,
+        theme->layout_border_color);
+  }
+}
+
+void ViewportPtrSystem::render_content(ConstElementPtr element, DrawList& dl) {
+  const auto& state = element.state();
+  auto& viewport = element.viewport();
+  viewport.viewport->draw(state.content_box, dl);
 }
 
 void ViewportPtrSystem::mouse_event(

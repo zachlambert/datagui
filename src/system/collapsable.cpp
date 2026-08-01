@@ -24,6 +24,7 @@ void CollapsableSystem::set_input_state(ElementPtr element) {
       state.fixed_size.x,
       collapsable.layout_state.content_fixed_size.x);
 
+  state.content_visible = collapsable.open;
   if (collapsable.open) {
     state.fixed_size.y += collapsable.layout_state.content_fixed_size.y;
     state.dynamic_size.y = collapsable.layout_state.content_dynamic_size.y;
@@ -45,8 +46,6 @@ void CollapsableSystem::set_input_state(ElementPtr element) {
   } else if (auto height = std::get_if<LengthDynamic>(&collapsable.height)) {
     state.dynamic_size.y = std::max(state.dynamic_size.y, height->weight);
   }
-
-  state.floating = false;
 }
 
 void CollapsableSystem::set_dependent_state(ElementPtr element) {
@@ -55,24 +54,26 @@ void CollapsableSystem::set_dependent_state(ElementPtr element) {
 
   if (!collapsable.open) {
     for (auto child = element.child(); child; child = child.next()) {
-      child.state().hidden = true;
+      child.state().set_hidden();
     }
     return;
   }
 
-  auto& content_box = collapsable.layout_state.content_box;
-  content_box = state.box();
+  state.content_box = state.box();
   if (collapsable.border) {
-    content_box.lower += Vec2::uniform(theme->layout_border_width);
-    content_box.upper -= Vec2::uniform(theme->layout_border_width);
+    state.content_box.shrink(theme->layout_border_width);
   }
-  content_box.lower.y += collapsable.header_size.y;
+  state.content_box.lower.y += collapsable.header_size.y;
 
   layout_set_dependent_state(
       element,
       theme,
       collapsable.layout,
       collapsable.layout_state);
+
+  state.content_overflowed =
+      (collapsable.layout_state.content_overrun.x > 0 ||
+       collapsable.layout_state.content_overrun.y > 0);
 }
 
 void CollapsableSystem::render(ConstElementPtr element, DrawList& dl) {
@@ -110,7 +111,7 @@ void CollapsableSystem::render(ConstElementPtr element, DrawList& dl) {
       LengthWrap(),
       collapsable.label);
 
-  layout_render(collapsable.layout_state, theme, dl);
+  layout_render_scroll(state.content_box, collapsable.layout_state, theme, dl);
 }
 
 void CollapsableSystem::mouse_event(
@@ -136,13 +137,13 @@ void CollapsableSystem::mouse_event(
 bool CollapsableSystem::scroll_event(
     ElementPtr element,
     const ScrollEvent& event) {
+  const auto& state = element.state();
   auto& collapsable = element.collapsable();
-  return layout_scroll_event(collapsable.layout_state, event);
+  return layout_scroll_event(state.content_box, collapsable.layout_state, event);
 }
 
 void CollapsableSystem::key_event(ElementPtr element, const KeyEvent& event) {
   auto& collapsable = element.collapsable();
-
   if (event.action == KeyAction::Release && event.key == Key::Enter) {
     collapsable.open = !collapsable.open;
   }

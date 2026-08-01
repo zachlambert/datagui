@@ -38,11 +38,7 @@ void layout_set_input_state(
   std::size_t i = 0;
   std::size_t j = 0;
   while (child) {
-    if (child.state().float_only) {
-      child = child.next();
-      continue;
-    }
-    if (child.state().force_hidden) {
+    if (!child.state().visible || child.state().is_popup) {
       child = child.next();
       continue;
     }
@@ -153,9 +149,11 @@ void layout_set_dependent_state(
     const Layout& layout,
     LayoutState& state) {
 
+  const auto& content_box = element.state().content_box;
+
   std::vector<float> col_sizes(state.col_input_sizes.size());
   {
-    float size = state.content_box.size().x;
+    float size = content_box.size().x;
     float content_size = state.content_fixed_size.x;
     float available = std::max(size - content_size, 0.f);
     float dynamic_size = state.content_dynamic_size.x;
@@ -172,7 +170,7 @@ void layout_set_dependent_state(
 
   std::vector<float> row_sizes(state.row_input_sizes.size());
   {
-    float size = state.content_box.size().y;
+    float size = content_box.size().y;
     float content_size = state.content_fixed_size.y;
     float available = std::max(size - content_size, 0.f);
     float dynamic_size = state.content_dynamic_size.y;
@@ -196,21 +194,15 @@ void layout_set_dependent_state(
   std::size_t i = 0;
   std::size_t j = 0;
   Vec2 origin =
-      state.content_box.lower - state.scroll_pos + Vec2::uniform(outer_padding);
+      content_box.lower - state.scroll_pos + Vec2::uniform(outer_padding);
   Vec2 offset;
 
   while (child) {
-    if (child.state().float_only) {
-      child.state().position = state.content_box.lower;
+    if (!child.state().visible) {
+      child.state().position = content_box.lower;
       child = child.next();
       continue;
     }
-    if (child.state().force_hidden) {
-      child.state().hidden = true;
-      child = child.next();
-      continue;
-    }
-    child.state().hidden = false;
 
     Vec2 cell_size;
     if (child.state().num_cells == 1) {
@@ -303,7 +295,7 @@ void layout_set_dependent_state(
     child = child.next();
   }
   while (child) {
-    child.state().hidden = true;
+    child.state().set_hidden();
     child = child.next();
   }
 
@@ -318,14 +310,15 @@ void layout_set_dependent_state(
       std::max(state.content_overrun.y, 0.f));
 }
 
-void layout_render(
+void layout_render_scroll(
+    const Box2& content_box,
     const LayoutState& state,
     const std::shared_ptr<Theme>& theme,
     DrawList& dl) {
 
   if (state.content_overrun.x > 0) {
-    Vec2 origin = state.content_box.lower;
-    Vec2 size = state.content_box.size();
+    Vec2 origin = content_box.lower;
+    Vec2 size = content_box.size();
     Box2 bg;
     Box2 fg;
 
@@ -346,8 +339,8 @@ void layout_render(
   }
 
   if (state.content_overrun.y > 0) {
-    Vec2 origin = state.content_box.lower;
-    Vec2 size = state.content_box.size();
+    Vec2 origin = content_box.lower;
+    Vec2 size = content_box.size();
     Box2 bg;
     Box2 fg;
 
@@ -366,14 +359,14 @@ void layout_render(
     dl.draw_box(bg, theme->scroll_bar_bg);
     dl.draw_box(fg, theme->scroll_bar_fg);
   }
-
-  if (state.content_overrun.x > 0 || state.content_overrun.y > 0) {
-    dl.new_group(state.content_box);
-  }
 }
 
-bool layout_scroll_event(LayoutState& state, const ScrollEvent& event) {
-  if (!state.content_box.contains(event.position)) {
+bool layout_scroll_event(
+    const Box2& content_box,
+    LayoutState& state,
+    const ScrollEvent& event) {
+
+  if (!content_box.contains(event.position)) {
     return false;
   }
 

@@ -15,6 +15,7 @@ public:
   void set_input_state(ElementPtr element) override;
   void set_dependent_state(ElementPtr element) override;
   void render(ConstElementPtr element, DrawList& dl) override;
+  void render_content(ConstElementPtr element, DrawList& dl) override;
   void mouse_event(ElementPtr element, const MouseEvent& event) override;
   void focus_tree_leave(ElementPtr element) override;
 

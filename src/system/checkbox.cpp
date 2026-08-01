@@ -11,9 +11,6 @@ void CheckboxSystem::set_input_state(ElementPtr element) {
   checkbox.checkbox_size = font.text_height() + 2 * theme->text_padding;
 
   state.fixed_size = Vec2::uniform(checkbox.checkbox_size);
-
-  state.dynamic_size = Vec2();
-  state.floating = false;
 }
 
 void CheckboxSystem::render(ConstElementPtr element, DrawList& dl) {

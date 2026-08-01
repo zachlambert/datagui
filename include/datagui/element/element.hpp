@@ -142,6 +142,7 @@ struct Select {
   std::vector<std::string> choices;
 
   // Dependent
+  float max_item_width = 0.f;
   std::vector<Box2> choice_boxes;
 
   // State

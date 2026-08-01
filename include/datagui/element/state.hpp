@@ -1,47 +1,62 @@
 #pragma once
 
 #include "datagui/geometry.hpp"
-#include "datagui/layout.hpp"
 
 namespace dgui {
 
+/* Stores the state common to all GUI elements.
+ * The majority of this state should be reset each update and fully defined
+ * by the corresponding element System and it's parent
+ *
+ * The exception is the state at the bottom under "Persistent state" which
+ * is retained each update and managed by the Gui
+ */
 struct State {
+  void reset_input() {
+    fixed_size = Vec2();
+    dynamic_size = Vec2();
+    visible = true;
+    content_visible = true;
+    content_floating = false;
+  }
+  void set_hidden() {
+    visible = false;
+    content_visible = false;
+  }
+
   // Layout input
-  // Define for self set_independent_state(...)
+  // Set by element in System::set_independent_state()
 
   Vec2 fixed_size;
   Vec2 dynamic_size;
-  int num_cells = 1; // Used in layout
+  bool visible = true;           // Is the element body visible?
+  bool content_visible = false;  // Does the element have visible child content?
+  bool content_floating = false; // Is the child content floating?
+  bool is_popup = false;
 
-  // If true, then the element will have an additional floating component
-  bool floating = false;
-  // If true, then the element has no effect on it's parent layout
-  bool float_only = false;
-  FloatingType floating_type = FloatingTypeRelative(Vec2(), Vec2());
-
-  // Used when the element is inserted into a layout
-  bool force_hidden = false;
-
-  // Layout output
-  // Define in set_dependent_state(...)
+  // Parent layout output
+  // Set by the parent in System::set_dependent_state()
 
   Vec2 position;
   Vec2 size;
   Box2 box() const {
     return Box2(position, position + size);
   }
+  // May also override visible and content_visible
 
-  bool hidden = false;
+  // Child layout output
+  // Set by the element in System::set_dependent_state() (after the parent)
+  Box2 content_box;
+  bool content_overflowed = false;
 
-  // Other state
+  // Input state set via args
+  int num_cells = 1;
 
-  Box2 float_box;
-  int float_priority = 0;
-
-  // Event handling
+  // Persistent state managed by Gui
   bool in_focus_tree = false;
   bool focused = false;
   bool hovered = false;
+  int float_priority = 0; // Set by gui, only applicable for floating content
 };
 
 } // namespace dgui

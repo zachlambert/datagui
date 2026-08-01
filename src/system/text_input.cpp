@@ -17,8 +17,6 @@ void TextInputSystem::set_input_state(ElementPtr element) {
   state.fixed_size =
       text_size +
       2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
-  state.dynamic_size = Vec2();
-  state.floating = 0;
 
   if (text_input.width) {
     auto dynamic = std::get_if<LengthDynamic>(&(*text_input.width));
@@ -26,16 +24,14 @@ void TextInputSystem::set_input_state(ElementPtr element) {
       state.dynamic_size.x = dynamic->weight;
     }
   }
+
+  // TODO
+  state.content_overflowed = false;
 }
 
 void TextInputSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& text_input = element.text_input();
-
-  const std::string& text = state.focused ? active_text : text_input.text;
-
-  const auto& font =
-      font_registry->get_font(theme->text_font, theme->text_size);
 
   Color border_color;
   if (state.in_focus_tree) {
@@ -49,6 +45,15 @@ void TextInputSystem::render(ConstElementPtr element, DrawList& dl) {
       theme->input_color_bg,
       theme->input_border_width,
       border_color);
+}
+
+void TextInputSystem::render_content(ConstElementPtr element, DrawList& dl) {
+  const auto& state = element.state();
+  const auto& text_input = element.text_input();
+
+  const std::string& text = state.focused ? active_text : text_input.text;
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
 
   Vec2 text_position =
       state.position +
@@ -71,13 +76,7 @@ void TextInputSystem::render(ConstElementPtr element, DrawList& dl) {
         dl);
   }
 
-  dl.draw_text(
-      font,
-      text_position,
-      theme->text_color,
-      text_length,
-      text,
-      true);
+  dl.draw_text(font, text_position, theme->text_color, text_length, text, true);
 }
 
 void TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {

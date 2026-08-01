@@ -1,8 +1,8 @@
 #pragma once
 
 #include "datagui/element/tree.hpp"
-#include "datagui/render/state/draw_list.hpp"
 #include "datagui/theme.hpp"
+#include "datagui/render/state/draw_list.hpp"
 
 namespace dgui {
 
@@ -18,12 +18,14 @@ void layout_set_dependent_state(
     const Layout& layout,
     LayoutState& state);
 
-void layout_render(
+void layout_render_scroll(
+    const Box2& content_box,
     const LayoutState& state,
     const std::shared_ptr<Theme>& theme,
     DrawList& dl);
 
 bool layout_scroll_event(
+    const Box2& content_box,
     LayoutState& state,
     const ScrollEvent& event);
 

@@ -335,6 +335,9 @@ private:
   void render(ConstElementPtr element) {
     system(element).render(element, dl);
   }
+  void render_content(ConstElementPtr element) {
+    system(element).render_content(element, dl);
+  }
   void mouse_event(ElementPtr element, const MouseEvent& event) {
     system(element).mouse_event(element, event);
   }

@@ -173,8 +173,8 @@ void GuiWriter::optional_begin(bool has_value) {
   }
 
   node = node.parent().next();
-  if (node) {
-    node.state().force_hidden = !has_value;
+  if (node && !has_value) {
+    node.state().set_hidden();
   }
 
   if (!has_value) {
@@ -207,11 +207,8 @@ void GuiWriter::variant_begin(
 
   node = node.next();
   while (node && node.id() != value) {
-    node.state().force_hidden = true;
+    node.state().set_hidden();
     node = node.next();
-  }
-  if (node) {
-    node.state().force_hidden = false;
   }
   next_id_ = value;
 
@@ -223,7 +220,7 @@ void GuiWriter::variant_end() {
   if (node) {
     node = node.next();
     while (node) {
-      node.state().force_hidden = true;
+      node.state().set_hidden();
       node = node.next();
     }
   }

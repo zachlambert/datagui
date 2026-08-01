@@ -22,19 +22,7 @@ void DropdownSystem::set_input_state(ElementPtr element) {
       dropdown.layout,
       dropdown.layout_state);
 
-  state.floating = dropdown.open;
-  state.float_only = false;
-
-  if (state.floating) {
-    Vec2 offset;
-    if (dropdown.direction == Direction::Horizontal) {
-      offset = Vec2(state.fixed_size.x, 0);
-    } else {
-      offset = Vec2(0, state.fixed_size.y);
-    }
-    state.floating_type =
-        FloatingTypeRelative(offset, dropdown.layout_state.content_fixed_size);
-  }
+  state.content_visible = dropdown.open;
 }
 
 void DropdownSystem::set_dependent_state(ElementPtr element) {
@@ -45,7 +33,16 @@ void DropdownSystem::set_dependent_state(ElementPtr element) {
     return;
   }
 
-  dropdown.layout_state.content_box = state.float_box;
+  Vec2 offset;
+  if (dropdown.direction == Direction::Horizontal) {
+    offset = Vec2(state.fixed_size.x, 0);
+  } else {
+    offset = Vec2(0, state.fixed_size.y);
+  }
+  state.content_box = Box2::from_size(
+      state.position + offset,
+      dropdown.layout_state.content_fixed_size);
+
   layout_set_dependent_state(
       element,
       theme,
@@ -73,11 +70,14 @@ void DropdownSystem::render(ConstElementPtr element, DrawList& dl) {
       theme->text_color,
       LengthWrap(),
       dropdown.label);
+}
 
-  if (dropdown.open) {
-    dl.draw_box(state.float_box, theme->layout_color_bg);
-    layout_render(dropdown.layout_state, theme, dl);
-  }
+void DropdownSystem::render_content(ConstElementPtr element, DrawList& dl) {
+  const auto& state = element.state();
+  const auto& dropdown = element.dropdown();
+
+  dl.draw_box(state.content_box, theme->layout_color_bg);
+  layout_render_scroll(state.content_box, dropdown.layout_state, theme, dl);
 }
 
 void DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
@@ -90,11 +90,12 @@ void DropdownSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
 bool DropdownSystem::scroll_event(
     ElementPtr element,
     const ScrollEvent& event) {
+  const auto& state = element.state();
   auto& dropdown = element.dropdown();
   if (!dropdown.open) {
     return false;
   }
-  return layout_scroll_event(dropdown.layout_state, event);
+  return layout_scroll_event(state.content_box, dropdown.layout_state, event);
 }
 
 void DropdownSystem::focus_enter(ElementPtr element) {

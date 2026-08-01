@@ -11,6 +11,9 @@ struct Box2 {
 
   Box2() {}
   Box2(const Vec2& lower, const Vec2& upper) : lower(lower), upper(upper) {}
+  static Box2 from_size(const Vec2& pos, const Vec2& size) {
+    return Box2(pos, pos + size);
+  }
 
   bool contains(const Vec2& point) const {
     return point.x >= lower.x && point.x < upper.x && point.y >= lower.y &&
@@ -56,6 +59,23 @@ struct Box2 {
   }
   Vec2 upper_right() const {
     return upper;
+  }
+
+  void expand(float amount) {
+    lower -= Vec2::uniform(amount);
+    upper += Vec2::uniform(amount);
+  }
+  void expand(const Vec2& amount) {
+    lower -= amount;
+    upper += amount;
+  }
+  void shrink(float amount) {
+    lower += Vec2::uniform(amount);
+    upper -= Vec2::uniform(amount);
+  }
+  void shrink(const Vec2& amount) {
+    lower += amount;
+    upper -= amount;
   }
 
   // To local box coords [0, 1]

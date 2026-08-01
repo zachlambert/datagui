@@ -1,6 +1,7 @@
 #include "datagui/system/slider.hpp"
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
 
 namespace dgui {
 
@@ -12,8 +13,6 @@ void SliderSystem::set_input_state(ElementPtr element) {
       slider.length ? *slider.length : theme->slider_default_length;
 
   state.fixed_size = Vec2(slider_length, theme->slider_height);
-  state.dynamic_size = Vec2();
-  state.floating = false;
 
   const auto& font =
       font_registry->get_font(theme->text_font, theme->text_size);

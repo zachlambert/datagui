@@ -13,6 +13,7 @@ public:
   virtual void set_dependent_state(ElementPtr element) {};
 
   virtual void render(ConstElementPtr element, DrawList& dl) = 0;
+  virtual void render_content(ConstElementPtr element, DrawList& dl) {}
 
   // Return true/false depending on if the event is handled
   virtual void mouse_event(ElementPtr element, const MouseEvent& event) {}

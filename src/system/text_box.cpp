@@ -9,10 +9,9 @@ void TextBoxSystem::set_input_state(ElementPtr element) {
   int text_size =
       text_box.text_size != 0 ? text_box.text_size : theme->text_size;
   const auto& font = font_registry->get_font(theme->text_font, text_size);
+
   state.fixed_size = font.text_size(text_box.text, LengthWrap()) +
                      Vec2::uniform(2 * theme->text_padding);
-  state.dynamic_size = Vec2();
-  state.floating = false;
 }
 
 void TextBoxSystem::render(ConstElementPtr element, DrawList& dl) {

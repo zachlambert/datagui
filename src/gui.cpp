@@ -410,11 +410,9 @@ bool Gui::tab_group(const std::string& label) {
   size_t index = tabs.labels.size();
   tabs.labels.push_back(label);
   if (tabs.tab == index) {
-    current.state().hidden = false;
     move_down();
     return true;
   }
-  current.state().hidden = true;
   current = current.next();
   return false;
 }
@@ -518,49 +516,55 @@ void Gui::render() {
     return;
   }
 
-  auto render_tree = [this](ConstElementPtr root) {
-    if (!root) {
-      return;
+  auto render_layer = [this](ConstElementPtr layer_root, bool is_root) {
+    std::stack<std::pair<ConstElementPtr, Box2>> group_stack;
+    if (is_root || layer_root.state().is_popup) {
+      dl.new_group(layer_root.state().box());
+      render(layer_root);
+      if (!layer_root.state().content_visible ||
+          layer_root.state().content_floating) {
+        return;
+      }
+      group_stack.emplace(layer_root, layer_root.state().box());
+    } else {
+      group_stack.emplace(layer_root, layer_root.state().content_box);
     }
-    struct State {
-      ConstElementPtr element;
-      bool first_visit;
-      State(ConstElementPtr element) : element(element), first_visit(true) {}
-    };
-    std::stack<State> stack;
-    stack.emplace(root);
 
-    while (!stack.empty()) {
-      auto& state = stack.top();
-      const auto& element = state.element;
-      assert(element);
+    while (!group_stack.empty()) {
+      auto [group_root, group_box] = group_stack.top();
+      group_stack.pop();
 
-      if (element.state().hidden ||
-          (element != root && element.state().floating)) {
+      dl.new_group(group_box);
+
+      std::stack<ConstElementPtr> stack;
+      stack.push(group_root);
+      while (!stack.empty()) {
+        auto element = stack.top();
         stack.pop();
-        continue;
-      }
 
-      if (!state.first_visit) {
-        stack.pop();
-        continue;
-      }
-      state.first_visit = false;
-
-      render(element);
-
-      for (auto child = element.child(); child; child = child.next()) {
-        stack.emplace(child);
+        render_content(element);
+        for (auto child = element.child(); child; child = child.next()) {
+          render(child);
+          const auto& c_state = child.state();
+          if (!c_state.content_visible || c_state.content_floating) {
+            continue;
+          }
+          if (c_state.content_overflowed) {
+            group_stack.emplace(
+                child,
+                intersection(group_box, c_state.content_box));
+          } else {
+            stack.push(child);
+          }
+        }
       }
     }
   };
 
   dl.clear();
-  dl.new_group(tree.root().state().box(), false);
-  render_tree(tree.root());
+  render_layer(tree.root(), true);
   for (auto element : ordered_floating_elements) {
-    dl.new_group(element.state().float_box, true);
-    render_tree(element);
+    render_layer(element, false);
   }
 #ifdef DGUI_DEBUG
   if (debug_mode_) {
@@ -575,6 +579,8 @@ void Gui::render() {
 
 #ifdef DGUI_DEBUG
 void Gui::debug_render() {
+  dl.new_group(Box2(Vec2(), window.size()));
+
   struct State {
     ConstElementPtr element;
     bool first_visit;
@@ -589,7 +595,7 @@ void Gui::debug_render() {
     auto& state = layer_stack.top();
     auto element = state.element;
 
-    if (element.state().hidden) {
+    if (!element.state().visible) {
       layer_stack.pop();
       continue;
     }
@@ -610,9 +616,9 @@ void Gui::debug_render() {
         2,
         debug_color);
 
-    if (element.state().floating) {
+    if (element.state().content_visible) {
       dl.draw_box(
-          element.state().float_box,
+          element.state().content_box,
           Color::Clear(),
           2,
           element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1));
@@ -637,8 +643,8 @@ void Gui::debug_render() {
        << focused.state().dynamic_size.y;
     ss << "\nsize: " << focused.state().size.x << ", "
        << focused.state().size.y;
-    ss << "\nhidden: " << (focused.state().hidden ? "true" : "false");
-    if (focused.state().floating) {
+    if (focused.state().is_popup ||
+        (focused.state().content_visible && focused.state().content_floating)) {
       ss << "\nfloating priority: " << focused.state().float_priority;
     }
     std::string debug_text = ss.str();
@@ -685,7 +691,7 @@ void Gui::calculate_sizes() {
       State& state = stack.top();
       auto element = state.element;
 
-      if (element.state().hidden) {
+      if (!element.state().visible) {
         stack.pop();
         continue;
       }
@@ -700,6 +706,7 @@ void Gui::calculate_sizes() {
       }
       stack.pop();
 
+      element.state().reset_input();
       set_input_state(element);
     }
   }
@@ -723,34 +730,22 @@ void Gui::calculate_sizes() {
 
     while (!stack.empty()) {
       auto element = stack.top();
+      auto& state = element.state();
       stack.pop();
 
-      if (element.state().hidden) {
+      if (!state.visible) {
         continue;
       }
 
-      if (element.state().floating) {
+      if (state.is_popup || (state.content_visible && state.content_floating)) {
         if (!prev_floating_elements.contains(element)) {
-          element.state().float_priority = next_float_priority++;
+          state.float_priority = next_float_priority++;
         }
         floating_elements.insert(element);
-
-        if (auto type = std::get_if<FloatingTypeAbsolute>(
-                &element.state().floating_type)) {
-          element.state().float_box.lower =
-              window.size() / 2.f - type->size / 2.f;
-          element.state().float_box.upper =
-              window.size() / 2.f + type->size / 2.f;
-        } else if (
-            auto type = std::get_if<FloatingTypeRelative>(
-                &element.state().floating_type)) {
-          element.state().float_box.lower =
-              element.state().position + type->offset;
-          element.state().float_box.upper =
-              element.state().float_box.lower + type->size;
-        } else {
-          assert(false);
-        }
+      }
+      if (state.is_popup) {
+        state.size = state.fixed_size;
+        state.position = window.size() / 2.f - state.size / 2.f;
       }
 
       set_dependent_state(element);
@@ -845,17 +840,16 @@ ElementPtr Gui::get_leaf_node(const Vec2& position) {
 
     while (!stack.empty()) {
       auto element = stack.top();
+      const auto& state = element.state();
       stack.pop();
 
-      if (element.state().hidden) {
+      if (!state.visible) {
         continue;
       }
       bool contains = false;
-      if (!element.state().float_only) {
-        contains |= element.state().box().contains(position);
-      }
-      if (element.state().floating) {
-        contains |= element.state().float_box.contains(position);
+      contains |= element.state().box().contains(position);
+      if (element.state().content_visible && element.state().content_floating) {
+        contains |= element.state().content_box.contains(position);
       }
       if (!contains) {
         continue;
@@ -982,7 +976,9 @@ void Gui::change_tree_focus(ElementPtr from, ElementPtr to) {
     while (iter) {
       added.insert(iter);
       iter.state().in_focus_tree = true;
-      if (!found_floating && iter.state().floating) {
+      if (!found_floating &&
+          (iter.state().is_popup ||
+           (iter.state().content_visible && iter.state().content_floating))) {
         found_floating = true;
         iter.state().float_priority = next_float_priority++;
       }
@@ -1040,9 +1036,9 @@ void Gui::focus_next(bool reverse) {
         }
       }
     }
-  } while (next && next != tree.root() && next.state().hidden);
+  } while (next && next != tree.root() && !next.state().visible);
 
-  if (next == tree.root() && tree.root().state().hidden) {
+  if (next == tree.root() && !tree.root().state().visible) {
     next = ElementPtr();
   }
 

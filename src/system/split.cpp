@@ -1,14 +1,11 @@
 #include "datagui/system/split.hpp"
+#include <algorithm>
 
 namespace dgui {
 
 void SplitSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& split = element.split();
-
-  state.fixed_size = Vec2();
-  state.dynamic_size = Vec2();
-  state.floating = false;
 
   Vec2 a_fixed_size;
   Vec2 a_dynamic_size;
@@ -17,7 +14,7 @@ void SplitSystem::set_input_state(ElementPtr element) {
 
   ElementPtr first, second;
   for (auto child = element.child(); child; child = child.next()) {
-    if (child.state().float_only) {
+    if (!child.state().visible) {
       continue;
     }
     if (!first) {
@@ -73,7 +70,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   auto& split = element.split();
 
   auto first = element.child();
-  while (first && first.state().float_only) {
+  while (first && !first.state().visible) {
     first = first.next();
   }
   if (!first) {
@@ -81,7 +78,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   }
 
   auto second = first.next();
-  while (second && second.state().float_only) {
+  while (second && !second.state().visible) {
     second = second.next();
   }
 

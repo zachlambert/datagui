@@ -53,7 +53,7 @@ struct DrawList {
   std::vector<Group> groups;
 
   void clear_mask();
-  void new_group(const Box2& mask, bool floating=false);
+  void new_group(const Box2& mask);
 
   void draw_box(
       const Box2& box,

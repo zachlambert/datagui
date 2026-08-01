@@ -10,48 +10,54 @@ void SelectSystem::set_input_state(ElementPtr element) {
       font_registry->get_font(theme->text_font, theme->text_size);
 
   float text_height = font.text_height();
-  float max_item_width = theme->select_min_width;
+  select.max_item_width = theme->select_min_width;
   for (const auto& choice : select.choices) {
     Vec2 choice_size = font.text_size(choice, LengthWrap());
-    max_item_width = std::max(max_item_width, choice_size.x);
+    select.max_item_width = std::max(select.max_item_width, choice_size.x);
   }
 
   float padding = theme->text_padding + theme->input_border_width;
-  state.fixed_size.x = max_item_width + 2 * padding;
+  state.fixed_size.x = select.max_item_width + 2 * padding;
   state.fixed_size.y = text_height + 2 * padding;
   state.dynamic_size = Vec2();
 
   if (!select.choices.empty()) {
-    state.floating = select.open;
-
-    Vec2 floating_size;
-    floating_size.x = max_item_width + 2 * padding;
-    floating_size.y =
-        select.choices.size() * (text_height + 2 * theme->text_padding) +
-        (select.choices.size() + 1) * theme->input_border_width;
-
-    Vec2 floating_offset;
-    floating_offset.x = 0;
-    floating_offset.y = state.fixed_size.y - theme->input_border_width;
-
-    state.floating_type = FloatingTypeRelative(floating_offset, floating_size);
+    state.content_visible = select.open;
   } else {
-    state.floating = false;
+    state.content_visible = false;
   }
+  state.content_floating = true;
 }
 
 void SelectSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& select = element.select();
 
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+  float text_height = font.text_height();
+
+  Vec2 float_size;
+  float_size.x = state.size.x;
+  float_size.y =
+      select.choices.size() * (text_height + 2 * theme->text_padding) +
+      (select.choices.size() + 1) * theme->input_border_width;
+
+  Vec2 float_offset;
+  float_offset.x = 0;
+  float_offset.y = state.fixed_size.y - theme->input_border_width;
+
+  state.content_box =
+      Box2::from_size(state.position + float_offset, float_size);
+
   select.choice_boxes.resize(select.choices.size());
 
-  Vec2 size = state.box().size();
-  Vec2 position = state.float_box.lower;
+  Vec2 item_position = state.content_box.lower;
+  Vec2 item_size = state.box().size();
   for (std::size_t i = 0; i < select.choices.size(); i++) {
     auto& box = select.choice_boxes[i];
-    box = Box2(position, position + size);
-    position.y += size.y - theme->input_border_width;
+    box = Box2::from_size(item_position, item_size);
+    item_position.y += (item_size.y - theme->input_border_width);
   }
 }
 
@@ -80,10 +86,13 @@ void SelectSystem::render(ConstElementPtr element, DrawList& dl) {
         LengthWrap(),
         select.choices[select.choice]);
   }
+}
 
-  if (!select.open) {
-    return;
-  }
+void SelectSystem::render_content(ConstElementPtr element, DrawList& dl) {
+  const auto& state = element.state();
+  const auto& select = element.select();
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
 
   for (std::size_t i = 0; i < select.choices.size(); i++) {
     const auto& box = select.choice_boxes[i];

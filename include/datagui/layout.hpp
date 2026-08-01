@@ -46,9 +46,12 @@ struct LayoutState {
   Vec2 content_fixed_size;
   Vec2 content_dynamic_size;
 
-  Box2 content_box;
   Vec2 content_overrun;
   Vec2 scroll_pos;
+
+  bool overflowed() const {
+    return content_overrun.x > 0 || content_overrun.y > 0;
+  }
 };
 
 class BoxDims {
@@ -126,19 +129,5 @@ inline BoxDims operator/(BoxDims lhs, float rhs) {
   lhs /= rhs;
   return lhs;
 }
-
-struct FloatingTypeAbsolute {
-  Vec2 size;
-  FloatingTypeAbsolute(const Vec2& size) : size(size) {}
-};
-
-struct FloatingTypeRelative {
-  Vec2 offset;
-  Vec2 size;
-  FloatingTypeRelative(const Vec2& offset, const Vec2& size) :
-      offset(offset), size(size) {}
-};
-
-using FloatingType = std::variant<FloatingTypeAbsolute, FloatingTypeRelative>;
 
 } // namespace dgui

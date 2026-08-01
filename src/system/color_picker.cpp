@@ -1,4 +1,5 @@
 #include "datagui/system/color_picker.hpp"
+#include <algorithm>
 
 namespace dgui {
 
@@ -14,18 +15,8 @@ void ColorPickerSystem::set_input_state(ElementPtr element) {
   state.fixed_size = Vec2::uniform(theme->color_picker_icon_size);
   state.dynamic_size = Vec2();
 
-  Vec2 float_offset(
-      0,
-      theme->color_picker_icon_size - theme->input_border_width);
-
-  const float r = theme->color_picker_hue_wheel_radius;
-  const float p = theme->color_picker_padding;
-  const float w = theme->color_picker_value_scale_width;
-  Vec2 float_size(3 * p + 2 * r + w, 2 * p + 2 * r);
-
-  state.floating = color_picker.open;
-  state.floating_type = FloatingTypeRelative(float_offset, float_size);
-  state.float_only = false;
+  state.content_visible = color_picker.open;
+  state.content_floating = true;
 }
 
 void ColorPickerSystem::set_dependent_state(ElementPtr element) {
@@ -36,14 +27,22 @@ void ColorPickerSystem::set_dependent_state(ElementPtr element) {
   const float p = theme->color_picker_padding;
   const float w = theme->color_picker_value_scale_width;
 
+  Vec2 float_offset(
+      0,
+      theme->color_picker_icon_size - theme->input_border_width);
+  Vec2 float_size(3 * p + 2 * r + w, 2 * p + 2 * r);
+
+  state.content_box =
+      Box2::from_size(state.position + float_offset, float_size);
+
   {
-    Vec2 origin = state.float_box.lower + Vec2::uniform(p);
+    Vec2 origin = state.content_box.lower + Vec2::uniform(p);
     Vec2 size = Vec2::uniform(2 * r);
     color_picker.hue_wheel_box = Box2(origin, origin + size);
   }
 
   {
-    Vec2 origin = state.float_box.lower + Vec2(2 * p + 2 * r, p);
+    Vec2 origin = state.content_box.lower + Vec2(2 * p + 2 * r, p);
     Vec2 size = Vec2(w, 2 * r);
     color_picker.lightness_box = Box2(origin, origin + size);
   }
@@ -54,16 +53,17 @@ void ColorPickerSystem::render(ConstElementPtr element, DrawList& dl) {
   auto& color_picker = element.color_picker();
 
   const auto& color = state.focused ? active_color : color_picker.value;
-
   dl.draw_box(state.box(), color, 2, theme->input_color_border);
+}
 
-  if (!state.floating) {
-    return;
-  }
+void ColorPickerSystem::render_content(ConstElementPtr element, DrawList& dl) {
+  const auto& state = element.state();
+  auto& color_picker = element.color_picker();
+  const auto& color = state.focused ? active_color : color_picker.value;
 
   Color bg_color = color;
   bg_color.a = 0.5;
-  dl.draw_box(state.float_box, bg_color, 2, theme->layout_border_color);
+  dl.draw_box(state.content_box, bg_color, 2, theme->layout_border_color);
 
   float lightness = color.lightness();
   struct Pixel {
