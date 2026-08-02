@@ -7,9 +7,7 @@ void PopupSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& popup = element.popup();
 
-  state.visible = popup.open;
-  state.is_popup = true;
-
+  state.display_mode = popup.open ? DisplayMode::Float : DisplayMode::Disabled;
   state.fixed_size = Vec2(popup.popup_size.x, popup.popup_size.y);
 
   const auto& font =
@@ -23,17 +21,19 @@ void PopupSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& popup = element.popup();
 
-  popup.header_box.lower = state.content_box.lower;
-  popup.header_box.upper.x = state.content_box.upper.x;
-  popup.header_box.upper.y = state.content_box.lower.y + popup.header_height;
+  state.size = state.fixed_size;
+  state.position = window_box.center() - state.size / 2;
+
+  popup.header_box =
+      Box2::from_size(state.position, Vec2(state.size.x, popup.header_height));
 
   const auto& font =
       font_registry->get_font(theme->text_font, theme->text_size);
   Vec2 x_size = font.text_size("x", LengthWrap()) +
                 Vec2::uniform(2 * theme->text_padding);
 
-  popup.close_button_box.lower.x = state.content_box.upper.x - x_size.x;
-  popup.close_button_box.lower.y = state.content_box.lower.y;
+  popup.close_button_box.lower.x = popup.header_box.upper.x - x_size.x;
+  popup.close_button_box.lower.y = popup.header_box.lower.y;
   popup.close_button_box.upper = popup.close_button_box.lower + x_size;
 
   popup.header_text_width = std::max(

@@ -10,18 +10,17 @@ void TabsSystem::set_input_state(ElementPtr element) {
   state.dynamic_size = Vec2();
 
   auto child = element.child();
-  for (std::size_t i = 0; i < tabs.labels.size(); i++) {
-    if (!child.state().visible) {
+  size_t child_i = 0;
+  while (child && child_i < tabs.labels.size()) {
+    if (child.state().display_mode != DisplayMode::Inline) {
       child = child.next();
       continue;
-    }
-    if (!child) {
-      break;
     }
     state.fixed_size = maximum(state.fixed_size, child.state().fixed_size);
     state.dynamic_size =
         maximum(state.dynamic_size, child.state().dynamic_size);
     child = child.next();
+    child_i++;
   }
 
   const auto& font =
@@ -55,23 +54,24 @@ void TabsSystem::set_dependent_state(ElementPtr element) {
     box.upper += state.position;
   }
 
-  Box2 content_box = state.box();
-  content_box.lower.y += tabs.header_height;
+  state.content_box = state.box();
+  state.content_box.lower.y += tabs.header_height;
 
-  Vec2 child_pos = content_box.lower;
-  Vec2 child_full_size = content_box.size();
+  Vec2 child_pos = state.content_box.lower;
+  Vec2 child_full_size = state.content_box.size();
 
   auto child = element.child();
-  std::size_t i = 0;
+  std::size_t child_i = 0;
   while (child) {
-    if (!child.state().visible) {
+    if (child.state().display_mode != DisplayMode::Inline) {
       child = child.next();
       continue;
     }
     auto& c_state = child.state();
-    if (i != tabs.tab) {
-      c_state.set_hidden();
-      i++;
+    if (child_i != tabs.tab) {
+      // Override
+      c_state.display_mode = DisplayMode::Disabled;
+      child_i++;
       continue;
     }
 
@@ -86,7 +86,7 @@ void TabsSystem::set_dependent_state(ElementPtr element) {
     } else {
       c_state.size.y = c_state.fixed_size.y;
     }
-    i++;
+    child_i++;
     child = child.next();
   }
 }

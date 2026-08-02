@@ -4,7 +4,12 @@
 
 namespace dgui {
 
-/* Stores the state common to all GUI elements.
+enum class DisplayMode {
+  Inline, Disabled, Float
+};
+
+/*
+ * Stores the state common to all GUI elements.
  * The majority of this state should be reset each update and fully defined
  * by the corresponding element System and it's parent
  *
@@ -13,15 +18,11 @@ namespace dgui {
  */
 struct State {
   void reset_input() {
+    // Set defaults
     fixed_size = Vec2();
     dynamic_size = Vec2();
-    visible = true;
-    content_visible = true;
-    content_floating = false;
-  }
-  void set_hidden() {
-    visible = false;
-    content_visible = false;
+    display_mode = DisplayMode::Inline;
+    content_mode = DisplayMode::Inline;
   }
 
   // Layout input
@@ -29,25 +30,23 @@ struct State {
 
   Vec2 fixed_size;
   Vec2 dynamic_size;
-  bool visible = true;           // Is the element body visible?
-  bool content_visible = false;  // Does the element have visible child content?
-  bool content_floating = false; // Is the child content floating?
-  bool is_popup = false;
+  DisplayMode display_mode = DisplayMode::Inline;
+  DisplayMode content_mode = DisplayMode::Inline;
 
   // Parent layout output
   // Set by the parent in System::set_dependent_state()
+  // Except for Window elements which set their own output state
 
   Vec2 position;
   Vec2 size;
   Box2 box() const {
     return Box2(position, position + size);
   }
-  // May also override visible and content_visible
+  bool content_overflowed;
 
   // Child layout output
   // Set by the element in System::set_dependent_state() (after the parent)
   Box2 content_box;
-  bool content_overflowed = false;
 
   // Input state set via args
   int num_cells = 1;
@@ -56,7 +55,6 @@ struct State {
   bool in_focus_tree = false;
   bool focused = false;
   bool hovered = false;
-  int float_priority = 0; // Set by gui, only applicable for floating content
 };
 
 } // namespace dgui

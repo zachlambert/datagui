@@ -21,7 +21,6 @@
 #include <memory>
 #include <optional>
 #include <set>
-#include <unordered_set>
 #include <vector>
 
 namespace dgui {
@@ -29,6 +28,7 @@ namespace dgui {
 // class Plotter;
 class Canvas2d;
 class Canvas3d;
+class PopupSystem;
 
 class Gui {
 public:
@@ -233,11 +233,11 @@ public:
   Canvas3d& canvas3d() {
     return viewport<Canvas3d>();
   }
-  #if 0
+#if 0
   Plotter& plotter() {
     return viewport<Plotter>();
   }
-  #endif
+#endif
 
 private:
   template <dpack::serializable T>
@@ -297,6 +297,7 @@ private:
   std::shared_ptr<Theme> theme;
   DrawList dl;
   std::vector<std::unique_ptr<System>> systems;
+  PopupSystem* popup_system;
 
   std::stack<std::pair<ElementPtr, VarPtr>> stack;
   ElementPtr current;
@@ -306,7 +307,7 @@ private:
   ElementPtr element_hover;
   ElementPtr element_left_held;
   ElementPtr element_middle_held;
-  int next_float_priority = 0;
+  int next_z_order = 0;
   std::vector<std::function<void()>> misc_events;
 
   std::size_t read_key() {
@@ -317,8 +318,30 @@ private:
   std::size_t next_key = 0;
   bool overwrite = false; // Only used for datapack_write, special case
 
-  std::unordered_set<ElementPtr, ElementPtr::HashFunc> floating_elements;
-  std::set<ElementPtr, ElementPtr::FloatCompare> ordered_floating_elements;
+  struct Layer {
+    ElementPtr element;
+    bool is_content = false;
+    friend bool operator==(const Layer& lhs, const Layer& rhs) {
+      return lhs.element.hash() == rhs.element.hash() && lhs.is_content == rhs.is_content;
+    }
+  };
+  struct LayerState {
+    int z_order = 0;
+    bool visited = false;
+  };
+  struct LayerHash {
+    size_t operator()(const Layer& key) const {
+      return key.element.hash() ^ std::hash<bool>{}(key.is_content);
+    }
+  };
+  using LayerPair = std::pair<Layer, LayerState>;
+  struct LayerCompare {
+    bool operator()(const LayerPair& lhs, const LayerPair& rhs) const {
+      return lhs.second.z_order < rhs.second.z_order;
+    }
+  };
+  std::unordered_map<Layer, LayerState, LayerHash> layers;
+  std::multiset<std::pair<Layer, LayerState>, LayerCompare> layers_ordered;
 
   Args args_;
 

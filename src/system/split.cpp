@@ -14,7 +14,7 @@ void SplitSystem::set_input_state(ElementPtr element) {
 
   ElementPtr first, second;
   for (auto child = element.child(); child; child = child.next()) {
-    if (!child.state().visible) {
+    if (child.state().display_mode != DisplayMode::Inline) {
       continue;
     }
     if (!first) {
@@ -69,8 +69,10 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& split = element.split();
 
+  state.content_box = state.box();
+
   auto first = element.child();
-  while (first && !first.state().visible) {
+  while (first && first.state().display_mode != DisplayMode::Inline) {
     first = first.next();
   }
   if (!first) {
@@ -78,7 +80,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   }
 
   auto second = first.next();
-  while (second && !second.state().visible) {
+  while (second && second.state().display_mode != DisplayMode::Inline) {
     second = second.next();
   }
 

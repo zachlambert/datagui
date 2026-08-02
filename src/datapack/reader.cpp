@@ -183,7 +183,7 @@ bool GuiReader::optional_begin() {
 
   node = node.parent().next();
   if (node && !has_value) {
-    node.state().set_hidden();
+    node.state().display_mode = DisplayMode::Disabled;
   }
 
   if (!has_value) {
@@ -219,7 +219,7 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
   int choice = select.choice;
   node = node.next();
   while (node && node.id() != choice) {
-    node.state().set_hidden();
+    node.state().display_mode = DisplayMode::Disabled;
     node = node.next();
   }
   next_id_ = choice;
@@ -233,7 +233,7 @@ void GuiReader::variant_end() {
   if (node) {
     node = node.next();
     while (node) {
-      node.state().set_hidden();
+      node.state().display_mode = DisplayMode::Disabled;
       node = node.next();
     }
   }

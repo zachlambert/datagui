@@ -21,12 +21,11 @@ void SelectSystem::set_input_state(ElementPtr element) {
   state.fixed_size.y = text_height + 2 * padding;
   state.dynamic_size = Vec2();
 
-  if (!select.choices.empty()) {
-    state.content_visible = select.open;
+  if (!select.choices.empty() && select.open) {
+    state.content_mode = DisplayMode::Float;
   } else {
-    state.content_visible = false;
+    state.content_mode = DisplayMode::Disabled;
   }
-  state.content_floating = true;
 }
 
 void SelectSystem::set_dependent_state(ElementPtr element) {

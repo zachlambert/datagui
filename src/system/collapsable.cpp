@@ -12,6 +12,8 @@ void CollapsableSystem::set_input_state(ElementPtr element) {
   collapsable.header_size = font.text_size(collapsable.label, LengthWrap()) +
                             Vec2::uniform(2 * theme->text_padding);
   state.fixed_size = collapsable.header_size;
+  state.content_mode =
+      collapsable.open ? DisplayMode::Inline : DisplayMode::Disabled;
 
   layout_set_input_state(
       element,
@@ -24,7 +26,6 @@ void CollapsableSystem::set_input_state(ElementPtr element) {
       state.fixed_size.x,
       collapsable.layout_state.content_fixed_size.x);
 
-  state.content_visible = collapsable.open;
   if (collapsable.open) {
     state.fixed_size.y += collapsable.layout_state.content_fixed_size.y;
     state.dynamic_size.y = collapsable.layout_state.content_dynamic_size.y;
@@ -53,9 +54,6 @@ void CollapsableSystem::set_dependent_state(ElementPtr element) {
   auto& collapsable = element.collapsable();
 
   if (!collapsable.open) {
-    for (auto child = element.child(); child; child = child.next()) {
-      child.state().set_hidden();
-    }
     return;
   }
 
@@ -71,9 +69,7 @@ void CollapsableSystem::set_dependent_state(ElementPtr element) {
       collapsable.layout,
       collapsable.layout_state);
 
-  state.content_overflowed =
-      (collapsable.layout_state.content_overrun.x > 0 ||
-       collapsable.layout_state.content_overrun.y > 0);
+  state.content_overflowed = collapsable.layout_state.overflowed();
 }
 
 void CollapsableSystem::render(ConstElementPtr element, DrawList& dl) {
@@ -139,7 +135,10 @@ bool CollapsableSystem::scroll_event(
     const ScrollEvent& event) {
   const auto& state = element.state();
   auto& collapsable = element.collapsable();
-  return layout_scroll_event(state.content_box, collapsable.layout_state, event);
+  return layout_scroll_event(
+      state.content_box,
+      collapsable.layout_state,
+      event);
 }
 
 void CollapsableSystem::key_event(ElementPtr element, const KeyEvent& event) {

@@ -115,6 +115,7 @@ public:
   template <bool Const>
   class VarPtr_ {
     using tree_ptr_t = std::conditional_t<Const, const Tree*, Tree*>;
+
   public:
     VarPtr_ next() {
       return VarPtr_(tree, element, tree->variables[variable].next);
@@ -169,29 +170,18 @@ public:
   template <bool IsConst>
   class ElementPtr_ {
   public:
-    struct FloatCompare {
-      bool operator()(const ElementPtr_& lhs, const ElementPtr_& rhs) const {
-        return std::tie(lhs.state().float_priority, lhs.index) <
-               std::tie(rhs.state().float_priority, rhs.index);
-      }
-    };
-    friend struct FloatCompare;
-    struct HashFunc {
-      std::size_t operator()(const ElementPtr_& element) const {
-        return std::hash<int>{}(element.index) ^
-               (((std::size_t)(element.tree)) << 1);
-      }
-    };
-    friend struct HashFunc;
-
     Type type() const {
       assert(tree && index != -1);
       return tree->elements[index].type;
     }
 
+    size_t hash() const {
+      return std::hash<int>{}(index) ^ (((std::size_t)(tree)) << 1);
+    }
+
 #define PROPS_METHOD(T, name) \
   std::conditional_t<IsConst, const T&, T&> name() const { \
-    assert(tree&& index != -1); \
+    assert(tree && index != -1); \
     assert(tree->elements.contains(index)); \
     const auto& element = tree->elements[index]; \
     assert(element.type == Type::T); \

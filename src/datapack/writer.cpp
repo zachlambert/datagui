@@ -174,7 +174,7 @@ void GuiWriter::optional_begin(bool has_value) {
 
   node = node.parent().next();
   if (node && !has_value) {
-    node.state().set_hidden();
+    node.state().display_mode = DisplayMode::Disabled;
   }
 
   if (!has_value) {
@@ -207,7 +207,7 @@ void GuiWriter::variant_begin(
 
   node = node.next();
   while (node && node.id() != value) {
-    node.state().set_hidden();
+    node.state().display_mode = DisplayMode::Disabled;
     node = node.next();
   }
   next_id_ = value;
@@ -220,7 +220,7 @@ void GuiWriter::variant_end() {
   if (node) {
     node = node.next();
     while (node) {
-      node.state().set_hidden();
+      node.state().display_mode = DisplayMode::Disabled;
       node = node.next();
     }
   }

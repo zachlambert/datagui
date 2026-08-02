@@ -38,7 +38,7 @@ void layout_set_input_state(
   std::size_t i = 0;
   std::size_t j = 0;
   while (child) {
-    if (!child.state().visible || child.state().is_popup) {
+    if (child.state().display_mode != DisplayMode::Inline) {
       child = child.next();
       continue;
     }
@@ -198,8 +198,7 @@ void layout_set_dependent_state(
   Vec2 offset;
 
   while (child) {
-    if (!child.state().visible) {
-      child.state().position = content_box.lower;
+    if (child.state().display_mode != DisplayMode::Inline) {
       child = child.next();
       continue;
     }
@@ -295,7 +294,8 @@ void layout_set_dependent_state(
     child = child.next();
   }
   while (child) {
-    child.state().set_hidden();
+    // Override
+    child.state().display_mode = DisplayMode::Disabled;
     child = child.next();
   }
 

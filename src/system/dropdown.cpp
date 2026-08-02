@@ -22,7 +22,8 @@ void DropdownSystem::set_input_state(ElementPtr element) {
       dropdown.layout,
       dropdown.layout_state);
 
-  state.content_visible = dropdown.open;
+  state.content_mode =
+      dropdown.open ? DisplayMode::Float : DisplayMode::Disabled;
 }
 
 void DropdownSystem::set_dependent_state(ElementPtr element) {

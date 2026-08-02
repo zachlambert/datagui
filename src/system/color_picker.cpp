@@ -14,14 +14,16 @@ void ColorPickerSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size = Vec2::uniform(theme->color_picker_icon_size);
   state.dynamic_size = Vec2();
-
-  state.content_visible = color_picker.open;
-  state.content_floating = true;
+  state.content_mode = color_picker.open ? DisplayMode::Float : DisplayMode::Disabled;
 }
 
 void ColorPickerSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& color_picker = element.color_picker();
+
+  if (!color_picker.open) {
+    return;
+  }
 
   const float r = theme->color_picker_hue_wheel_radius;
   const float p = theme->color_picker_padding;
