@@ -296,8 +296,6 @@ private:
   std::shared_ptr<FontRegistry> font_registry;
   std::shared_ptr<Theme> theme;
   DrawList dl;
-  std::vector<std::unique_ptr<System>> systems;
-  PopupSystem* popup_system;
 
   std::stack<std::pair<ElementPtr, VarPtr>> stack;
   ElementPtr current;
@@ -344,47 +342,7 @@ private:
   std::multiset<std::pair<Layer, LayerState>, LayerCompare> layers_ordered;
 
   Args args_;
-
-  // For convenience
-  System& system(ConstElementPtr element) {
-    return *systems[static_cast<std::size_t>(element.type())];
-  }
-  void set_input_state(ElementPtr element) {
-    system(element).set_input_state(element);
-  }
-  void set_dependent_state(ElementPtr element) {
-    system(element).set_dependent_state(element);
-  };
-  void render(ConstElementPtr element) {
-    system(element).render(element, dl);
-  }
-  void render_content(ConstElementPtr element) {
-    system(element).render_content(element, dl);
-  }
-  void mouse_event(ElementPtr element, const MouseEvent& event) {
-    system(element).mouse_event(element, event);
-  }
-  void mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
-    system(element).mouse_hover(element, mouse_pos);
-  }
-  bool scroll_event(ElementPtr element, const ScrollEvent& event) {
-    return system(element).scroll_event(element, event);
-  }
-  void key_event(ElementPtr element, const KeyEvent& event) {
-    system(element).key_event(element, event);
-  }
-  void text_event(ElementPtr element, const TextEvent& event) {
-    system(element).text_event(element, event);
-  }
-  void focus_enter(ElementPtr element) {
-    system(element).focus_enter(element);
-  }
-  void focus_leave(ElementPtr element, bool success) {
-    return system(element).focus_leave(element, success);
-  }
-  void focus_tree_leave(ElementPtr element) {
-    return system(element).focus_tree_leave(element);
-  }
+  SystemSet systems;
 };
 
 #define DGUI_SCOPE(gui_name) auto defer_end = gui_name.defer_end()

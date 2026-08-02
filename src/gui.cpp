@@ -3,21 +3,6 @@
 #include <stack>
 #include <unordered_set>
 
-#include "datagui/system/button.hpp"
-#include "datagui/system/checkbox.hpp"
-#include "datagui/system/collapsable.hpp"
-#include "datagui/system/color_picker.hpp"
-#include "datagui/system/dropdown.hpp"
-#include "datagui/system/group.hpp"
-#include "datagui/system/popup.hpp"
-#include "datagui/system/select.hpp"
-#include "datagui/system/slider.hpp"
-#include "datagui/system/split.hpp"
-#include "datagui/system/tabs.hpp"
-#include "datagui/system/text_box.hpp"
-#include "datagui/system/text_input.hpp"
-#include "datagui/system/viewport_ptr.hpp"
-
 namespace dgui {
 
 using namespace std::placeholders;
@@ -38,32 +23,7 @@ void Gui::open(
   theme = std::make_shared<Theme>(theme_default());
   program_registry.init();
   font_registry->init();
-
-  systems.resize(TypeCount);
-
-#define REGISTER(Name, System, args...) \
-  systems[(std::size_t)Type::Name] = std::make_unique<System>(args);
-
-  REGISTER(Button, ButtonSystem, font_registry, theme);
-  REGISTER(Checkbox, CheckboxSystem, font_registry, theme);
-  REGISTER(Collapsable, CollapsableSystem, font_registry, theme);
-  REGISTER(ColorPicker, ColorPickerSystem, font_registry, theme);
-  REGISTER(Dropdown, DropdownSystem, font_registry, theme);
-  REGISTER(Group, GroupSystem, theme);
-  REGISTER(Popup, PopupSystem, font_registry, theme);
-  REGISTER(Select, SelectSystem, font_registry, theme);
-  REGISTER(Slider, SliderSystem, font_registry, theme);
-  REGISTER(Split, SplitSystem, theme);
-  REGISTER(Tabs, TabsSystem, font_registry, theme);
-  REGISTER(TextBox, TextBoxSystem, font_registry, theme);
-  REGISTER(TextInput, TextInputSystem, font_registry, theme);
-  REGISTER(ViewportPtr, ViewportPtrSystem, theme);
-
-#undef REGISTER
-  for (const auto& system : systems) {
-    assert(system);
-  }
-  popup_system = dynamic_cast<PopupSystem*>(systems[(size_t)Type::Popup].get());
+  systems.init(font_registry, theme);
 }
 
 void Gui::close() {
@@ -523,7 +483,7 @@ void Gui::render() {
 
     if (!from_content) {
       dl.new_group(layer_root.state().box());
-      render(layer_root);
+      systems.render(layer_root, dl);
       if (layer_root.state().content_mode != DisplayMode::Inline) {
         return;
       }
@@ -549,13 +509,13 @@ void Gui::render() {
         auto element = stack.top();
         stack.pop();
 
-        render_content(element);
+        systems.render_content(element, dl);
         for (auto child = element.child(); child; child = child.next()) {
           const auto& c_state = child.state();
           if (c_state.display_mode != DisplayMode::Inline) {
             continue;
           }
-          render(child);
+          systems.render(child, dl);
           if (c_state.content_mode != DisplayMode::Inline) {
             continue;
           }
@@ -705,7 +665,7 @@ void Gui::calculate_sizes() {
       stack.pop();
 
       element.state().reset_input();
-      set_input_state(element);
+      systems.set_input_state(element);
     }
   }
 
@@ -722,7 +682,7 @@ void Gui::calculate_sizes() {
     layers.emplace(layer, next_z_order++);
   };
   {
-    popup_system->set_window_box(Box2(Vec2(), window.size()));
+    systems.set_window_box(Box2(Vec2(), window.size()));
 
     std::stack<ElementPtr> stack;
     {
@@ -749,7 +709,7 @@ void Gui::calculate_sizes() {
         visit_layer(element, true);
       }
 
-      set_dependent_state(element);
+      systems.set_dependent_state(element);
 
       for (auto child = element.child(); child; child = child.next()) {
         stack.push(child);
@@ -812,13 +772,13 @@ void Gui::event_handling() {
     }
 
     if (!handled && element_focus) {
-      key_event(element_focus, event);
+      systems.key_event(element_focus, event);
     }
   }
 
   if (element_focus) {
     for (const auto& event : window.text_events()) {
-      text_event(element_focus, event);
+      systems.text_event(element_focus, event);
     }
   }
 
@@ -893,7 +853,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
     // node_focus should be a valid node, but there may be edge cases where
     // this isn't true (eg: The node gets removed)
     if (element_focus) {
-      mouse_event(element_focus, event);
+      systems.mouse_event(element_focus, event);
     }
     return;
   }
@@ -905,7 +865,7 @@ void Gui::event_handling_left_click(const MouseEvent& event) {
 
   change_tree_focus(prev_element_focus, element_focus);
   if (element_focus) {
-    mouse_event(element_focus, event);
+    systems.mouse_event(element_focus, event);
   }
 }
 
@@ -913,14 +873,14 @@ void Gui::event_handling_right_click(const MouseEvent& event) {
   if (event.action == MouseAction::Press) {
     element_left_held = get_leaf_node(event.position);
     if (element_left_held) {
-      mouse_event(element_left_held, event);
+      systems.mouse_event(element_left_held, event);
     }
     return;
   }
   if (!element_left_held) {
     return;
   }
-  mouse_event(element_left_held, event);
+  systems.mouse_event(element_left_held, event);
 
   if (event.action == MouseAction::Release) {
     element_left_held = ElementPtr();
@@ -931,14 +891,14 @@ void Gui::event_handling_middle_click(const MouseEvent& event) {
   if (event.action == MouseAction::Press) {
     element_middle_held = get_leaf_node(event.position);
     if (element_middle_held) {
-      mouse_event(element_middle_held, event);
+      systems.mouse_event(element_middle_held, event);
     }
     return;
   }
   if (!element_middle_held) {
     return;
   }
-  mouse_event(element_middle_held, event);
+  systems.mouse_event(element_middle_held, event);
 
   if (event.action == MouseAction::Release) {
     element_middle_held = ElementPtr();
@@ -955,13 +915,13 @@ void Gui::event_handling_hover(const Vec2& mouse_pos) {
     return;
   }
   element_hover.state().hovered = true;
-  mouse_hover(element_hover, mouse_pos);
+  systems.mouse_hover(element_hover, mouse_pos);
 }
 
 void Gui::event_handling_scroll(const ScrollEvent& event) {
   ElementPtr element = get_leaf_node(event.position);
   while (element) {
-    if (scroll_event(element, event)) {
+    if (systems.scroll_event(element, event)) {
       return;
     }
     element = element.parent();
@@ -1004,15 +964,15 @@ void Gui::change_tree_focus(ElementPtr from, ElementPtr to) {
   }
 
   if (from) {
-    focus_leave(from, true);
+    systems.focus_leave(from, true);
   }
   for (auto iter : removed) {
     if (!added.contains(iter)) {
-      focus_tree_leave(iter);
+      systems.focus_tree_leave(iter);
     }
   }
   if (to) {
-    focus_enter(to);
+    systems.focus_enter(to);
   }
 
   if (!focused_layers.empty()) {
