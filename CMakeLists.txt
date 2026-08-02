@@ -24,6 +24,7 @@ add_library(datagui SHARED
 
   src/element/args.cpp
   src/element/key_list.cpp
+  src/element/layer_manager.cpp
   src/element/system.cpp
   src/element/tree.cpp
 

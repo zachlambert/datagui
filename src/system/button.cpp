@@ -29,7 +29,7 @@ void ButtonSystem::render(ConstElementPtr element, DrawList& dl) {
   }
 
   Color border_color;
-  if (state.in_focus_tree) {
+  if (state.focused) {
     border_color = theme->input_color_border_focus;
   } else {
     border_color = theme->input_color_border;

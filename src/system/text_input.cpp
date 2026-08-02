@@ -34,7 +34,7 @@ void TextInputSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& text_input = element.text_input();
 
   Color border_color;
-  if (state.in_focus_tree) {
+  if (state.focused) {
     border_color = theme->input_color_border_focus;
   } else {
     border_color = theme->input_color_border;

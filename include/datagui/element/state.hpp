@@ -52,9 +52,10 @@ struct State {
   int num_cells = 1;
 
   // Persistent state managed by Gui
-  bool in_focus_tree = false;
+  bool focus_ancestor = false;
   bool focused = false;
   bool hovered = false;
+  size_t focus_index = 0;
 };
 
 } // namespace dgui

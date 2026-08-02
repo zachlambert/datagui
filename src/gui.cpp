@@ -204,6 +204,9 @@ bool Gui::popup(
     open = false;
     popup.open = false;
   } else {
+    if (open && !popup.open) {
+      element_focus_defer = current;
+    }
     popup.open = open;
   }
   if (popup.open) {
@@ -532,8 +535,7 @@ void Gui::render() {
   };
 
   dl.clear();
-  render_layer(tree.root(), false);
-  for (const auto& [layer, _] : layers_ordered) {
+  for (const auto& layer : layer_manager.layers()) {
     render_layer(layer.element, layer.is_content);
   }
 #ifdef DGUI_DEBUG
@@ -575,9 +577,9 @@ void Gui::debug_render() {
     }
     state.first_visit = false;
 
-    Color debug_color = element.state().focused         ? Color::Blue()
-                        : element.state().in_focus_tree ? Color::Red()
-                                                        : Color::Green();
+    Color debug_color = element.state().focused          ? Color::Blue()
+                        : element.state().focus_ancestor ? Color::Red()
+                                                         : Color::Green();
     dl.draw_box(
         Box2(
             element.state().position,
@@ -591,7 +593,7 @@ void Gui::debug_render() {
           element.state().content_box,
           Color::Clear(),
           2,
-          element.state().in_focus_tree ? Color(1, 0, 1) : Color(0, 1, 1));
+          element.state().focus_ancestor ? Color(1, 0, 1) : Color(0, 1, 1));
     }
 
     for (auto child = element.child(); child; child = child.next()) {
@@ -669,18 +671,6 @@ void Gui::calculate_sizes() {
     }
   }
 
-  for (auto& [_, state] : layers) {
-    state.visited = false;
-  }
-  auto visit_layer = [&](const ElementPtr& element, bool is_content) {
-    Layer layer(element, is_content);
-    auto iter = layers.find(layer);
-    if (iter != layers.end()) {
-      iter->second.visited = true;
-      return;
-    }
-    layers.emplace(layer, next_z_order++);
-  };
   {
     systems.set_window_box(Box2(Vec2(), window.size()));
 
@@ -691,6 +681,7 @@ void Gui::calculate_sizes() {
       window.set_dynamic_size();
       root.state().position = Vec2();
       root.state().size = window.size();
+      root.state().display_mode = DisplayMode::Float;
       stack.push(root);
     }
 
@@ -702,12 +693,7 @@ void Gui::calculate_sizes() {
       if (state.display_mode == DisplayMode::Disabled) {
         continue;
       }
-      if (state.display_mode == DisplayMode::Float) {
-        visit_layer(element, false);
-      }
-      if (state.content_mode == DisplayMode::Float) {
-        visit_layer(element, true);
-      }
+      layer_manager.visit(element);
 
       systems.set_dependent_state(element);
 
@@ -716,14 +702,16 @@ void Gui::calculate_sizes() {
       }
     }
   }
-  layers_ordered.clear();
-  for (const auto& layer_pair : layers) {
-    layers_ordered.insert(layer_pair);
-  }
+  layer_manager.visit(tree.root());
 }
 
 void Gui::event_handling() {
   window.poll_events();
+
+  if (element_focus_defer) {
+    change_tree_focus(element_focus, element_focus_defer);
+    element_focus_defer = ElementPtr();
+  }
 
   for (const auto& event : window.mouse_events()) {
     switch (event.button) {
@@ -781,11 +769,6 @@ void Gui::event_handling() {
       systems.text_event(element_focus, event);
     }
   }
-
-  for (auto callback : misc_events) {
-    callback();
-  }
-  misc_events.clear();
 }
 
 ElementPtr Gui::get_leaf_node(const Vec2& position) {
@@ -833,16 +816,13 @@ ElementPtr Gui::get_leaf_node(const Vec2& position) {
     return leaf;
   };
 
-  for (auto iter = layers_ordered.rbegin(); iter != layers_ordered.rend();
-       iter++) {
-    const auto& layer = iter->first;
-    auto leaf = get_tree_leaf(layer.element, layer.is_content);
+  for (auto iter = layer_manager.layers().rbegin();
+       iter != layer_manager.layers().rend();
+       ++iter) {
+    auto leaf = get_tree_leaf(iter->element, iter->is_content);
     if (leaf) {
       return leaf;
     }
-  }
-  if (tree.root()) {
-    return get_tree_leaf(tree.root(), false);
   }
   return ElementPtr();
 }
@@ -929,64 +909,40 @@ void Gui::event_handling_scroll(const ScrollEvent& event) {
 }
 
 void Gui::change_tree_focus(ElementPtr from, ElementPtr to) {
-  struct HashFunc {
-    std::size_t operator()(const ElementPtr& element) const {
-      return element.hash();
-    }
-  };
-  std::unordered_set<ElementPtr, HashFunc> removed;
-  std::unordered_set<ElementPtr, HashFunc> added;
+  focus_index++;
 
+  // All ancestors of "to" get given the latest focus_index
+  if (to) {
+    auto iter = to.parent();
+    while (iter) {
+      iter.state().focus_index = focus_index;
+      iter.state().focus_ancestor = true;
+      iter = iter.parent();
+    }
+  }
+
+  // Order of operations:
+  // - focus_leave(from)
+  // - focus_tree_leave(ancestors with outdated focus_index)
+  // - focus_enter(to)
   if (from) {
     from.state().focused = false;
-    auto iter = from;
-    while (iter) {
-      removed.insert(iter);
-      iter.state().in_focus_tree = false;
-      iter = iter.parent();
-    }
-  }
-
-  std::vector<Layer> focused_layers;
-  if (to) {
-    to.state().focused = true;
-    auto iter = to;
-    while (iter) {
-      added.insert(iter);
-      if (iter.state().content_mode == DisplayMode::Float) {
-        focused_layers.push_back(Layer{iter, true});
-      }
-      if (iter.state().display_mode == DisplayMode::Float) {
-        focused_layers.push_back(Layer{iter, false});
-      }
-      iter = iter.parent();
-    }
-  }
-
-  if (from) {
     systems.focus_leave(from, true);
-  }
-  for (auto iter : removed) {
-    if (!added.contains(iter)) {
+
+    auto iter = from.parent();
+    while (iter) {
+      if (iter.state().focus_index == focus_index) {
+        break;
+      }
+      iter.state().focus_ancestor = false;
       systems.focus_tree_leave(iter);
+      iter = iter.parent();
     }
   }
   if (to) {
+    to.state().focus_index = focus_index;
+    to.state().focused = true;
     systems.focus_enter(to);
-  }
-
-  if (!focused_layers.empty()) {
-    for (auto iter = focused_layers.begin(); iter != focused_layers.end();
-         ++iter) {
-      auto existing = layers.find(*iter);
-      if (existing != layers.end()) {
-        existing->second.z_order = next_z_order++;
-      }
-    }
-    layers_ordered.clear();
-    for (const auto& layer_pair : layers) {
-      layers_ordered.insert(layer_pair);
-    }
   }
 }
 
