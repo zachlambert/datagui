@@ -21,27 +21,27 @@ void GuiWriter::number(dpack::NumberType type, const void* value) {
   if (in_color) {
     float& output = color.data[color_i - 1];
     switch (type) {
-    case dpack::NumberType::I32:
-      output = double(*(const std::int32_t*)value) / 255;
-      break;
-    case dpack::NumberType::I64:
-      output = double(*(const std::int64_t*)value) / 255;
-      break;
-    case dpack::NumberType::U32:
-      output = double(*(const std::uint32_t*)value) / 255;
-      break;
-    case dpack::NumberType::U64:
-      output = double(*(const std::uint64_t*)value) / 255;
-      break;
-    case dpack::NumberType::U8:
-      output = double(*(const std::uint8_t*)value) / 255;
-      break;
-    case dpack::NumberType::F32:
-      output = *(const float*)value;
-      break;
-    case dpack::NumberType::F64:
-      output = *(const double*)value;
-      break;
+      case dpack::NumberType::I32:
+        output = double(*(const std::int32_t*)value) / 255;
+        break;
+      case dpack::NumberType::I64:
+        output = double(*(const std::int64_t*)value) / 255;
+        break;
+      case dpack::NumberType::U32:
+        output = double(*(const std::uint32_t*)value) / 255;
+        break;
+      case dpack::NumberType::U64:
+        output = double(*(const std::uint64_t*)value) / 255;
+        break;
+      case dpack::NumberType::U8:
+        output = double(*(const std::uint8_t*)value) / 255;
+        break;
+      case dpack::NumberType::F32:
+        output = *(const float*)value;
+        break;
+      case dpack::NumberType::F64:
+        output = *(const double*)value;
+        break;
     }
     return;
   }
@@ -58,27 +58,27 @@ void GuiWriter::number(dpack::NumberType type, const void* value) {
     slider.type = convert_type(type);
 
     switch (type) {
-    case dpack::NumberType::I32:
-      slider.value = *(const std::int32_t*)value;
-      break;
-    case dpack::NumberType::I64:
-      slider.value = *(const std::int64_t*)value;
-      break;
-    case dpack::NumberType::U32:
-      slider.value = *(const std::uint32_t*)value;
-      break;
-    case dpack::NumberType::U64:
-      slider.value = *(const std::uint64_t*)value;
-      break;
-    case dpack::NumberType::U8:
-      slider.value = *(const std::uint8_t*)value;
-      break;
-    case dpack::NumberType::F32:
-      slider.value = *(const float*)value;
-      break;
-    case dpack::NumberType::F64:
-      slider.value = *(const double*)value;
-      break;
+      case dpack::NumberType::I32:
+        slider.value = *(const std::int32_t*)value;
+        break;
+      case dpack::NumberType::I64:
+        slider.value = *(const std::int64_t*)value;
+        break;
+      case dpack::NumberType::U32:
+        slider.value = *(const std::uint32_t*)value;
+        break;
+      case dpack::NumberType::U64:
+        slider.value = *(const std::uint64_t*)value;
+        break;
+      case dpack::NumberType::U8:
+        slider.value = *(const std::uint8_t*)value;
+        break;
+      case dpack::NumberType::F32:
+        slider.value = *(const float*)value;
+        break;
+      case dpack::NumberType::F64:
+        slider.value = *(const double*)value;
+        break;
     }
     slider.changed = false;
     return;
@@ -88,27 +88,27 @@ void GuiWriter::number(dpack::NumberType type, const void* value) {
   auto& text_input = node.text_input();
 
   switch (type) {
-  case dpack::NumberType::I32:
-    text_input.text = number_to_string(*(const std::int32_t*)value);
-    break;
-  case dpack::NumberType::I64:
-    text_input.text = number_to_string(*(const std::int64_t*)value);
-    break;
-  case dpack::NumberType::U32:
-    text_input.text = number_to_string(*(const std::uint32_t*)value);
-    break;
-  case dpack::NumberType::U64:
-    text_input.text = number_to_string(*(const std::uint64_t*)value);
-    break;
-  case dpack::NumberType::U8:
-    text_input.text = number_to_string(*(const std::uint8_t*)value);
-    break;
-  case dpack::NumberType::F32:
-    text_input.text = number_to_string(*(const float*)value);
-    break;
-  case dpack::NumberType::F64:
-    text_input.text = number_to_string(*(const double*)value);
-    break;
+    case dpack::NumberType::I32:
+      text_input.text = number_to_string(*(const std::int32_t*)value);
+      break;
+    case dpack::NumberType::I64:
+      text_input.text = number_to_string(*(const std::int64_t*)value);
+      break;
+    case dpack::NumberType::U32:
+      text_input.text = number_to_string(*(const std::uint32_t*)value);
+      break;
+    case dpack::NumberType::U64:
+      text_input.text = number_to_string(*(const std::uint64_t*)value);
+      break;
+    case dpack::NumberType::U8:
+      text_input.text = number_to_string(*(const std::uint8_t*)value);
+      break;
+    case dpack::NumberType::F32:
+      text_input.text = number_to_string(*(const float*)value);
+      break;
+    case dpack::NumberType::F64:
+      text_input.text = number_to_string(*(const double*)value);
+      break;
   }
   text_input.changed = false;
 }
@@ -173,8 +173,8 @@ void GuiWriter::optional_begin(bool has_value) {
   }
 
   node = node.parent().next();
-  if (node && !has_value) {
-    node.state().display_mode = DisplayMode::Disabled;
+  if (node) {
+    node.state().hidden = !has_value;
   }
 
   if (!has_value) {
@@ -191,9 +191,7 @@ void GuiWriter::optional_end() {
   node = node.parent();
 }
 
-void GuiWriter::variant_begin(
-    int value,
-    const std::span<const char*>& labels) {
+void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   enter_container(-1, 1);
 
   node.expect(Type::Select, read_id());
@@ -207,10 +205,13 @@ void GuiWriter::variant_begin(
 
   node = node.next();
   while (node && node.id() != value) {
-    node.state().display_mode = DisplayMode::Disabled;
+    node.state().hidden = true;
     node = node.next();
   }
   next_id_ = value;
+  if (node) {
+    node.state().hidden = false;
+  }
 
   in_composite_ = true;
 }
@@ -220,7 +221,7 @@ void GuiWriter::variant_end() {
   if (node) {
     node = node.next();
     while (node) {
-      node.state().display_mode = DisplayMode::Disabled;
+      node.state().hidden = true;
       node = node.next();
     }
   }

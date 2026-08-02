@@ -220,7 +220,7 @@ void ColorPickerSystem::mouse_event(
   }
 }
 
-void ColorPickerSystem::focus_tree_leave(ElementPtr element) {
+void ColorPickerSystem::focus_leave(ElementPtr element, bool success) {
   auto& color_picker = element.color_picker();
   color_picker.open = false;
 }

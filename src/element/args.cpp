@@ -4,6 +4,7 @@
 namespace dgui {
 
 void Args::apply(ElementPtr element) {
+  hidden_.consume(element.state().hidden);
   num_cells_.consume(element.state().num_cells);
   switch (element.type()) {
   case Type::Button: {

@@ -49,6 +49,7 @@ struct State {
   Box2 content_box;
 
   // Input state set via args
+  bool hidden = false;
   int num_cells = 1;
 
   // Persistent state managed by Gui

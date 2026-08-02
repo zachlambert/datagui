@@ -1,7 +1,6 @@
 #include "datagui/gui.hpp"
 #include <sstream>
 #include <stack>
-#include <unordered_set>
 
 namespace dgui {
 
@@ -668,6 +667,10 @@ void Gui::calculate_sizes() {
 
       element.state().reset_input();
       systems.set_input_state(element);
+      if (element.state().hidden) {
+        // Override
+        element.state().display_mode = DisplayMode::Disabled;
+      }
     }
   }
 
@@ -909,6 +912,9 @@ void Gui::event_handling_scroll(const ScrollEvent& event) {
 }
 
 void Gui::change_tree_focus(ElementPtr from, ElementPtr to) {
+  if (from == to) {
+    return;
+  }
   focus_index++;
 
   // All ancestors of "to" get given the latest focus_index
@@ -929,7 +935,8 @@ void Gui::change_tree_focus(ElementPtr from, ElementPtr to) {
     from.state().focused = false;
     systems.focus_leave(from, true);
 
-    auto iter = from.parent();
+    // Also call focus_tree_leave() for "from"
+    auto iter = from;
     while (iter) {
       if (iter.state().focus_index == focus_index) {
         break;

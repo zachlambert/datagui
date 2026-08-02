@@ -17,7 +17,7 @@ public:
   void render(ConstElementPtr element, DrawList& dl) override;
   void render_content(ConstElementPtr element, DrawList& dl) override;
   void mouse_event(ElementPtr element, const MouseEvent& event) override;
-  void focus_tree_leave(ElementPtr element) override;
+  void focus_leave(ElementPtr element, bool success) override;
 
 private:
   std::string get_slider_text(const Slider& slider) const;

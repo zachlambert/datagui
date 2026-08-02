@@ -19,27 +19,27 @@ T number_from_string(const std::string& string) {
 void GuiReader::number(dpack::NumberType type, void* value) {
   if (in_color) {
     switch (type) {
-    case dpack::NumberType::I32:
-      *(std::int32_t*)value = color.data[color_i - 1] * 255;
-      break;
-    case dpack::NumberType::I64:
-      *(std::int64_t*)value = color.data[color_i - 1] * 255;
-      break;
-    case dpack::NumberType::U32:
-      *(std::int32_t*)value = color.data[color_i - 1] * 255;
-      break;
-    case dpack::NumberType::U64:
-      *(std::uint64_t*)value = color.data[color_i - 1] * 255;
-      break;
-    case dpack::NumberType::F32:
-      *(float*)value = color.data[color_i - 1];
-      break;
-    case dpack::NumberType::F64:
-      *(double*)value = color.data[color_i - 1];
-      break;
-    case dpack::NumberType::U8:
-      *(std::uint8_t*)value = color.data[color_i - 1] * 255;
-      break;
+      case dpack::NumberType::I32:
+        *(std::int32_t*)value = color.data[color_i - 1] * 255;
+        break;
+      case dpack::NumberType::I64:
+        *(std::int64_t*)value = color.data[color_i - 1] * 255;
+        break;
+      case dpack::NumberType::U32:
+        *(std::int32_t*)value = color.data[color_i - 1] * 255;
+        break;
+      case dpack::NumberType::U64:
+        *(std::uint64_t*)value = color.data[color_i - 1] * 255;
+        break;
+      case dpack::NumberType::F32:
+        *(float*)value = color.data[color_i - 1];
+        break;
+      case dpack::NumberType::F64:
+        *(double*)value = color.data[color_i - 1];
+        break;
+      case dpack::NumberType::U8:
+        *(std::uint8_t*)value = color.data[color_i - 1] * 255;
+        break;
     }
     return;
   }
@@ -59,27 +59,27 @@ void GuiReader::number(dpack::NumberType type, void* value) {
     slider.changed = false;
 
     switch (type) {
-    case dpack::NumberType::I32:
-      *(std::int32_t*)value = slider.value;
-      break;
-    case dpack::NumberType::I64:
-      *(std::int64_t*)value = slider.value;
-      break;
-    case dpack::NumberType::U32:
-      *(std::uint32_t*)value = slider.value;
-      break;
-    case dpack::NumberType::U64:
-      *(std::uint64_t*)value = slider.value;
-      break;
-    case dpack::NumberType::U8:
-      *(std::uint8_t*)value = slider.value;
-      break;
-    case dpack::NumberType::F32:
-      *(float*)value = slider.value;
-      break;
-    case dpack::NumberType::F64:
-      *(double*)value = slider.value;
-      break;
+      case dpack::NumberType::I32:
+        *(std::int32_t*)value = slider.value;
+        break;
+      case dpack::NumberType::I64:
+        *(std::int64_t*)value = slider.value;
+        break;
+      case dpack::NumberType::U32:
+        *(std::uint32_t*)value = slider.value;
+        break;
+      case dpack::NumberType::U64:
+        *(std::uint64_t*)value = slider.value;
+        break;
+      case dpack::NumberType::U8:
+        *(std::uint8_t*)value = slider.value;
+        break;
+      case dpack::NumberType::F32:
+        *(float*)value = slider.value;
+        break;
+      case dpack::NumberType::F64:
+        *(double*)value = slider.value;
+        break;
     }
     return;
   }
@@ -90,27 +90,29 @@ void GuiReader::number(dpack::NumberType type, void* value) {
   text_input.changed = false;
 
   switch (type) {
-  case dpack::NumberType::I32:
-    *(std::int32_t*)value = number_from_string<std::int32_t>(text_input.text);
-    break;
-  case dpack::NumberType::I64:
-    *(std::int64_t*)value = number_from_string<std::int64_t>(text_input.text);
-    break;
-  case dpack::NumberType::U32:
-    *(std::uint32_t*)value = number_from_string<std::uint32_t>(text_input.text);
-    break;
-  case dpack::NumberType::U64:
-    *(std::uint64_t*)value = number_from_string<std::uint64_t>(text_input.text);
-    break;
-  case dpack::NumberType::U8:
-    *(std::uint8_t*)value = number_from_string<std::uint8_t>(text_input.text);
-    break;
-  case dpack::NumberType::F32:
-    *(float*)value = number_from_string<float>(text_input.text);
-    break;
-  case dpack::NumberType::F64:
-    *(double*)value = number_from_string<double>(text_input.text);
-    break;
+    case dpack::NumberType::I32:
+      *(std::int32_t*)value = number_from_string<std::int32_t>(text_input.text);
+      break;
+    case dpack::NumberType::I64:
+      *(std::int64_t*)value = number_from_string<std::int64_t>(text_input.text);
+      break;
+    case dpack::NumberType::U32:
+      *(std::uint32_t*)value =
+          number_from_string<std::uint32_t>(text_input.text);
+      break;
+    case dpack::NumberType::U64:
+      *(std::uint64_t*)value =
+          number_from_string<std::uint64_t>(text_input.text);
+      break;
+    case dpack::NumberType::U8:
+      *(std::uint8_t*)value = number_from_string<std::uint8_t>(text_input.text);
+      break;
+    case dpack::NumberType::F32:
+      *(float*)value = number_from_string<float>(text_input.text);
+      break;
+    case dpack::NumberType::F64:
+      *(double*)value = number_from_string<double>(text_input.text);
+      break;
   }
 }
 
@@ -182,8 +184,8 @@ bool GuiReader::optional_begin() {
   }
 
   node = node.parent().next();
-  if (node && !has_value) {
-    node.state().display_mode = DisplayMode::Disabled;
+  if (node) {
+    node.state().hidden = !has_value;
   }
 
   if (!has_value) {
@@ -219,10 +221,13 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
   int choice = select.choice;
   node = node.next();
   while (node && node.id() != choice) {
-    node.state().display_mode = DisplayMode::Disabled;
+    node.state().hidden = true;
     node = node.next();
   }
   next_id_ = choice;
+  if (node) {
+    node.state().hidden = false;
+  }
 
   in_composite_ = true;
   return choice;
@@ -233,7 +238,7 @@ void GuiReader::variant_end() {
   if (node) {
     node = node.next();
     while (node) {
-      node.state().display_mode = DisplayMode::Disabled;
+      node.state().hidden = true;
       node = node.next();
     }
   }
@@ -495,38 +500,38 @@ bool GuiReader::peek_changed(ConstElementPtr root) {
     auto node = stack.top();
 
     switch (node.type()) {
-    case Type::Button:
-      if (node.button().released) {
-        return true;
-      }
-      break;
-    case Type::Checkbox:
-      if (node.checkbox().changed) {
-        return true;
-      }
-      break;
-    case Type::ColorPicker:
-      if (node.color_picker().changed) {
-        return true;
-      }
-      break;
-    case Type::Select:
-      if (node.select().changed) {
-        return true;
-      }
-      break;
-    case Type::Slider:
-      if (node.slider().changed) {
-        return true;
-      }
-      break;
-    case Type::TextInput:
-      if (node.text_input().changed) {
-        return true;
-      }
-      break;
-    default:
-      break;
+      case Type::Button:
+        if (node.button().released) {
+          return true;
+        }
+        break;
+      case Type::Checkbox:
+        if (node.checkbox().changed) {
+          return true;
+        }
+        break;
+      case Type::ColorPicker:
+        if (node.color_picker().changed) {
+          return true;
+        }
+        break;
+      case Type::Select:
+        if (node.select().changed) {
+          return true;
+        }
+        break;
+      case Type::Slider:
+        if (node.slider().changed) {
+          return true;
+        }
+        break;
+      case Type::TextInput:
+        if (node.text_input().changed) {
+          return true;
+        }
+        break;
+      default:
+        break;
     }
 
     if (node.var()) {
