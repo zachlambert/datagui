@@ -8,7 +8,7 @@ LinePlot::Builder Plotter::plot(const std::vector<Vec2>& points) {
 }
 
 LinePlot::Builder Plotter::plot(std::vector<Vec2>&& points) {
-  plots.push_back(std::make_unique<LinePlot>(theme, font_registry, points));
+  plots.push_back(std::make_unique<LinePlot>(theme, font_registry, std::move(points)));
   return dynamic_cast<LinePlot*>(plots.back().get())->builder();
 }
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "datagui/input/event.hpp"
-#include "datagui/theme.hpp"
 #include "datagui/render/state/draw_list.hpp"
+#include "datagui/theme.hpp"
 #include <memory>
 
 namespace dgui {

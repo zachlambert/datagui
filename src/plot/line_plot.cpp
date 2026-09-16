@@ -57,7 +57,7 @@ LinePlot::LinePlot(
     std::shared_ptr<Theme> theme,
     std::shared_ptr<FontRegistry> font_registry,
     std::vector<Vec2>&& points) :
-    theme_(theme), font_registry_(font_registry), points_(points) {
+    theme_(theme), font_registry_(font_registry), points_(std::move(points)) {
   init();
 }
 
@@ -208,6 +208,10 @@ void LinePlot::init() {
   args_.color = matplotlib_colors[default_color_i_];
   default_color_i_ = (default_color_i_ + 1) % matplotlib_colors.size();
 
+  if (points_.empty()) {
+    data_bounds_ = Box2(Vec2(), Vec2::ones());
+    return;
+  }
   data_bounds_.lower = Vec2::uniform(std::numeric_limits<float>::max());
   data_bounds_.upper = Vec2::uniform(-std::numeric_limits<float>::max());
   for (const auto& point : points_) {

@@ -107,11 +107,6 @@ void PlotFrame::calculate(const Box2& viewport) {
       text_width = item_width - (2 * theme_->text_padding + text_width);
 
       item.origin = Vec2(x, y);
-      item.icon_box = Box2::from_size(
-          item.origin,
-          Vec2(args_.legend_icon_width, font.text_height()));
-      item.text_origin =
-          item.origin + Vec2(args_.legend_icon_width + theme_->text_padding, 0);
       item.text_width = text_width;
       x += item_width;
     }
@@ -122,11 +117,17 @@ void PlotFrame::calculate(const Box2& viewport) {
     legend_box_ = Box2::from_lower_right(
         viewport.lower_right(Vec2::uniform(args_.outer_padding)),
         Vec2(max_width, y));
+
+    for (auto& item : legend_items_) {
+      item.origin += legend_box_->lower;
+      item.icon_box = Box2::from_size(
+          item.origin,
+          Vec2(args_.legend_icon_width, font.text_height()));
+      item.text_origin =
+          item.origin + Vec2(args_.legend_icon_width + theme_->text_padding, 0);
+    }
   } else {
     legend_box_.reset();
-  }
-  for (auto& item : legend_items_) {
-    item.origin += legend_box_->lower;
   }
 
   // =============================
@@ -146,7 +147,7 @@ void PlotFrame::calculate(const Box2& viewport) {
 
     for (auto& gm : gradient_maps_) {
       gm.ticks.length = item_height;
-      aside_width_ += ticks_depth(gm.ticks);
+      aside_width_ += args_.gradient_map_width + ticks_depth(gm.ticks);
     }
     const Vec2 origin = viewport.lower_right(
         Vec2(args_.outer_padding + aside_width_, top_padding));
@@ -159,7 +160,7 @@ void PlotFrame::calculate(const Box2& viewport) {
           Vec2(args_.gradient_map_width, item_height));
       gm.ticks.origin = item_origin + Vec2(args_.gradient_map_width, 0);
 
-      x += ticks_depth(gm.ticks);
+      x += args_.gradient_map_width + ticks_depth(gm.ticks);
     }
   }
 
@@ -175,9 +176,9 @@ void PlotFrame::calculate(const Box2& viewport) {
       viewport.lower + Vec2(left_padding, bottom_padding),
       viewport.upper - Vec2(right_padding, top_padding));
 
-  xticks_.origin = plot_area_.lower_left();
+  xticks_.origin = plot_area_.upper_left();
   xticks_.length = plot_area_.size_x();
-  yticks_.origin = plot_area_.upper_left();
+  yticks_.origin = plot_area_.lower_left();
   yticks_.length = plot_area_.size_y();
 
   // =============================
@@ -245,7 +246,9 @@ void PlotFrame::draw_frame(const Box2& viewport, DrawList& dl) const {
     draw_ticks(dl, gradient_map.ticks);
   }
 
+  #if 0
   dl.draw_box(plot_area_, Color::Gray(0.9));
+  #endif
   dl.draw_line(
       plot_area_.lower_left(),
       plot_area_.upper_left(),
@@ -285,7 +288,7 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
 
   float power = 0;
   float diff = std::max(ticks.max_value - ticks.min_value, 1e-12f);
-  if (std::isinf(diff)) {
+  if (!std::isfinite(diff)) {
     // Silently ignore
     return;
   }

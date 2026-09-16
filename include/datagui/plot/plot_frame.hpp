@@ -52,13 +52,13 @@ public:
     return plot_area_;
   }
   const Box2& legend_icon_box(int index) const {
-    if (index < 0) {
+    if (index < 0 || index >= (int)legend_items_.size()) {
       throw std::invalid_argument("Invalid index");
     }
     return legend_items_[index].icon_box;
   }
   const Box2& gradient_map_box(size_t index) const {
-    if (index < 0) {
+    if (index < 0 || index >= (int)gradient_maps_.size()) {
       throw std::invalid_argument("Invalid index");
     }
     return gradient_maps_[index].gm_box;

@@ -44,7 +44,7 @@ HeatmapPlot::HeatmapPlot(
     height_(height) {
 
   auto get_value = [&](size_t j, size_t i) {
-    const Vec2 s = Vec2(j, i) / Vec2(width_, height_);
+    const Vec2 s = Vec2(j, i) / Vec2(width_ - 1, height_ - 1);
     const Vec2 value = lower_ + s * (upper_ - lower_);
     return function_(value);
   };
@@ -78,10 +78,10 @@ void HeatmapPlot::draw_frame_components(const PlotFrame& frame, DrawList& dl)
   }
   const Box2& box = frame.gradient_map_box(icon_index_);
   ImageData data;
-  data.resize(32, 16);
+  data.resize(8, std::ceil(8 * box.size_y() / box.size_x()));
   for (size_t y = 0; y < data.height(); y++) {
     for (size_t x = 0; x < data.width(); x++) {
-      const float s = static_cast<float>(x) / (data.width() + 1);
+      const float s = static_cast<float>(x) / (data.width() - 1);
       data(x, y).set(args_.gradient_map.lookup(s).rgb);
     }
   }
@@ -93,13 +93,15 @@ void HeatmapPlot::draw_frame_components(const PlotFrame& frame, DrawList& dl)
 
 void HeatmapPlot::draw_data(const PlotFrame& frame, Scene2d& scene) const {
   auto get_value = [&](size_t j, size_t i) {
-    const Vec2 s = Vec2(j, i) / Vec2(width_, height_);
+    Vec2 s = Vec2(j, i) / Vec2(width_ - 1, height_ - 1);
+    s.x = std::clamp(s.x, 0.f, 1.f);
+    s.y = std::clamp(s.y, 0.f, 1.f);
     const Vec2 value = lower_ + s * (upper_ - lower_);
     return function_(value);
   };
-  float min_value = args_.min_value.value_or(std::numeric_limits<float>::max());
+  float min_value = args_.min_value.value_or(data_min_);
   float max_value =
-      args_.max_value.value_or(-std::numeric_limits<float>::max());
+      args_.max_value.value_or(data_max_);
   ImageData data;
   data.resize(width_, height_);
   for (size_t i = 0; i < data.height(); i++) {

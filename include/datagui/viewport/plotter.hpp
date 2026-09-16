@@ -9,15 +9,6 @@
 
 namespace dgui {
 
-struct PlotterArgs {
-  float tick_length = 5;
-  float inner_padding = 5;
-  float outer_padding = 10;
-  float line_width = 2;
-  Color tick_color = Color::Gray(0.2);
-  float heatmap_scale_width = 16;
-};
-
 class Plotter : public Viewport {
 public:
   LinePlot::Builder plot(const std::vector<Vec2>& points);
