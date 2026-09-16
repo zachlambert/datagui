@@ -16,7 +16,7 @@ public:
   static GradientMap linear(Color min, Color max) {
     return GradientMap(Linear{min, max});
   }
-  static GradientMap virids() {
+  static GradientMap viridis() {
     return GradientMap(Viridis{});
   }
 

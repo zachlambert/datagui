@@ -48,14 +48,11 @@ public:
       std::shared_ptr<FontRegistry> font_registry_,
       std::vector<Vec2>&& points);
 
-  Box2 get_data_bounds() const override {
-    return data_bounds_;
-  }
-  void draw_data(const Box2& data_box, const Box2& draw_box, Scene2d& scene)
+  void add_frame_components(PlotFrame& frame) override;
+  void draw_frame_components(const PlotFrame& frame, DrawList& dl)
       const override;
 
-  Vec2 legend_item_size() const override;
-  void draw_legend_item(DrawList& dl, const Vec2& origin) const override;
+  void draw_data(const PlotFrame& frame, Scene2d& scene) const override;
 
   Builder builder() {
     return Builder(args_);
@@ -70,6 +67,7 @@ private:
   Args args_;
   std::vector<Vec2> points_;
   Box2 data_bounds_;
+  int legend_id_ = -1;
 };
 
 } // namespace dgui

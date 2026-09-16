@@ -74,6 +74,19 @@ struct Box2 {
     return upper - offset;
   }
 
+  Vec2 lower_center() const {
+    return Vec2((lower.x + upper.x) / 2, lower.y);
+  }
+  Vec2 upper_center() const {
+    return Vec2((lower.x + upper.x) / 2, upper.y);
+  }
+  Vec2 center_left() const {
+    return Vec2(lower.x, (lower.y + upper.y) / 2);
+  }
+  Vec2 center_right() const {
+    return Vec2(upper.x, (lower.y + upper.y) / 2);
+  }
+
   static Box2 from_lower_left(const Vec2& lower_left, const Vec2& size) {
     return Box2::from_size(lower_left, size);
   }

@@ -2,19 +2,18 @@
 
 #include "datagui/plot/plot.hpp"
 #include "datagui/render/font_registry.hpp"
+#include "datagui/render/lookup/gradient_map.hpp"
 #include "datagui/theme.hpp"
 #include <functional>
 #include <optional>
 
 namespace dgui {
 
-enum class HeatmapType { Viridis, Linear };
-
 class HeatmapPlot : public Plot {
 public:
   struct Args {
     std::string label;
-    HeatmapType type;
+    GradientMap gradient_map = GradientMap::viridis();
     Vec3 linear_min;
     Vec3 linear_max;
     std::optional<float> min_value;
@@ -45,22 +44,17 @@ public:
       size_t width,
       size_t height);
 
-  Box2 get_data_bounds() const override {
-    return Box2(lower_, upper_);
-  }
-  void draw_data(const Box2& data_box, const Box2& draw_box, Scene2d& scene)
+  void add_frame_components(PlotFrame& frame) override;
+  void draw_frame_components(const PlotFrame& frame, DrawList& dl)
       const override;
 
-  Vec2 legend_item_size() const override;
-  void draw_legend_item(DrawList& dl, const Vec2& origin) const override;
+  void draw_data(const PlotFrame& frame, Scene2d& scene) const override;
 
   Builder builder() {
     return Builder(args_);
   }
 
 private:
-  Vec3 get_color(float s) const;
-
   std::shared_ptr<Theme> theme_;
   std::shared_ptr<FontRegistry> font_registry_;
 
@@ -69,6 +63,9 @@ private:
   std::function<float(const Vec2&)> function_;
   size_t width_;
   size_t height_;
+  float data_min_ = 0;
+  float data_max_ = 0;
+  int icon_index_ = -1;
 
   Args args_;
 };

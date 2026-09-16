@@ -37,12 +37,12 @@ void PlotFrame::add_data(const Vec2& min, const Vec2& max) {
   }
 }
 
-size_t PlotFrame::add_legend_item(const std::string& label) {
+int PlotFrame::add_legend_item(const std::string& label) {
   legend_items_.emplace_back(label);
   return legend_items_.size() - 1;
 }
 
-size_t PlotFrame::add_gradient_map(
+int PlotFrame::add_gradient_map(
     float min,
     float max,
     const std::string& label) {
@@ -111,6 +111,9 @@ void PlotFrame::calculate(const Box2& viewport) {
       text_width = item_width - (2 * theme_->text_padding + text_width);
 
       item.origin = Vec2(x, y);
+      item.icon_box = Box2::from_size(
+          item.origin,
+          Vec2(args_.legend_icon_width, font.text_height()));
       item.text_origin =
           item.origin + Vec2(args_.legend_icon_width + theme_->text_padding, 0);
       item.text_width = text_width;

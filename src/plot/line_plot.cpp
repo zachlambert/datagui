@@ -57,13 +57,76 @@ LinePlot::LinePlot(
   init();
 }
 
-void LinePlot::draw_data(
-    const Box2& data_box,
-    const Box2& draw_box,
-    Scene2d& scene) const {
+void LinePlot::add_frame_components(PlotFrame& frame) {
+  frame.add_data(data_bounds_.lower, data_bounds_.upper);
+  if (!args_.label.empty()) {
+    legend_id_ = frame.add_legend_item(args_.label);
+  }
+}
 
+void LinePlot::draw_frame_components(const PlotFrame& frame, DrawList& dl)
+    const {
+  if (legend_id_ < 0) {
+    return;
+  }
+  const Box2& box = frame.legend_icon_box(legend_id_);
+  switch (args_.line_style) {
+    case LineStyle::None:
+      break;
+    case LineStyle::Solid:
+      dl.draw_line(
+          box.center_left(),
+          box.center_right(),
+          args_.line_width,
+          args_.color);
+      break;
+    case LineStyle::Dashed: {
+      const float line_length = box.size_x();
+      const Vec2 origin = box.center_left();
+      float s = -line_length / 2;
+      while (s < line_length / 2) {
+        const int index = std::round(s / dashed_segment_length);
+        if (index % 2 == 0) {
+          double s2 = std::min(s + dashed_segment_length, line_length / 2);
+          dl.draw_line(
+              origin + Vec2(s, 0),
+              origin + Vec2(s2, 0),
+              args_.line_width,
+              args_.color);
+        }
+        s += dashed_segment_length;
+      }
+      break;
+    }
+  }
+
+  const Vec2 marker_pos = box.center();
+  switch (args_.marker_style) {
+    case MarkerStyle::Circle:
+      dl.draw_circle(marker_pos, args_.marker_width / 2, args_.color);
+      break;
+    case MarkerStyle::Cross: {
+      Vec2 delta_up(args_.marker_width / 2, args_.marker_width / 2);
+      Vec2 delta_down(args_.marker_width / 2, -args_.marker_width / 2);
+      dl.draw_line(
+          marker_pos - delta_up,
+          marker_pos + delta_up,
+          args_.marker_width * 0.3,
+          args_.color);
+      dl.draw_line(
+          marker_pos - delta_down,
+          marker_pos + delta_down,
+          args_.marker_width * 0.3,
+          args_.color);
+    } break;
+    default:
+      break;
+  }
+}
+
+void LinePlot::draw_data(const PlotFrame& frame, Scene2d& scene) const {
   auto plot_marker = [&](const Vec2& point) {
-    Vec2 draw_point = remap(point, data_box, draw_box);
+    Vec2 draw_point = remap(point, frame.data_area(), frame.plot_area());
     switch (args_.marker_style) {
       case MarkerStyle::Circle:
         scene.draw_circle(
@@ -93,8 +156,8 @@ void LinePlot::draw_data(
   };
 
   auto plot_line = [&](const Vec2& a, const Vec2& b, float length) {
-    Vec2 draw_a = remap(a, data_box, draw_box);
-    Vec2 draw_b = remap(b, data_box, draw_box);
+    Vec2 draw_a = remap(a, frame.data_area(), frame.plot_area());
+    Vec2 draw_b = remap(b, frame.data_area(), frame.plot_area());
     float ab_length = (draw_a - draw_b).length();
     Vec2 dir = (draw_b - draw_a) / ab_length;
     switch (args_.line_style) {
@@ -134,75 +197,6 @@ void LinePlot::draw_data(
   }
   if (!points_.empty()) {
     plot_marker(points_.back());
-  }
-}
-
-Vec2 LinePlot::legend_item_size() const {
-  auto& font = font_registry_->get_font(theme_->text_font, theme_->text_size);
-  Vec2 size = font.text_size(args_.label);
-  // Space for icon
-  size.x += 2 * font.text_height();
-  return size;
-}
-
-void LinePlot::draw_legend_item(DrawList& dl, const Vec2& origin) const {
-  auto& font = font_registry_->get_font(theme_->text_font, theme_->text_size);
-  const Vec2 text_size = font.text_size(args_.label);
-
-  const Vec2 text_origin = origin + Vec2(2 * font.text_height(), 0);
-  const Vec2 marker_pos =
-      origin + Vec2(font.text_height(), font.text_height() / 2);
-
-  const float line_length =
-      2 * font.text_height() - args_.line_width - 2 * theme_->text_padding;
-  switch (args_.line_style) {
-    case LineStyle::None:
-      break;
-    case LineStyle::Solid:
-      dl.draw_line(
-          marker_pos - Vec2(line_length / 2, 0),
-          marker_pos + Vec2(line_length / 2, 0),
-          args_.line_width,
-          args_.color);
-      break;
-    case LineStyle::Dashed: {
-      float s = -line_length / 2;
-      while (s < line_length / 2) {
-        const int index = std::round(s / dashed_segment_length);
-        if (index % 2 == 0) {
-          double s2 = std::min(s + dashed_segment_length, line_length / 2);
-          dl.draw_line(
-              marker_pos + Vec2(s, 0),
-              marker_pos + Vec2(s2, 0),
-              args_.line_width,
-              args_.color);
-        }
-        s += dashed_segment_length;
-      }
-      break;
-    }
-  }
-
-  switch (args_.marker_style) {
-    case MarkerStyle::Circle:
-      dl.draw_circle(marker_pos, args_.marker_width / 2, args_.color);
-      break;
-    case MarkerStyle::Cross: {
-      Vec2 delta_up(args_.marker_width / 2, args_.marker_width / 2);
-      Vec2 delta_down(args_.marker_width / 2, -args_.marker_width / 2);
-      dl.draw_line(
-          marker_pos - delta_up,
-          marker_pos + delta_up,
-          args_.marker_width * 0.3,
-          args_.color);
-      dl.draw_line(
-          marker_pos - delta_down,
-          marker_pos + delta_down,
-          args_.marker_width * 0.3,
-          args_.color);
-    } break;
-    default:
-      break;
   }
 }
 

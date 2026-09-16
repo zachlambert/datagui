@@ -39,8 +39,8 @@ public:
   }
 
   void add_data(const Vec2& min, const Vec2& max);
-  size_t add_legend_item(const std::string& label);
-  size_t add_gradient_map(float min, float max, const std::string& label = "");
+  int add_legend_item(const std::string& label);
+  int add_gradient_map(float min, float max, const std::string& label = "");
 
   void calculate(const Box2& viewport);
   void draw_frame(const Box2& viewport, DrawList& dl) const;
@@ -51,10 +51,16 @@ public:
   const Box2& plot_area() const {
     return plot_area_;
   }
-  const Vec2& legend_item_origin(size_t index) const {
-    return legend_items_[index].origin;
+  const Box2& legend_icon_box(int index) const {
+    if (index < 0) {
+      throw std::invalid_argument("Invalid index");
+    }
+    return legend_items_[index].icon_box;
   }
   const Box2& gradient_map_box(size_t index) const {
+    if (index < 0) {
+      throw std::invalid_argument("Invalid index");
+    }
     return gradient_maps_[index].gm_box;
   }
 
@@ -88,6 +94,7 @@ private:
     std::string label;
     // Set in calculate()
     Vec2 origin;
+    Box2 icon_box;
     Vec2 text_origin;
     float text_width;
     LegendItem(const std::string& label) : label(label) {}
