@@ -5,8 +5,8 @@
 namespace dgui {
 
 PlotFrame::PlotFrame() {
-  xticks_.loc = TicksLoc::Left;
-  yticks_.loc = TicksLoc::Bottom;
+  xticks_.loc = TicksLoc::Bottom;
+  yticks_.loc = TicksLoc::Left;
 }
 
 void PlotFrame::init(
@@ -33,7 +33,7 @@ void PlotFrame::add_data(const Vec2& min, const Vec2& max) {
     data_range_ = Box2(min, max);
   } else {
     data_range_->lower = minimum(data_range_->lower, min);
-    data_range_->lower = maximum(data_range_->upper, max);
+    data_range_->upper = maximum(data_range_->upper, max);
   }
 }
 
@@ -91,10 +91,6 @@ void PlotFrame::calculate(const Box2& viewport) {
   }
 
   if (!legend_items_.empty()) {
-    const size_t item_count = legend_items_.size();
-    float item_width = 0;
-    float item_height = 0;
-
     float x = 0;
     float y = 0;
     const float max_width = viewport.size_x() - 2 * args_.outer_padding -
@@ -129,6 +125,9 @@ void PlotFrame::calculate(const Box2& viewport) {
   } else {
     legend_box_.reset();
   }
+  for (auto& item : legend_items_) {
+    item.origin += legend_box_->lower;
+  }
 
   // =============================
   // Define top and bottom padding
@@ -136,7 +135,7 @@ void PlotFrame::calculate(const Box2& viewport) {
   const float top_padding =
       header_height_ + args_.outer_padding + args_.header_margin_bot;
 
-  const float bottom_padding = ticks_depth(yticks_) + args_.outer_padding;
+  const float bottom_padding = ticks_depth(xticks_) + args_.outer_padding;
 
   // =============================
   // Calculate aside_width_, gradient_maps_[i].box
@@ -167,7 +166,7 @@ void PlotFrame::calculate(const Box2& viewport) {
   // =============================
   // Define left and right padding, and plot_area_
 
-  const float left_padding = ticks_depth(yticks_);
+  const float left_padding = ticks_depth(yticks_) + args_.outer_padding;
   const float right_padding =
       args_.outer_padding +
       (aside_width_ > 0 ? aside_width_ + args_.aside_margin_left : 0);
@@ -177,7 +176,9 @@ void PlotFrame::calculate(const Box2& viewport) {
       viewport.upper - Vec2(right_padding, top_padding));
 
   xticks_.origin = plot_area_.lower_left();
+  xticks_.length = plot_area_.size_x();
   yticks_.origin = plot_area_.upper_left();
+  yticks_.length = plot_area_.size_y();
 
   // =============================
   // Calculatel data_range_
@@ -284,6 +285,10 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
 
   float power = 0;
   float diff = std::max(ticks.max_value - ticks.min_value, 1e-12f);
+  if (std::isinf(diff)) {
+    // Silently ignore
+    return;
+  }
   while (diff > 10) {
     diff /= 10;
     power++;
@@ -310,7 +315,7 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
 
   float value = ceil(ticks.min_value / resolution) * resolution;
   while (value < ticks.max_value) {
-    float s = (value - ticks.min_value) / diff;
+    float s = (value - ticks.min_value) / (ticks.max_value - ticks.min_value);
 
     std::stringstream ss;
     ss << std::fixed << std::setprecision(1) << value / display_value_scale;

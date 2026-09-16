@@ -13,8 +13,8 @@ public:
 
     void set(const Vec3& color, float alpha = 1.f) {
       r = color.x;
-      g = color.x;
-      b = color.x;
+      g = color.y;
+      b = color.z;
       a = 1.f;
     }
   };

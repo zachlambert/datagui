@@ -11,6 +11,8 @@ class FontRegistry;
 
 class Viewport {
 public:
+  virtual ~Viewport() = default;
+
   virtual void init(
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontRegistry>& font_registry) = 0;

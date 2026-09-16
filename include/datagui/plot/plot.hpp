@@ -8,6 +8,8 @@ namespace dgui {
 
 class Plot {
 public:
+  virtual ~Plot() = default;
+
   virtual void add_frame_components(PlotFrame& frame) = 0;
   virtual void draw_frame_components(const PlotFrame& frame, DrawList& dl)
       const = 0;

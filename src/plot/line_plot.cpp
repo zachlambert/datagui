@@ -5,6 +5,8 @@ namespace dgui {
 
 static constexpr float dashed_segment_length = 20;
 
+size_t LinePlot::default_color_i_ = 0;
+
 LinePlot::Builder& LinePlot::Builder::label(const std::string& label) {
   args.label = label;
   return *this;
@@ -45,15 +47,17 @@ LinePlot::Builder& LinePlot::Builder::line_dashed(float width) {
 }
 
 LinePlot::LinePlot(
-    std::shared_ptr<Theme> theme_,
-    std::shared_ptr<FontRegistry> font_registry_,
-    const std::vector<Vec2>& points) {
+    std::shared_ptr<Theme> theme,
+    std::shared_ptr<FontRegistry> font_registry,
+    const std::vector<Vec2>& points) :
+    theme_(theme), font_registry_(font_registry), points_(points) {
   init();
 }
 LinePlot::LinePlot(
-    std::shared_ptr<Theme> theme_,
-    std::shared_ptr<FontRegistry> font_registry_,
-    std::vector<Vec2>&& points) {
+    std::shared_ptr<Theme> theme,
+    std::shared_ptr<FontRegistry> font_registry,
+    std::vector<Vec2>&& points) :
+    theme_(theme), font_registry_(font_registry), points_(points) {
   init();
 }
 
@@ -208,7 +212,7 @@ void LinePlot::init() {
   data_bounds_.upper = Vec2::uniform(-std::numeric_limits<float>::max());
   for (const auto& point : points_) {
     data_bounds_.lower = minimum(data_bounds_.lower, point);
-    data_bounds_.upper = maximum(data_bounds_.lower, point);
+    data_bounds_.upper = maximum(data_bounds_.upper, point);
   }
 }
 

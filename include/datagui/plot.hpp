@@ -5,6 +5,8 @@
 
 namespace dgui {
 
+// TODO: Update
+#if 0
 inline void plot(
     const std::string& title,
     std::size_t width,
@@ -20,5 +22,6 @@ inline void plot(
     gui.poll();
   }
 }
+#endif
 
 } // namespace dgui

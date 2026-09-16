@@ -5,7 +5,6 @@
 #include "datagui/plot/plot_frame.hpp"
 #include "datagui/viewport/viewport.hpp"
 #include <functional>
-#include <optional>
 #include <vector>
 
 namespace dgui {
@@ -61,22 +60,22 @@ public:
       std::size_t height);
 
   void title(const std::string& title) {
-    title_ = title;
+    frame_.set_title(title);
   }
   void xlabel(const std::string& xlabel) {
-    xlabel_ = xlabel;
+    frame_.set_xlabel(xlabel);
   }
   void ylabel(const std::string& ylabel) {
-    ylabel_ = ylabel;
+    frame_.set_ylabel(ylabel);
   }
   void xlimit(float lower, float upper) {
-    xlimit_ = std::make_pair(lower, upper);
+    frame_.set_xlimit(lower, upper);
   }
   void ylimit(float lower, float upper) {
-    ylimit_ = std::make_pair(lower, upper);
+    frame_.set_ylimit(lower, upper);
   }
   void undistorted() {
-    undistorted_ = true;
+    // TODO
   }
 
 private:
@@ -85,6 +84,7 @@ private:
       const std::shared_ptr<FontRegistry>& font_registry) override;
 
   void begin() override;
+  void end() override;
   void draw(const Box2& viewport, DrawList& dl) override;
 
   void mouse_event(const MouseEvent& event) override;
@@ -94,23 +94,13 @@ private:
   std::shared_ptr<FontRegistry> font_registry;
 
   PlotFrame frame_;
-#if 0
-  PlotterArgs args;
-#endif
   std::vector<std::unique_ptr<Plot>> plots;
 
+  // TODO: Currently not implemented
   bool mouse_down_valid = false;
   Vec2 mouse_down_pos;
   Box2 mouse_down_subview;
   Box2 subview = Box2(Vec2(), Vec2::ones());
-  Box2 plot_area;
-
-  std::string title_;
-  std::string xlabel_;
-  std::string ylabel_;
-  std::optional<std::pair<float, float>> xlimit_;
-  std::optional<std::pair<float, float>> ylimit_;
-  bool undistorted_ = false;
 };
 
 }; // namespace dgui

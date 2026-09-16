@@ -58,12 +58,16 @@ public:
     return Builder(args_);
   }
 
+  static void reset_default_color_i() {
+    default_color_i_ = 0;
+  }
+
 private:
   void init();
 
   std::shared_ptr<Theme> theme_;
   std::shared_ptr<FontRegistry> font_registry_;
-  size_t default_color_i_ = 0;
+  static size_t default_color_i_;
   Args args_;
   std::vector<Vec2> points_;
   Box2 data_bounds_;

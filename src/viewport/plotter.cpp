@@ -3,18 +3,13 @@
 namespace dgui {
 
 LinePlot::Builder Plotter::plot(const std::vector<Vec2>& points) {
-  auto plot = std::make_unique<LinePlot>(theme, font_registry, points);
-  auto builder = plot->builder();
-  plots.push_back(std::move(plot));
-  return builder;
+  plots.push_back(std::make_unique<LinePlot>(theme, font_registry, points));
+  return dynamic_cast<LinePlot*>(plots.back().get())->builder();
 }
 
 LinePlot::Builder Plotter::plot(std::vector<Vec2>&& points) {
-  auto plot =
-      std::make_unique<LinePlot>(theme, font_registry, std::move(points));
-  auto builder = plot->builder();
-  plots.push_back(std::move(plot));
-  return builder;
+  plots.push_back(std::make_unique<LinePlot>(theme, font_registry, points));
+  return dynamic_cast<LinePlot*>(plots.back().get())->builder();
 }
 
 LinePlot::Builder Plotter::plot(
@@ -46,8 +41,8 @@ LinePlot::Builder Plotter::plot(
     std::size_t stride) {
   std::vector<Vec2> points(size);
   for (std::size_t i = 0; i < size; i++) {
-    points[i].x = x[i * (stride / sizeof(float))];
-    points[i].y = y[i * (stride / sizeof(float))];
+    points[i].x = x[i * (stride / sizeof(double))];
+    points[i].y = y[i * (stride / sizeof(double))];
   }
   return plot(std::move(points));
 }
@@ -93,17 +88,16 @@ HeatmapPlot::Builder Plotter::heatmap(
     const std::function<float(const Vec2&)>& function,
     std::size_t width,
     std::size_t height) {
-  auto plot = std::make_unique<HeatmapPlot>(
-      theme,
-      font_registry,
-      lower,
-      upper,
-      function,
-      width,
-      height);
-  auto builder = plot->builder();
-  plots.push_back(std::move(plot));
-  return builder;
+  plots.push_back(
+      std::make_unique<HeatmapPlot>(
+          theme,
+          font_registry,
+          lower,
+          upper,
+          function,
+          width,
+          height));
+  return dynamic_cast<HeatmapPlot*>(plots.back().get())->builder();
 }
 
 void Plotter::init(
@@ -111,22 +105,23 @@ void Plotter::init(
     const std::shared_ptr<FontRegistry>& font_registry) {
   this->theme = theme;
   this->font_registry = font_registry;
+  frame_.init(theme, font_registry);
 }
 
 void Plotter::begin() {
+  LinePlot::reset_default_color_i();
   frame_.clear();
   plots.clear();
-  xlabel_.clear();
-  ylabel_.clear();
-  xlimit_ = std::nullopt;
-  ylimit_ = std::nullopt;
-  undistorted_ = false;
 }
 
-void Plotter::draw(const Box2& viewport, DrawList& dl) {
+void Plotter::end() {
   for (const auto& plot : plots) {
     plot->add_frame_components(frame_);
   }
+}
+
+void Plotter::draw(const Box2& viewport, DrawList& dl) {
+  frame_.calculate(viewport);
   frame_.draw_frame(viewport, dl);
   for (const auto& plot : plots) {
     plot->draw_frame_components(frame_, dl);
@@ -138,11 +133,11 @@ void Plotter::draw(const Box2& viewport, DrawList& dl) {
   }
 
   Camera2d plot_camera;
-  plot_camera.position = plot_area.center();
+  plot_camera.position = frame_.plot_area().center();
   plot_camera.angle = 0;
-  plot_camera.size = plot_area.size();
+  plot_camera.size = frame_.plot_area().size();
 
-  dl.draw_scene_2d(viewport, plot_camera, scene);
+  dl.draw_scene_2d(frame_.plot_area(), plot_camera, scene);
 }
 
 void Plotter::mouse_event(const MouseEvent& event) {
@@ -150,7 +145,7 @@ void Plotter::mouse_event(const MouseEvent& event) {
     return;
   }
   if (event.action == MouseAction::Press) {
-    if (!plot_area.contains(event.position)) {
+    if (!frame_.plot_area().contains(event.position)) {
       mouse_down_valid = false;
       return;
     }
@@ -170,13 +165,13 @@ void Plotter::mouse_event(const MouseEvent& event) {
   }
 
   Vec2 delta = mouse_down_subview.size() * (mouse_down_pos - event.position) /
-               plot_area.size();
+               frame_.plot_area().size();
   subview =
       Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
 }
 
 bool Plotter::scroll_event(const ScrollEvent& event) {
-  if (!plot_area.contains(event.position)) {
+  if (!frame_.plot_area().contains(event.position)) {
     return false;
   }
   float ratio = std::exp(event.amount / 1000.f);
