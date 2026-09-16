@@ -1,4 +1,5 @@
-#include "datagui/visual/color_map.hpp"
+#include "datagui/render/lookup/gradient_map.hpp"
+#include "datagui/geometry/vec.hpp"
 #include <algorithm>
 
 namespace dgui {
@@ -134,10 +135,17 @@ static const Vec3 viridis_data[] = {
     {0.964894, 0.902323, 0.123941}, {0.974417, 0.903590, 0.130215},
     {0.983868, 0.904867, 0.136897}, {0.993248, 0.906157, 0.143936}};
 
-Vec3 color_map_viridis(float s) {
-  std::size_t N = sizeof(viridis_data) / sizeof(Vec3);
+Color GradientMap::lookup(float s) const {
   s = std::clamp(s, 0.f, 1.f);
-  return viridis_data[std::size_t(s * (N - 1))];
+  if (auto linear = std::get_if<Linear>(&impl_)) {
+    return Color(linear->min.rgb * (1 - s) + linear->max.rgb * s);
+  } else if (std::get_if<Viridis>(&impl_)) {
+    constexpr std::size_t N = sizeof(viridis_data) / sizeof(Vec3);
+    return Color(viridis_data[std::size_t(s * (N - 1))]);
+  } else {
+    throw std::logic_error("Missing implementation");
+    return Color();
+  }
 }
 
 } // namespace dgui

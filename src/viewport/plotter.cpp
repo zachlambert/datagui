@@ -1,133 +1,116 @@
 #include "datagui/viewport/plotter.hpp"
-#include "datagui/visual/color_map.hpp"
 #include <iomanip>
 #include <sstream>
 
 namespace dgui {
 
-// Matplotlib colors
-std::vector<Color> default_plot_colors = {
-    Color(0.122, 0.467, 0.706),
-    Color(1.000, 0.498, 0.055),
-    Color(0.173, 0.627, 0.173),
-    Color(0.839, 0.153, 0.157),
-    Color(0.580, 0.404, 0.741),
-    Color(0.549, 0.337, 0.294),
-    Color(0.890, 0.467, 0.761),
-    Color(0.498, 0.498, 0.498),
-    Color(0.737, 0.741, 0.133),
-    Color(0.090, 0.745, 0.812),
-};
-
-PlotHandle Plotter::plot(const std::vector<Vec2>& points) {
-  PlotItem& item = plot_items.emplace_back();
-  item.points = points;
-  item.args.color = default_plot_colors[default_color_i];
-  default_color_i = (default_color_i + 1) % default_plot_colors.size();
-  return PlotHandle(item.args);
+LinePlot::Builder Plotter::plot(const std::vector<Vec2>& points) {
+  auto plot = std::make_unique<LinePlot>(theme, font_registry, points);
+  auto builder = plot->builder();
+  plots.push_back(std::move(plot));
+  return builder;
 }
 
-PlotHandle Plotter::plot(std::vector<Vec2>&& points) {
-  PlotItem& item = plot_items.emplace_back();
-  item.points = std::move(points);
-  item.args.color = default_plot_colors[default_color_i];
-  default_color_i = (default_color_i + 1) % default_plot_colors.size();
-  return PlotHandle(item.args);
+LinePlot::Builder Plotter::plot(std::vector<Vec2>&& points) {
+  auto plot =
+      std::make_unique<LinePlot>(theme, font_registry, std::move(points));
+  auto builder = plot->builder();
+  plots.push_back(std::move(plot));
+  return builder;
 }
 
-PlotHandle Plotter::plot(
+LinePlot::Builder Plotter::plot(
     const float* x,
     const float* y,
     std::size_t size,
     std::size_t stride) {
-  assert(stride % sizeof(float) == 0);
-  PlotItem& item = plot_items.emplace_back();
-  item.points.resize(size);
+  std::vector<Vec2> points(size);
   for (std::size_t i = 0; i < size; i++) {
-    item.points[i].x = x[i * (stride / sizeof(float))];
-    item.points[i].y = y[i * (stride / sizeof(float))];
+    points[i].x = x[i * (stride / sizeof(float))];
+    points[i].y = y[i * (stride / sizeof(float))];
   }
-  item.args.color = default_plot_colors[default_color_i];
-  default_color_i = (default_color_i + 1) % default_plot_colors.size();
-  return PlotHandle(item.args);
+  return plot(std::move(points));
 }
 
-PlotHandle Plotter::plot(
+LinePlot::Builder Plotter::plot(
+    const std::vector<float>& x,
+    const std::vector<float>& y) {
+  if (x.size() != y.size()) {
+    throw std::invalid_argument("x and y must have the same size");
+  }
+  return plot(x.data(), y.data(), x.size(), sizeof(float));
+}
+
+LinePlot::Builder Plotter::plot(
     const double* x,
     const double* y,
     std::size_t size,
     std::size_t stride) {
-  assert(stride % sizeof(float) == 0);
-  PlotItem& item = plot_items.emplace_back();
-  item.points.resize(size);
+  std::vector<Vec2> points(size);
   for (std::size_t i = 0; i < size; i++) {
-    item.points[i].x = x[i * (stride / sizeof(double))];
-    item.points[i].y = y[i * (stride / sizeof(double))];
+    points[i].x = x[i * (stride / sizeof(float))];
+    points[i].y = y[i * (stride / sizeof(float))];
   }
-  item.args.color = default_plot_colors[default_color_i];
-  default_color_i = (default_color_i + 1) % default_plot_colors.size();
-  return PlotHandle(item.args);
+  return plot(std::move(points));
 }
 
-PlotHandle Plotter::plot_function(
+LinePlot::Builder Plotter::plot(
+    const std::vector<double>& x,
+    const std::vector<double>& y) {
+  if (x.size() != y.size()) {
+    throw std::invalid_argument("x and y must have the same size");
+  }
+  return plot(x.data(), y.data(), x.size(), sizeof(double));
+}
+
+LinePlot::Builder Plotter::plot_function(
     const std::function<float(float)>& f,
     float x_min,
     float x_max,
     float x_resolution) {
-  PlotItem& item = plot_items.emplace_back();
-  item.points.clear();
+  std::vector<Vec2> points;
+  points.reserve(std::ceil((x_max - x_min) / x_resolution));
   for (float x = x_min; x <= x_max; x += x_resolution) {
-    item.points.push_back({x, f(x)});
+    points.push_back({x, f(x)});
   }
-  item.args.color = default_plot_colors[default_color_i];
-  default_color_i = (default_color_i + 1) % default_plot_colors.size();
-  return PlotHandle(item.args);
+  return plot(std::move(points));
 }
 
-PlotHandle Plotter::plot_function(
+LinePlot::Builder Plotter::plot_function(
     const std::function<double(double)>& f,
     double x_min,
     double x_max,
     double x_resolution) {
-  PlotItem& item = plot_items.emplace_back();
-  item.points.clear();
-  for (float x = x_min; x <= x_max; x += x_resolution) {
-    item.points.push_back({float(x), float(f(x))});
+  std::vector<Vec2> points;
+  points.reserve(std::ceil((x_max - x_min) / x_resolution));
+  for (double x = x_min; x <= x_max; x += x_resolution) {
+    points.push_back({static_cast<float>(x), static_cast<float>(f(x))});
   }
-  item.args.color = default_plot_colors[default_color_i];
-  default_color_i = (default_color_i + 1) % default_plot_colors.size();
-  return PlotHandle(item.args);
+  return plot(std::move(points));
 }
 
-HeatmapHandle Plotter::heatmap(
+HeatmapPlot::Builder Plotter::heatmap(
     const Vec2& lower,
     const Vec2& upper,
     const std::function<float(const Vec2&)>& function,
     std::size_t width,
     std::size_t height) {
-  HeatmapItem& item = heatmap_items.emplace_back();
-  item.bounds = Box2(lower, upper);
-  item.function = function;
-  item.width = width;
-  item.height = height;
-  return HeatmapHandle(item.args);
+  auto plot =
+      std::make_unique<HeatmapPlot>(lower, upper, function, width, height);
+  auto builder = plot->builder();
+  plots.push_back(std::move(plot));
+  return builder;
 }
 
 void Plotter::init(
     const std::shared_ptr<Theme>& theme,
-    const std::shared_ptr<FontManager>& fm) {
+    const std::shared_ptr<FontRegistry>& font_registry) {
   this->theme = theme;
-  this->fm = fm;
-  fixed_shape_shader.init();
-  fixed_text_shader.init(fm);
-  fixed_image_shader.init();
-  plot_shape_shader.init();
-  plot_image_shader.init();
+  this->font_registry = font_registry;
 }
 
 void Plotter::begin() {
-  plot_items.clear();
-  heatmap_items.clear();
+  plots.clear();
   xlabel_.clear();
   ylabel_.clear();
   xlimit_ = std::nullopt;
@@ -136,14 +119,7 @@ void Plotter::begin() {
   default_color_i = 0;
 }
 
-void Plotter::draw(const Box2& viewport, const Box2& mask) {
-  queue_commands(viewport);
-
-  Camera2d fixed_camera;
-  fixed_camera.position = viewport.center();
-  fixed_camera.angle = 0;
-  fixed_camera.size = viewport.size();
-
+void Plotter::draw(const Box2& viewport, DrawList& dl) {
   Camera2d plot_camera;
   plot_camera.position = plot_area.center();
   plot_camera.angle = 0;
@@ -160,6 +136,10 @@ void Plotter::draw(const Box2& viewport, const Box2& mask) {
   fixed_image_shader.clear();
   plot_shape_shader.clear();
   plot_image_shader.clear();
+
+  camera.size.x = default_view_width_ / zoom;
+  camera.size.y = viewport.ratio_yx() * camera.size.x;
+  dl.draw_scene_2d(viewport, camera, scene);
 }
 
 void Plotter::queue_commands(const Box2& viewport) {
@@ -320,30 +300,30 @@ void Plotter::queue_commands(const Box2& viewport) {
   auto plot_marker = [&](const Vec2& point, const PlotArgs& args) {
     Vec2 position = to_plot_position(point);
     switch (args.marker_style) {
-    case dgui::PlotMarkerStyle::Circle:
-      plot_shape_shader.queue_circle(
-          position,
-          args.marker_width / 2,
-          args.color,
-          0,
-          Color::Black());
-      break;
-    case dgui::PlotMarkerStyle::Cross: {
-      Vec2 delta_up(args.marker_width / 2, args.marker_width / 2);
-      Vec2 delta_down(args.marker_width / 2, -args.marker_width / 2);
-      plot_shape_shader.queue_line(
-          position - delta_up,
-          position + delta_up,
-          args.marker_width * 0.3,
-          args.color);
-      plot_shape_shader.queue_line(
-          position - delta_down,
-          position + delta_down,
-          args.marker_width * 0.3,
-          args.color);
-    } break;
-    default:
-      break;
+      case dgui::PlotMarkerStyle::Circle:
+        plot_shape_shader.queue_circle(
+            position,
+            args.marker_width / 2,
+            args.color,
+            0,
+            Color::Black());
+        break;
+      case dgui::PlotMarkerStyle::Cross: {
+        Vec2 delta_up(args.marker_width / 2, args.marker_width / 2);
+        Vec2 delta_down(args.marker_width / 2, -args.marker_width / 2);
+        plot_shape_shader.queue_line(
+            position - delta_up,
+            position + delta_up,
+            args.marker_width * 0.3,
+            args.color);
+        plot_shape_shader.queue_line(
+            position - delta_down,
+            position + delta_down,
+            args.marker_width * 0.3,
+            args.color);
+      } break;
+      default:
+        break;
     }
   };
 
@@ -354,30 +334,33 @@ void Plotter::queue_commands(const Box2& viewport) {
         float ab_length = (position_b - position_a).length();
         Vec2 dir = (position_b - position_a) / ab_length;
         switch (args.line_style) {
-        case dgui::PlotLineStyle::Solid:
-          plot_shape_shader
-              .queue_line(position_a, position_b, args.line_width, args.color);
-          break;
-        case dgui::PlotLineStyle::Dashed: {
-          const float resolution = 20;
-          float s1 = -std::fmod(length, resolution);
-          while (s1 < ab_length) {
-            float s2 = s1 + resolution;
-            int i = (length + s1) / resolution;
-            if (i % 2 == 0) {
-              plot_shape_shader.queue_line(
-                  position_a + std::max(s1, 0.f) * dir,
-                  position_a + std::min(s2, ab_length) * dir,
-                  args.line_width,
-                  args.color,
-                  false);
+          case dgui::PlotLineStyle::Solid:
+            plot_shape_shader.queue_line(
+                position_a,
+                position_b,
+                args.line_width,
+                args.color);
+            break;
+          case dgui::PlotLineStyle::Dashed: {
+            const float resolution = 20;
+            float s1 = -std::fmod(length, resolution);
+            while (s1 < ab_length) {
+              float s2 = s1 + resolution;
+              int i = (length + s1) / resolution;
+              if (i % 2 == 0) {
+                plot_shape_shader.queue_line(
+                    position_a + std::max(s1, 0.f) * dir,
+                    position_a + std::min(s2, ab_length) * dir,
+                    args.line_width,
+                    args.color,
+                    false);
+              }
+              s1 = s2;
             }
-            s1 = s2;
+            break;
           }
-          break;
-        }
-        default:
-          break;
+          default:
+            break;
         }
         return ab_length;
       };
@@ -426,21 +409,21 @@ void Plotter::queue_commands(const Box2& viewport) {
       auto get_pixel = [&item](float s) {
         Pixel pixel;
         switch (item.args.type) {
-        case HeatmapType::Viridis: {
-          Vec3 color = color_map_viridis(s);
-          pixel.r = color.x * 255;
-          pixel.g = color.y * 255;
-          pixel.b = color.z * 255;
-          break;
-        }
-        case HeatmapType::Linear: {
-          Vec3 color =
-              (1 - s) * item.args.linear_min + s * item.args.linear_max;
-          pixel.r = color.x * 255;
-          pixel.g = color.y * 255;
-          pixel.b = color.z * 255;
-          break;
-        }
+          case HeatmapType::Viridis: {
+            Vec3 color = color_map_viridis(s);
+            pixel.r = color.x * 255;
+            pixel.g = color.y * 255;
+            pixel.b = color.z * 255;
+            break;
+          }
+          case HeatmapType::Linear: {
+            Vec3 color =
+                (1 - s) * item.args.linear_min + s * item.args.linear_max;
+            pixel.r = color.x * 255;
+            pixel.g = color.y * 255;
+            pixel.b = color.z * 255;
+            break;
+          }
         }
         pixel.a = 255;
         return pixel;

@@ -1,6 +1,9 @@
 #include "datagui/gui.hpp"
 #include <sstream>
 #include <stack>
+#include "datagui/viewport/canvas2d.hpp"
+#include "datagui/viewport/canvas3d.hpp"
+#include "datagui/viewport/plotter.hpp"
 
 namespace dgui {
 
@@ -1017,10 +1020,15 @@ T& Gui::viewport() {
   assert(ptr);
   return *ptr;
 }
-template Canvas2d& Gui::viewport<Canvas2d>();
-template Canvas3d& Gui::viewport<Canvas3d>();
-#if 0
-template Plotter& Gui::viewport<Plotter>();
-#endif
+
+Canvas2d& Gui::canvas2d() {
+  return viewport<Canvas2d>();
+}
+Canvas3d& Gui::canvas3d() {
+  return viewport<Canvas3d>();
+}
+Plotter& Gui::plotter() {
+  return viewport<Plotter>();
+}
 
 } // namespace dgui

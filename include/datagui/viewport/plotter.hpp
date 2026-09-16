@@ -1,108 +1,13 @@
 #pragma once
 
+#include "datagui/plot/heatmap_plot.hpp"
+#include "datagui/plot/line_plot.hpp"
 #include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/image_shader.hpp"
-#include "datagui/visual/shape_2d_shader.hpp"
-#include "datagui/visual/text_2d_shader.hpp"
 #include <functional>
-#include <vector>
 #include <optional>
+#include <vector>
 
 namespace dgui {
-
-extern std::vector<Color> default_plot_colors;
-
-enum class PlotLineStyle { None, Solid, Dashed };
-enum class PlotMarkerStyle { None, Circle, Cross };
-
-struct PlotArgs {
-  std::string label;
-  Color color = Color::Black();
-  PlotLineStyle line_style = PlotLineStyle::Solid;
-  PlotMarkerStyle marker_style = PlotMarkerStyle::None;
-  float line_width = 2;
-  float marker_width = 8;
-};
-
-class PlotHandle {
-public:
-  PlotHandle& label(const std::string& label) {
-    args.label = label;
-    return *this;
-  }
-  PlotHandle& color(const Color& color) {
-    args.color = color;
-    return *this;
-  }
-  PlotHandle& marker_circle(float width = 8) {
-    args.marker_style = PlotMarkerStyle::Circle;
-    args.marker_width = width;
-    return *this;
-  }
-  PlotHandle& marker_cross(float width = 8) {
-    args.marker_style = PlotMarkerStyle::Cross;
-    args.marker_width = width;
-    return *this;
-  }
-  PlotHandle& no_line() {
-    args.line_style = PlotLineStyle::None;
-    return *this;
-  }
-  PlotHandle& line_solid(float width = 2) {
-    args.line_style = PlotLineStyle::Solid;
-    args.line_width = width;
-    return *this;
-  }
-  PlotHandle& line_dashed(float width = 2) {
-    args.line_style = PlotLineStyle::Dashed;
-    args.line_width = width;
-    return *this;
-  }
-
-private:
-  PlotHandle(PlotArgs& args) : args(args) {}
-
-  PlotArgs& args;
-  friend class Plotter;
-};
-
-enum class HeatmapType { Viridis, Linear };
-
-struct HeatmapArgs {
-  HeatmapType type;
-  Vec3 linear_min;
-  Vec3 linear_max;
-  std::optional<float> min_value;
-  std::optional<float> max_value;
-};
-
-class HeatmapHandle {
-public:
-  HeatmapHandle& viridis() {
-    args.type = HeatmapType::Viridis;
-    return *this;
-  }
-  HeatmapHandle& linear(const Color& min, const Color& max) {
-    args.type = HeatmapType::Linear;
-    args.linear_min = {min.r, min.g, min.b};
-    args.linear_max = {max.r, max.g, max.b};
-    return *this;
-  }
-  HeatmapHandle& min_value(float value) {
-    args.min_value = value;
-    return *this;
-  }
-  HeatmapHandle& max_value(float value) {
-    args.max_value = value;
-    return *this;
-  }
-
-private:
-  HeatmapHandle(HeatmapArgs& args) : args(args) {}
-
-  HeatmapArgs& args;
-  friend class Plotter;
-};
 
 struct PlotterArgs {
   float tick_length = 5;
@@ -115,41 +20,39 @@ struct PlotterArgs {
 
 class Plotter : public Viewport {
 public:
-  PlotHandle plot(const std::vector<Vec2>& points);
-  PlotHandle plot(std::vector<Vec2>&& points);
+  LinePlot::Builder plot(const std::vector<Vec2>& points);
+  LinePlot::Builder plot(std::vector<Vec2>&& points);
 
-  PlotHandle plot(
+  LinePlot::Builder plot(
       const float* x,
       const float* y,
       std::size_t size,
       std::size_t stride = sizeof(float));
-  PlotHandle plot(const std::vector<float>& x, const std::vector<float>& y) {
-    assert(x.size() == y.size());
-    return plot(x.data(), y.data(), x.size(), sizeof(float));
-  }
+  LinePlot::Builder plot(
+      const std::vector<float>& x,
+      const std::vector<float>& y);
 
-  PlotHandle plot(
+  LinePlot::Builder plot(
       const double* x,
       const double* y,
       std::size_t size,
       std::size_t stride = sizeof(double));
-  PlotHandle plot(const std::vector<double>& x, const std::vector<double>& y) {
-    assert(x.size() == y.size());
-    return plot(x.data(), y.data(), x.size(), sizeof(double));
-  }
+  LinePlot::Builder plot(
+      const std::vector<double>& x,
+      const std::vector<double>& y);
 
-  PlotHandle plot_function(
+  LinePlot::Builder plot_function(
       const std::function<float(float)>& f,
       float x_min,
       float x_max,
       float x_resolution);
-  PlotHandle plot_function(
+  LinePlot::Builder plot_function(
       const std::function<double(double)>& f,
       double x_min,
       double x_max,
       double x_resolution);
 
-  HeatmapHandle heatmap(
+  HeatmapPlot::Builder heatmap(
       const Vec2& lower,
       const Vec2& upper,
       const std::function<float(const Vec2&)>& function,
@@ -178,13 +81,13 @@ public:
 private:
   void init(
       const std::shared_ptr<Theme>& theme,
-      const std::shared_ptr<FontManager>& fm) override;
+      const std::shared_ptr<FontRegistry>& font_registry) override;
+
   void begin() override;
-  void draw(const Box2& viewport, const Box2& mask) override;
+  void draw(const Box2& viewport, DrawList& dl) override;
 
   void mouse_event(const MouseEvent& event) override;
   bool scroll_event(const ScrollEvent& event) override;
-  void queue_commands(const Box2& viewport);
 
   struct Tick {
     float position;
@@ -192,7 +95,14 @@ private:
   };
   std::tuple<std::string, std::vector<Tick>> get_ticks(float min, float max);
 
+  std::shared_ptr<Theme> theme;
+  std::shared_ptr<FontRegistry> font_registry;
+
+#if 0
   PlotterArgs args;
+#endif
+  std::vector<std::unique_ptr<Plot>> plots;
+  std::size_t default_color_i = 0;
 
   bool mouse_down_valid = false;
   Vec2 mouse_down_pos;
@@ -200,42 +110,12 @@ private:
   Box2 subview = Box2(Vec2(), Vec2::ones());
   Box2 plot_area;
 
-  struct PlotItem {
-    PlotArgs args;
-    std::vector<Vec2> points;
-  };
-  std::vector<PlotItem> plot_items;
-
-  struct HeatmapItem {
-    HeatmapArgs args;
-    Box2 bounds;
-    std::function<float(const Vec2&)> function;
-    std::size_t width;
-    std::size_t height;
-
-    mutable float min_value;
-    mutable float max_value;
-    mutable Image image;
-    mutable Image scale_image;
-  };
-  std::vector<HeatmapItem> heatmap_items;
-
   std::string title_;
   std::string xlabel_;
   std::string ylabel_;
   std::optional<std::pair<float, float>> xlimit_;
   std::optional<std::pair<float, float>> ylimit_;
   bool undistorted_ = false;
-
-  std::size_t default_color_i = 0;
-  std::shared_ptr<Theme> theme;
-  std::shared_ptr<FontManager> fm;
-
-  Shape2dShader fixed_shape_shader;
-  Text2dShader fixed_text_shader;
-  ImageShader fixed_image_shader;
-  Shape2dShader plot_shape_shader;
-  ImageShader plot_image_shader;
 };
 
 }; // namespace dgui

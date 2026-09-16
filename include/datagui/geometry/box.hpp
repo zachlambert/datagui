@@ -61,6 +61,32 @@ struct Box2 {
     return upper;
   }
 
+  Vec2 lower_left(const Vec2& offset) const {
+    return lower + offset;
+  }
+  Vec2 lower_right(const Vec2& offset) const {
+    return Vec2(upper.x - offset.x, lower.y + offset.y);
+  }
+  Vec2 upper_left(const Vec2& offset) const {
+    return Vec2(lower.x + offset.x, upper.y - offset.y);
+  }
+  Vec2 upper_right(const Vec2& offset) const {
+    return upper - offset;
+  }
+
+  static Box2 from_lower_left(const Vec2& lower_left, const Vec2& size) {
+    return Box2::from_size(lower_left, size);
+  }
+  static Box2 from_lower_right(const Vec2& lower_right, const Vec2& size) {
+    return Box2::from_size(lower_right - Vec2(size.x, 0), size);
+  }
+  static Box2 from_upper_left(const Vec2& upper_left, const Vec2& size) {
+    return Box2::from_size(upper_left - Vec2(0, size.y), size);
+  }
+  static Box2 from_upper_right(const Vec2& upper_right, const Vec2& size) {
+    return Box2::from_size(upper_right - size, size);
+  }
+
   void expand(float amount) {
     lower -= Vec2::uniform(amount);
     upper += Vec2::uniform(amount);
@@ -78,14 +104,14 @@ struct Box2 {
     upper -= amount;
   }
 
-  // To local box coords [0, 1]
-  Vec2 to_coords(const Vec2& position) {
+  // [lower, upper] -> [0, 1]
+  Vec2 to_coords(const Vec2& position) const {
     return Vec2(
         (position.x - lower.x) / (upper.x - lower.x),
         (position.y - lower.y) / (upper.y - lower.y));
   }
-  // From local box coords [0, 1]
-  Vec2 from_local(const Vec2& coords) {
+  // [0, 1] -> [lower, upper]
+  Vec2 from_coords(const Vec2& coords) const {
     return Vec2(
         lower.x + coords.x * (upper.x - lower.x),
         lower.y + coords.y * (upper.y - lower.y));
@@ -113,6 +139,10 @@ inline Box2 intersection(const Box2& a, const Box2& b) {
 
 inline Box2 bounding(const Box2& a, const Box2& b) {
   return Box2(minimum(a.lower, b.lower), maximum(a.upper, b.upper));
+}
+
+inline Vec2 remap(const Vec2& point, const Box2& from, const Box2& to) {
+  return to.from_coords(from.to_coords(point));
 }
 
 // Returns true if outer_box containers inner_box

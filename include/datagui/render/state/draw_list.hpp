@@ -59,8 +59,22 @@ struct DrawList {
       const Box2& box,
       const Color& color,
       float border_width = 0,
-      Color border_color = Color::Black(),
+      const Color& border_color = Color::Black(),
       float radius = 0);
+
+  void draw_circle(
+      const Vec2& positoin,
+      double radius,
+      const Color& color,
+      float border_width = 0,
+      const Color& border_color = Color::Black());
+
+  void draw_line(
+      const Vec2& start,
+      const Vec2& end,
+      float width,
+      const Color& color,
+      bool rounded_ends = true);
 
   void draw_text(
       const FontAtlas& font_atlas,
@@ -68,13 +82,14 @@ struct DrawList {
       const Color& color,
       Length width,
       const std::string& text,
-      bool editable = false);
+      bool editable = false,
+      float angle = 0);
 
   void draw_image(
       const Image& image,
       const Vec2& origin,
       double angle,
-      const Vec2& scale);
+      const Vec2& size);
 
   void draw_scene_2d(
       const Box2& viewport,

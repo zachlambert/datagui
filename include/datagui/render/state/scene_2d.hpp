@@ -1,9 +1,9 @@
 #pragma once
 
 #include "datagui/asset/image.hpp"
+#include "datagui/render/font_atlas.hpp"
 #include "datagui/render/state/glyph_2d_instance.hpp"
 #include "datagui/render/state/shape_2d_instance.hpp"
-#include "datagui/render/font_atlas.hpp"
 #include <variant>
 
 namespace dgui {
@@ -41,38 +41,38 @@ struct Scene2d {
       float angle,
       const Vec2& size,
       const Color& color,
-      float border_width,
-      Color border_color);
+      float border_width = 0,
+      Color border_color = Color::Black());
 
   void draw_circle(
       const Vec2& position,
       float radius,
       const Color& color,
-      float border_width,
-      Color border_color);
+      float border_width = 0,
+      Color border_color = Color::Black());
 
   void draw_ellipse(
       const Vec2& position,
       float angle,
       const Vec2& radii,
       const Color& color,
-      float border_width,
-      Color border_color);
+      float border_width = 0,
+      Color border_color = Color::Black());
 
   void draw_line(
       const Vec2& a,
       const Vec2& b,
       float width,
       const Color& color,
-      bool rounded_ends);
+      bool rounded_ends = false);
 
   void draw_capsule(
       const Vec2& start,
       const Vec2& end,
       float radius,
       const Color& color,
-      float border_width,
-      Color border_color);
+      float border_width = 0,
+      Color border_color = Color::Black());
 
   void draw_text(
       const FontAtlas& font_atlas,
