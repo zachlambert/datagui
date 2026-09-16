@@ -130,7 +130,7 @@ void LinePlot::draw_frame_components(const PlotFrame& frame, DrawList& dl)
 
 void LinePlot::draw_data(const PlotFrame& frame, Scene2d& scene) const {
   auto plot_marker = [&](const Vec2& point) {
-    Vec2 draw_point = remap(point, frame.data_area(), frame.plot_area());
+    Vec2 draw_point = remap(point, frame.data_window(), frame.scene_area());
     switch (args_.marker_style) {
       case MarkerStyle::Circle:
         scene.draw_circle(
@@ -160,8 +160,8 @@ void LinePlot::draw_data(const PlotFrame& frame, Scene2d& scene) const {
   };
 
   auto plot_line = [&](const Vec2& a, const Vec2& b, float length) {
-    Vec2 draw_a = remap(a, frame.data_area(), frame.plot_area());
-    Vec2 draw_b = remap(b, frame.data_area(), frame.plot_area());
+    Vec2 draw_a = remap(a, frame.data_window(), frame.scene_area());
+    Vec2 draw_b = remap(b, frame.data_window(), frame.scene_area());
     float ab_length = (draw_a - draw_b).length();
     Vec2 dir = (draw_b - draw_a) / ab_length;
     switch (args_.line_style) {

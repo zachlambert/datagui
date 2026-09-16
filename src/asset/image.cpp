@@ -56,6 +56,9 @@ void Image::load(std::size_t width, std::size_t height, void* pixels) {
 }
 
 void Image::load(const ImageData& data) {
+  if (data.width() == 0 || data.height() == 0) {
+    return;
+  }
   load(data.width(), data.height(), (void*)&data(0, 0));
 }
 

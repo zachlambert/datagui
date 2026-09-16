@@ -77,13 +77,14 @@ void HeatmapPlot::draw_frame_components(const PlotFrame& frame, DrawList& dl)
     return;
   }
   const Box2& box = frame.gradient_map_box(icon_index_);
+  // The gradient map is a vertical bar with the maximum value at the top.
+  // Row 0 of the image is drawn at box.lower, which is the top edge in
+  // y-down gui coordinates, so the gradient is inverted
   ImageData data;
-  data.resize(8, std::ceil(8 * box.size_y() / box.size_x()));
+  data.resize(1, std::max<size_t>(2, std::ceil(box.size_y())));
   for (size_t y = 0; y < data.height(); y++) {
-    for (size_t x = 0; x < data.width(); x++) {
-      const float s = static_cast<float>(x) / (data.width() - 1);
-      data(x, y).set(args_.gradient_map.lookup(s).rgb);
-    }
+    const float s = 1.f - static_cast<float>(y) / (data.height() - 1);
+    data(0, y).set(args_.gradient_map.lookup(s));
   }
 
   Image image;
@@ -109,11 +110,14 @@ void HeatmapPlot::draw_data(const PlotFrame& frame, Scene2d& scene) const {
       const float value = get_value(j, i);
       const float s =
           std::clamp((value - min_value) / (max_value - min_value), 0.f, 1.f);
-      data(j, i).set(args_.gradient_map.lookup(s).rgb);
+      data(j, i).set(args_.gradient_map.lookup(s));
     }
   }
-  Vec2 draw_lower = remap(lower_, frame.data_area(), frame.plot_area());
-  Vec2 draw_upper = remap(upper_, frame.data_area(), frame.plot_area());
+  // The image quad maps its (0, 0) corner to the origin, and the first row of
+  // the image to v = 0. Both correspond to data coordinate lower_, since the
+  // scene is y-up
+  const Vec2 draw_lower = remap(lower_, frame.data_window(), frame.scene_area());
+  const Vec2 draw_upper = remap(upper_, frame.data_window(), frame.scene_area());
   scene.draw_image(data, draw_lower, 0, draw_upper - draw_lower);
 }
 

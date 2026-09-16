@@ -91,41 +91,59 @@ void PlotFrame::calculate(const Box2& viewport) {
   }
 
   if (!legend_items_.empty()) {
+    const float row_height = font.text_height();
+    // Space left over for the legend contents, once the title, the outer
+    // padding and the legend box's own padding are accounted for
+    const float content_max_width = std::max(
+        viewport.size_x() - 2 * args_.outer_padding -
+            2 * args_.legend_padding - args_.title_legend_gap - title_width_,
+        args_.legend_icon_width);
+
+    // Lay the items out relative to the top-left of the legend contents,
+    // wrapping onto a new row when the current one is full
     float x = 0;
     float y = 0;
-    const float max_width = viewport.size_x() - 2 * args_.outer_padding -
-                            args_.title_legend_gap - title_width_;
+    float content_width = 0;
     for (auto& item : legend_items_) {
-      float text_width = font.text_size(item.label).x;
-      float item_width =
-          args_.legend_icon_width + 2 * theme_->text_padding + text_width;
-      if (x + item_width > max_width && x > 0) {
+      const float label_width = font.text_size(item.label).x;
+      const float item_width = std::min(
+          args_.legend_icon_width + theme_->text_padding + label_width,
+          content_max_width);
+
+      if (x > 0 && x + item_width > content_max_width) {
         x = 0;
-        y += font.text_height();
+        y += row_height;
       }
-      item_width = std::min(item_width, max_width);
-      text_width = item_width - (2 * theme_->text_padding + text_width);
 
       item.origin = Vec2(x, y);
-      item.text_width = text_width;
-      x += item_width;
+      item.text_width =
+          item_width - (args_.legend_icon_width + theme_->text_padding);
+
+      x += item_width + args_.legend_item_gap;
+      content_width = std::max(content_width, x - args_.legend_item_gap);
     }
-    if (x > 0) {
-      y += font.text_height();
-    }
-    header_height_ = std::max(header_height_, y);
-    legend_box_ = Box2::from_lower_right(
-        viewport.lower_right(Vec2::uniform(args_.outer_padding)),
-        Vec2(max_width, y));
+    y += row_height;
+
+    // The legend sits in the top-right of the header, to the right of the
+    // title
+    const Vec2 content_origin(
+        viewport.upper.x - args_.outer_padding - args_.legend_padding -
+            content_width,
+        viewport.lower.y + args_.outer_padding + args_.legend_padding);
 
     for (auto& item : legend_items_) {
-      item.origin += legend_box_->lower;
+      item.origin += content_origin;
       item.icon_box = Box2::from_size(
           item.origin,
-          Vec2(args_.legend_icon_width, font.text_height()));
+          Vec2(args_.legend_icon_width, row_height));
       item.text_origin =
           item.origin + Vec2(args_.legend_icon_width + theme_->text_padding, 0);
     }
+
+    legend_box_ = Box2::from_size(content_origin, Vec2(content_width, y));
+    legend_box_->expand(args_.legend_padding);
+
+    header_height_ = std::max(header_height_, y + 2 * args_.legend_padding);
   } else {
     legend_box_.reset();
   }
@@ -158,7 +176,9 @@ void PlotFrame::calculate(const Box2& viewport) {
       gm.gm_box = Box2::from_lower_left(
           item_origin,
           Vec2(args_.gradient_map_width, item_height));
-      gm.ticks.origin = item_origin + Vec2(args_.gradient_map_width, 0);
+      // Ticks run up from the bottom-right corner of the gradient map
+      gm.ticks.origin =
+          item_origin + Vec2(args_.gradient_map_width, item_height);
 
       x += args_.gradient_map_width + ticks_depth(gm.ticks);
     }
@@ -172,58 +192,71 @@ void PlotFrame::calculate(const Box2& viewport) {
       args_.outer_padding +
       (aside_width_ > 0 ? aside_width_ + args_.aside_margin_left : 0);
 
+  // Gui coordinates are y-down, so the header sits against viewport.lower and
+  // the x-axis ticks against viewport.upper
   plot_area_ = Box2(
-      viewport.lower + Vec2(left_padding, bottom_padding),
-      viewport.upper - Vec2(right_padding, top_padding));
+      viewport.lower + Vec2(left_padding, top_padding),
+      viewport.upper - Vec2(right_padding, bottom_padding));
 
-  xticks_.origin = plot_area_.upper_left();
+  // Both axes start from the bottom-left corner of the plot area, which is
+  // (lower.x, upper.y) in y-down coordinates
+  const Vec2 axis_origin(plot_area_.lower.x, plot_area_.upper.y);
+  xticks_.origin = axis_origin;
   xticks_.length = plot_area_.size_x();
-  yticks_.origin = plot_area_.lower_left();
+  yticks_.origin = axis_origin;
   yticks_.length = plot_area_.size_y();
 
-  // =============================
-  // Calculatel data_range_
+  // The scene is y-up with a zero origin, and covers the same extent as the
+  // plot area
+  scene_area_ = Box2(Vec2(), plot_area_.size());
 
+  // =============================
+  // Calculate data_window_
+
+  // TODO: The window is currently always the full data range. Once camera
+  // controls are added it will instead be a sub-region of it
   if (data_range_) {
-    data_area_ = *data_range_;
+    data_window_ = *data_range_;
   } else {
     // No data defined
     // If there also isn't any fixed limits defined, use an arbitrary
     // [0, 1] range
     if (!xlimit_.has_value()) {
-      data_area_.lower.x = 0;
-      data_area_.upper.x = 1;
+      data_window_.lower.x = 0;
+      data_window_.upper.x = 1;
     }
     if (!ylimit_.has_value()) {
-      data_area_.lower.y = 0;
-      data_area_.upper.y = 1;
+      data_window_.lower.y = 0;
+      data_window_.upper.y = 1;
     }
   }
   if (xlimit_.has_value()) {
-    data_area_.lower.x = xlimit_->first;
-    data_area_.upper.x = xlimit_->second;
+    data_window_.lower.x = xlimit_->first;
+    data_window_.upper.x = xlimit_->second;
   }
   if (ylimit_.has_value()) {
-    data_area_.lower.y = ylimit_->first;
-    data_area_.upper.y = ylimit_->second;
+    data_window_.lower.y = ylimit_->first;
+    data_window_.upper.y = ylimit_->second;
   }
 
-  xticks_.min_value = data_area_.lower.x;
-  xticks_.max_value = data_area_.upper.x;
-  yticks_.min_value = data_area_.lower.y;
-  yticks_.max_value = data_area_.upper.y;
+  // Ticks are labelled with the visible range, not the full data range
+  xticks_.min_value = data_window_.lower.x;
+  xticks_.max_value = data_window_.upper.x;
+  yticks_.min_value = data_window_.lower.y;
+  yticks_.max_value = data_window_.upper.y;
 }
 
 void PlotFrame::draw_frame(const Box2& viewport, DrawList& dl) const {
   const auto& font =
       font_registry_->get_font(theme_->text_font, theme_->text_size);
-  const Vec2 size = viewport.size();
 
   if (!title_.empty()) {
+    // draw_text takes the top-left of the text, and gui coordinates are
+    // y-down, so the header is at viewport.lower
     dl.draw_text(
         font,
         viewport.lower +
-            Vec2(args_.outer_padding, size.y - args_.outer_padding),
+            Vec2::uniform(args_.outer_padding + theme_->text_padding),
         theme_->text_color,
         LengthFixed(title_width_),
         title_);
@@ -246,9 +279,9 @@ void PlotFrame::draw_frame(const Box2& viewport, DrawList& dl) const {
     draw_ticks(dl, gradient_map.ticks);
   }
 
-  #if 0
-  dl.draw_box(plot_area_, Color::Gray(0.9));
-  #endif
+  // NOTE: The plot area background is the scene's clear color, set by the
+  // Plotter. It can't be drawn here, since scenes are rendered before the
+  // geometry of the group they belong to
   dl.draw_line(
       plot_area_.lower_left(),
       plot_area_.upper_left(),
@@ -284,7 +317,6 @@ float PlotFrame::ticks_depth(const Ticks& ticks) const {
 void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
   const auto& font =
       font_registry_->get_font(theme_->text_font, theme_->text_size);
-  const float number_width = ticks_number_width_em * font.text_height();
 
   float power = 0;
   float diff = std::max(ticks.max_value - ticks.min_value, 1e-12f);
@@ -324,21 +356,25 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
     ss << std::fixed << std::setprecision(1) << value / display_value_scale;
     const std::string text = ss.str();
 
-    const Vec2 text_size = font.text_size(text, LengthFixed(number_width));
+    // Use the natural size to position the label. Measuring with a fixed
+    // width would just return that width back, leaving the label detached
+    // from its tick
+    const Vec2 text_size = font.text_size(text);
 
     Vec2 position = ticks.origin;
     Vec2 end_offset;
     Vec2 text_offset;
     switch (ticks.loc) {
       case TicksLoc::Left:
-        position.y += s * ticks.length;
+        // Gui coordinates are y-down, so increasing values run up the screen
+        position.y -= s * ticks.length;
         end_offset.x = -args_.tick_length;
         text_offset = Vec2(
             -args_.tick_length - theme_->text_padding - text_size.x,
             -text_size.y / 2);
         break;
       case TicksLoc::Right:
-        position.y += s * ticks.length;
+        position.y -= s * ticks.length;
         end_offset.x = args_.tick_length;
         text_offset =
             Vec2(args_.tick_length + theme_->text_padding, -text_size.y / 2);
@@ -355,7 +391,7 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
         font,
         position + text_offset,
         theme_->text_color,
-        LengthFixed(number_width),
+        LengthWrap(),
         text);
 
     value += resolution;
@@ -374,16 +410,17 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
       case TicksLoc::Left:
         text_offset = Vec2(
             -width - theme_->text_padding,
-            -font.text_height() + theme_->text_padding);
+            -ticks.length - font.text_height() - theme_->text_padding);
         break;
       case TicksLoc::Right:
         text_offset = Vec2(
             theme_->text_padding,
-            -font.text_height() + theme_->text_padding);
+            -ticks.length - font.text_height() - theme_->text_padding);
         break;
       case TicksLoc::Bottom:
-        text_offset =
-            Vec2(ticks.length + theme_->text_padding, theme_->text_padding);
+        text_offset = Vec2(
+            ticks.length + theme_->text_padding,
+            args_.tick_length + theme_->text_padding);
         break;
     }
     dl.draw_text(

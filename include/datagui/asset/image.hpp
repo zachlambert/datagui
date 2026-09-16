@@ -1,21 +1,34 @@
 #pragma once
 
+#include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <vector>
+#include "datagui/color.hpp"
 #include "datagui/geometry/vec.hpp"
 
 namespace dgui {
 
 class ImageData {
 public:
+  // Stored in the format the texture is uploaded as, so that Image::load()
+  // can pass the pixel buffer straight through
   struct Pixel {
-    float r, g, b, a;
+    std::uint8_t r, g, b, a;
 
     void set(const Vec3& color, float alpha = 1.f) {
-      r = color.x;
-      g = color.y;
-      b = color.z;
-      a = 1.f;
+      r = to_byte(color.x);
+      g = to_byte(color.y);
+      b = to_byte(color.z);
+      a = to_byte(alpha);
+    }
+    void set(const Color& color) {
+      set(color.rgb, color.a);
+    }
+
+  private:
+    static std::uint8_t to_byte(float value) {
+      return std::uint8_t(std::clamp(value, 0.f, 1.f) * 255.f);
     }
   };
 

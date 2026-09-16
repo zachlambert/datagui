@@ -15,7 +15,7 @@ int main() {
   float t = 0;
   float freq = 5;
   float T = 1;
-  std::size_t N = 20;
+  std::size_t N = 100;
 
   float a = 1;
   float b = 1;
@@ -42,26 +42,28 @@ int main() {
           t += dt;
         }
 
-        std::vector<Vec2> a, b, c, d, e, f;
+        auto func = [](float freq, float t, float phase) {
+          return std::max(0.f, std::sin(freq * t + phase));
+        };
+        static constexpr size_t plot_n = 6;
+        std::array<std::vector<Vec2>, plot_n> plots;
         for (float dt = 0; dt < T; dt += T / N) {
-          a.push_back({t + dt, std::sin(freq * (t + dt))});
-          b.push_back({t + dt, std::sin(freq * (t + dt) + 1 * M_PIf / 3)});
-          c.push_back({t + dt, std::sin(freq * (t + dt) + 2 * M_PIf / 3)});
-          d.push_back({t + dt, std::sin(freq * (t + dt) + 3 * M_PIf / 3)});
-          e.push_back({t + dt, std::sin(freq * (t + dt) + 4 * M_PIf / 3)});
-          f.push_back({t + dt, std::sin(freq * (t + dt) + 5 * M_PIf / 3)});
+          for (size_t i = 0; i < plot_n; i++) {
+            plots[i].push_back({t + dt, func(freq, t + dt, i * M_PIf / 3)});
+          }
         }
 
         plotter.title("Sine Waves");
         plotter.xlabel("Time");
         plotter.ylabel("Value");
+        plotter.ylimit(-0.1, 1.1);
 
-        plotter.plot(a).line_solid(6).label("a");
-        plotter.plot(b).label("b").marker_circle();
-        plotter.plot(c).label("c").marker_cross();
-        plotter.plot(d).label("d").line_dashed();
-        plotter.plot(e).label("e").line_dashed();
-        plotter.plot(f).label("f").no_line().marker_cross();
+        plotter.plot(plots[0]).line_solid(6).label("a");
+        plotter.plot(plots[1]).label("b").marker_circle();
+        plotter.plot(plots[2]).label("c").marker_cross();
+        plotter.plot(plots[3]).label("d").line_dashed();
+        plotter.plot(plots[4]).label("e").line_dashed();
+        plotter.plot(plots[5]).label("f").no_line().marker_cross();
       }
 
       gui.args().grid(-1, 2);
@@ -89,9 +91,10 @@ int main() {
       {
         DGUI_SCOPE(gui);
         auto f = [&](const Vec2& pos) {
-          return std::exp(-pos.x * a) * std::sin(b * 2 * M_PIf * pos.y);
+          return std::exp(-pos.x * a) * std::exp(pos.y) *
+                 std::sin(b * 2 * M_PIf * pos.y);
         };
-        plotter.title("exp(-ax) *sin(2{pi}by)");
+        plotter.title("exp(-ax) * exp(y) * sin(2{pi}by)");
         plotter.heatmap(Vec2(0, -1), Vec2(2, 1), f, 100, 100);
       }
 

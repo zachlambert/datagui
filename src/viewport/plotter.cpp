@@ -127,15 +127,24 @@ void Plotter::draw(const Box2& viewport, DrawList& dl) {
     plot->draw_frame_components(frame_, dl);
   }
 
+  // The scene is cleared to the background color before the data is drawn,
+  // so that the background doesn't paint over it. Drawing a box on the draw
+  // list wouldn't work, since scenes are always rendered before the
+  // geometry of the group they belong to
   auto scene = std::make_shared<Scene2d>();
+  scene->bg_color = Color::Gray(0.9);
   for (const auto& plot : plots) {
     plot->draw_data(frame_, *scene);
   }
 
+  // The camera covers the scene area, which has the same size as the plot
+  // area, so data mapped into it with remap() is drawn 1:1 in pixels and line
+  // and marker widths carry over unscaled
+  const Box2& scene_area = frame_.scene_area();
   Camera2d plot_camera;
-  plot_camera.position = frame_.plot_area().center();
+  plot_camera.position = scene_area.center();
   plot_camera.angle = 0;
-  plot_camera.size = frame_.plot_area().size();
+  plot_camera.size = scene_area.size();
 
   dl.draw_scene_2d(frame_.plot_area(), plot_camera, scene);
 }

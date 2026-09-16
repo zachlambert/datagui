@@ -17,6 +17,8 @@ class PlotFrame {
     float tick_length = 5;
     float gradient_map_width = 10;
     float legend_icon_width = 20;
+    float legend_item_gap = 15;
+    float legend_padding = 4;
   };
 
 public:
@@ -45,9 +47,19 @@ public:
   void calculate(const Box2& viewport);
   void draw_frame(const Box2& viewport, DrawList& dl) const;
 
-  const Box2& data_area() const {
-    return data_area_;
+  // The region of the data range currently in view. Plots map their data
+  // with remap(point, data_window(), scene_area()), so anything outside the
+  // window naturally falls outside the scene area
+  const Box2& data_window() const {
+    return data_window_;
   }
+  // The box the plot scene's camera covers, with a zero origin and the same
+  // size as the plot area. Unlike the plot area this is y-up, matching the
+  // scene camera
+  const Box2& scene_area() const {
+    return scene_area_;
+  }
+  // The gui box the frame is drawn in, which is y-down
   const Box2& plot_area() const {
     return plot_area_;
   }
@@ -111,6 +123,7 @@ private:
     }
   };
 
+  // Bounding box of all the data added via add_data()
   std::optional<Box2> data_range_;
   std::vector<LegendItem> legend_items_;
   std::vector<GradientMap> gradient_maps_;
@@ -121,8 +134,11 @@ private:
   float aside_width_ = 0;   // Right aside box for gradient maps
   float title_width_ = 0;
   std::optional<Box2> legend_box_;
-  Box2 data_area_;
+  // TODO: Currently always equal to the data range, but will become movable
+  // with camera controls
+  Box2 data_window_;
   Box2 plot_area_;
+  Box2 scene_area_;
 };
 
 } // namespace dgui
