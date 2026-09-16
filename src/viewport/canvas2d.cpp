@@ -1,5 +1,5 @@
 #include "datagui/viewport/canvas2d.hpp"
-#include "datagui/render/lookup/color_map.hpp"
+#include "datagui/render/lookup/gradient_map.hpp"
 
 namespace dgui {
 
@@ -95,6 +95,8 @@ void Canvas2d::heatmap(
     float max_value,
     std::size_t width,
     std::size_t height) {
+
+  const GradientMap gm = GradientMap::viridis();
   struct Pixel {
     std::uint8_t r, g, b, a;
   };
@@ -120,12 +122,12 @@ void Canvas2d::heatmap(
           color = (1 - s) * min + s * max;
         }
         float s = (value - min_value) / (max_value - min_value);
-        Vec3 color = color_map_viridis(s);
+        Vec3 color = gm.lookup(s).rgb;
         s = std::clamp(s, 0.f, 1.f);
       } else {
         float s = (value - min_value) / (max_value - min_value);
         s = std::clamp(s, 0.f, 1.f);
-        color = color_map_viridis(s);
+        color = gm.lookup(s).rgb;
       }
 
       auto& pixel = pixels[i * width + j];

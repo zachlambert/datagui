@@ -42,8 +42,13 @@ add_library(datagui SHARED
   src/input/number_input.cpp
   src/input/text_selection.cpp
 
+  src/plot/heatmap_plot.cpp
+  src/plot/line_plot.cpp
+  src/plot/plot_frame.cpp
+
   src/render/lookup/ansi_colors.cpp
-  src/render/lookup/color_map.cpp
+  src/render/lookup/gradient_map.cpp
+  src/render/lookup/matplotlib_colors.cpp
 
   src/render/program/font_program.cpp
   src/render/program/glyph_2d_program.cpp

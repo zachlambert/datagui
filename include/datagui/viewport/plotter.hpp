@@ -2,6 +2,7 @@
 
 #include "datagui/plot/heatmap_plot.hpp"
 #include "datagui/plot/line_plot.hpp"
+#include "datagui/plot/plot_frame.hpp"
 #include "datagui/viewport/viewport.hpp"
 #include <functional>
 #include <optional>
@@ -89,20 +90,14 @@ private:
   void mouse_event(const MouseEvent& event) override;
   bool scroll_event(const ScrollEvent& event) override;
 
-  struct Tick {
-    float position;
-    std::string label;
-  };
-  std::tuple<std::string, std::vector<Tick>> get_ticks(float min, float max);
-
   std::shared_ptr<Theme> theme;
   std::shared_ptr<FontRegistry> font_registry;
 
+  PlotFrame frame_;
 #if 0
   PlotterArgs args;
 #endif
   std::vector<std::unique_ptr<Plot>> plots;
-  std::size_t default_color_i = 0;
 
   bool mouse_down_valid = false;
   Vec2 mouse_down_pos;

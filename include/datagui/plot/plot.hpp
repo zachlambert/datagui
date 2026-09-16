@@ -1,6 +1,5 @@
 #pragma once
 
-#include "datagui/geometry/box.hpp"
 #include "datagui/plot/plot_frame.hpp"
 #include "datagui/render/state/draw_list.hpp"
 #include "datagui/render/state/scene_2d.hpp"

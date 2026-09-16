@@ -274,6 +274,7 @@ float PlotFrame::ticks_depth(const Ticks& ticks) const {
     // puts a newline in the label if required to avoid overflow
     depth += font.text_size(ticks.label).y + theme_->text_padding;
   }
+  return depth;
 }
 
 void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
