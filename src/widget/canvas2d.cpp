@@ -51,7 +51,7 @@ void Canvas2d::capsule(
   scene->draw_capsule(a, b, radius, color, border_width, border_color);
 }
 
-void Canvas2d::text(
+void Canvas2d::label(
     const std::string& text,
     const Vec2& origin,
     float angle,
@@ -59,32 +59,8 @@ void Canvas2d::text(
     Font font,
     Color text_color,
     Length width) {
-  if (view_width_ <= 0) {
-    return;
-  }
-  float text_scale = camera.size.x / view_width_;
-
-  static constexpr int max_font_size = 80;
-  static constexpr int min_font_size = 12;
-  // Avoid generating too many fonts, choose font sizes at multiples of 4
-  // and adjust zoom appropriately
-  static constexpr int font_size_modulo = 4;
-
-  const int scaled_font_size = static_cast<int>(font_size * zoom);
-  const int font_size_used = std::clamp(
-      scaled_font_size - (scaled_font_size % font_size_modulo),
-      min_font_size,
-      max_font_size);
-  const float zoom_used = (font_size * zoom) / font_size_used;
-
-  scene->draw_text(
-      font_registry->get_font(font, font_size_used),
-      origin,
-      angle,
-      Vec2::uniform(text_scale * zoom_used),
-      text_color,
-      width,
-      text);
+  label_commands_.push_back(
+      LabelCommand{text, origin, angle, font_size, font, text_color, width});
 }
 
 void Canvas2d::heatmap(
@@ -162,14 +138,49 @@ void Canvas2d::begin() {
   }
   scene->clear();
   scene->bg_color = Color::Gray(0.95);
+  label_commands_.clear();
   default_position_ = Vec2();
   default_view_width_ = 1;
 }
 
 void Canvas2d::set_dependent_state(const Box2& box) {
-  view_width_ = box.size_x() - border_width_ * 2;
+  const float view_width = box.size_x() - border_width_ * 2;
   camera.size.x = default_view_width_ / zoom;
   camera.size.y = box.ratio_yx() * camera.size.x;
+
+  // The queued labels are written to the scene here, since the scale from
+  // canvas coordinates to pixels is only known once the widget size is known.
+  // NOTE: This means labels are always drawn on top of the scene geometry
+  if (label_commands_.empty() || view_width <= 0) {
+    label_commands_.clear();
+    return;
+  }
+  const float text_scale = camera.size.x / view_width;
+
+  static constexpr int max_font_size = 80;
+  static constexpr int min_font_size = 12;
+  // Avoid generating too many fonts, choose font sizes at multiples of 4
+  // and adjust zoom appropriately
+  static constexpr int font_size_modulo = 4;
+
+  for (const auto& command : label_commands_) {
+    const int scaled_font_size = static_cast<int>(command.font_size * zoom);
+    const int font_size_used = std::clamp(
+        scaled_font_size - (scaled_font_size % font_size_modulo),
+        min_font_size,
+        max_font_size);
+    const float zoom_used = (command.font_size * zoom) / font_size_used;
+
+    scene->draw_text(
+        font_registry->get_font(command.font, font_size_used),
+        command.origin,
+        command.angle,
+        Vec2::uniform(text_scale * zoom_used),
+        command.text_color,
+        command.width,
+        command.text);
+  }
+  label_commands_.clear();
 }
 
 void Canvas2d::render(const Box2& box, DrawList& dl) const {

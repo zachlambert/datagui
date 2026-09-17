@@ -5,6 +5,8 @@
 #include "datagui/render/font_registry.hpp"
 #include <functional>
 #include <optional>
+#include <string>
+#include <vector>
 
 namespace dgui {
 
@@ -43,7 +45,9 @@ public:
       float border_width = 0,
       const Color& border_color = Color::Black());
 
-  void text(
+  // Labels are always drawn on top of the scene geometry, regardless of the
+  // order they are added in
+  void label(
       const std::string& text,
       const Vec2& origin,
       float angle = 0,
@@ -87,16 +91,29 @@ private:
   void mouse_event(const Box2& box, const MouseEvent& event) override;
   bool scroll_event(const Box2& box, const ScrollEvent& event) override;
 
+  // Labels are queued instead of being written to the scene immediately, since
+  // the scale depends on the widget size, which isn't known until
+  // set_dependent_state()
+  struct LabelCommand {
+    std::string text;
+    Vec2 origin;
+    float angle;
+    int font_size;
+    Font font;
+    Color text_color;
+    Length width;
+  };
+
   static constexpr float border_width_ = 2;
   Color bg_color_ = Color::Gray(0.95);
   Camera2d click_camera;
   std::optional<MouseEvent> mouse_event_;
 
   Vec2 default_position_;
-  float default_view_width_;
+  float default_view_width_ = 1;
 
   float zoom = 1;
-  float view_width_ = 0;
+  std::vector<LabelCommand> label_commands_;
 
   std::shared_ptr<FontRegistry> font_registry;
   Camera2d camera;
