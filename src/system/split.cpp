@@ -35,18 +35,18 @@ void SplitSystem::set_input_state(ElementPtr element) {
     }
   }
 
-  if (split.direction == Direction::Horizontal) {
-    state.fixed_size.y =
-        a_fixed_size.y + b_fixed_size.y + theme->split_divider_width;
-    state.dynamic_size.y = std::max(a_dynamic_size.y + b_dynamic_size.y, 1.f);
+  // Since the vsplit is resizable, the content in the resizable direction
+  // must have zero fixed width and a non-zero dynamic width
+  // This is because each half needs to be resizable down to zero width anyway
 
+  if (split.direction == Direction::Horizontal) {
+    state.fixed_size.y = 0;
+    state.dynamic_size.y = 1;
     state.fixed_size.x = std::max(a_fixed_size.x, b_fixed_size.x);
     state.dynamic_size.x = std::max(a_dynamic_size.x, b_dynamic_size.x);
   } else {
-    state.fixed_size.x =
-        a_fixed_size.x + b_fixed_size.x + theme->split_divider_width;
-    state.dynamic_size.x = std::max(a_dynamic_size.x + b_dynamic_size.x, 1.f);
-
+    state.fixed_size.x = 0;
+    state.dynamic_size.x = 1;
     state.fixed_size.y = std::max(a_fixed_size.y, b_fixed_size.y);
     state.dynamic_size.y = std::max(a_dynamic_size.y, b_dynamic_size.y);
   }
