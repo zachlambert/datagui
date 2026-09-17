@@ -23,6 +23,7 @@ void PlotFrame::clear() {
   yticks_.label.clear();
   xlimit_.reset();
   ylimit_.reset();
+  undistorted_ = false;
   data_range_.reset();
   legend_items_.clear();
   gradient_maps_.clear();
@@ -70,7 +71,11 @@ void PlotFrame::set_ylimit(float min, float max) {
   ylimit_ = std::make_pair(min, max);
 }
 
-void PlotFrame::calculate(const Box2& viewport) {
+void PlotFrame::set_undistorted(bool undistorted) {
+  undistorted_ = undistorted;
+}
+
+void PlotFrame::calculate(const Box2& viewport, const Box2& subview) {
   const auto& font =
       font_registry_->get_font(theme_->text_font, theme_->text_size);
 
@@ -211,10 +216,8 @@ void PlotFrame::calculate(const Box2& viewport) {
   scene_area_ = Box2(Vec2(), plot_area_.size());
 
   // =============================
-  // Calculate data_window_
+  // Calculate data_fit_ and data_window_
 
-  // TODO: The window is currently always the full data range. Once camera
-  // controls are added it will instead be a sub-region of it
   if (data_range_) {
     data_window_ = *data_range_;
   } else {
@@ -239,7 +242,18 @@ void PlotFrame::calculate(const Box2& viewport) {
     data_window_.upper.y = ylimit_->second;
   }
 
-  // Ticks are labelled with the visible range, not the full data range
+  data_window_ = data_window_.subview(subview);
+
+  if (undistorted_ && !plot_area_.empty()) {
+    const Vec2 centre = data_window_.center();
+    const Vec2 size = data_window_.size();
+    const float scale = std::max(
+        std::abs(size.x) / plot_area_.size_x(),
+        std::abs(size.y) / plot_area_.size_y());
+    const Vec2 half_size = plot_area_.size() * scale / 2;
+    data_window_ = Box2(centre - half_size, centre + half_size);
+  }
+
   xticks_.min_value = data_window_.lower.x;
   xticks_.max_value = data_window_.upper.x;
   yticks_.min_value = data_window_.lower.y;
@@ -279,9 +293,8 @@ void PlotFrame::draw_frame(const Box2& viewport, DrawList& dl) const {
     draw_ticks(dl, gradient_map.ticks);
   }
 
-  // NOTE: The plot area background is the scene's clear color, set by the
-  // Plotter. It can't be drawn here, since scenes are rendered before the
-  // geometry of the group they belong to
+  // NOTE: Don't draw a background color, since it will be drawn over the plot data
+  // Instead, the scene2d is given a bg color
   dl.draw_line(
       plot_area_.lower_left(),
       plot_area_.upper_left(),

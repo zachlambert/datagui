@@ -66,7 +66,7 @@ public:
     frame_.set_ylimit(lower, upper);
   }
   void undistorted() {
-    // TODO
+    frame_.set_undistorted(true);
   }
 
 private:
@@ -81,17 +81,23 @@ private:
   void mouse_event(const MouseEvent& event) override;
   bool scroll_event(const ScrollEvent& event) override;
 
+  Vec2 event_to_gui(const Vec2& position) const;
+  Vec2 gui_to_scene(const Vec2& position) const;
+  // The data point currently under the given scene position
+  Vec2 scene_to_data(const Vec2& position) const;
+
   std::shared_ptr<Theme> theme;
   std::shared_ptr<FontRegistry> font_registry;
 
   PlotFrame frame_;
   std::vector<std::unique_ptr<Plot>> plots;
 
-  // TODO: Currently not implemented
-  bool mouse_down_valid = false;
-  Vec2 mouse_down_pos;
-  Box2 mouse_down_subview;
-  Box2 subview = Box2(Vec2(), Vec2::ones());
+  // Camera controls
+  Box2 viewport_;
+  Box2 subview_ = Box2(Vec2(), Vec2::ones());
+  bool panning_ = false;
+  Vec2 pan_press_scene_;
+  Box2 pan_press_window_;
 };
 
 }; // namespace dgui

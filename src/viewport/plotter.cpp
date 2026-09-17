@@ -8,7 +8,8 @@ LinePlot::Builder Plotter::plot(const std::vector<Vec2>& points) {
 }
 
 LinePlot::Builder Plotter::plot(std::vector<Vec2>&& points) {
-  plots.push_back(std::make_unique<LinePlot>(theme, font_registry, std::move(points)));
+  plots.push_back(
+      std::make_unique<LinePlot>(theme, font_registry, std::move(points)));
   return dynamic_cast<LinePlot*>(plots.back().get())->builder();
 }
 
@@ -121,7 +122,11 @@ void Plotter::end() {
 }
 
 void Plotter::draw(const Box2& viewport, DrawList& dl) {
-  frame_.calculate(viewport);
+  // Kept so that mouse and scroll events, which arrive normalized, can be
+  // mapped back into gui coordinates
+  viewport_ = viewport;
+
+  frame_.calculate(viewport, subview_);
   frame_.draw_frame(viewport, dl);
   for (const auto& plot : plots) {
     plot->draw_frame_components(frame_, dl);
@@ -149,41 +154,77 @@ void Plotter::draw(const Box2& viewport, DrawList& dl) {
   dl.draw_scene_2d(frame_.plot_area(), plot_camera, scene);
 }
 
+Vec2 Plotter::event_to_gui(const Vec2& position) const {
+  // NOTE: Events are normalized against the element box, whereas the viewport
+  // passed to draw() is the content box. These differ if the viewport has a
+  // border, in which case the mapping is off by the border width
+  return Vec2(
+      viewport_.lower.x + position.x * viewport_.size_x(),
+      viewport_.upper.y - position.y * viewport_.size_y());
+}
+
+Vec2 Plotter::gui_to_scene(const Vec2& position) const {
+  const Box2& plot_area = frame_.plot_area();
+  return Vec2(position.x - plot_area.lower.x, plot_area.upper.y - position.y);
+}
+
+Vec2 Plotter::scene_to_data(const Vec2& position) const {
+  return remap(position, frame_.scene_area(), frame_.data_window());
+}
+
 void Plotter::mouse_event(const MouseEvent& event) {
   if (event.button != MouseButton::Left) {
     return;
   }
+
   if (event.action == MouseAction::Press) {
-    if (!frame_.plot_area().contains(event.position)) {
-      mouse_down_valid = false;
+    if (!frame_.plot_area().contains(event_to_gui(event.position))) {
+      panning_ = false;
       return;
     }
+    // Double click restores the automatic fit to the data
     if (event.is_double_click) {
-      subview = Box2(Vec2(), Vec2::ones());
-      mouse_down_subview = subview;
+      panning_ = false;
+      subview_ = Box2(Vec2(), Vec2::ones());
       return;
     }
-    mouse_down_valid = true;
-    mouse_down_pos = event.position;
-    mouse_down_subview = subview;
-    return;
-  }
-  if (!mouse_down_valid || event.action != MouseAction::Hold ||
-      event.button != MouseButton::Left) {
+    panning_ = true;
+    pan_press_scene_ = gui_to_scene(event_to_gui(event.position));
+    pan_press_window_ = frame_.data_window();
     return;
   }
 
-  Vec2 delta = mouse_down_subview.size() * (mouse_down_pos - event.position) /
-               frame_.plot_area().size();
-  subview =
-      Box2(mouse_down_subview.lower + delta, mouse_down_subview.upper + delta);
+  if (event.action == MouseAction::Release) {
+    panning_ = false;
+    return;
+  }
+
+  // Keep panning once started, even if the cursor leaves the plot area
+  if (!panning_ || event.action != MouseAction::Hold) {
+    return;
+  }
+  if (frame_.scene_area().empty()) {
+    return;
+  }
+
+  // Move the window opposite to the drag, so the data follows the cursor
+  const Vec2 scene = gui_to_scene(event_to_gui(event.position));
+  const Vec2 delta = (scene - pan_press_scene_) * pan_press_window_.size() /
+                     frame_.scene_area().size();
+  subview_ =
+      Box2(pan_press_window_.lower - delta, pan_press_window_.upper - delta);
 }
 
 bool Plotter::scroll_event(const ScrollEvent& event) {
-  if (!frame_.plot_area().contains(event.position)) {
+  #if 0
+  const Vec2 gui = event_to_gui(event.position);
+  if (!frame_.plot_area().contains(gui)) {
     return false;
   }
-  float ratio = std::exp(event.amount / 1000.f);
+
+  // Matches Canvas2d, where a positive scroll amount zooms out. Shift and
+  // ctrl restrict the zoom to a single axis
+  const float ratio = std::exp(event.amount / 250.f);
   Vec2 size_ratio = Vec2::ones();
   if (!event.mod.shift) {
     size_ratio.x = ratio;
@@ -191,10 +232,15 @@ bool Plotter::scroll_event(const ScrollEvent& event) {
   if (!event.mod.ctrl) {
     size_ratio.y = ratio;
   }
-  Vec2 centre = subview.center();
-  Vec2 size = subview.size() * size_ratio;
-  subview = Box2(centre - size / 2, centre + size / 2);
 
+  // Zoom about the cursor, so the data under it stays put
+  const Box2& window = frame_.data_window();
+  const Vec2 anchor = scene_to_data(gui_to_scene(gui));
+  subview_ = Box2(
+      anchor - (anchor - window.lower) * size_ratio,
+      anchor + (window.upper - anchor) * size_ratio);
+
+  #endif
   return true;
 }
 

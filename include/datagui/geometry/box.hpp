@@ -129,6 +129,10 @@ struct Box2 {
         lower.x + coords.x * (upper.x - lower.x),
         lower.y + coords.y * (upper.y - lower.y));
   }
+  Box2 subview(const Box2& box_coords) const {
+    return Box2(from_coords(box_coords.lower), from_coords(box_coords.upper));
+  }
+
   float ratio_yx() const {
     return (upper.y - lower.y) / (upper.x - lower.x);
   }

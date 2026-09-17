@@ -81,8 +81,8 @@ void ViewportPtrSystem::mouse_event(
   const auto& viewport = element.viewport();
 
   MouseEvent remapped = event;
-  remapped.position = state.box().to_coords(event.position);
-  remapped.press_position = state.box().to_coords(event.press_position);
+  remapped.position = state.content_box.to_coords(event.position);
+  remapped.press_position = state.content_box.to_coords(event.press_position);
   remapped.position.y = 1 - remapped.position.y;
   remapped.press_position.y = 1 - remapped.press_position.y;
   viewport.viewport->mouse_event(remapped);
@@ -95,7 +95,7 @@ bool ViewportPtrSystem::scroll_event(
   const auto& viewport = element.viewport();
 
   ScrollEvent remapped = event;
-  remapped.position = state.box().to_coords(event.position);
+  remapped.position = state.content_box.to_coords(event.position);
   remapped.position.y = 1 - remapped.position.y;
   return viewport.viewport->scroll_event(remapped);
 }

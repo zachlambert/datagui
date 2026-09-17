@@ -35,6 +35,7 @@ public:
   void set_ylabel(const std::string& ylabel);
   void set_xlimit(float min, float max);
   void set_ylimit(float min, float max);
+  void set_undistorted(bool undistorted);
 
   Args& args() {
     return args_;
@@ -44,25 +45,19 @@ public:
   int add_legend_item(const std::string& label);
   int add_gradient_map(float min, float max, const std::string& label = "");
 
-  void calculate(const Box2& viewport);
+  void calculate(const Box2& viewport, const Box2& subview);
   void draw_frame(const Box2& viewport, DrawList& dl) const;
 
-  // The region of the data range currently in view. Plots map their data
-  // with remap(point, data_window(), scene_area()), so anything outside the
-  // window naturally falls outside the scene area
   const Box2& data_window() const {
     return data_window_;
   }
-  // The box the plot scene's camera covers, with a zero origin and the same
-  // size as the plot area. Unlike the plot area this is y-up, matching the
-  // scene camera
   const Box2& scene_area() const {
     return scene_area_;
   }
-  // The gui box the frame is drawn in, which is y-down
   const Box2& plot_area() const {
     return plot_area_;
   }
+
   const Box2& legend_icon_box(int index) const {
     if (index < 0 || index >= (int)legend_items_.size()) {
       throw std::invalid_argument("Invalid index");
@@ -99,6 +94,7 @@ private:
   std::string title_;
   std::optional<std::pair<float, float>> xlimit_;
   std::optional<std::pair<float, float>> ylimit_;
+  bool undistorted_ = false;
   Ticks xticks_;
   Ticks yticks_;
 
@@ -123,7 +119,6 @@ private:
     }
   };
 
-  // Bounding box of all the data added via add_data()
   std::optional<Box2> data_range_;
   std::vector<LegendItem> legend_items_;
   std::vector<GradientMap> gradient_maps_;
@@ -134,8 +129,7 @@ private:
   float aside_width_ = 0;   // Right aside box for gradient maps
   float title_width_ = 0;
   std::optional<Box2> legend_box_;
-  // TODO: Currently always equal to the data range, but will become movable
-  // with camera controls
+
   Box2 data_window_;
   Box2 plot_area_;
   Box2 scene_area_;
