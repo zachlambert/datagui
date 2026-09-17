@@ -56,6 +56,7 @@ bool Gui::poll() {
   tree.clear_removed();
 
   assert(stack.empty());
+  assert(next_key == 0);
   calculate_sizes();
   render();
   event_handling();

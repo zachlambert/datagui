@@ -239,10 +239,10 @@ public:
   template <typename Component, typename... Args>
   requires component_c<Component, Args...>
   void component(Args&&... args) {
-    Component& component = variable([]() {
+    Component& component = variable<Component>([]() {
       return Component();
     });
-    component.visit(std::forward<Args>(args)...);
+    component.visit(*this, std::forward<Args>(args)...);
   }
 
 private:

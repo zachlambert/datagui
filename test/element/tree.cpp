@@ -8,7 +8,7 @@ TEST(Tree, CreateElements) {
 
   auto node = tree.root();
   ASSERT_FALSE(node);
-  node.create(Type::Group);
+  node.insert(Type::Group);
   ASSERT_TRUE(node);
   ASSERT_EQ(node.type(), Type::Group);
   {
@@ -20,7 +20,7 @@ TEST(Tree, CreateElements) {
 
   node = node.child();
   ASSERT_FALSE(node);
-  node.create(Type::Button);
+  node.insert(Type::Button);
   ASSERT_TRUE(node);
   ASSERT_EQ(node.type(), Type::Button);
   {
@@ -32,7 +32,7 @@ TEST(Tree, CreateElements) {
 
   node = node.next();
   ASSERT_FALSE(node);
-  node.create(Type::TextInput);
+  node.insert(Type::TextInput);
   ASSERT_TRUE(node);
   ASSERT_EQ(node.type(), Type::TextInput);
   {

@@ -2,6 +2,6 @@
 
 namespace dgui {
 
-std::size_t KeyList::next_key = 0;
+std::size_t KeyList::next_key_counter = 0;
 
 } // namespace dgui

@@ -263,13 +263,14 @@ public:
       return tree && index != -1 && tree->elements.contains(index);
     }
 
-    void create(Type type, std::size_t id = 0) {
+    void insert(Type type, std::size_t id = 0) {
       assert(tree);
       if (parent_ == -1) {
-        index = tree->create_element(parent_, -1, id, type);
+        index = tree->create_element(-1, -1, id, type);
       } else {
         assert(tree->elements.contains(parent_));
-        int prev = tree->elements[parent_].last_child;
+        int prev = index == -1 ? tree->elements[parent_].last_child
+                               : tree->elements[index].prev;
         index = tree->create_element(parent_, prev, id, type);
       }
     }
@@ -286,15 +287,20 @@ public:
 
     bool expect(Type type, std::size_t id = 0) {
       assert(tree);
-      while (index != -1 && id != tree->elements[index].id) {
-        (*this) = erase();
+      int search_index = index;
+      while (search_index != -1 && tree->elements[search_index].id != id) {
+        search_index = tree->elements[search_index].next;
       }
-      if (index == -1) {
-        create(type, id);
+      if (search_index == -1) {
+        insert(type, id);
         return true;
       }
-      if (type != tree->elements[index].type) {
+      if (type != tree->elements[search_index].type) {
         throw ElementError("Incorrect type");
+      }
+      // Else, remove up to search_index
+      while (index != search_index) {
+        (*this) = erase();
       }
       return false;
     }
