@@ -1,4 +1,4 @@
-#include "datagui/viewport/canvas2d.hpp"
+#include "datagui/widget/canvas2d.hpp"
 #include "datagui/render/lookup/gradient_map.hpp"
 
 namespace dgui {
@@ -59,10 +59,10 @@ void Canvas2d::text(
     Font font,
     Color text_color,
     Length width) {
-  if (!prev_viewport_) {
+  if (view_width_ <= 0) {
     return;
   }
-  float text_scale = camera.size.x / prev_viewport_->size().x;
+  float text_scale = camera.size.x / view_width_;
 
   static constexpr int max_font_size = 80;
   static constexpr int min_font_size = 12;
@@ -157,20 +157,30 @@ void Canvas2d::init(
 }
 
 void Canvas2d::begin() {
-  scene = std::make_shared<Scene2d>();
+  if (!scene) {
+    scene = std::make_shared<Scene2d>();
+  }
+  scene->clear();
   scene->bg_color = Color::Gray(0.95);
   default_position_ = Vec2();
   default_view_width_ = 1;
 }
 
-void Canvas2d::draw(const Box2& viewport, DrawList& dl) {
-  prev_viewport_ = viewport;
+void Canvas2d::set_dependent_state(const Box2& box) {
+  view_width_ = box.size_x() - border_width_ * 2;
   camera.size.x = default_view_width_ / zoom;
-  camera.size.y = viewport.ratio_yx() * camera.size.x;
+  camera.size.y = box.ratio_yx() * camera.size.x;
+}
+
+void Canvas2d::render(const Box2& viewport, DrawList& dl) const {
   dl.draw_scene_2d(viewport, camera, scene);
 }
 
-void Canvas2d::mouse_event(const MouseEvent& event) {
+void Canvas2d::mouse_event(const Box2& box, const MouseEvent& event) {
+  const Box2 canvas = box.from_shrink(border_width_);
+  const Vec2 position_coords = canvas.to_coords(event.position);
+  const Vec2 press_position_coords = canvas.to_coords(event.press_position);
+
   if (event.button == MouseButton::Right) {
     if (event.action == MouseAction::Press) {
       if (event.mod.ctrl) {
@@ -180,23 +190,26 @@ void Canvas2d::mouse_event(const MouseEvent& event) {
       click_camera = camera;
     } else {
       camera.position = click_camera.position +
-                        click_camera.from_camera(event.press_position) -
-                        click_camera.from_camera(event.position);
+                        click_camera.from_camera(press_position_coords) -
+                        click_camera.from_camera(position_coords);
     }
   }
 
   MouseEvent remapped = event;
-  remapped.press_position = camera.from_camera(event.press_position);
-  remapped.position = camera.from_camera(event.position);
+  remapped.press_position = camera.from_camera(press_position_coords);
+  remapped.position = camera.from_camera(position_coords);
   mouse_event_ = remapped;
 }
 
-bool Canvas2d::scroll_event(const ScrollEvent& event) {
+bool Canvas2d::scroll_event(const Box2& box, const ScrollEvent& event) {
+  const Vec2 position_coords =
+      box.from_shrink(border_width_).to_coords(event.position);
+
   float change_factor = std::exp(-event.amount / 250);
   camera.size /= change_factor;
   zoom *= change_factor;
-  camera.position +=
-      (event.position - Vec2::uniform(0.5)) * (change_factor - 1) * camera.size;
+  camera.position += (position_coords - Vec2::uniform(0.5)) *
+                     (change_factor - 1) * camera.size;
   return true;
 }
 

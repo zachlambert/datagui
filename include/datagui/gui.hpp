@@ -6,6 +6,7 @@
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/writer.hpp"
 #include "datagui/element/args.hpp"
+#include "datagui/element/layer_manager.hpp"
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
 #include "datagui/render/executor.hpp"
@@ -14,12 +15,10 @@
 #include "datagui/render/state/draw_list.hpp"
 #include "datagui/render/window.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/viewport/viewport.hpp"
-#include "datagui/viewport/canvas2d.hpp"
-#include "datagui/viewport/canvas3d.hpp"
-#include "datagui/viewport/plotter.hpp"
-#include "datagui/element/layer_manager.hpp"
-#include "datagui/viewport/viewport.hpp"
+#include "datagui/widget/canvas2d.hpp"
+#include "datagui/widget/canvas3d.hpp"
+#include "datagui/widget/plotter.hpp"
+#include "datagui/widget/widget.hpp"
 #include <memory>
 #include <optional>
 #include <vector>
@@ -274,8 +273,8 @@ private:
   void focus_next(bool reverse);
 
   template <typename T>
-  requires std::is_base_of_v<Viewport, T>
-  T& viewport();
+  requires std::is_base_of_v<Widget, T>
+  T& widget();
 
   Window window;
   ProgramRegistry program_registry;

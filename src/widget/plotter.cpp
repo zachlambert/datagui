@@ -1,4 +1,4 @@
-#include "datagui/viewport/plotter.hpp"
+#include "datagui/widget/plotter.hpp"
 
 namespace dgui {
 
@@ -113,6 +113,10 @@ void Plotter::begin() {
   LinePlot::reset_default_color_i();
   frame_.clear();
   plots.clear();
+  if (!scene) {
+    scene = std::make_shared<Scene2d>();
+  }
+  scene->clear();
 }
 
 void Plotter::end() {
@@ -121,30 +125,22 @@ void Plotter::end() {
   }
 }
 
-void Plotter::draw(const Box2& viewport, DrawList& dl) {
-  // Kept so that mouse and scroll events, which arrive normalized, can be
-  // mapped back into gui coordinates
-  viewport_ = viewport;
+void Plotter::set_dependent_state(const Box2& box) {
+  frame_.calculate(box, subview_);
+}
 
-  frame_.calculate(viewport, subview_);
-  frame_.draw_frame(viewport, dl);
+void Plotter::render(const Box2& box, DrawList& dl) const {
+  frame_.draw_frame(box, dl);
   for (const auto& plot : plots) {
     plot->draw_frame_components(frame_, dl);
   }
 
-  // The scene is cleared to the background color before the data is drawn,
-  // so that the background doesn't paint over it. Drawing a box on the draw
-  // list wouldn't work, since scenes are always rendered before the
-  // geometry of the group they belong to
   auto scene = std::make_shared<Scene2d>();
   scene->bg_color = Color::Gray(0.9);
   for (const auto& plot : plots) {
     plot->draw_data(frame_, *scene);
   }
 
-  // The camera covers the scene area, which has the same size as the plot
-  // area, so data mapped into it with remap() is drawn 1:1 in pixels and line
-  // and marker widths carry over unscaled
   const Box2& scene_area = frame_.scene_area();
   Camera2d plot_camera;
   plot_camera.position = scene_area.center();
@@ -154,31 +150,13 @@ void Plotter::draw(const Box2& viewport, DrawList& dl) {
   dl.draw_scene_2d(frame_.plot_area(), plot_camera, scene);
 }
 
-Vec2 Plotter::event_to_gui(const Vec2& position) const {
-  // NOTE: Events are normalized against the element box, whereas the viewport
-  // passed to draw() is the content box. These differ if the viewport has a
-  // border, in which case the mapping is off by the border width
-  return Vec2(
-      viewport_.lower.x + position.x * viewport_.size_x(),
-      viewport_.upper.y - position.y * viewport_.size_y());
-}
-
-Vec2 Plotter::gui_to_scene(const Vec2& position) const {
-  const Box2& plot_area = frame_.plot_area();
-  return Vec2(position.x - plot_area.lower.x, plot_area.upper.y - position.y);
-}
-
-Vec2 Plotter::scene_to_data(const Vec2& position) const {
-  return remap(position, frame_.scene_area(), frame_.data_window());
-}
-
-void Plotter::mouse_event(const MouseEvent& event) {
+void Plotter::mouse_event(const Box2& box, const MouseEvent& event) {
   if (event.button != MouseButton::Left) {
     return;
   }
 
   if (event.action == MouseAction::Press) {
-    if (!frame_.plot_area().contains(event_to_gui(event.position))) {
+    if (!frame_.plot_area().contains(event.position)) {
       panning_ = false;
       return;
     }
@@ -189,7 +167,8 @@ void Plotter::mouse_event(const MouseEvent& event) {
       return;
     }
     panning_ = true;
-    pan_press_scene_ = gui_to_scene(event_to_gui(event.position));
+    pan_press_scene_ =
+        remap_flip_y(event.position, frame_.plot_area(), frame_.scene_area());
     pan_press_window_ = frame_.data_window();
     return;
   }
@@ -208,17 +187,16 @@ void Plotter::mouse_event(const MouseEvent& event) {
   }
 
   // Move the window opposite to the drag, so the data follows the cursor
-  const Vec2 scene = gui_to_scene(event_to_gui(event.position));
-  const Vec2 delta = (scene - pan_press_scene_) * pan_press_window_.size() /
+  const Vec2 pos_scene =
+      remap_flip_y(event.position, frame_.plot_area(), frame_.scene_area());
+  const Vec2 delta = (pos_scene - pan_press_scene_) * pan_press_window_.size() /
                      frame_.scene_area().size();
   subview_ =
       Box2(pan_press_window_.lower - delta, pan_press_window_.upper - delta);
 }
 
-bool Plotter::scroll_event(const ScrollEvent& event) {
-  #if 0
-  const Vec2 gui = event_to_gui(event.position);
-  if (!frame_.plot_area().contains(gui)) {
+bool Plotter::scroll_event(const Box2& box, const ScrollEvent& event) {
+  if (!frame_.plot_area().contains(event.position)) {
     return false;
   }
 
@@ -235,12 +213,12 @@ bool Plotter::scroll_event(const ScrollEvent& event) {
 
   // Zoom about the cursor, so the data under it stays put
   const Box2& window = frame_.data_window();
-  const Vec2 anchor = scene_to_data(gui_to_scene(gui));
+  const Vec2 anchor =
+      remap_flip_y(event.position, frame_.plot_area(), frame_.data_window());
   subview_ = Box2(
       anchor - (anchor - window.lower) * size_ratio,
       anchor + (window.upper - anchor) * size_ratio);
 
-  #endif
   return true;
 }
 

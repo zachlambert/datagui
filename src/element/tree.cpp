@@ -111,7 +111,7 @@ int Tree::emplace_type(Type type) {
     HANDLE(Tabs, tabs);
     HANDLE(TextBox, text_box);
     HANDLE(TextInput, text_input);
-    HANDLE(ViewportPtr, viewport);
+    HANDLE(WidgetPtr, widget_ptr);
   default:
     assert(false);
     return -1;
@@ -140,7 +140,7 @@ void Tree::pop_type(Type type, std::size_t index) {
     HANDLE(Tabs, tabs);
     HANDLE(TextBox, text_box);
     HANDLE(TextInput, text_input);
-    HANDLE(ViewportPtr, viewport);
+    HANDLE(WidgetPtr, widget_ptr);
   default:
     assert(false);
     break;

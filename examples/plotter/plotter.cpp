@@ -1,4 +1,4 @@
-#include "datagui/viewport/plotter.hpp"
+#include "datagui/widget/plotter.hpp"
 #include "datagui/gui.hpp"
 #include <chrono>
 #include <cmath>

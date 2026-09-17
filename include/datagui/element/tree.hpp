@@ -202,7 +202,7 @@ public:
     PROPS_METHOD(Tabs, tabs)
     PROPS_METHOD(TextBox, text_box)
     PROPS_METHOD(TextInput, text_input)
-    PROPS_METHOD(ViewportPtr, viewport)
+    PROPS_METHOD(WidgetPtr, widget_ptr)
 
 #undef PROPS_METHOD
 
@@ -413,7 +413,7 @@ private:
   VectorMap<Tabs> tabs;
   VectorMap<TextBox> text_box;
   VectorMap<TextInput> text_input;
-  VectorMap<ViewportPtr> viewport;
+  VectorMap<WidgetPtr> widget_ptr;
 };
 
 using ElementPtr = Tree::ElementPtr;

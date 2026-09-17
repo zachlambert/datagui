@@ -88,11 +88,11 @@ add_library(datagui SHARED
   src/system/tabs.cpp
   src/system/text_box.cpp
   src/system/text_input.cpp
-  src/system/viewport_ptr.cpp
+  src/system/widget_ptr.cpp
 
-  src/viewport/canvas2d.cpp
-  src/viewport/canvas3d.cpp
-  src/viewport/plotter.cpp
+  src/widget/canvas2d.cpp
+  src/widget/canvas3d.cpp
+  src/widget/plotter.cpp
 
   src/gui.cpp
 

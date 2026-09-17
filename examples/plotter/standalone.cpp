@@ -1,5 +1,5 @@
 #include "datagui/gui.hpp"
-#include "datagui/viewport/plotter.hpp"
+#include "datagui/widget/plotter.hpp"
 #include <cmath>
 
 int main() {

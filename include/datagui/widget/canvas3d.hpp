@@ -1,13 +1,13 @@
 #pragma once
 
-#include "datagui/viewport/viewport.hpp"
+#include "datagui/widget/widget.hpp"
 #include "datagui/asset/uv_mesh.hpp"
 #include "datagui/render/state/scene_3d.hpp"
 #include <functional>
 
 namespace dgui {
 
-class Canvas3d : public Viewport {
+class Canvas3d : public Widget {
 public:
   Canvas3d();
 
@@ -98,11 +98,16 @@ private:
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontRegistry>& font_registry) override;
   void begin() override;
-  void draw(const Box2& viewport, DrawList& dl) override;
 
-  void mouse_event(const MouseEvent& event) override;
-  bool scroll_event(const ScrollEvent& event) override;
+  Vec2 min_size() const override { return Vec2::uniform(border_width_ * 2); }
+  void set_dependent_state(const Box2& box) override;
+  void render(const Box2& box, DrawList& dl) const override;
+
+  void mouse_event(const Box2& box, const MouseEvent& event) override;
+  bool scroll_event(const Box2& box, const ScrollEvent& event) override;
   void reset_camera();
+
+  static constexpr float border_width_ = 2;
 
   Camera3d camera;
   std::shared_ptr<Scene3d> scene;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "datagui/gui.hpp"
-#include "datagui/viewport/plotter.hpp"
+#include "datagui/widget/plotter.hpp"
 
 namespace dgui {
 

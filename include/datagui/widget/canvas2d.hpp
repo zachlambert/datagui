@@ -1,6 +1,6 @@
 #pragma once
 
-#include "datagui/viewport/viewport.hpp"
+#include "datagui/widget/widget.hpp"
 #include "datagui/render/state/scene_2d.hpp"
 #include "datagui/render/font_registry.hpp"
 #include <functional>
@@ -8,7 +8,7 @@
 
 namespace dgui {
 
-class Canvas2d : public Viewport {
+class Canvas2d : public Widget {
 public:
   void rect(
       const Vec2& position,
@@ -79,11 +79,15 @@ private:
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontRegistry>& font_registry) override;
   void begin() override;
-  void draw(const Box2& viewport, DrawList& dl) override;
 
-  void mouse_event(const MouseEvent& event) override;
-  bool scroll_event(const ScrollEvent& event) override;
+  Vec2 min_size() const override { return Vec2::uniform(border_width_ * 2); }
+  void set_dependent_state(const Box2& box) override;
+  void render(const Box2& box, DrawList& dl) const override;
 
+  void mouse_event(const Box2& box, const MouseEvent& event) override;
+  bool scroll_event(const Box2& box, const ScrollEvent& event) override;
+
+  static constexpr float border_width_ = 2;
   Color bg_color_ = Color::Gray(0.95);
   Camera2d click_camera;
   std::optional<MouseEvent> mouse_event_;
@@ -92,7 +96,7 @@ private:
   float default_view_width_;
 
   float zoom = 1;
-  std::optional<Box2> prev_viewport_;
+  float view_width_ = 0;
 
   std::shared_ptr<FontRegistry> font_registry;
   Camera2d camera;

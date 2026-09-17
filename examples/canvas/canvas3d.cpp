@@ -1,4 +1,4 @@
-#include "datagui/viewport/canvas3d.hpp"
+#include "datagui/widget/canvas3d.hpp"
 #include "datagui/gui.hpp"
 
 int main() {

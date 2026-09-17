@@ -4,7 +4,7 @@
 #include "datagui/geometry.hpp"
 #include "datagui/input/number_input.hpp"
 #include "datagui/layout.hpp"
-#include "datagui/viewport/viewport.hpp"
+#include "datagui/widget/widget.hpp"
 #include "datagui/asset/image.hpp"
 #include <optional>
 #include <vector>
@@ -25,7 +25,7 @@ enum class Type {
   Tabs,
   TextBox,
   TextInput,
-  ViewportPtr,
+  WidgetPtr,
 };
 static constexpr std::size_t TypeCount = 14;
 
@@ -218,18 +218,13 @@ struct TextBox {
   int text_size = 0;
 };
 
-struct ViewportPtr {
+struct WidgetPtr {
   // Args
-  Layout layout;
   Length width = LengthDynamic();
   Length height = LengthDynamic();
-  bool border = false;
-
-  // Dependent
-  LayoutState layout_state;
 
   // State
-  std::unique_ptr<Viewport> viewport;
+  std::unique_ptr<Widget> widget;
 };
 
 } // namespace dgui

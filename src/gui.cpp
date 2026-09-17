@@ -1,9 +1,6 @@
 #include "datagui/gui.hpp"
 #include <sstream>
 #include <stack>
-#include "datagui/viewport/canvas2d.hpp"
-#include "datagui/viewport/canvas3d.hpp"
-#include "datagui/viewport/plotter.hpp"
 
 namespace dgui {
 
@@ -43,8 +40,8 @@ void Gui::end() {
   assert(!stack.empty());
   std::tie(current, var_current) = stack.top();
   stack.pop();
-  if (current.type() == Type::ViewportPtr) {
-    current.viewport().viewport->end();
+  if (current.type() == Type::WidgetPtr) {
+    current.widget_ptr().widget->end();
   }
   current = current.next();
 }
@@ -1005,30 +1002,30 @@ void Gui::focus_next(bool reverse) {
 }
 
 template <typename T>
-requires std::is_base_of_v<Viewport, T>
-T& Gui::viewport() {
-  current.expect(Type::ViewportPtr, read_key());
+requires std::is_base_of_v<Widget, T>
+T& Gui::widget() {
+  current.expect(Type::WidgetPtr, read_key());
   args_.apply(current);
-  auto& viewport = current.viewport();
-  if (!viewport.viewport) {
-    viewport.viewport = std::make_unique<T>();
-    viewport.viewport->init(theme, font_registry);
+  auto& widget_ptr = current.widget_ptr();
+  if (!widget_ptr.widget) {
+    widget_ptr.widget = std::make_unique<T>();
+    widget_ptr.widget->init(theme, font_registry);
   }
   move_down();
-  viewport.viewport->begin();
-  T* ptr = dynamic_cast<T*>(viewport.viewport.get());
+  widget_ptr.widget->begin();
+  T* ptr = dynamic_cast<T*>(widget_ptr.widget.get());
   assert(ptr);
   return *ptr;
 }
 
 Canvas2d& Gui::canvas2d() {
-  return viewport<Canvas2d>();
+  return widget<Canvas2d>();
 }
 Canvas3d& Gui::canvas3d() {
-  return viewport<Canvas3d>();
+  return widget<Canvas3d>();
 }
 Plotter& Gui::plotter() {
-  return viewport<Plotter>();
+  return widget<Plotter>();
 }
 
 } // namespace dgui

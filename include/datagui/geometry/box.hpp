@@ -117,6 +117,27 @@ struct Box2 {
     upper -= amount;
   }
 
+  Box2 from_expand(float amount) const {
+    Box2 result = *this;
+    result.expand(amount);
+    return result;
+  }
+  Box2 from_expand(const Vec2& amount) const {
+    Box2 result = *this;
+    result.expand(amount);
+    return result;
+  }
+  Box2 from_shrink(float amount) const {
+    Box2 result = *this;
+    result.shrink(amount);
+    return result;
+  }
+  Box2 from_shrink(const Vec2& amount) const {
+    Box2 result = *this;
+    result.shrink(amount);
+    return result;
+  }
+
   // [lower, upper] -> [0, 1]
   Vec2 to_coords(const Vec2& position) const {
     return Vec2(
@@ -160,6 +181,12 @@ inline Box2 bounding(const Box2& a, const Box2& b) {
 
 inline Vec2 remap(const Vec2& point, const Box2& from, const Box2& to) {
   return to.from_coords(from.to_coords(point));
+}
+
+inline Vec2 remap_flip_y(const Vec2& point, const Box2& from, const Box2& to) {
+  Vec2 coords = from.to_coords(point);
+  coords.y = 1 - coords.y;
+  return to.from_coords(coords);
 }
 
 // Returns true if outer_box containers inner_box

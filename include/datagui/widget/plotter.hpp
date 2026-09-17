@@ -3,13 +3,13 @@
 #include "datagui/plot/heatmap_plot.hpp"
 #include "datagui/plot/line_plot.hpp"
 #include "datagui/plot/plot_frame.hpp"
-#include "datagui/viewport/viewport.hpp"
+#include "datagui/widget/widget.hpp"
 #include <functional>
 #include <vector>
 
 namespace dgui {
 
-class Plotter : public Viewport {
+class Plotter : public Widget {
 public:
   LinePlot::Builder plot(const std::vector<Vec2>& points);
   LinePlot::Builder plot(std::vector<Vec2>&& points);
@@ -76,24 +76,20 @@ private:
 
   void begin() override;
   void end() override;
-  void draw(const Box2& viewport, DrawList& dl) override;
+  void set_dependent_state(const Box2& box) override;
+  void render(const Box2& viewport, DrawList& dl) const override;
 
-  void mouse_event(const MouseEvent& event) override;
-  bool scroll_event(const ScrollEvent& event) override;
-
-  Vec2 event_to_gui(const Vec2& position) const;
-  Vec2 gui_to_scene(const Vec2& position) const;
-  // The data point currently under the given scene position
-  Vec2 scene_to_data(const Vec2& position) const;
+  void mouse_event(const Box2& box, const MouseEvent& event) override;
+  bool scroll_event(const Box2& box, const ScrollEvent& event) override;
 
   std::shared_ptr<Theme> theme;
   std::shared_ptr<FontRegistry> font_registry;
 
   PlotFrame frame_;
   std::vector<std::unique_ptr<Plot>> plots;
+  std::shared_ptr<Scene2d> scene;
 
   // Camera controls
-  Box2 viewport_;
   Box2 subview_ = Box2(Vec2(), Vec2::ones());
   bool panning_ = false;
   Vec2 pan_press_scene_;

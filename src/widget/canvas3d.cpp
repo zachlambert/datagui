@@ -1,4 +1,4 @@
-#include "datagui/viewport/canvas3d.hpp"
+#include "datagui/widget/canvas3d.hpp"
 
 namespace dgui {
 
@@ -154,7 +154,10 @@ void Canvas3d::point_cloud(
 }
 
 void Canvas3d::begin() {
-  scene = std::make_shared<Scene3d>();
+  if (!scene) {
+    scene = std::make_shared<Scene3d>();
+  }
+  scene->clear();
   scene->bg_color = Color::Gray(0.95);
   aspect_ratio_ = 1;
   click_callback_ = {};
@@ -164,13 +167,20 @@ void Canvas3d::init(
     const std::shared_ptr<Theme>& theme,
     const std::shared_ptr<FontRegistry>& font_registry) {}
 
-void Canvas3d::draw(const Box2& viewport, DrawList& dl) {
+void Canvas3d::set_dependent_state(const Box2& box) {
   camera.fov.y =
-      2.f * std::atan(std::tan(0.5f * camera.fov.x) * viewport.ratio_yx());
-  dl.draw_scene_3d(viewport, camera, scene);
+      2.f * std::atan(std::tan(0.5f * camera.fov.x) * box.ratio_yx());
 }
 
-void Canvas3d::mouse_event(const MouseEvent& event) {
+void Canvas3d::render(const Box2& box, DrawList& dl) const {
+  dl.draw_scene_3d(box, camera, scene);
+}
+
+void Canvas3d::mouse_event(const Box2& box, const MouseEvent& event) {
+  const Box2 canvas = box.from_shrink(border_width_);
+  const Vec2 position_coords = canvas.to_coords(event.position);
+  const Vec2 press_position_coords = canvas.to_coords(event.press_position);
+
   if (event.button == MouseButton::Right) {
     if (event.action == MouseAction::Press) {
       if (event.mod.ctrl) {
@@ -180,8 +190,8 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
     }
     if (event.mod.shift) {
       Vec3 delta_cs =
-          (click_camera.ray_camera(event.position) -
-           click_camera.ray_camera(event.press_position));
+          (click_camera.ray_camera(position_coords) -
+           click_camera.ray_camera(press_position_coords));
       float yaw_change = std::atan2(delta_cs.x, 1);
       float pitch_change = std::atan2(delta_cs.y, 1);
       float click_yaw =
@@ -201,9 +211,9 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
       };
     } else {
       float distance = click_camera.position.z /
-                       click_camera.direction_world(event.press_position).z;
-      Vec3 delta_cs = (click_camera.ray_camera(event.position) -
-                       click_camera.ray_camera(event.press_position)) *
+                       click_camera.direction_world(press_position_coords).z;
+      Vec3 delta_cs = (click_camera.ray_camera(position_coords) -
+                       click_camera.ray_camera(press_position_coords)) *
                       distance;
       camera.position =
           click_camera.position + click_camera.rotation() * delta_cs;
@@ -211,8 +221,8 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
   }
 
   if (click_callback_) {
-    Vec3 press_ray = camera.ray_camera(event.press_position);
-    Vec3 ray = camera.ray_camera(event.position);
+    Vec3 press_ray = camera.ray_camera(press_position_coords);
+    Vec3 ray = camera.ray_camera(position_coords);
     MouseEvent remapped = event;
     remapped.press_position = Vec2(press_ray.x, press_ray.y);
     remapped.position = Vec2(ray.x, ray.y);
@@ -220,7 +230,10 @@ void Canvas3d::mouse_event(const MouseEvent& event) {
   }
 }
 
-bool Canvas3d::scroll_event(const ScrollEvent& event) {
+bool Canvas3d::scroll_event(const Box2& box, const ScrollEvent& event) {
+  const Vec2 position_coords =
+      box.from_shrink(border_width_).to_coords(event.position);
+
   float distance = -event.amount / 20.f;
   if (event.mod.shift) {
     distance /= 10;
@@ -228,7 +241,7 @@ bool Canvas3d::scroll_event(const ScrollEvent& event) {
   if (event.mod.ctrl) {
     distance *= 10;
   }
-  camera.position += camera.direction_world(event.position) * distance;
+  camera.position += camera.direction_world(position_coords) * distance;
   return true;
 }
 

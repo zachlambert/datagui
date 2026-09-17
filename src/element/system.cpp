@@ -13,7 +13,7 @@
 #include "datagui/system/tabs.hpp"
 #include "datagui/system/text_box.hpp"
 #include "datagui/system/text_input.hpp"
-#include "datagui/system/viewport_ptr.hpp"
+#include "datagui/system/widget_ptr.hpp"
 
 namespace dgui {
 
@@ -38,7 +38,7 @@ void SystemSet::init(
   REGISTER(Tabs, TabsSystem, font_registry, theme);
   REGISTER(TextBox, TextBoxSystem, font_registry, theme);
   REGISTER(TextInput, TextInputSystem, font_registry, theme);
-  REGISTER(ViewportPtr, ViewportPtrSystem, theme);
+  REGISTER(WidgetPtr, WidgetPtrSystem, theme);
 
 #undef REGISTER
   for (const auto& system : systems) {
