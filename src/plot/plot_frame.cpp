@@ -75,20 +75,15 @@ void PlotFrame::set_undistorted(bool undistorted) {
   undistorted_ = undistorted;
 }
 
-void PlotFrame::calculate(const Box2& viewport, const Box2& subview) {
+void PlotFrame::calculate_sizes() {
   const auto& font =
       font_registry_->get_font(theme_->text_font, theme_->text_size);
-
-  // ===================================================================
-  // Calculate header_height_, title_width_, legend_box_, legend_items_[i].pos
 
   header_height_ = 0;
 
   if (!title_.empty()) {
     const Vec2 title_size = font.text_size(title_);
-    title_width_ = std::min(
-        title_size.x + 2 * theme_->text_padding,
-        viewport.size_x() / 2);
+    title_width_ = title_size.x + 2 * theme_->text_padding;
     header_height_ =
         std::max(header_height_, title_size.y + 2 * theme_->text_padding);
   } else {
@@ -96,45 +91,77 @@ void PlotFrame::calculate(const Box2& viewport, const Box2& subview) {
   }
 
   if (!legend_items_.empty()) {
-    const float row_height = font.text_height();
-    // Space left over for the legend contents, once the title, the outer
-    // padding and the legend box's own padding are accounted for
-    const float content_max_width = std::max(
-        viewport.size_x() - 2 * args_.outer_padding -
-            2 * args_.legend_padding - args_.title_legend_gap - title_width_,
-        args_.legend_icon_width);
+    const float row_height = font.text_height() + 2 * theme_->text_padding;
 
-    // Lay the items out relative to the top-left of the legend contents,
-    // wrapping onto a new row when the current one is full
     float x = 0;
     float y = 0;
     float content_width = 0;
     for (auto& item : legend_items_) {
       const float label_width = font.text_size(item.label).x;
-      const float item_width = std::min(
-          args_.legend_icon_width + theme_->text_padding + label_width,
-          content_max_width);
-
-      if (x > 0 && x + item_width > content_max_width) {
+      const float other_width = args_.legend_icon_width +
+                                args_.legend_icon_text_padding +
+                                2 * theme_->text_padding;
+      const float item_width =
+          std::min(label_width + other_width, args_.legend_max_width);
+      if (x > 0 &&
+          x + args_.legend_item_gap + item_width > args_.legend_max_width) {
+        content_width = std::max(content_width, x);
         x = 0;
         y += row_height;
       }
+      if (x > 0) {
+        x += args_.legend_item_gap;
+      }
 
       item.origin = Vec2(x, y);
-      item.text_width =
-          item_width - (args_.legend_icon_width + theme_->text_padding);
+      item.text_width = item_width - other_width;
 
-      x += item_width + args_.legend_item_gap;
-      content_width = std::max(content_width, x - args_.legend_item_gap);
+      x += item_width;
     }
     y += row_height;
+    content_width = std::max(content_width, x);
 
-    // The legend sits in the top-right of the header, to the right of the
-    // title
-    const Vec2 content_origin(
-        viewport.upper.x - args_.outer_padding - args_.legend_padding -
-            content_width,
-        viewport.lower.y + args_.outer_padding + args_.legend_padding);
+    legend_size_ =
+        Vec2(content_width, y) + Vec2::uniform(2 * args_.legend_padding);
+    header_height_ = std::max(header_height_, legend_size_.y);
+  } else {
+    legend_size_ = Vec2();
+  }
+
+  aside_width_ = 0;
+  {
+    for (auto& gm : gradient_maps_) {
+      aside_width_ += args_.gradient_map_width + ticks_depth(gm.ticks);
+    }
+  }
+
+  plot_offset_lower_.x = ticks_depth(yticks_) + args_.outer_padding;
+  plot_offset_upper_.x =
+      args_.outer_padding +
+      (aside_width_ > 0 ? aside_width_ + args_.aside_margin_left : 0.f);
+  plot_offset_lower_.y =
+      header_height_ + args_.outer_padding + args_.header_margin_bot;
+  plot_offset_upper_.y = ticks_depth(xticks_) + args_.outer_padding;
+
+  min_size_ = plot_offset_lower_ + plot_offset_upper_ +
+              Vec2::uniform(args_.min_plot_area_size);
+  min_size_.x = std::max(
+      min_size_.x,
+      2 * args_.outer_padding + title_width_ + legend_size_.x +
+          args_.title_legend_gap);
+}
+
+void PlotFrame::calculate_positions(const Box2& box, const Box2& subview) {
+  const auto& font =
+      font_registry_->get_font(theme_->text_font, theme_->text_size);
+
+  if (!legend_items_.empty()) {
+    legend_box_ = Box2::from_lower_right(
+        box.lower_right(Vec2::uniform(args_.outer_padding)),
+        legend_size_);
+    const Vec2 content_origin =
+        legend_box_.lower + Vec2::uniform(args_.legend_padding);
+    const float row_height = font.text_height() + 2 * theme_->text_padding;
 
     for (auto& item : legend_items_) {
       item.origin += content_origin;
@@ -142,42 +169,22 @@ void PlotFrame::calculate(const Box2& viewport, const Box2& subview) {
           item.origin,
           Vec2(args_.legend_icon_width, row_height));
       item.text_origin =
-          item.origin + Vec2(args_.legend_icon_width + theme_->text_padding, 0);
+          item.origin +
+          Vec2(args_.legend_icon_width + args_.legend_icon_text_padding, 0) +
+          Vec2::uniform(theme_->text_padding);
     }
-
-    legend_box_ = Box2::from_size(content_origin, Vec2(content_width, y));
-    legend_box_->expand(args_.legend_padding);
-
-    header_height_ = std::max(header_height_, y + 2 * args_.legend_padding);
-  } else {
-    legend_box_.reset();
   }
 
-  // =============================
-  // Define top and bottom padding
-
-  const float top_padding =
-      header_height_ + args_.outer_padding + args_.header_margin_bot;
-
-  const float bottom_padding = ticks_depth(xticks_) + args_.outer_padding;
-
-  // =============================
-  // Calculate aside_width_, gradient_maps_[i].box
-
-  aside_width_ = 0;
-  {
-    const float item_height = viewport.size_y() - top_padding - bottom_padding;
-
-    for (auto& gm : gradient_maps_) {
-      gm.ticks.length = item_height;
-      aside_width_ += args_.gradient_map_width + ticks_depth(gm.ticks);
-    }
-    const Vec2 origin = viewport.lower_right(
-        Vec2(args_.outer_padding + aside_width_, top_padding));
+  if (!gradient_maps_.empty()) {
+    const Vec2 origin = box.lower_right(
+        Vec2(args_.outer_padding + aside_width_, plot_offset_lower_.y));
+    const float item_height =
+        box.size_y() - (plot_offset_lower_.y + plot_offset_upper_.y);
 
     float x = 0;
     for (auto& gm : gradient_maps_) {
       const Vec2 item_origin = origin + Vec2(x, 0);
+      gm.ticks.length = item_height;
       gm.gm_box = Box2::from_lower_left(
           item_origin,
           Vec2(args_.gradient_map_width, item_height));
@@ -189,30 +196,18 @@ void PlotFrame::calculate(const Box2& viewport, const Box2& subview) {
     }
   }
 
-  // =============================
-  // Define left and right padding, and plot_area_
+  plot_area_ =
+      Box2(box.lower + plot_offset_lower_, box.upper - plot_offset_upper_);
 
-  const float left_padding = ticks_depth(yticks_) + args_.outer_padding;
-  const float right_padding =
-      args_.outer_padding +
-      (aside_width_ > 0 ? aside_width_ + args_.aside_margin_left : 0);
-
-  // Gui coordinates are y-down, so the header sits against viewport.lower and
-  // the x-axis ticks against viewport.upper
-  plot_area_ = Box2(
-      viewport.lower + Vec2(left_padding, top_padding),
-      viewport.upper - Vec2(right_padding, bottom_padding));
-
-  // Both axes start from the bottom-left corner of the plot area, which is
-  // (lower.x, upper.y) in y-down coordinates
   const Vec2 axis_origin(plot_area_.lower.x, plot_area_.upper.y);
   xticks_.origin = axis_origin;
   xticks_.length = plot_area_.size_x();
   yticks_.origin = axis_origin;
   yticks_.length = plot_area_.size_y();
 
-  // The scene is y-up with a zero origin, and covers the same extent as the
-  // plot area
+  // Scene area = Selected area for the scene2d, which is a different coordinate
+  // frame (y-up) chosen to have the same size as the plot area, so line widths,
+  // marker sizes, text size, are scaled the same as the reset of the GUI
   scene_area_ = Box2(Vec2(), plot_area_.size());
 
   // =============================
@@ -276,8 +271,8 @@ void PlotFrame::draw_frame(const Box2& viewport, DrawList& dl) const {
         title_);
   }
 
-  if (legend_box_) {
-    dl.draw_box(*legend_box_, Color::White(), 2);
+  if (!legend_items_.empty()) {
+    dl.draw_box(legend_box_, Color::White(), 2);
     for (const auto& item : legend_items_) {
       dl.draw_text(
           font,
@@ -293,8 +288,8 @@ void PlotFrame::draw_frame(const Box2& viewport, DrawList& dl) const {
     draw_ticks(dl, gradient_map.ticks);
   }
 
-  // NOTE: Don't draw a background color, since it will be drawn over the plot data
-  // Instead, the scene2d is given a bg color
+  // NOTE: Don't draw a background color, since it will be drawn over the plot
+  // data Instead, the scene2d is given a bg color
   dl.draw_line(
       plot_area_.lower_left(),
       plot_area_.upper_left(),

@@ -76,6 +76,7 @@ private:
 
   void begin() override;
   void end() override;
+  Vec2 min_size() const override;
   void set_dependent_state(const Box2& box) override;
   void render(const Box2& viewport, DrawList& dl) const override;
 

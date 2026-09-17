@@ -17,8 +17,11 @@ class PlotFrame {
     float tick_length = 5;
     float gradient_map_width = 10;
     float legend_icon_width = 20;
-    float legend_item_gap = 15;
-    float legend_padding = 4;
+    float legend_icon_text_padding = 5;
+    float legend_item_gap = 10;
+    float legend_padding = 5;
+    float legend_max_width = 300;
+    float min_plot_area_size = 50;
   };
 
 public:
@@ -45,9 +48,13 @@ public:
   int add_legend_item(const std::string& label);
   int add_gradient_map(float min, float max, const std::string& label = "");
 
-  void calculate(const Box2& viewport, const Box2& subview);
+  void calculate_sizes();
+  void calculate_positions(const Box2& box, const Box2& subview);
   void draw_frame(const Box2& viewport, DrawList& dl) const;
 
+  const Vec2& min_size() const {
+    return min_size_;
+  }
   const Box2& data_window() const {
     return data_window_;
   }
@@ -123,12 +130,16 @@ private:
   std::vector<LegendItem> legend_items_;
   std::vector<GradientMap> gradient_maps_;
 
-  // Set in calculate()
-
   float header_height_ = 0; // Top header for title and legend
   float aside_width_ = 0;   // Right aside box for gradient maps
   float title_width_ = 0;
-  std::optional<Box2> legend_box_;
+
+  Vec2 plot_offset_lower_;
+  Vec2 plot_offset_upper_;
+  Vec2 min_size_;
+
+  Vec2 legend_size_;
+  Box2 legend_box_;
 
   Box2 data_window_;
   Box2 plot_area_;

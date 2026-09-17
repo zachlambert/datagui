@@ -123,10 +123,15 @@ void Plotter::end() {
   for (const auto& plot : plots) {
     plot->add_frame_components(frame_);
   }
+  frame_.calculate_sizes();
+}
+
+Vec2 Plotter::min_size() const {
+  return frame_.min_size();
 }
 
 void Plotter::set_dependent_state(const Box2& box) {
-  frame_.calculate(box, subview_);
+  frame_.calculate_positions(box, subview_);
 }
 
 void Plotter::render(const Box2& box, DrawList& dl) const {

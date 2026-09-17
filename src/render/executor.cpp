@@ -81,6 +81,9 @@ void Executor::draw(
       const auto& instance = dl.scene_2d_instances[group.scene_2d_offset + i];
       const auto& [viewport, camera, scene] = instance;
 
+      if (!intersects(viewport, group.mask)) {
+        continue;
+      }
       set_mask(intersection(viewport, group.mask));
       set_viewport(viewport);
       const Mat3 PV = camera.projection_mat() * camera.view_mat();
@@ -120,6 +123,9 @@ void Executor::draw(
       const auto& instance = dl.scene_3d_instances[group.scene_3d_offset + i];
       const auto& [viewport, camera, scene] = instance;
 
+      if (!intersects(viewport, group.mask)) {
+        continue;
+      }
       set_mask(intersection(viewport, group.mask));
       set_viewport(viewport);
       const Mat4 projection = camera.projection_mat();
