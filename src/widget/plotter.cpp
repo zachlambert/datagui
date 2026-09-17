@@ -167,9 +167,9 @@ void Plotter::mouse_event(const Box2& box, const MouseEvent& event) {
       return;
     }
     panning_ = true;
-    pan_press_scene_ =
-        remap_flip_y(event.position, frame_.plot_area(), frame_.scene_area());
-    pan_press_window_ = frame_.data_window();
+    subview_pressed_ = subview_;
+    position_pressed_ =
+        remap_flip_y(event.position, frame_.plot_area(), Box2::unit_box());
     return;
   }
 
@@ -186,13 +186,11 @@ void Plotter::mouse_event(const Box2& box, const MouseEvent& event) {
     return;
   }
 
-  // Move the window opposite to the drag, so the data follows the cursor
-  const Vec2 pos_scene =
-      remap_flip_y(event.position, frame_.plot_area(), frame_.scene_area());
-  const Vec2 delta = (pos_scene - pan_press_scene_) * pan_press_window_.size() /
-                     frame_.scene_area().size();
+  const Vec2 position =
+      remap_flip_y(event.position, frame_.plot_area(), Box2::unit_box());
+  const Vec2 delta = (position - position_pressed_) * subview_pressed_.size();
   subview_ =
-      Box2(pan_press_window_.lower - delta, pan_press_window_.upper - delta);
+      Box2(subview_pressed_.lower - delta, subview_pressed_.upper - delta);
 }
 
 bool Plotter::scroll_event(const Box2& box, const ScrollEvent& event) {
@@ -211,13 +209,16 @@ bool Plotter::scroll_event(const Box2& box, const ScrollEvent& event) {
     size_ratio.y = ratio;
   }
 
-  // Zoom about the cursor, so the data under it stays put
-  const Box2& window = frame_.data_window();
   const Vec2 anchor =
-      remap_flip_y(event.position, frame_.plot_area(), frame_.data_window());
+      remap_flip_y(event.position, frame_.plot_area(), subview_);
   subview_ = Box2(
-      anchor - (anchor - window.lower) * size_ratio,
-      anchor + (window.upper - anchor) * size_ratio);
+      anchor - (anchor - subview_.lower) * size_ratio,
+      anchor + (subview_.upper - anchor) * size_ratio);
+
+  if (panning_) {
+    subview_pressed_ = subview_;
+    position_pressed_ = remap_flip_y(event.position, frame_.plot_area(), Box2::unit_box());
+  }
 
   return true;
 }

@@ -172,14 +172,17 @@ void Canvas2d::set_dependent_state(const Box2& box) {
   camera.size.y = box.ratio_yx() * camera.size.x;
 }
 
-void Canvas2d::render(const Box2& viewport, DrawList& dl) const {
-  dl.draw_scene_2d(viewport, camera, scene);
+void Canvas2d::render(const Box2& box, DrawList& dl) const {
+  dl.draw_box(box, Color::Black(), border_width_);
+  dl.draw_scene_2d(box.from_shrink(border_width_), camera, scene);
 }
 
 void Canvas2d::mouse_event(const Box2& box, const MouseEvent& event) {
   const Box2 canvas = box.from_shrink(border_width_);
-  const Vec2 position_coords = canvas.to_coords(event.position);
-  const Vec2 press_position_coords = canvas.to_coords(event.press_position);
+  const Vec2 position_coords =
+      remap_flip_y(event.position, canvas, Box2::unit_box());
+  const Vec2 press_position_coords =
+      remap_flip_y(event.press_position, canvas, Box2::unit_box());
 
   if (event.button == MouseButton::Right) {
     if (event.action == MouseAction::Press) {
@@ -202,8 +205,10 @@ void Canvas2d::mouse_event(const Box2& box, const MouseEvent& event) {
 }
 
 bool Canvas2d::scroll_event(const Box2& box, const ScrollEvent& event) {
-  const Vec2 position_coords =
-      box.from_shrink(border_width_).to_coords(event.position);
+  const Vec2 position_coords = remap_flip_y(
+      event.position,
+      box.from_shrink(border_width_),
+      Box2::unit_box());
 
   float change_factor = std::exp(-event.amount / 250);
   camera.size /= change_factor;

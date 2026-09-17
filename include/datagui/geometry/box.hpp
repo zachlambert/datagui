@@ -11,6 +11,11 @@ struct Box2 {
 
   Box2() {}
   Box2(const Vec2& lower, const Vec2& upper) : lower(lower), upper(upper) {}
+
+  static Box2 unit_box() {
+    return Box2(Vec2(), Vec2::ones());
+  }
+
   static Box2 from_size(const Vec2& pos, const Vec2& size) {
     return Box2(pos, pos + size);
   }

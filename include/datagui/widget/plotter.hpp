@@ -92,8 +92,8 @@ private:
   // Camera controls
   Box2 subview_ = Box2(Vec2(), Vec2::ones());
   bool panning_ = false;
-  Vec2 pan_press_scene_;
-  Box2 pan_press_window_;
+  Box2 subview_pressed_; // Initial subview when mouse down
+  Vec2 position_pressed_; // Normalized position when mouse down
 };
 
 }; // namespace dgui
