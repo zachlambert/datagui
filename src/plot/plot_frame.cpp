@@ -1,8 +1,33 @@
 #include "datagui/plot/plot_frame.hpp"
+#include <algorithm>
+#include <cmath>
 #include <iomanip>
 #include <sstream>
 
 namespace dgui {
+
+namespace {
+
+// The power of ten of a value's magnitude, ie floor(log10(abs(value))), and
+// zero for a value of zero
+double magnitude_power(double value) {
+  double magnitude = std::abs(value);
+  if (magnitude == 0 || !std::isfinite(magnitude)) {
+    return 0;
+  }
+  double power = 0;
+  while (magnitude >= 10) {
+    magnitude /= 10;
+    power++;
+  }
+  while (magnitude < 1) {
+    magnitude *= 10;
+    power--;
+  }
+  return power;
+}
+
+} // namespace
 
 PlotFrame::PlotFrame() {
   xticks_.loc = TicksLoc::Bottom;
@@ -79,13 +104,16 @@ void PlotFrame::calculate_sizes() {
   const auto& font =
       font_registry_->get_font(theme_->text_font, theme_->text_size);
 
+  // Min size to allow for power/offset display at top of y axis
+  const float min_padding_title_plot = 1.2 * font.text_height();
+
   header_height_ = 0;
 
   if (!title_.empty()) {
     const Vec2 title_size = font.text_size(title_);
     title_width_ = title_size.x + 2 * theme_->text_padding;
     header_height_ =
-        std::max(header_height_, title_size.y + 2 * theme_->text_padding);
+        title_size.y + 2 * theme_->text_padding + min_padding_title_plot;
   } else {
     title_width_ = 0;
   }
@@ -134,6 +162,8 @@ void PlotFrame::calculate_sizes() {
       aside_width_ += args_.gradient_map_width + ticks_depth(gm.ticks);
     }
   }
+  // Set a minimum aside width to allow for the xaxis power label
+  aside_width_ = std::max(aside_width_, font.text_height() * 3.2f);
 
   plot_offset_lower_.x = ticks_depth(yticks_) + args_.outer_padding;
   plot_offset_upper_.x =
@@ -305,14 +335,22 @@ void PlotFrame::draw_frame(const Box2& viewport, DrawList& dl) const {
   draw_ticks(dl, yticks_);
 }
 
+float PlotFrame::ticks_number_depth(const Ticks& ticks) const {
+  const auto& font =
+      font_registry_->get_font(theme_->text_font, theme_->text_size);
+  // Numbers below the axis only need one line of height, whereas numbers
+  // beside the axis are given a fixed em width
+  return ticks.loc == TicksLoc::Bottom
+             ? font.text_height()
+             : font.text_height() * ticks_number_width_em;
+}
+
 float PlotFrame::ticks_depth(const Ticks& ticks) const {
   const auto& font =
       font_registry_->get_font(theme_->text_font, theme_->text_size);
   float depth = args_.tick_length;
   depth += theme_->text_padding;
-  depth += ticks.loc == TicksLoc::Bottom
-               ? font.text_height()
-               : font.text_height() * ticks_number_width_em;
+  depth += ticks_number_depth(ticks);
   depth += theme_->text_padding;
   if (!ticks.label.empty()) {
     // Either takes one line (possibly overflowing), or user manually
@@ -326,9 +364,14 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
   const auto& font =
       font_registry_->get_font(theme_->text_font, theme_->text_size);
 
-  float power = 0;
-  float diff = std::max(ticks.max_value - ticks.min_value, 1e-12f);
-  if (!std::isfinite(diff)) {
+  // Zooming in shrinks the range far below what a float can resolve at the
+  // magnitude of the values, so the values are calculated at double precision
+  const double min_value = ticks.min_value;
+  const double max_value = ticks.max_value;
+
+  double power = 0;
+  double diff = std::max(max_value - min_value, 0.0);
+  if (!std::isfinite(diff) || diff == 0.0) {
     // Silently ignore
     return;
   }
@@ -340,28 +383,94 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
     diff *= 10;
     power--;
   }
-  float resolution;
-  if (diff < 2) {
-    resolution = 0.2;
-  } else if (diff < 5) {
-    resolution = 0.5;
+
+  // Guaranteed that diff ~ [1, 10]
+  // Choose the display_resolution from a set of "nice" numbers such
+  // that diff / display_resolution < max_count
+
+  int max_count = ticks_max_count;
+  if (ticks.loc == TicksLoc::Bottom) {
+    max_count = std::min<int>(
+        max_count,
+        std::ceil(
+            plot_area_.size_x() /
+            (font.text_height() * ticks_number_width_em)));
   } else {
-    resolution = 1;
+    max_count = std::min<int>(
+        max_count,
+        std::ceil(plot_area_.size_y() / font.text_height()));
   }
-  resolution *= std::pow(10, power);
 
-  float display_power = 0;
-  if (power < -1 || power > 2) {
-    display_power = power;
+  double resolution_display;
+  std::array<double, 10> display_resolution_choices =
+      {0.1, 0.25, 0.4, 0.5, 1.0, 2.5, 4.0, 5.0, 8.0, 10.0};
+  for (double choice : display_resolution_choices) {
+    int count = std::ceil(diff / choice);
+    resolution_display = choice;
+    if (count < max_count) {
+      break;
+    }
   }
-  float display_value_scale = std::pow(10, display_power);
+  const double resolution = resolution_display * std::pow(10, power);
 
-  float value = ceil(ticks.min_value / resolution) * resolution;
-  while (value < ticks.max_value) {
-    float s = (value - ticks.min_value) / (ticks.max_value - ticks.min_value);
+  // The power to scale by comes from the magnitude of what is displayed, not
+  // from the range. Powers close to zero are left unscaled, since they are
+  // readable as they are
+  auto display_power_for = [](double magnitude) {
+    const double value_power = magnitude_power(magnitude);
+    return (value_power < -1 || value_power > 2) ? value_power : 0.0;
+  };
+  // Consecutive ticks are separated by mantissa * 10^(power - display_power)
+  // once scaled, which is how many decimal places are needed to tell them
+  // apart
+  auto precision_for = [&](double display_power) {
+    return int(display_power - power) + (resolution_display < 1 ? 1 : 0);
+  };
+
+  double offset = 0;
+  double display_power =
+      display_power_for(std::max(std::abs(min_value), std::abs(max_value)));
+
+  if (precision_for(display_power) > ticks_max_precision) {
+    // Zoomed in far enough that the values share leading digits which every
+    // label would otherwise repeat. Those are pulled out into a single offset,
+    // leaving the labels to show only the part that varies. Rounding towards
+    // zero to one decade above the tick spacing keeps the remainder to under
+    // ten ticks, so the labels stay short whatever the values are
+    const double offset_step = std::pow(10, power + 1);
+    offset = std::trunc(min_value / offset_step) * offset_step;
+    display_power = display_power_for(
+        std::max(std::abs(min_value - offset), std::abs(max_value - offset)));
+  }
+
+  const double display_value_scale = std::pow(10, display_power);
+  const int precision =
+      std::clamp(precision_for(display_power), 0, ticks_max_precision);
+
+  // The resolution is derived from the range, so the tick count is bounded by
+  // construction. Calculate it up front and index the values off the first
+  // one: accumulating `value += resolution` doesn't advance at all once the
+  // resolution drops below the precision available at that value
+  const double first_value = std::ceil(min_value / resolution) * resolution;
+  const double count = std::ceil((max_value - first_value) / resolution);
+  int tick_count = std::isfinite(count)
+                       ? int(std::clamp(count, 0.0, double(ticks_max_count)))
+                       : 0;
+  if (ticks.loc == TicksLoc::Bottom) {
+    tick_count = std::min<int>(
+        tick_count,
+        std::floor(
+            plot_area_.size_x() /
+            (font.text_height() * ticks_number_width_em)));
+  }
+
+  for (int i = 0; i < tick_count; i++) {
+    const double value = first_value + i * resolution;
+    const float s = float((value - min_value) / (max_value - min_value));
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(1) << value / display_value_scale;
+    ss << std::fixed << std::setprecision(precision)
+       << (value - offset) / display_value_scale;
     const std::string text = ss.str();
 
     // Use the natural size to position the label. Measuring with a fixed
@@ -401,33 +510,47 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
         theme_->text_color,
         LengthWrap(),
         text);
-
-    value += resolution;
   }
 
-  // Draw the display power off the end of the ticks line
+  // Draw the multiplier and offset off the end of the ticks line
   // Adjust margins so there is always enough margin for this to fit
-  if (display_power != 0) {
+  if (tick_count > 0 && (display_power != 0 || offset != 0)) {
     std::stringstream ss;
-    ss << int(display_power);
-    const std::string power_label = "1e" + ss.str();
-    const float width = font.text_size(power_label).x;
+    if (display_power != 0) {
+      ss << "1e" << int(display_power);
+    }
+    if (offset != 0) {
+      if (display_power != 0) {
+        ss << "\n";
+      }
+      // Increase the resolution of the offset as required, up to a maximum
+      // value of 3 decimal places (currently assume this is fine, otherwise
+      // it's difficult to find a suitable layout to fit the offset in without
+      // extra padding on the rhs)
+      ss << std::showpos << std::fixed
+         << std::setprecision(std::clamp(int(-(power + 1)), 0, 3)) << offset;
+    }
+    const std::string power_label = ss.str();
+    const Vec2 label_size = font.text_size(power_label);
 
     Vec2 text_offset;
     switch (ticks.loc) {
       case TicksLoc::Left:
         text_offset = Vec2(
-            -width - theme_->text_padding,
-            -ticks.length - font.text_height() - theme_->text_padding);
+            -label_size.x - theme_->text_padding,
+            -ticks.length - label_size.y - theme_->text_padding);
         break;
       case TicksLoc::Right:
         text_offset = Vec2(
             theme_->text_padding,
-            -ticks.length - font.text_height() - theme_->text_padding);
+            -ticks.length - label_size.y - theme_->text_padding);
         break;
       case TicksLoc::Bottom:
+        // Small extra x padding to avoid overlap
+        // Doesn't need to be particularly big, since when the power/offset label appears,
+        // the numbers being shown are limited to being small as well
         text_offset = Vec2(
-            ticks.length + theme_->text_padding,
+            ticks.length + theme_->text_padding + font.text_height() * 0.7f,
             args_.tick_length + theme_->text_padding);
         break;
     }
@@ -440,7 +563,40 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
   }
 
   if (!ticks.label.empty()) {
-    // TODO
+    // The label sits beyond the tick numbers, centered along the axis. Labels
+    // beside the axis are rotated to read bottom-to-top, so their text height
+    // is what extends away from the axis in both cases.
+    const Vec2 label_size = font.text_size(ticks.label);
+    const float label_offset = args_.tick_length + 2 * theme_->text_padding +
+                               ticks_number_depth(ticks);
+
+    Vec2 text_offset;
+    float angle = 0;
+    switch (ticks.loc) {
+      case TicksLoc::Left:
+        // Rotating by -90 degrees maps the text origin (its top-left corner)
+        // to the bottom-left corner of the rendered label
+        angle = -M_PIf / 2;
+        text_offset = Vec2(
+            -label_offset - label_size.y,
+            -(ticks.length - label_size.x) / 2);
+        break;
+      case TicksLoc::Right:
+        angle = -M_PIf / 2;
+        text_offset = Vec2(label_offset, -(ticks.length - label_size.x) / 2);
+        break;
+      case TicksLoc::Bottom:
+        text_offset = Vec2((ticks.length - label_size.x) / 2, label_offset);
+        break;
+    }
+    dl.draw_text(
+        font,
+        ticks.origin + text_offset,
+        theme_->text_color,
+        LengthWrap(),
+        ticks.label,
+        false,
+        angle);
   }
 }
 

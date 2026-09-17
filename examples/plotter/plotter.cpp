@@ -62,7 +62,7 @@ int main() {
         plotter.plot(plots[1]).label("b").marker_circle();
         plotter.plot(plots[2]).label("c").marker_cross();
         plotter.plot(plots[3]).label("d").line_dashed();
-        plotter.plot(plots[4]).label("e").line_dashed();
+        plotter.plot(plots[4]).label("e").line_dashed().marker_circle();
         plotter.plot(plots[5]).label("f").no_line().marker_cross();
       }
 

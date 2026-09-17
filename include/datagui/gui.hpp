@@ -15,10 +15,8 @@
 #include "datagui/render/state/draw_list.hpp"
 #include "datagui/render/window.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/widget/canvas2d.hpp"
-#include "datagui/widget/canvas3d.hpp"
-#include "datagui/widget/plotter.hpp"
 #include "datagui/widget/widget.hpp"
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -29,6 +27,13 @@ class Plotter;
 class Canvas2d;
 class Canvas3d;
 class PopupSystem;
+
+class Gui;
+
+template <typename T, typename... Args>
+concept component_c = requires(T& component, Gui& gui, Args&&... args) {
+  component.visit(gui, std::forward<Args>(args)...);
+};
 
 class Gui {
 public:
@@ -230,6 +235,15 @@ public:
   Canvas2d& canvas2d();
   Canvas3d& canvas3d();
   Plotter& plotter();
+
+  template <typename Component, typename... Args>
+  requires component_c<Component, Args...>
+  void component(Args&&... args) {
+    Component& component = variable([]() {
+      return Component();
+    });
+    component.visit(std::forward<Args>(args)...);
+  }
 
 private:
   template <dpack::serializable T>

@@ -43,40 +43,6 @@ void Executor::draw(
   glEnable(GL_SCISSOR_TEST);
 
   for (const auto& group : dl.groups) {
-    reset_viewport();
-    set_mask(group.mask);
-
-    if (group.shape_count > 0) {
-      registry.shape_2d_program.bind();
-      registry.shape_2d_program.draw(
-          screen_PV,
-          &dl.shape_instances[group.shape_offset],
-          group.shape_count);
-    }
-
-    if (group.glyph_group_count > 0) {
-      registry.glyph_2d_program.bind();
-      for (size_t i = 0; i < group.glyph_group_count; i++) {
-        const auto& glyphs = dl.glyph_groups[group.glyph_group_offset + i];
-        registry.glyph_2d_program.draw(
-            screen_PV,
-            glyphs.font_texture,
-            &dl.glyph_instances[glyphs.offset],
-            glyphs.count);
-      }
-    }
-
-    if (group.image_count > 0) {
-      registry.image_2d_program.bind();
-      for (size_t i = 0; i < group.image_count; i++) {
-        const auto& instance = dl.image_instances[group.image_offset + i];
-        registry.image_2d_program.draw(
-            screen_PV,
-            instance.image.texture(),
-            instance.transform);
-      }
-    }
-
     for (size_t i = 0; i < group.scene_2d_count; i++) {
       const auto& instance = dl.scene_2d_instances[group.scene_2d_offset + i];
       const auto& [viewport, camera, scene] = instance;
@@ -180,6 +146,40 @@ void Executor::draw(
       glEnable(GL_BLEND);
       glDisable(GL_DEPTH_TEST);
       glDisable(GL_CULL_FACE);
+    }
+
+    reset_viewport();
+    set_mask(group.mask);
+
+    if (group.shape_count > 0) {
+      registry.shape_2d_program.bind();
+      registry.shape_2d_program.draw(
+          screen_PV,
+          &dl.shape_instances[group.shape_offset],
+          group.shape_count);
+    }
+
+    if (group.glyph_group_count > 0) {
+      registry.glyph_2d_program.bind();
+      for (size_t i = 0; i < group.glyph_group_count; i++) {
+        const auto& glyphs = dl.glyph_groups[group.glyph_group_offset + i];
+        registry.glyph_2d_program.draw(
+            screen_PV,
+            glyphs.font_texture,
+            &dl.glyph_instances[glyphs.offset],
+            glyphs.count);
+      }
+    }
+
+    if (group.image_count > 0) {
+      registry.image_2d_program.bind();
+      for (size_t i = 0; i < group.image_count; i++) {
+        const auto& instance = dl.image_instances[group.image_offset + i];
+        registry.image_2d_program.draw(
+            screen_PV,
+            instance.image.texture(),
+            instance.transform);
+      }
     }
   }
 

@@ -25,6 +25,38 @@ struct Box2 {
            point.y < upper.y;
   }
 
+  // Returns true if any part of the segment a -> b lies within the box,
+  // including a segment that only touches its boundary. Narrows the range of
+  // the segment that can still be inside one axis at a time, which is empty
+  // as soon as the entry point on one axis is beyond the exit point of the
+  // other
+  bool intersects_segment(const Vec2& a, const Vec2& b) const {
+    const Vec2 delta = b - a;
+    float t_min = 0;
+    float t_max = 1;
+    for (std::size_t axis = 0; axis < 2; axis++) {
+      if (delta(axis) == 0) {
+        // Parallel to this axis, so it either lies within the box's extent
+        // along it, or entirely outside
+        if (a(axis) < lower(axis) || a(axis) > upper(axis)) {
+          return false;
+        }
+        continue;
+      }
+      float t_lower = (lower(axis) - a(axis)) / delta(axis);
+      float t_upper = (upper(axis) - a(axis)) / delta(axis);
+      if (t_lower > t_upper) {
+        std::swap(t_lower, t_upper);
+      }
+      t_min = std::max(t_min, t_lower);
+      t_max = std::min(t_max, t_upper);
+      if (t_min > t_max) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   Vec2 center() const {
     return Vec2((lower.x + upper.x) / 2, (lower.y + upper.y) / 2);
   }

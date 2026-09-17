@@ -10,7 +10,7 @@ namespace dgui {
 
 class PlotFrame {
   struct Args {
-    float outer_padding = 10;
+    float outer_padding = 5;
     float header_margin_bot = 5;
     float aside_margin_left = 5;
     float title_legend_gap = 10;
@@ -21,7 +21,7 @@ class PlotFrame {
     float legend_item_gap = 10;
     float legend_padding = 5;
     float legend_max_width = 300;
-    float min_plot_area_size = 50;
+    float min_plot_area_size = 250;
   };
 
 public:
@@ -89,7 +89,11 @@ private:
     Vec2 origin;
   };
 
-  static constexpr float ticks_number_width_em = 4;
+  static constexpr float ticks_number_width_em = 2.5;
+  static constexpr int ticks_max_count = 20;
+  static constexpr int ticks_max_precision = 3;
+
+  float ticks_number_depth(const Ticks& ticks) const;
   float ticks_depth(const Ticks& ticks) const;
   void draw_ticks(DrawList& dl, const Ticks& ticks) const;
 

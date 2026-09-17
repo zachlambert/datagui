@@ -1,9 +1,54 @@
 #include "datagui/plot/line_plot.hpp"
 #include "datagui/render/lookup/matplotlib_colors.hpp"
+#include <algorithm>
+#include <cmath>
+#include <utility>
 
 namespace dgui {
 
 static constexpr float dashed_segment_length = 20;
+static constexpr float dashed_segment_length_legend = 5;
+
+namespace {
+
+#if 0
+// Clips the segment a -> b against the box, returning the parametric range
+// [t_min, t_max] of the portion inside it, or false if it lies entirely
+// outside
+bool clip_segment(
+    const Box2& box,
+    const Vec2& a,
+    const Vec2& b,
+    float& t_min,
+    float& t_max) {
+  t_min = 0;
+  t_max = 1;
+  const Vec2 delta = b - a;
+  for (std::size_t axis = 0; axis < 2; axis++) {
+    if (delta(axis) == 0) {
+      // Parallel to this axis, so it is either entirely within the box's
+      // extent along it, or entirely outside
+      if (a(axis) < box.lower(axis) || a(axis) > box.upper(axis)) {
+        return false;
+      }
+      continue;
+    }
+    float t_lower = (box.lower(axis) - a(axis)) / delta(axis);
+    float t_upper = (box.upper(axis) - a(axis)) / delta(axis);
+    if (t_lower > t_upper) {
+      std::swap(t_lower, t_upper);
+    }
+    t_min = std::max(t_min, t_lower);
+    t_max = std::min(t_max, t_upper);
+    if (t_min > t_max) {
+      return false;
+    }
+  }
+  return true;
+}
+#endif
+
+} // namespace
 
 size_t LinePlot::default_color_i_ = 0;
 
@@ -85,20 +130,26 @@ void LinePlot::draw_frame_components(const PlotFrame& frame, DrawList& dl)
           args_.color);
       break;
     case LineStyle::Dashed: {
+      // The icon is much shorter than a plotted line, so shrink the segments
+      // so that a few dashes are visible within it
       const float line_length = box.size_x();
+      if (line_length <= 0) {
+        break;
+      }
+      const float segment_length = std::min(
+          dashed_segment_length,
+          line_length / dashed_segment_length_legend);
       const Vec2 origin = box.center_left();
-      float s = -line_length / 2;
-      while (s < line_length / 2) {
-        const int index = std::round(s / dashed_segment_length);
-        if (index % 2 == 0) {
-          double s2 = std::min(s + dashed_segment_length, line_length / 2);
-          dl.draw_line(
-              origin + Vec2(s, 0),
-              origin + Vec2(s2, 0),
-              args_.line_width,
-              args_.color);
-        }
-        s += dashed_segment_length;
+      float s = 0;
+      while (s < line_length) {
+        const float s2 = std::min(s + segment_length, line_length);
+        dl.draw_line(
+            origin + Vec2(s, 0),
+            origin + Vec2(s2, 0),
+            args_.line_width,
+            args_.color,
+            false);
+        s += 2 * segment_length;
       }
       break;
     }
@@ -129,8 +180,16 @@ void LinePlot::draw_frame_components(const PlotFrame& frame, DrawList& dl)
 }
 
 void LinePlot::draw_data(const PlotFrame& frame, Scene2d& scene) const {
+  // Used to exclude markers outside of this area
+  // Expand by the marker width
+  const Box2 marker_scene_area =
+      frame.scene_area().from_expand(args_.marker_width);
+
   auto plot_marker = [&](const Vec2& point) {
     Vec2 draw_point = remap(point, frame.data_window(), frame.scene_area());
+    if (!marker_scene_area.contains(draw_point)) {
+      return;
+    }
     switch (args_.marker_style) {
       case MarkerStyle::Circle:
         scene.draw_circle(
@@ -159,48 +218,52 @@ void LinePlot::draw_data(const PlotFrame& frame, Scene2d& scene) const {
     }
   };
 
-  auto plot_line = [&](const Vec2& a, const Vec2& b, float length) {
-    Vec2 draw_a = remap(a, frame.data_window(), frame.scene_area());
-    Vec2 draw_b = remap(b, frame.data_window(), frame.scene_area());
-    float ab_length = (draw_a - draw_b).length();
-    Vec2 dir = (draw_b - draw_a) / ab_length;
-    switch (args_.line_style) {
-      case LineStyle::Solid:
-        scene.draw_line(draw_a, draw_b, args_.line_width, args_.color);
-        break;
-      case LineStyle::Dashed: {
-        float s1 = -std::fmod(length, dashed_segment_length);
-        while (s1 < ab_length) {
-          float s2 = s1 + dashed_segment_length;
-          int i = (length + s1) / dashed_segment_length;
-          if (i % 2 == 0) {
+  switch (args_.line_style) {
+    case LineStyle::Solid: {
+      for (std::size_t i = 0; i + 1 < points_.size(); i++) {
+        const Vec2 a =
+            remap(points_[i], frame.data_window(), frame.scene_area());
+        const Vec2 b =
+            remap(points_[i + 1], frame.data_window(), frame.scene_area());
+        if (!frame.scene_area().intersects_segment(a, b)) {
+          continue;
+        }
+        scene.draw_line(a, b, args_.line_width, args_.color);
+      }
+      break;
+    }
+    case LineStyle::Dashed: {
+      float phase = 0;
+      const float period = 2 * dashed_segment_length;
+      for (std::size_t i = 0; i + 1 < points_.size(); i++) {
+        const Vec2 a =
+            remap(points_[i], frame.data_window(), frame.scene_area());
+        const Vec2 b =
+            remap(points_[i + 1], frame.data_window(), frame.scene_area());
+        const float length = (a - b).length();
+        if (frame.scene_area().intersects_segment(a, b) && length > 0) {
+          const Vec2 dir = (b - a) / length;
+          const float s0 =
+              phase < dashed_segment_length ? -phase : period - phase;
+          for (float s = s0; s < length; s += period) {
             scene.draw_line(
-                draw_a + std::max(s1, 0.f) * dir,
-                draw_a + std::min(s2, ab_length) * dir,
+                a + std::max(s, 0.f) * dir,
+                a + std::min(s + dashed_segment_length, length) * dir,
                 args_.line_width,
                 args_.color,
                 false);
           }
-          s1 = s2;
         }
-        break;
+        phase = std::fmod(phase + length, period);
       }
-      default:
-        break;
+      break;
     }
-    return ab_length;
-  };
-
-  float length = 0;
-  for (std::size_t i = 0; i + 1 < points_.size(); i++) {
-    const Vec2& a = points_[i];
-    const Vec2& b = points_[i + 1];
-    float line_length = plot_line(a, b, length);
-    plot_marker(a);
-    length += line_length;
+    case LineStyle::None:
+      // Do nothing
+      break;
   }
-  if (!points_.empty()) {
-    plot_marker(points_.back());
+  for (const auto& point : points_) {
+    plot_marker(point);
   }
 }
 

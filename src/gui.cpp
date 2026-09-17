@@ -1,4 +1,7 @@
 #include "datagui/gui.hpp"
+#include "datagui/widget/canvas2d.hpp"
+#include "datagui/widget/canvas3d.hpp"
+#include "datagui/widget/plotter.hpp"
 #include <sstream>
 #include <stack>
 

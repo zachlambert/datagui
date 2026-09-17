@@ -2,6 +2,10 @@
 
 namespace dgui {
 
+// A float holds about 7 significant digits, so a data window any smaller than
+// this fraction of the values it contains can't be resolved
+static constexpr float min_window_ratio = 1e-6;
+
 LinePlot::Builder Plotter::plot(const std::vector<Vec2>& points) {
   plots.push_back(std::make_unique<LinePlot>(theme, font_registry, points));
   return dynamic_cast<LinePlot*>(plots.back().get())->builder();
@@ -212,6 +216,21 @@ bool Plotter::scroll_event(const Box2& box, const ScrollEvent& event) {
   }
   if (!event.mod.ctrl) {
     size_ratio.y = ratio;
+  }
+
+  // Stop zooming in once the window reaches the limit of what the data's
+  // values can resolve, rather than letting it collapse onto a single
+  // representable value
+  const Box2 window = frame_.data_window();
+  for (std::size_t axis = 0; axis < 2; axis++) {
+    if (size_ratio(axis) < 1 &&
+        window.size()(axis) * size_ratio(axis) <
+            std::abs(window.center()(axis)) * min_window_ratio) {
+      size_ratio(axis) = 1;
+    }
+  }
+  if (size_ratio.x == 1 && size_ratio.y == 1) {
+    return true;
   }
 
   const Vec2 anchor =
