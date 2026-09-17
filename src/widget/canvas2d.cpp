@@ -170,14 +170,22 @@ void Canvas2d::set_dependent_state(const Box2& box) {
         min_font_size,
         max_font_size);
     const float zoom_used = (command.font_size * zoom) / font_size_used;
+    const float glyph_scale = text_scale * zoom_used;
+
+    // The width is provided in canvas coordinates, but the text is laid out in
+    // the font's pixel coordinates
+    Length width = command.width;
+    if (auto fixed_width = std::get_if<LengthFixed>(&command.width)) {
+      width = LengthFixed(fixed_width->value / glyph_scale);
+    }
 
     scene->draw_text(
         font_registry->get_font(command.font, font_size_used),
         command.origin,
         command.angle,
-        Vec2::uniform(text_scale * zoom_used),
+        Vec2::uniform(glyph_scale),
         command.text_color,
-        command.width,
+        width,
         command.text);
   }
   label_commands_.clear();

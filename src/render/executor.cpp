@@ -182,6 +182,10 @@ void Executor::draw(
       glDisable(GL_CULL_FACE);
     }
   }
+
+  // Don't leave the scissor test enabled, since anything rendering outside of
+  // here (eg: generating a font atlas) would be cropped by it
+  glDisable(GL_SCISSOR_TEST);
 }
 
 } // namespace dgui

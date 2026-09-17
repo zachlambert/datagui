@@ -34,6 +34,7 @@ FontAtlas::FontAtlas(
   GLint original_unpack_alignment;
   GLboolean original_blend = glIsEnabled(GL_BLEND);
   GLint original_blend_src, original_blend_dst;
+  GLboolean original_scissor = glIsEnabled(GL_SCISSOR_TEST);
 
   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &original_fb);
   glGetIntegerv(GL_VIEWPORT, original_viewport);
@@ -84,6 +85,11 @@ FontAtlas::FontAtlas(
       glDisable(GL_BLEND);
     }
     glBlendFunc(original_blend_src, original_blend_dst);
+    if (original_scissor) {
+      glEnable(GL_SCISSOR_TEST);
+    } else {
+      glDisable(GL_SCISSOR_TEST);
+    }
   };
 
   // Return zero for success, >0 for failure
@@ -166,6 +172,9 @@ FontAtlas::FontAtlas(
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  // The scissor box is in window coordinates, so it would crop the glyphs
+  // being rendered to the atlas texture
+  glDisable(GL_SCISSOR_TEST);
 
   glViewport(0, 0, texture_width_, texture_height_);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
