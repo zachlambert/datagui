@@ -6,7 +6,7 @@ Theme theme_default() {
   Theme theme;
 
   theme.text_font = Font::DejaVuSans;
-  theme.text_size = 14;
+  theme.text_size = 16;
   theme.text_padding = 4;
   theme.text_color = Color::Black();
   theme.text_highlight_color = Color::Gray(0.8);

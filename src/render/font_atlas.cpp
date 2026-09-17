@@ -100,16 +100,9 @@ FontAtlas::FontAtlas(
   glGenFramebuffers(1, &framebuffer);
 
   // Initialize geometric properties
-  line_height_ = float(face->height) / 128;
-  ascender_ = float(face->ascender) / 128;
-  descender_ = -float(face->descender) / 128;
-
-  // For some reason, the ascender, descender and line_height values aren't
-  // scaled to the requested font size, even though the glyphs are
-  float scale = float(font_size) / line_height_;
-  ascender_ *= scale;
-  descender_ *= scale;
-  line_height_ = font_size;
+  line_height_ = font_size * float(face->height) / face->units_per_EM;
+  ascender_ = font_size * float(face->ascender) / face->units_per_EM;
+  descender_ = -font_size * float(face->descender) / face->units_per_EM;
 
   // 1st pass iterate through characters
   // -> Read properties and find required texture height
