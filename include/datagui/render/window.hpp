@@ -35,6 +35,7 @@ public:
   }
   void set_fixed_size(const Vec2& size);
   void set_dynamic_size();
+  void set_min_size(const Vec2& min_size);
 
   void poll_events();
 
@@ -55,11 +56,11 @@ public:
   }
 
 private:
-  std::string title;
-  std::size_t default_width;
-  std::size_t default_height;
+  std::string title = "datagui";
+  std::size_t default_width = 900;
+  std::size_t default_height = 600;
 
-  GLFWwindow* window;
+  GLFWwindow* window = nullptr;
   Vec2 size_;
   std::optional<std::chrono::steady_clock::time_point> reenable_vsync_time_;
 

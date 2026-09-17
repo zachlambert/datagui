@@ -105,15 +105,16 @@ void PlotFrame::calculate_sizes() {
       font_registry_->get_font(theme_->text_font, theme_->text_size);
 
   // Min size to allow for power/offset display at top of y axis
-  const float min_padding_title_plot = 1.2 * font.text_height();
+  const float min_padding_title_plot = 2.f * font.text_height();
 
-  header_height_ = 0;
+  header_height_ = min_padding_title_plot;
 
   if (!title_.empty()) {
     const Vec2 title_size = font.text_size(title_);
     title_width_ = title_size.x + 2 * theme_->text_padding;
-    header_height_ =
-        title_size.y + 2 * theme_->text_padding + min_padding_title_plot;
+    header_height_ = std::max(
+        header_height_,
+        title_size.y + 2 * theme_->text_padding + min_padding_title_plot);
   } else {
     title_width_ = 0;
   }
@@ -163,7 +164,7 @@ void PlotFrame::calculate_sizes() {
     }
   }
   // Set a minimum aside width to allow for the xaxis power label
-  aside_width_ = std::max(aside_width_, font.text_height() * 3.2f);
+  aside_width_ = std::max(aside_width_, font.text_height() * 3.5f);
 
   plot_offset_lower_.x = ticks_depth(yticks_) + args_.outer_padding;
   plot_offset_upper_.x =
@@ -171,7 +172,9 @@ void PlotFrame::calculate_sizes() {
       (aside_width_ > 0 ? aside_width_ + args_.aside_margin_left : 0.f);
   plot_offset_lower_.y =
       header_height_ + args_.outer_padding + args_.header_margin_bot;
-  plot_offset_upper_.y = ticks_depth(xticks_) + args_.outer_padding;
+  plot_offset_upper_.y = std::max(
+      ticks_depth(xticks_) + args_.outer_padding,
+      font.text_height() * 3);
 
   min_size_ = plot_offset_lower_ + plot_offset_upper_ +
               Vec2::uniform(args_.min_plot_area_size);
@@ -547,8 +550,9 @@ void PlotFrame::draw_ticks(DrawList& dl, const Ticks& ticks) const {
         break;
       case TicksLoc::Bottom:
         // Small extra x padding to avoid overlap
-        // Doesn't need to be particularly big, since when the power/offset label appears,
-        // the numbers being shown are limited to being small as well
+        // Doesn't need to be particularly big, since when the power/offset
+        // label appears, the numbers being shown are limited to being small as
+        // well
         text_offset = Vec2(
             ticks.length + theme_->text_padding + font.text_height() * 0.7f,
             args_.tick_length + theme_->text_padding);

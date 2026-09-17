@@ -5,23 +5,16 @@
 
 namespace dgui {
 
-// TODO: Update
-#if 0
 inline void plot(
-    const std::string& title,
-    std::size_t width,
-    std::size_t height,
-    const std::function<void(Plotter&)> plot) {
+    const std::function<void(Plotter&)> plot,
+    const std::string& title = "Plot") {
   Gui gui;
   gui.open(title);
-  while (gui.running()) {
-    if (auto plotter = gui.plotter(width, height)) {
-      plot(*plotter);
-      gui.end();
-    }
-    gui.poll();
+  while (gui.poll()) {
+    auto& plotter = gui.plotter();
+    plot(plotter);
+    gui.end();
   }
 }
-#endif
 
 } // namespace dgui

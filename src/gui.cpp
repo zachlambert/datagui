@@ -655,6 +655,7 @@ void Gui::calculate_sizes() {
 
     std::stack<State> stack;
     stack.emplace(tree.root());
+    window.set_min_size(tree.root().state().fixed_size);
 
     while (!stack.empty()) {
       State& state = stack.top();

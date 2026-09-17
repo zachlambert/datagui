@@ -34,30 +34,30 @@ void glfw_mouse_button_callback(
   MouseEvent event;
 
   switch (button) {
-  case GLFW_MOUSE_BUTTON_LEFT:
-    event.button = MouseButton::Left;
-    break;
-  case GLFW_MOUSE_BUTTON_MIDDLE:
-    event.button = MouseButton::Middle;
-    break;
-  case GLFW_MOUSE_BUTTON_RIGHT:
-    event.button = MouseButton::Right;
-    break;
-  default:
-    return;
+    case GLFW_MOUSE_BUTTON_LEFT:
+      event.button = MouseButton::Left;
+      break;
+    case GLFW_MOUSE_BUTTON_MIDDLE:
+      event.button = MouseButton::Middle;
+      break;
+    case GLFW_MOUSE_BUTTON_RIGHT:
+      event.button = MouseButton::Right;
+      break;
+    default:
+      return;
   }
 
   switch (action) {
-  case GLFW_PRESS:
-    event.action = MouseAction::Press;
-    window->mouse_button_down_[(std::size_t)event.button] = true;
-    break;
-  case GLFW_RELEASE:
-    event.action = MouseAction::Release;
-    window->mouse_button_down_[(std::size_t)event.button] = false;
-    break;
-  default:
-    return;
+    case GLFW_PRESS:
+      event.action = MouseAction::Press;
+      window->mouse_button_down_[(std::size_t)event.button] = true;
+      break;
+    case GLFW_RELEASE:
+      event.action = MouseAction::Release;
+      window->mouse_button_down_[(std::size_t)event.button] = false;
+      break;
+    default:
+      return;
   }
 
   double mx, my;
@@ -108,54 +108,54 @@ void glfw_key_callback(
   KeyEvent event;
 
   switch (action) {
-  case GLFW_PRESS:
-    event.action = KeyAction::Press;
-    break;
-  case GLFW_REPEAT:
-    event.action = KeyAction::Repeat;
-    break;
-  case GLFW_RELEASE:
-    event.action = KeyAction::Release;
-    break;
-  default:
-    return;
+    case GLFW_PRESS:
+      event.action = KeyAction::Press;
+      break;
+    case GLFW_REPEAT:
+      event.action = KeyAction::Repeat;
+      break;
+    case GLFW_RELEASE:
+      event.action = KeyAction::Release;
+      break;
+    default:
+      return;
   }
 
   switch (key) {
-  case GLFW_KEY_LEFT:
-    event.key = Key::Left;
-    break;
-  case GLFW_KEY_RIGHT:
-    event.key = Key::Right;
-    break;
-  case GLFW_KEY_UP:
-    event.key = Key::Up;
-    break;
-  case GLFW_KEY_DOWN:
-    event.key = Key::Down;
-    break;
-  case GLFW_KEY_TAB:
-    event.key = Key::Tab;
-    break;
-  case GLFW_KEY_ESCAPE:
-    event.key = Key::Escape;
-    break;
-  case GLFW_KEY_ENTER:
-    event.key = Key::Enter;
-    break;
-  case GLFW_KEY_BACKSPACE:
-    event.key = Key::Backspace;
-    break;
-  case GLFW_KEY_DELETE:
-    event.key = Key::Delete;
-    break;
-  default:
-    if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) {
-      event.key = (Key)((int)Key::A + (key - GLFW_KEY_A));
-    } else {
-      return;
-    }
-    break;
+    case GLFW_KEY_LEFT:
+      event.key = Key::Left;
+      break;
+    case GLFW_KEY_RIGHT:
+      event.key = Key::Right;
+      break;
+    case GLFW_KEY_UP:
+      event.key = Key::Up;
+      break;
+    case GLFW_KEY_DOWN:
+      event.key = Key::Down;
+      break;
+    case GLFW_KEY_TAB:
+      event.key = Key::Tab;
+      break;
+    case GLFW_KEY_ESCAPE:
+      event.key = Key::Escape;
+      break;
+    case GLFW_KEY_ENTER:
+      event.key = Key::Enter;
+      break;
+    case GLFW_KEY_BACKSPACE:
+      event.key = Key::Backspace;
+      break;
+    case GLFW_KEY_DELETE:
+      event.key = Key::Delete;
+      break;
+    default:
+      if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) {
+        event.key = (Key)((int)Key::A + (key - GLFW_KEY_A));
+      } else {
+        return;
+      }
+      break;
   }
 
   event.mod.ctrl = mods & (1 << 1);
@@ -193,15 +193,11 @@ void glfw_resize_callback(GLFWwindow* glfw_window, int width, int height) {
   glfwMakeContextCurrent(prior_context);
 
   // Wait an arbitrary short period of time before re-enabling vsync
-  window->reenable_vsync_time_ = std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
+  window->reenable_vsync_time_ =
+      std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
 }
 
-Window::Window() :
-    title("datagui"),
-    default_width(900),
-    default_height(600),
-    window(nullptr),
-    size_(900, 600) {
+Window::Window() : size_(default_width, default_height) {
   for (std::size_t i = 0; i < MouseButtonSize; i++) {
     mouse_button_down_[i] = false;
     mouse_down_mod_[i].ctrl = false;
@@ -300,7 +296,8 @@ void Window::render_begin() {
 }
 
 void Window::render_end() {
-  if (reenable_vsync_time_ && std::chrono::steady_clock::now() > *reenable_vsync_time_) {
+  if (reenable_vsync_time_ &&
+      std::chrono::steady_clock::now() > *reenable_vsync_time_) {
     reenable_vsync_time_.reset();
     glfwSwapInterval(1);
   }
@@ -315,6 +312,15 @@ void Window::set_fixed_size(const Vec2& size) {
 
 void Window::set_dynamic_size() {
   glfwSetWindowAttrib(window, GLFW_RESIZABLE, true);
+}
+
+void Window::set_min_size(const Vec2& min_size) {
+  glfwSetWindowSizeLimits(
+      window,
+      min_size.x,
+      min_size.y,
+      GLFW_DONT_CARE,
+      GLFW_DONT_CARE);
 }
 
 void Window::poll_events() {
