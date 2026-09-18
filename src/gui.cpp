@@ -50,8 +50,18 @@ void Gui::end() {
 }
 
 bool Gui::poll() {
-  if (element_focus && tree.has_removed(element_focus)) {
-    element_focus = ElementPtr();
+  // Any element cached from the previous cycle may have been removed while
+  // building the tree (eg: pressing the remove button on a list item removes
+  // the button itself), so all of them need clearing, not just the focus
+  for (ElementPtr* element :
+       {&element_focus,
+        &element_hover,
+        &element_left_held,
+        &element_middle_held,
+        &element_focus_defer}) {
+    if (tree.has_removed(*element)) {
+      *element = ElementPtr();
+    }
   }
   tree.clear_removed();
 
@@ -655,7 +665,7 @@ void Gui::calculate_sizes() {
 
     std::stack<State> stack;
     stack.emplace(tree.root());
-    window.set_min_size(tree.root().state().fixed_size);
+    window.set_min_size(minimum(tree.root().state().fixed_size, max_min_size_));
 
     while (!stack.empty()) {
       State& state = stack.top();
