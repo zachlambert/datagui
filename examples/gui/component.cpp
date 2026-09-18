@@ -1,11 +1,17 @@
-#include <datagui/gui.hpp>
 #include <algorithm>
+#include <datagui/gui.hpp>
 #include <iostream>
+#include <optional>
 
 class NumberDisplay {
 public:
   void visit(dgui::Gui& gui, int number) {
     gui.text_box("The number is " + std::to_string(number));
+    if (!prev_number || *prev_number != number) {
+      total_changes++;
+      prev_number = number;
+    }
+    gui.text_box("Total changes: " + std::to_string(total_changes));
     for (int i = 0; i < std::clamp(number, 0, 10); i++) {
       gui.key(i);
       if (gui.button("Button " + std::to_string(i))) {
@@ -24,6 +30,10 @@ public:
       gui.text_box("Max buttons shown");
     }
   }
+
+private:
+  std::optional<int> prev_number;
+  size_t total_changes = 0;
 };
 
 int main() {
