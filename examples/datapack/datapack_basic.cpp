@@ -36,7 +36,6 @@ int main() {
 
   Shape shape;
 
-  int revisit = 0;
   while (gui.poll()) {
     gui.args().width_expand();
     gui.group();

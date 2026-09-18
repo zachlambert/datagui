@@ -11,6 +11,8 @@ int main() {
   }
 
   dgui::plot([&](dgui::Plotter& plotter) {
+    plotter.xlabel("x");
+    plotter.ylabel("y");
     plotter.plot(xs, ys);
   });
 }
