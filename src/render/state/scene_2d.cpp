@@ -1,4 +1,5 @@
 #include "datagui/render/state/scene_2d.hpp"
+#include "datagui/geometry/rot.hpp"
 
 namespace dgui {
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "datagui/geometry.hpp"
+#include "datagui/geometry/box.hpp"
+#include "datagui/geometry/vec.hpp"
 #include "datagui/layout.hpp"
 #include "datagui/render/state/glyph_2d_instance.hpp"
 #include <string>

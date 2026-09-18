@@ -1,6 +1,7 @@
 #pragma once
 
-#include "datagui/geometry.hpp"
+#include "datagui/geometry/box.hpp"
+#include "datagui/geometry/vec.hpp"
 
 namespace dgui {
 

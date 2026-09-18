@@ -1,7 +1,8 @@
 #pragma once
 
 #include "datagui/color.hpp"
-#include "datagui/geometry.hpp"
+#include "datagui/geometry/box.hpp"
+#include "datagui/geometry/vec.hpp"
 #include "datagui/input/number_input.hpp"
 #include "datagui/layout.hpp"
 #include "datagui/widget/widget.hpp"

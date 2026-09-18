@@ -1,7 +1,8 @@
 #pragma once
 
 #include "datagui/element/tree.hpp"
-#include "datagui/geometry.hpp"
+#include "datagui/geometry/box.hpp"
+#include "datagui/geometry/vec.hpp"
 #include "datagui/input/event.hpp"
 #include "datagui/render/state/draw_list.hpp"
 #include <vector>

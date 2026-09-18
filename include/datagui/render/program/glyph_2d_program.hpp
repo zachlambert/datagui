@@ -1,6 +1,6 @@
 #pragma once
 
-#include "datagui/geometry.hpp"
+#include "datagui/geometry/mat.hpp"
 #include "datagui/render/state/glyph_2d_instance.hpp"
 
 namespace dgui {

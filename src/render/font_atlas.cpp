@@ -1,4 +1,5 @@
 #include "datagui/render/font_atlas.hpp"
+#include "datagui/geometry/rot.hpp"
 #include "datagui/render/lookup/ansi_colors.hpp"
 #include "datagui/render/program/font_program.hpp"
 #include <GL/glew.h>

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "datagui/geometry.hpp"
+#include "datagui/geometry/box.hpp"
+#include "datagui/geometry/vec.hpp"
 #include "datagui/input/event.hpp"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
