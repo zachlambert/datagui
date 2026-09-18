@@ -1,21 +1,8 @@
 #include "datagui/datapack/writer.hpp"
 #include "datagui/datapack/common.hpp"
-#include <array>
-#include <charconv>
 #include <datapack/encode/base64.hpp>
 
 namespace dgui {
-
-template <typename T>
-std::string number_to_string(T value) {
-  std::array<char, 64> buffer;
-  auto result =
-      std::to_chars(buffer.data(), buffer.data() + buffer.size(), value);
-  if (result.ec != std::errc{}) {
-    return "0";
-  }
-  return std::string(buffer.data(), result.ptr);
-}
 
 void GuiWriter::number(dpack::NumberType type, const void* value) {
   if (in_color) {
@@ -86,6 +73,7 @@ void GuiWriter::number(dpack::NumberType type, const void* value) {
 
   node.expect(Type::TextInput, read_id());
   auto& text_input = node.text_input();
+  text_input.number_type = convert_type(type);
 
   switch (type) {
     case dpack::NumberType::I32:
