@@ -20,6 +20,24 @@ int main() {
 
     gui.text_box("Canvas");
 
+    gui.args().bg_color(Color::Hsl(220, 0.3, 0.8));
+    gui.args().grid(-1, 2);
+    if (gui.collapsable("Properties")) {
+      DGUI_SCOPE(gui);
+
+      gui.text_box("Color");
+      gui.args().always();
+      gui.color_picker_v(color);
+
+      gui.text_box("Width");
+      gui.args().always();
+      gui.slider_v<float>(width, 0.1, 2);
+
+      gui.text_box("Border size");
+      gui.args().always();
+      gui.slider_v<float>(border_size, 0, width / 2);
+    }
+
     auto& canvas = gui.canvas2d();
     {
       DGUI_SCOPE(gui);
@@ -38,24 +56,6 @@ int main() {
           click_2 = event->position;
         }
       }
-    }
-
-    gui.args().bg_color(Color::Hsl(220, 0.3, 0.8));
-    gui.args().grid(-1, 2);
-    if (gui.collapsable("Properties")) {
-      DGUI_SCOPE(gui);
-
-      gui.text_box("Color");
-      gui.args().always();
-      gui.color_picker_v(color);
-
-      gui.text_box("Width");
-      gui.args().always();
-      gui.slider_v<float>(width, 0.1, 2);
-
-      gui.text_box("Border size");
-      gui.args().always();
-      gui.slider_v<float>(border_size, 0, width / 2);
     }
   }
 }
