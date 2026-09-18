@@ -381,10 +381,13 @@ void GuiWriter::list_item_begin() {
   // so this should always be in bounds
   assert(list_state.pos < list_state.var->ids.size());
 
-  next_id_ = list_state.var->ids[list_state.pos];
-  // The item is a plain group, not a collapsable
-  in_composite_ = true;
-  enter_container(1, -1);
+  // The item group is internal to the list, so doesn't need enter_container()
+  node.expect(Type::Group, list_state.var->ids[list_state.pos]);
+  auto& group = node.group();
+  group.layout.tight = true;
+  group.layout.rows = 1;
+  group.layout.cols = -1;
+  node = node.child();
 
   node.expect(Type::TextBox);
   node.text_box().text = "[" + std::to_string(list_state.pos) + "]";

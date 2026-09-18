@@ -400,12 +400,15 @@ void GuiReader::list_item_begin() {
   // If this isn't followed, then it will go out of bounds here
   assert(list_state.pos < list_state.var->ids.size());
 
+  // The item group is internal to the list, so doesn't need enter_container().
   // Any items removed on the previous cycle are erased by expect() searching
   // forwards for this id
-  next_id_ = list_state.var->ids[list_state.pos];
-  // The item is a plain group, not a collapsable
-  in_composite_ = true;
-  enter_container(1, -1);
+  node.expect(Type::Group, list_state.var->ids[list_state.pos]);
+  auto& group = node.group();
+  group.layout.tight = true;
+  group.layout.rows = 1;
+  group.layout.cols = -1;
+  node = node.child();
 
   node.expect(Type::TextBox);
   node.text_box().text = "[" + std::to_string(list_state.pos) + "]";
