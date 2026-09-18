@@ -8,23 +8,26 @@ void TabsSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size = Vec2();
   state.dynamic_size = Vec2();
+
   auto child = element.child();
-  for (std::size_t i = 0; i < tabs.labels.size(); i++) {
-    if (child.state().float_only) {
+  size_t child_i = 0;
+  while (child && child_i < tabs.labels.size()) {
+    if (child.state().display_mode != DisplayMode::Inline) {
       child = child.next();
       continue;
-    }
-    if (!child) {
-      break;
     }
     state.fixed_size = maximum(state.fixed_size, child.state().fixed_size);
     state.dynamic_size =
         maximum(state.dynamic_size, child.state().dynamic_size);
     child = child.next();
+    child_i++;
   }
 
-  tabs.header_height = fm->text_height(theme->text_font, theme->text_size) +
-                       2 * theme->text_padding + 2 * theme->input_border_width;
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+
+  tabs.header_height = font.text_height() + 2 * theme->text_padding +
+                       2 * theme->input_border_width;
   state.fixed_size.y += tabs.header_height;
 
   tabs.label_boxes.resize(tabs.labels.size());
@@ -32,7 +35,7 @@ void TabsSystem::set_input_state(ElementPtr element) {
   for (std::size_t i = 0; i < tabs.labels.size(); i++) {
     const auto& label = tabs.labels[i];
     Vec2 label_size =
-        fm->text_size(label, theme->text_font, theme->text_size, LengthWrap()) +
+        font.text_size(label, LengthWrap()) +
         Vec2::uniform(2 * theme->text_padding + 2 * theme->input_border_width);
 
     tabs.label_boxes[i] = Box2(offset, offset + label_size);
@@ -51,21 +54,28 @@ void TabsSystem::set_dependent_state(ElementPtr element) {
     box.upper += state.position;
   }
 
-  state.child_mask = state.box();
-  state.child_mask.lower.y += tabs.header_height;
+  state.content_box = state.box();
+  state.content_box.lower.y += tabs.header_height;
 
-  Vec2 child_pos = state.child_mask.lower;
-  Vec2 child_full_size = state.child_mask.size();
+  Vec2 child_pos = state.content_box.lower;
+  Vec2 child_full_size = state.content_box.size();
 
   auto child = element.child();
-  std::size_t i = 0;
+  std::size_t child_i = 0;
   while (child) {
-    if (child.state().float_only) {
+    if (child.state().display_mode != DisplayMode::Inline) {
       child = child.next();
       continue;
     }
-    child.state().position = child_pos;
     auto& c_state = child.state();
+    if (child_i != tabs.tab) {
+      // Override
+      c_state.display_mode = DisplayMode::Disabled;
+      child_i++;
+      continue;
+    }
+
+    c_state.position = child_pos;
     if (c_state.dynamic_size.x > 0) {
       c_state.size.x = child_full_size.x;
     } else {
@@ -76,20 +86,22 @@ void TabsSystem::set_dependent_state(ElementPtr element) {
     } else {
       c_state.size.y = c_state.fixed_size.y;
     }
-    assert(child.state().hidden == (i != tabs.tab));
-    i++;
+    child_i++;
     child = child.next();
   }
 }
 
-void TabsSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void TabsSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& tabs = element.tabs();
+
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
 
   Box2 header_box;
   header_box.lower = state.position;
   header_box.upper = state.position + Vec2(state.size.x, tabs.header_height);
-  renderer.queue_box(
+  dl.draw_box(
       header_box,
       theme->header_color,
       theme->input_border_width,
@@ -101,18 +113,17 @@ void TabsSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
     const Color& bg_color =
         (i == tabs.tab) ? theme->input_color_bg_active : theme->input_color_bg;
     const auto& box = tabs.label_boxes[i];
-    renderer.queue_box(
+    dl.draw_box(
         box,
         bg_color,
         theme->input_border_width,
         theme->input_color_border);
-    renderer.queue_text(
+    dl.draw_text(
+        font,
         box.lower + text_offset,
-        tabs.labels[i],
-        theme->text_font,
-        theme->text_size,
         theme->text_color,
-        LengthWrap());
+        LengthWrap(),
+        tabs.labels[i]);
   }
 }
 

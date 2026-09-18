@@ -4,6 +4,12 @@
 
 namespace dgui {
 
+void ImageData::resize(size_t width, size_t height) {
+  width_ = width;
+  height_ = height;
+  pixels_.resize(width_ * height_);
+}
+
 Image::Data::~Data() {
   if (texture > 0) {
     glDeleteTextures(1, &texture);
@@ -47,6 +53,13 @@ void Image::load(std::size_t width, std::size_t height, void* pixels) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void Image::load(const ImageData& data) {
+  if (data.width() == 0 || data.height() == 0) {
+    return;
+  }
+  load(data.width(), data.height(), (void*)&data(0, 0));
 }
 
 } // namespace dgui

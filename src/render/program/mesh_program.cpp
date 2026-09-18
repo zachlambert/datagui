@@ -1,0 +1,62 @@
+#include "datagui/render/program/mesh_program.hpp"
+#include "datagui/render/shaders.hpp"
+#include <GL/glew.h>
+
+namespace dgui {
+
+void MeshProgram::init() {
+  program_id = compile_program_vf(shaders::mesh_vs, shaders::mesh_fs);
+
+  uniform_P = glGetUniformLocation(program_id, "P");
+  uniform_V = glGetUniformLocation(program_id, "V");
+  uniform_M = glGetUniformLocation(program_id, "M");
+  uniform_mesh_color = glGetUniformLocation(program_id, "mesh_color");
+  uniform_use_texture = glGetUniformLocation(program_id, "use_texture");
+  uniform_mesh_texture = glGetUniformLocation(program_id, "mesh_texture");
+
+  glUseProgram(program_id);
+  // Assign sampler2D mesh_texture to 0 by default
+  glUniform1i(uniform_mesh_texture, 0);
+  glUseProgram(0);
+}
+
+void MeshProgram::bind() {
+  glUseProgram(program_id);
+}
+
+void MeshProgram::draw(
+    const Mat4& view,
+    const Mat4& projection,
+    const Mesh& mesh,
+    const Mat4& transform,
+    const Color& base_color) {
+  if (!mesh.is_loaded()) {
+    return;
+  }
+
+  glUniformMatrix4fv(uniform_P, 1, GL_FALSE, projection.data);
+  glUniformMatrix4fv(uniform_V, 1, GL_FALSE, view.data);
+  glUniformMatrix4fv(uniform_M, 1, GL_FALSE, transform.data);
+  glUniform4fv(uniform_mesh_color, 1, base_color.data);
+  glVertexAttrib4f(2, 1.f, 1.f, 1.f, 1.f);
+
+  glUniform1i(uniform_use_texture, mesh.data->has_uv ? 1 : 0);
+  if (mesh.data->has_uv) {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mesh.data->texture.texture());
+  }
+
+  glBindVertexArray(mesh.data->VAO);
+  glDrawElements(
+      GL_TRIANGLES,
+      mesh.data->index_count,
+      GL_UNSIGNED_INT,
+      (void*)0);
+  glBindVertexArray(0);
+
+  if (mesh.data->has_uv) {
+    glBindTexture(GL_TEXTURE_2D, 0);
+  }
+}
+
+} // namespace dgui

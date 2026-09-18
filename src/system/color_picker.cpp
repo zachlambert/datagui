@@ -1,11 +1,12 @@
 #include "datagui/system/color_picker.hpp"
+#include <algorithm>
 
 namespace dgui {
 
 ColorPickerSystem::ColorPickerSystem(
-    std::shared_ptr<FontManager> fm,
+    std::shared_ptr<FontRegistry> font_registry,
     std::shared_ptr<Theme> theme) :
-    fm(fm), theme(theme) {}
+    font_registry(font_registry), theme(theme) {}
 
 void ColorPickerSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
@@ -13,57 +14,58 @@ void ColorPickerSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size = Vec2::uniform(theme->color_picker_icon_size);
   state.dynamic_size = Vec2();
-
-  Vec2 float_offset(
-      0,
-      theme->color_picker_icon_size - theme->input_border_width);
-
-  const float r = theme->color_picker_hue_wheel_radius;
-  const float p = theme->color_picker_padding;
-  const float w = theme->color_picker_value_scale_width;
-  Vec2 float_size(3 * p + 2 * r + w, 2 * p + 2 * r);
-
-  state.floating = color_picker.open;
-  state.floating_type = FloatingTypeRelative(float_offset, float_size);
-  state.float_only = false;
+  state.content_mode = color_picker.open ? DisplayMode::Float : DisplayMode::Disabled;
 }
 
 void ColorPickerSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& color_picker = element.color_picker();
 
+  if (!color_picker.open) {
+    return;
+  }
+
   const float r = theme->color_picker_hue_wheel_radius;
   const float p = theme->color_picker_padding;
   const float w = theme->color_picker_value_scale_width;
 
+  Vec2 float_offset(
+      0,
+      theme->color_picker_icon_size - theme->input_border_width);
+  Vec2 float_size(3 * p + 2 * r + w, 2 * p + 2 * r);
+
+  state.content_box =
+      Box2::from_size(state.position + float_offset, float_size);
+
   {
-    Vec2 origin = state.float_box.lower + Vec2::uniform(p);
+    Vec2 origin = state.content_box.lower + Vec2::uniform(p);
     Vec2 size = Vec2::uniform(2 * r);
     color_picker.hue_wheel_box = Box2(origin, origin + size);
   }
 
   {
-    Vec2 origin = state.float_box.lower + Vec2(2 * p + 2 * r, p);
+    Vec2 origin = state.content_box.lower + Vec2(2 * p + 2 * r, p);
     Vec2 size = Vec2(w, 2 * r);
     color_picker.lightness_box = Box2(origin, origin + size);
   }
 }
 
-void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void ColorPickerSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   auto& color_picker = element.color_picker();
 
   const auto& color = state.focused ? active_color : color_picker.value;
+  dl.draw_box(state.box(), color, 2, theme->input_color_border);
+}
 
-  renderer.queue_box(state.box(), color, 2, theme->input_color_border);
-
-  if (!state.floating) {
-    return;
-  }
+void ColorPickerSystem::render_content(ConstElementPtr element, DrawList& dl) {
+  const auto& state = element.state();
+  auto& color_picker = element.color_picker();
+  const auto& color = state.focused ? active_color : color_picker.value;
 
   Color bg_color = color;
   bg_color.a = 0.5;
-  renderer.queue_box(state.float_box, bg_color, 2, theme->layout_border_color);
+  dl.draw_box(state.content_box, bg_color, 2, theme->layout_border_color);
 
   float lightness = color.lightness();
   struct Pixel {
@@ -113,9 +115,11 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
       }
     }
     color_picker.hue_wheel_image.load(n, n, pixels.data());
-    renderer.queue_image(
-        color_picker.hue_wheel_box,
-        color_picker.hue_wheel_image);
+    dl.draw_image(
+        color_picker.hue_wheel_image,
+        color_picker.hue_wheel_box.lower,
+        0,
+        color_picker.hue_wheel_box.size());
   }
   {
     const std::size_t h = 100;
@@ -142,9 +146,11 @@ void ColorPickerSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
       }
     }
     color_picker.lightness_image.load(w, h, pixels.data());
-    renderer.queue_image(
-        color_picker.lightness_box,
-        color_picker.lightness_image);
+    dl.draw_image(
+        color_picker.lightness_image,
+        color_picker.lightness_box.lower,
+        0,
+        color_picker.lightness_box.size());
   }
 }
 
@@ -214,7 +220,7 @@ void ColorPickerSystem::mouse_event(
   }
 }
 
-void ColorPickerSystem::focus_tree_leave(ElementPtr element) {
+void ColorPickerSystem::focus_leave(ElementPtr element, bool success) {
   auto& color_picker = element.color_picker();
   color_picker.open = false;
 }

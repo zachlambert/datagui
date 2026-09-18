@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/geometry/vec.hpp"
 #include <cmath>
 #include <datapack/datapack.hpp>
 
@@ -14,11 +15,13 @@ public:
       float b;
       float a;
     };
+    Vec3 rgb;
     float data[4];
   };
 
   Color() {}
   Color(float r, float g, float b, float a = 1) : r(r), g(g), b(b), a(a) {}
+  explicit Color(const Vec3& rgb, float a = 1) : r(rgb.x), g(rgb.y), b(rgb.z), a(a) {}
 
   static Color Red(float value = 1) {
     return Color(value, 0, 0, 1);

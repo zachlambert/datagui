@@ -3,74 +3,6 @@
 
 namespace dgui {
 
-std::size_t find_cursor(
-    const FontStructure& font,
-    const std::string& text,
-    Length text_width,
-    const Vec2& point) {
-
-  auto fixed_width = std::get_if<LengthFixed>(&text_width);
-  Vec2 pos;
-  pos.y += font.line_height;
-
-  std::size_t column = 0;
-  bool column_found = false;
-
-  for (std::size_t i = 0; i < text.size(); i++) {
-    if (!font.char_valid(text[i])) {
-      continue;
-    }
-    const auto& c = font.get(text[i]);
-
-    if (!column_found && pos.x + c.advance / 2 > point.x) {
-      column_found = true;
-      column = i;
-      if (point.y < pos.y) {
-        return column;
-      }
-    }
-
-    if (fixed_width && pos.x + c.advance > fixed_width->value) {
-      if (!column_found) {
-        column = i + 1;
-      }
-      if (point.y < pos.y) {
-        return column;
-      }
-      pos.x = 0;
-      pos.y += font.line_height;
-      column_found = false;
-    }
-    pos.x += c.advance;
-  }
-  if (!column_found) {
-    column = text.size();
-  }
-  return column;
-}
-
-Vec2 cursor_offset(
-    const FontStructure& font,
-    const std::string& text,
-    Length text_width,
-    std::size_t cursor) {
-  auto fixed_width = std::get_if<LengthFixed>(&text_width);
-  Vec2 offset;
-
-  for (std::size_t i = 0; i < cursor; i++) {
-    if (!font.char_valid(text[i])) {
-      continue;
-    }
-    const auto& c = font.get(text[i]);
-    if (fixed_width && offset.x + c.advance > fixed_width->value) {
-      offset.x = 0;
-      offset.y += font.line_height;
-    }
-    offset.x += c.advance;
-  }
-  return offset;
-}
-
 void selection_text_event(
     std::string& text,
     TextSelection& selection,
@@ -267,21 +199,23 @@ void render_selection(
     const std::string& text,
     const Vec2& origin,
     const TextSelection& selection,
-    const FontStructure& font,
+    const FontAtlas& font,
     Color cursor_color,
     Color highlight_color,
     int cursor_width,
     Length width,
-    GuiRenderer& renderer) {
+    DrawList& dl) {
+
+  float line_height = font.text_height();
 
   // Render cursor only
 
   if (selection.span() == 0) {
-    Vec2 offset = cursor_offset(font, text, width, selection.begin);
-    renderer.queue_box(
+    Vec2 offset = font.cursor_offset(text, width, selection.begin);
+    dl.draw_box(
         Box2(
             origin + offset - Vec2(float(cursor_width) / 2, 0),
-            origin + offset + Vec2(cursor_width, font.line_height)),
+            origin + offset + Vec2(cursor_width, line_height)),
         cursor_color);
     return;
   }
@@ -292,37 +226,32 @@ void render_selection(
 
   std::size_t from = selection.from();
   std::size_t to = selection.to();
-  Vec2 offset = cursor_offset(font, text, width, from);
+  Vec2 offset = font.cursor_offset(text, width, from);
   Vec2 from_offset = offset;
 
   for (std::size_t i = from; i < to; i++) {
-    if (!font.char_valid(text[i])) {
-      continue;
-    }
-    const auto& c = font.get(text[i]);
+    float advance = font.advance(text[i]);
 
-    if (fixed_width && offset.x + c.advance > fixed_width->value) {
+    if (fixed_width && offset.x + advance > fixed_width->value) {
       Vec2 to_offset = offset;
       if (from == text.size()) {
-        to_offset.x += c.advance;
+        to_offset.x += advance;
       }
-      to_offset.y += font.line_height;
-      renderer.queue_box(
+      to_offset.y += line_height;
+      dl.draw_box(
           Box2(origin + from_offset, origin + to_offset),
           highlight_color);
 
       from = i;
       offset.x = 0;
-      offset.y += font.line_height;
+      offset.y += line_height;
       from_offset = offset;
     }
-    offset.x += c.advance;
+    offset.x += advance;
   }
 
-  Vec2 to_offset = offset + Vec2(0, font.line_height);
-  renderer.queue_box(
-      Box2(origin + from_offset, origin + to_offset),
-      highlight_color);
+  Vec2 to_offset = offset + Vec2(0, line_height);
+  dl.draw_box(Box2(origin + from_offset, origin + to_offset), highlight_color);
 }
 
 } // namespace dgui

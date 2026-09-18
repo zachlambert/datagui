@@ -6,19 +6,19 @@
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/writer.hpp"
 #include "datagui/element/args.hpp"
+#include "datagui/element/layer_manager.hpp"
 #include "datagui/element/system.hpp"
 #include "datagui/element/tree.hpp"
+#include "datagui/render/executor.hpp"
+#include "datagui/render/font_registry.hpp"
+#include "datagui/render/program_registry.hpp"
+#include "datagui/render/state/draw_list.hpp"
+#include "datagui/render/window.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/viewport/canvas2d.hpp"
-#include "datagui/viewport/canvas3d.hpp"
-#include "datagui/viewport/plotter.hpp"
-#include "datagui/viewport/viewport.hpp"
-#include "datagui/visual/gui_renderer.hpp"
-#include "datagui/visual/window.hpp"
+#include "datagui/widget/widget.hpp"
+#include <functional>
 #include <memory>
 #include <optional>
-#include <set>
-#include <unordered_set>
 #include <vector>
 
 namespace dgui {
@@ -26,6 +26,14 @@ namespace dgui {
 class Plotter;
 class Canvas2d;
 class Canvas3d;
+class PopupSystem;
+
+class Gui;
+
+template <typename T, typename... Args>
+concept component_c = requires(T& component, Gui& gui, Args&&... args) {
+  component.visit(gui, std::forward<Args>(args)...);
+};
 
 class Gui {
 public:
@@ -224,14 +232,17 @@ public:
     return args_;
   }
 
-  Canvas2d& canvas2d() {
-    return viewport<Canvas2d>();
-  }
-  Canvas3d& canvas3d() {
-    return viewport<Canvas3d>();
-  }
-  Plotter& plotter() {
-    return viewport<Plotter>();
+  Canvas2d& canvas2d();
+  Canvas3d& canvas3d();
+  Plotter& plotter();
+
+  template <typename Component, typename... Args>
+  requires component_c<Component, Args...>
+  void component(Args&&... args) {
+    Component& component = variable<Component>([]() {
+      return Component();
+    });
+    component.visit(*this, std::forward<Args>(args)...);
   }
 
 private:
@@ -276,20 +287,21 @@ private:
   void focus_next(bool reverse);
 
   template <typename T>
-  requires std::is_base_of_v<Viewport, T>
-  T& viewport();
+  requires std::is_base_of_v<Widget, T>
+  T& widget();
 
   Window window;
+  ProgramRegistry program_registry;
   Tree tree;
+  Executor executor;
 
 #ifdef DGUI_DEBUG
   bool debug_mode_ = false;
 #endif
 
-  std::shared_ptr<FontManager> fm;
+  std::shared_ptr<FontRegistry> font_registry;
   std::shared_ptr<Theme> theme;
-  GuiRenderer renderer;
-  std::vector<std::unique_ptr<System>> systems;
+  DrawList dl;
 
   std::stack<std::pair<ElementPtr, VarPtr>> stack;
   ElementPtr current;
@@ -299,8 +311,8 @@ private:
   ElementPtr element_hover;
   ElementPtr element_left_held;
   ElementPtr element_middle_held;
-  int next_float_priority = 0;
-  std::vector<std::function<void()>> misc_events;
+  ElementPtr element_focus_defer;
+  int focus_index = 0;
 
   std::size_t read_key() {
     std::size_t key = next_key;
@@ -308,50 +320,10 @@ private:
     return key;
   }
   std::size_t next_key = 0;
-  bool overwrite = false; // Only used for datapack_write, special case
-
-  std::unordered_set<ElementPtr, ElementPtr::HashFunc> floating_elements;
-  std::set<ElementPtr, ElementPtr::FloatCompare> ordered_floating_elements;
 
   Args args_;
-
-  // For convenience
-  System& system(ConstElementPtr element) {
-    return *systems[static_cast<std::size_t>(element.type())];
-  }
-  void set_input_state(ElementPtr element) {
-    system(element).set_input_state(element);
-  }
-  void set_dependent_state(ElementPtr element) {
-    system(element).set_dependent_state(element);
-  };
-  void render(ConstElementPtr element) {
-    system(element).render(element, renderer);
-  }
-  void mouse_event(ElementPtr element, const MouseEvent& event) {
-    system(element).mouse_event(element, event);
-  }
-  void mouse_hover(ElementPtr element, const Vec2& mouse_pos) {
-    system(element).mouse_hover(element, mouse_pos);
-  }
-  bool scroll_event(ElementPtr element, const ScrollEvent& event) {
-    return system(element).scroll_event(element, event);
-  }
-  void key_event(ElementPtr element, const KeyEvent& event) {
-    system(element).key_event(element, event);
-  }
-  void text_event(ElementPtr element, const TextEvent& event) {
-    system(element).text_event(element, event);
-  }
-  void focus_enter(ElementPtr element) {
-    system(element).focus_enter(element);
-  }
-  void focus_leave(ElementPtr element, bool success) {
-    return system(element).focus_leave(element, success);
-  }
-  void focus_tree_leave(ElementPtr element) {
-    return system(element).focus_tree_leave(element);
-  }
+  SystemSet systems;
+  LayerManager layer_manager;
 };
 
 #define DGUI_SCOPE(gui_name) auto defer_end = gui_name.defer_end()

@@ -11,7 +11,6 @@ void GroupSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size = group.layout_state.content_fixed_size;
   state.dynamic_size = group.layout_state.content_dynamic_size;
-  state.floating = false;
   if (group.border) {
     state.fixed_size += Vec2::uniform(2 * theme->layout_border_width);
   }
@@ -28,30 +27,22 @@ void GroupSystem::set_input_state(ElementPtr element) {
   } else if (auto height = std::get_if<LengthDynamic>(&group.height)) {
     state.dynamic_size.y = std::max(state.dynamic_size.y, height->weight);
   }
-
-  state.floating = false;
 }
 
 void GroupSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& group = element.group();
 
-  group.content_box = state.box();
+  state.content_box = state.box();
   if (group.border) {
-    group.content_box.lower += Vec2::uniform(theme->layout_border_width);
-    group.content_box.upper -= Vec2::uniform(theme->layout_border_width);
+    state.content_box.shrink(theme->layout_border_width);
   }
-  state.child_mask = group.content_box;
 
-  layout_set_dependent_state(
-      element,
-      group.content_box,
-      theme,
-      group.layout,
-      group.layout_state);
+  layout_set_dependent_state(element, theme, group.layout, group.layout_state);
+  state.content_overflowed = group.layout_state.overflowed();
 }
 
-void GroupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void GroupSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& group = element.group();
 
@@ -59,19 +50,20 @@ void GroupSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
     Color bg_color = group.bg_color ? *group.bg_color : Color::Clear();
     int border_width =
         group.border ? theme->layout_border_width : theme->layout_border_width;
-    renderer.queue_box(
+    dl.draw_box(
         state.box(),
         bg_color,
         border_width,
         theme->layout_border_color);
   }
 
-  layout_render_scroll(group.content_box, group.layout_state, theme, renderer);
+  layout_render_scroll(state.content_box, group.layout_state, theme, dl);
 }
 
 bool GroupSystem::scroll_event(ElementPtr element, const ScrollEvent& event) {
+  const auto& state = element.state();
   auto& group = element.group();
-  return layout_scroll_event(group.content_box, group.layout_state, event);
+  return layout_scroll_event(state.content_box, group.layout_state, event);
 }
 
 } // namespace dgui

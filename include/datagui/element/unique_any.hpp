@@ -7,7 +7,7 @@ namespace dgui {
 class UniqueAny {
   class ValueBase {
   public:
-    virtual ~ValueBase() {}
+    virtual ~ValueBase() = default;
   };
 
   template <typename T>

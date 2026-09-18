@@ -6,18 +6,7 @@ namespace dgui {
 Mat3 Camera2d::view_mat() const {
   Rot2 R_T = Rot2(angle).mat().transpose();
   Vec2 minus_R_T_pos = R_T.mat() * (-position);
-
-  Mat3 view;
-  view(2, 2) = 1;
-  for (std::size_t i = 0; i < 2; i++) {
-    for (std::size_t j = 0; j < 2; j++) {
-      view(i, j) = R_T.mat()(i, j);
-    }
-  }
-  for (std::size_t i = 0; i < 2; i++) {
-    view(i, 2) = minus_R_T_pos(i);
-  }
-  return view;
+  return Mat3::transform(minus_R_T_pos, R_T);
 }
 
 Mat3 Camera2d::projection_mat() const {
@@ -43,25 +32,13 @@ Rot3 Camera3d::rotation() const {
   Vec3 n1 = Vec3(0, 0, 1).cross(n3);
   n1 /= n1.length();
   Vec3 n2 = n3.cross(n1);
-  return Rot3(Mat3(n1, n2, n3));
+  return Rot3(Mat3::from_cols(n1, n2, n3));
 }
 
 Mat4 Camera3d::view_mat() const {
   Mat3 R_T = rotation().mat().transpose();
   Vec3 minus_R_T_pos = R_T * (-position);
-
-  Mat4 view;
-  view(3, 3) = 1;
-  for (std::size_t i = 0; i < 3; i++) {
-    view(i, 3) = minus_R_T_pos(i);
-  }
-  for (std::size_t i = 0; i < 3; i++) {
-    for (std::size_t j = 0; j < 3; j++) {
-      view(i, j) = R_T(i, j);
-    }
-  }
-
-  return view;
+  return Mat4::transform(minus_R_T_pos, Rot3(R_T));
 }
 
 Mat4 Camera3d::projection_mat() const {

@@ -18,11 +18,14 @@ find_package(Freetype REQUIRED)
 
 add_library(datagui SHARED
   src/color.cpp
+  src/font.cpp
   src/log.cpp
   src/theme.cpp
 
   src/element/args.cpp
   src/element/key_list.cpp
+  src/element/layer_manager.cpp
+  src/element/system.cpp
   src/element/tree.cpp
 
   src/geometry/box.cpp
@@ -34,23 +37,40 @@ add_library(datagui SHARED
   src/asset/image.cpp
   src/asset/mesh.cpp
   src/asset/point_cloud.cpp
-  src/asset/uv_mesh.cpp
-
-  src/visual/color_map.cpp
-  src/visual/font_manager.cpp
-  src/visual/image_shader.cpp
-  src/visual/mesh_shader.cpp
-  src/visual/point_cloud_shader.cpp
-  src/visual/gui_renderer.cpp
-  src/visual/shader_utils.cpp
-  src/visual/shape_2d_shader.cpp
-  src/visual/shape_3d_shader.cpp
-  src/visual/text_2d_shader.cpp
-  src/visual/uv_mesh_shader.cpp
-  src/visual/window.cpp
 
   src/input/number_input.cpp
   src/input/text_selection.cpp
+
+  src/plot/heatmap_plot.cpp
+  src/plot/line_plot.cpp
+  src/plot/plot_frame.cpp
+
+  src/render/lookup/ansi_colors.cpp
+  src/render/lookup/gradient_map.cpp
+  src/render/lookup/matplotlib_colors.cpp
+
+  src/render/program/font_program.cpp
+  src/render/program/glyph_2d_program.cpp
+  src/render/program/image_2d_program.cpp
+  src/render/program/mesh_program.cpp
+  src/render/program/point_cloud_program.cpp
+  src/render/program/shape_2d_program.cpp
+  src/render/program/shape_3d_program.cpp
+
+  src/render/state/draw_list.cpp
+  src/render/state/scene_2d.cpp
+  src/render/state/scene_3d.cpp
+  src/render/state/shape_2d_instance.cpp
+  src/render/state/shape_3d_instance.cpp
+  src/render/state/shape_3d_vertex.cpp
+
+  src/render/executor.cpp
+  src/render/font_atlas.cpp
+  src/render/font_registry.cpp
+  src/render/program_registry.cpp
+  src/render/shaders.cpp
+  src/render/window.cpp
+
 
   src/system_utils/layout.cpp
 
@@ -67,15 +87,14 @@ add_library(datagui SHARED
   src/system/tabs.cpp
   src/system/text_box.cpp
   src/system/text_input.cpp
-  src/system/viewport_ptr.cpp
+  src/system/widget_ptr.cpp
 
-  src/viewport/canvas2d.cpp
-  src/viewport/canvas3d.cpp
-  src/viewport/plotter.cpp
+  src/widget/canvas2d.cpp
+  src/widget/canvas3d.cpp
+  src/widget/plotter.cpp
 
   src/gui.cpp
 
-  # src/datapack/edit.cpp
   src/datapack/common.cpp
   src/datapack/reader.cpp
   src/datapack/writer.cpp
@@ -92,14 +111,33 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   target_compile_definitions(datagui PUBLIC -DDGUI_DEBUG)
 endif()
 
+# Embed shader sources into the library at build time
+
+include(cmake/EmbedShaders.cmake)
+embed_shader(shape_2d.vert shape_2d_vs)
+embed_shader(shape_2d.frag shape_2d_fs)
+embed_shader(glyph_2d.vert glyph_2d_vs)
+embed_shader(glyph_2d.frag glyph_2d_fs)
+embed_shader(image_2d.vert image_2d_vs)
+embed_shader(image_2d.frag image_2d_fs)
+embed_shader(font.vert font_vs)
+embed_shader(font.frag font_fs)
+embed_shader(mesh.vert mesh_vs)
+embed_shader(mesh.frag mesh_fs)
+embed_shader(point_cloud.vert point_cloud_vs)
+embed_shader(point_cloud.geom point_cloud_gs)
+embed_shader(point_cloud.frag point_cloud_fs)
+embed_shader(shape_3d.vert shape_3d_vs)
+embed_shader(shape_3d.frag shape_3d_fs)
+
 # Additional targets
 
 if (NOT BUILD_ADDITIONAL_TARGETS)
     return()
 endif()
 
-add_subdirectory(examples)
 add_subdirectory(test)
+add_subdirectory(examples)
 
 # Create install target
 

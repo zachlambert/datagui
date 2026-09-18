@@ -1,11 +1,7 @@
-#include "datagui/gui.hpp"
-#include "datagui/viewport/plotter.hpp"
+#include "datagui/plot.hpp"
 #include <cmath>
 
 int main() {
-  dgui::Gui gui;
-  gui.open();
-
   std::vector<double> xs;
   std::vector<double> ys;
   for (int i = 0; i <= 1000; i++) {
@@ -14,10 +10,7 @@ int main() {
     ys.push_back(std::exp(-x) * std::cos(10 * M_PI * x));
   }
 
-  while (gui.poll()) {
-    auto& plotter = gui.plotter();
-    DGUI_SCOPE(gui);
-
+  dgui::plot([&](dgui::Plotter& plotter) {
     plotter.plot(xs, ys);
-  }
+  });
 }

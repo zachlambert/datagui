@@ -6,16 +6,17 @@
 
 namespace dgui {
 
+// Generates a list of unique keys, that are also guaranteed to be non-zero
 class KeyList {
 public:
   std::size_t append() {
-    std::size_t key = next_key++;
+    std::size_t key = make_key();
     keys.push_back(key);
     return key;
   }
 
   std::size_t insert(std::size_t pos) {
-    std::size_t key = next_key++;
+    std::size_t key = make_key();
     keys.insert(keys.begin() + pos, key);
     return key;
   }
@@ -44,8 +45,13 @@ public:
   }
 
 private:
+  std::size_t make_key() {
+    // The default hash function may return 0 for next_key_counter == 0
+    return 1 + std::hash<std::size_t>{}(next_key_counter++);
+  }
+
   std::vector<std::size_t> keys;
-  static std::size_t next_key;
+  static std::size_t next_key_counter;
 };
 
 } // namespace dgui

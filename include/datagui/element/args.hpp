@@ -193,6 +193,7 @@ public:
 private:
   void apply(ElementPtr element);
 
+  Arg<bool> hidden_ = false;
   Arg<int> num_cells_ = 1;
   ArgOpt<Color> text_color_;
   Arg<int> text_size_ = 0;

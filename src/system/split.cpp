@@ -1,14 +1,11 @@
 #include "datagui/system/split.hpp"
+#include <algorithm>
 
 namespace dgui {
 
 void SplitSystem::set_input_state(ElementPtr element) {
   auto& state = element.state();
   auto& split = element.split();
-
-  state.fixed_size = Vec2();
-  state.dynamic_size = Vec2();
-  state.floating = false;
 
   Vec2 a_fixed_size;
   Vec2 a_dynamic_size;
@@ -17,7 +14,7 @@ void SplitSystem::set_input_state(ElementPtr element) {
 
   ElementPtr first, second;
   for (auto child = element.child(); child; child = child.next()) {
-    if (child.state().float_only) {
+    if (child.state().display_mode != DisplayMode::Inline) {
       continue;
     }
     if (!first) {
@@ -38,18 +35,18 @@ void SplitSystem::set_input_state(ElementPtr element) {
     }
   }
 
-  if (split.direction == Direction::Horizontal) {
-    state.fixed_size.y =
-        a_fixed_size.y + b_fixed_size.y + theme->split_divider_width;
-    state.dynamic_size.y = std::max(a_dynamic_size.y + b_dynamic_size.y, 1.f);
+  // Since the vsplit is resizable, the content in the resizable direction
+  // must have zero fixed width and a non-zero dynamic width
+  // This is because each half needs to be resizable down to zero width anyway
 
+  if (split.direction == Direction::Horizontal) {
+    state.fixed_size.y = 0;
+    state.dynamic_size.y = 1;
     state.fixed_size.x = std::max(a_fixed_size.x, b_fixed_size.x);
     state.dynamic_size.x = std::max(a_dynamic_size.x, b_dynamic_size.x);
   } else {
-    state.fixed_size.x =
-        a_fixed_size.x + b_fixed_size.x + theme->split_divider_width;
-    state.dynamic_size.x = std::max(a_dynamic_size.x + b_dynamic_size.x, 1.f);
-
+    state.fixed_size.x = 0;
+    state.dynamic_size.x = 1;
     state.fixed_size.y = std::max(a_fixed_size.y, b_fixed_size.y);
     state.dynamic_size.y = std::max(a_dynamic_size.y, b_dynamic_size.y);
   }
@@ -72,10 +69,10 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   auto& state = element.state();
   auto& split = element.split();
 
-  state.child_mask = state.box();
+  state.content_box = state.box();
 
   auto first = element.child();
-  while (first && first.state().float_only) {
+  while (first && first.state().display_mode != DisplayMode::Inline) {
     first = first.next();
   }
   if (!first) {
@@ -83,7 +80,7 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   }
 
   auto second = first.next();
-  while (second && second.state().float_only) {
+  while (second && second.state().display_mode != DisplayMode::Inline) {
     second = second.next();
   }
 
@@ -163,11 +160,11 @@ void SplitSystem::set_dependent_state(ElementPtr element) {
   }
 }
 
-void SplitSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void SplitSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& split = element.split();
   const Color& color = split.held ? theme->split_divider_color_active
                                   : theme->split_divider_color;
-  renderer.queue_box(split.divider_box, color);
+  dl.draw_box(split.divider_box, color);
 }
 
 void SplitSystem::mouse_event(ElementPtr element, const MouseEvent& event) {

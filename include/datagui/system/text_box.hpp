@@ -1,20 +1,22 @@
 #pragma once
 
 #include "datagui/element/system.hpp"
+#include "datagui/render/font_registry.hpp"
 #include "datagui/theme.hpp"
-#include "datagui/visual/font_manager.hpp"
 
 namespace dgui {
 
 class TextBoxSystem : public System {
 public:
-  TextBoxSystem(std::shared_ptr<FontManager> fm, std::shared_ptr<Theme> theme) :
-      fm(fm), theme(theme) {}
+  TextBoxSystem(
+      std::shared_ptr<FontRegistry> font_registry,
+      std::shared_ptr<Theme> theme) :
+      font_registry(font_registry), theme(theme) {}
   void set_input_state(ElementPtr element) override;
-  void render(ConstElementPtr element, GuiRenderer& renderer) override;
+  void render(ConstElementPtr element, DrawList& dl) override;
 
 private:
-  std::shared_ptr<FontManager> fm;
+  std::shared_ptr<FontRegistry> font_registry;
   std::shared_ptr<Theme> theme;
 };
 

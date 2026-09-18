@@ -115,6 +115,7 @@ public:
   template <bool Const>
   class VarPtr_ {
     using tree_ptr_t = std::conditional_t<Const, const Tree*, Tree*>;
+
   public:
     VarPtr_ next() {
       return VarPtr_(tree, element, tree->variables[variable].next);
@@ -169,29 +170,18 @@ public:
   template <bool IsConst>
   class ElementPtr_ {
   public:
-    struct FloatCompare {
-      bool operator()(const ElementPtr_& lhs, const ElementPtr_& rhs) const {
-        return std::tie(lhs.state().float_priority, lhs.index) <
-               std::tie(rhs.state().float_priority, rhs.index);
-      }
-    };
-    friend struct FloatCompare;
-    struct HashFunc {
-      std::size_t operator()(const ElementPtr_& element) const {
-        return std::hash<int>{}(element.index) ^
-               (((std::size_t)(element.tree)) << 1);
-      }
-    };
-    friend struct HashFunc;
-
     Type type() const {
       assert(tree && index != -1);
       return tree->elements[index].type;
     }
 
+    size_t hash() const {
+      return std::hash<int>{}(index) ^ (((std::size_t)(tree)) << 1);
+    }
+
 #define PROPS_METHOD(T, name) \
   std::conditional_t<IsConst, const T&, T&> name() const { \
-    assert(tree&& index != -1); \
+    assert(tree && index != -1); \
     assert(tree->elements.contains(index)); \
     const auto& element = tree->elements[index]; \
     assert(element.type == Type::T); \
@@ -212,7 +202,7 @@ public:
     PROPS_METHOD(Tabs, tabs)
     PROPS_METHOD(TextBox, text_box)
     PROPS_METHOD(TextInput, text_input)
-    PROPS_METHOD(ViewportPtr, viewport)
+    PROPS_METHOD(WidgetPtr, widget_ptr)
 
 #undef PROPS_METHOD
 
@@ -273,13 +263,14 @@ public:
       return tree && index != -1 && tree->elements.contains(index);
     }
 
-    void create(Type type, std::size_t id = 0) {
+    void insert(Type type, std::size_t id = 0) {
       assert(tree);
       if (parent_ == -1) {
-        index = tree->create_element(parent_, -1, id, type);
+        index = tree->create_element(-1, -1, id, type);
       } else {
         assert(tree->elements.contains(parent_));
-        int prev = tree->elements[parent_].last_child;
+        int prev = index == -1 ? tree->elements[parent_].last_child
+                               : tree->elements[index].prev;
         index = tree->create_element(parent_, prev, id, type);
       }
     }
@@ -296,15 +287,20 @@ public:
 
     bool expect(Type type, std::size_t id = 0) {
       assert(tree);
-      while (index != -1 && id != tree->elements[index].id) {
-        (*this) = erase();
+      int search_index = index;
+      while (search_index != -1 && tree->elements[search_index].id != id) {
+        search_index = tree->elements[search_index].next;
       }
-      if (index == -1) {
-        create(type, id);
+      if (search_index == -1) {
+        insert(type, id);
         return true;
       }
-      if (type != tree->elements[index].type) {
+      if (type != tree->elements[search_index].type) {
         throw ElementError("Incorrect type");
+      }
+      // Else, remove up to search_index
+      while (index != search_index) {
+        (*this) = erase();
       }
       return false;
     }
@@ -423,7 +419,7 @@ private:
   VectorMap<Tabs> tabs;
   VectorMap<TextBox> text_box;
   VectorMap<TextInput> text_input;
-  VectorMap<ViewportPtr> viewport;
+  VectorMap<WidgetPtr> widget_ptr;
 };
 
 using ElementPtr = Tree::ElementPtr;

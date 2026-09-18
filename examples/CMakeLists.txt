@@ -11,6 +11,7 @@ create_example(gui extra_inputs)
 create_example(gui lists)
 create_example(gui popups)
 create_example(gui splits)
+create_example(gui component)
 
 create_example(datapack datapack)
 create_example(datapack datapack_2)

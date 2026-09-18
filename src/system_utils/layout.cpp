@@ -1,4 +1,5 @@
 #include "datagui/system_utils/layout.hpp"
+#include <algorithm>
 
 namespace dgui {
 
@@ -37,11 +38,7 @@ void layout_set_input_state(
   std::size_t i = 0;
   std::size_t j = 0;
   while (child) {
-    if (child.state().float_only) {
-      child = child.next();
-      continue;
-    }
-    if (child.state().force_hidden) {
+    if (child.state().display_mode != DisplayMode::Inline) {
       child = child.next();
       continue;
     }
@@ -148,10 +145,11 @@ void layout_set_input_state(
 
 void layout_set_dependent_state(
     ElementPtr element,
-    const Box2& content_box,
     const std::shared_ptr<Theme>& theme,
     const Layout& layout,
     LayoutState& state) {
+
+  const auto& content_box = element.state().content_box;
 
   std::vector<float> col_sizes(state.col_input_sizes.size());
   {
@@ -200,17 +198,10 @@ void layout_set_dependent_state(
   Vec2 offset;
 
   while (child) {
-    if (child.state().float_only) {
-      child.state().position = content_box.lower;
+    if (child.state().display_mode != DisplayMode::Inline) {
       child = child.next();
       continue;
     }
-    if (child.state().force_hidden) {
-      child.state().hidden = true;
-      child = child.next();
-      continue;
-    }
-    child.state().hidden = false;
 
     Vec2 cell_size;
     if (child.state().num_cells == 1) {
@@ -250,26 +241,26 @@ void layout_set_dependent_state(
     Vec2& position = child.state().position;
 
     switch (layout.x_alignment) {
-    case XAlignment::Left:
-      position.x = offset.x;
-      break;
-    case XAlignment::Center:
-      position.x = offset.x + (cell_size.x - size.x) / 2;
-      break;
-    case XAlignment::Right:
-      position.x = offset.x + (cell_size.x - size.x);
-      break;
+      case XAlignment::Left:
+        position.x = offset.x;
+        break;
+      case XAlignment::Center:
+        position.x = offset.x + (cell_size.x - size.x) / 2;
+        break;
+      case XAlignment::Right:
+        position.x = offset.x + (cell_size.x - size.x);
+        break;
     }
     switch (layout.y_alignment) {
-    case YAlignment::Top:
-      position.y = offset.y;
-      break;
-    case YAlignment::Center:
-      position.y = offset.y + (cell_size.y - size.y) / 2;
-      break;
-    case YAlignment::Bottom:
-      position.y = offset.y + (cell_size.y - size.y);
-      break;
+      case YAlignment::Top:
+        position.y = offset.y;
+        break;
+      case YAlignment::Center:
+        position.y = offset.y + (cell_size.y - size.y) / 2;
+        break;
+      case YAlignment::Bottom:
+        position.y = offset.y + (cell_size.y - size.y);
+        break;
     }
     position += origin;
 
@@ -303,7 +294,8 @@ void layout_set_dependent_state(
     child = child.next();
   }
   while (child) {
-    child.state().hidden = true;
+    // Override
+    child.state().display_mode = DisplayMode::Disabled;
     child = child.next();
   }
 
@@ -322,7 +314,7 @@ void layout_render_scroll(
     const Box2& content_box,
     const LayoutState& state,
     const std::shared_ptr<Theme>& theme,
-    GuiRenderer& renderer) {
+    DrawList& dl) {
 
   if (state.content_overrun.x > 0) {
     Vec2 origin = content_box.lower;
@@ -342,8 +334,8 @@ void layout_render_scroll(
     fg.lower.x = origin.x + location * size.x;
     fg.upper.x = origin.x + (location + ratio) * size.x;
 
-    renderer.queue_box(bg, theme->scroll_bar_bg);
-    renderer.queue_box(fg, theme->scroll_bar_fg);
+    dl.draw_box(bg, theme->scroll_bar_bg);
+    dl.draw_box(fg, theme->scroll_bar_fg);
   }
 
   if (state.content_overrun.y > 0) {
@@ -364,8 +356,8 @@ void layout_render_scroll(
     fg.lower.y = origin.y + location * size.y;
     fg.upper.y = origin.y + (location + ratio) * size.y;
 
-    renderer.queue_box(bg, theme->scroll_bar_bg);
-    renderer.queue_box(fg, theme->scroll_bar_fg);
+    dl.draw_box(bg, theme->scroll_bar_bg);
+    dl.draw_box(fg, theme->scroll_bar_fg);
   }
 }
 
@@ -373,6 +365,7 @@ bool layout_scroll_event(
     const Box2& content_box,
     LayoutState& state,
     const ScrollEvent& event) {
+
   if (!content_box.contains(event.position)) {
     return false;
   }

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "datagui/color.hpp"
-#include "datagui/geometry.hpp"
+#include "datagui/geometry/box.hpp"
+#include "datagui/geometry/vec.hpp"
 #include "datagui/input/number_input.hpp"
 #include "datagui/layout.hpp"
-#include "datagui/viewport/viewport.hpp"
+#include "datagui/widget/widget.hpp"
 #include "datagui/asset/image.hpp"
 #include <optional>
 #include <vector>
@@ -25,7 +26,7 @@ enum class Type {
   Tabs,
   TextBox,
   TextInput,
-  ViewportPtr,
+  WidgetPtr,
 };
 static constexpr std::size_t TypeCount = 14;
 
@@ -63,11 +64,10 @@ struct Collapsable {
 
   // Dependent
   Vec2 header_size;
-  Box2 content_box;
+  LayoutState layout_state;
 
   // State
   bool open = false;
-  LayoutState layout_state;
 };
 
 struct ColorPicker {
@@ -112,9 +112,6 @@ struct Group {
   bool border = false;
 
   // Dependent
-  Box2 content_box;
-
-  // State
   LayoutState layout_state;
 };
 
@@ -134,12 +131,11 @@ struct Popup {
   Box2 header_box;
   float header_text_width;
   Box2 close_button_box;
-  Box2 content_box;
+  LayoutState layout_state;
 
   // State
   bool open = false;
   bool close_button_released = false;
-  LayoutState layout_state;
 };
 
 struct Select {
@@ -147,6 +143,7 @@ struct Select {
   std::vector<std::string> choices;
 
   // Dependent
+  float max_item_width = 0.f;
   std::vector<Box2> choice_boxes;
 
   // State
@@ -222,19 +219,13 @@ struct TextBox {
   int text_size = 0;
 };
 
-struct ViewportPtr {
+struct WidgetPtr {
   // Args
-  Layout layout;
   Length width = LengthDynamic();
   Length height = LengthDynamic();
-  bool border = false;
-
-  // Dependent
-  Box2 content_box;
 
   // State
-  std::unique_ptr<Viewport> viewport;
-  LayoutState layout_state;
+  std::unique_ptr<Widget> widget;
 };
 
 } // namespace dgui

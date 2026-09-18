@@ -1,137 +1,211 @@
 #include "datagui/asset/mesh.hpp"
 #include <GL/glew.h>
-#include <vector>
+#include <cassert>
 
 namespace dgui {
 
 Mesh::Data::~Data() {
-  if (VAO > 0) {
-    glDeleteVertexArrays(1, &VAO);
-  }
-  if (VBO > 0) {
-    glDeleteBuffers(1, &VBO);
-  }
-  if (EBO > 0) {
-    glDeleteBuffers(1, &EBO);
-  }
+  // Ignores zero values
+  glDeleteVertexArrays(1, &VAO);
+  glDeleteBuffers(1, &EBO);
+  glDeleteBuffers(1, &VBO);
 }
 
 Mesh::Data::Data(Data&& other) {
   VAO = other.VAO;
-  VBO = other.VBO;
-  EBO = other.VBO;
-  index_count = other.index_count;
   other.VAO = 0;
-  other.VBO = 0;
+  EBO = other.EBO;
   other.EBO = 0;
-  other.index_count = 0;
+  VBO = other.VBO;
+  other.VBO = 0;
+  index_count = other.index_count;
+  has_color = other.has_color;
+  has_uv = other.has_uv;
+  texture = std::move(other.texture);
 }
 
 Mesh::Data& Mesh::Data::operator=(Data&& other) {
-  if (VAO > 0) {
-    glDeleteVertexArrays(1, &VAO);
-  }
-  if (VBO > 0) {
-    glDeleteBuffers(1, &VBO);
-  }
-  if (EBO > 0) {
-    glDeleteBuffers(1, &EBO);
-  }
+  glDeleteVertexArrays(1, &VAO);
+  glDeleteBuffers(1, &EBO);
+  glDeleteBuffers(1, &VBO);
+
   VAO = other.VAO;
-  VBO = other.VBO;
-  EBO = other.VBO;
-  index_count = other.index_count;
   other.VAO = 0;
-  other.VBO = 0;
+  EBO = other.EBO;
   other.EBO = 0;
-  other.index_count = 0;
+  VBO = other.VBO;
+  other.VBO = 0;
+  has_color = other.has_color;
+  has_uv = other.has_uv;
+  texture = std::move(other.texture);
+  index_count = other.index_count;
+
   return *this;
 }
 
-void Mesh::init() {
-  assert(!data);
+void Mesh::load_impl(
+    const unsigned int* indices,
+    size_t index_count,
+    const void* vertices,
+    size_t vertex_count,
+    size_t pos_offset,
+    size_t normal_offset,
+    size_t color_offset,
+    size_t uv_offset,
+    int stride) {
+  if (data) {
+    data.reset();
+  }
   data = std::make_shared<Data>();
 
-  assert(data->VAO == 0);
-  assert(data->VBO == 0);
-  assert(data->EBO == 0);
+  data->index_count = index_count;
 
   glGenVertexArrays(1, &data->VAO);
   glGenBuffers(1, &data->VBO);
   glGenBuffers(1, &data->EBO);
 
+  // Assign EBO to VAO
   glBindVertexArray(data->VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, data->VBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data->EBO);
-
-  GLuint index = 0;
-  glVertexAttribPointer(
-      index,
-      3,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)(offsetof(Vertex, position)));
-  glEnableVertexAttribArray(index);
-  index++;
-
-  glVertexAttribPointer(
-      index,
-      3,
-      GL_FLOAT,
-      GL_FALSE,
-      sizeof(Vertex),
-      (void*)(offsetof(Vertex, normal)));
-  glEnableVertexAttribArray(index);
-  index++;
-
   glBindVertexArray(0);
-}
 
-void Mesh::load_vertices(
-    const void* vertices,
-    std::size_t num_vertices,
-    std::size_t positions_offset,
-    std::size_t normals_offset,
-    std::size_t stride) {
-
-  if (!data) {
-    init();
-  }
-
-  std::vector<Vertex> gl_vertices(num_vertices);
-  for (std::size_t i = 0; i < num_vertices; i++) {
-    gl_vertices[i].position =
-        *(Vec3*)((std::uint8_t*)vertices + i * stride + positions_offset);
-    gl_vertices[i].normal =
-        *(Vec3*)((std::uint8_t*)vertices + i * stride + normals_offset);
-  }
-
-  glBindBuffer(GL_ARRAY_BUFFER, data->VBO);
-  glBufferData(
-      GL_ARRAY_BUFFER,
-      gl_vertices.size() * sizeof(Vertex),
-      gl_vertices.data(),
-      GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void Mesh::load_indices(
-    const unsigned int* const indices,
-    std::size_t num_indices) {
-  if (!data) {
-    init();
-  }
-
+  // Assign index data
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data->EBO);
   glBufferData(
       GL_ELEMENT_ARRAY_BUFFER,
-      num_indices * sizeof(unsigned int),
+      index_count * sizeof(unsigned int),
       indices,
       GL_STATIC_DRAW);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-  data->index_count = num_indices;
+  // Configure vertex array
+
+  glBindVertexArray(data->VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, data->VBO);
+  {
+    GLuint index = 0;
+
+    glVertexAttribPointer(
+        index,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        stride,
+        (void*)pos_offset);
+    glEnableVertexAttribArray(index);
+    index++;
+
+    glVertexAttribPointer(
+        index,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        stride,
+        (void*)normal_offset);
+    glEnableVertexAttribArray(index);
+    index++;
+
+    if (color_offset > 0) {
+      glVertexAttribPointer(
+          index,
+          4,
+          GL_FLOAT,
+          GL_FALSE,
+          stride,
+          (void*)color_offset);
+      glEnableVertexAttribArray(index);
+    }
+    index++;
+
+    if (uv_offset > 0) {
+      glVertexAttribPointer(
+          index,
+          2,
+          GL_FLOAT,
+          GL_FALSE,
+          stride,
+          (void*)uv_offset);
+      glEnableVertexAttribArray(index);
+    }
+    index++;
+  }
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  // Copy vertex cata
+  glBindBuffer(GL_ARRAY_BUFFER, data->VBO);
+  glBufferData(
+      GL_ARRAY_BUFFER,
+      vertex_count * stride,
+      vertices,
+      GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void Mesh::load(
+    const unsigned int* indices,
+    size_t index_count,
+    const void* vertices,
+    size_t vertex_count,
+    size_t pos_offset,
+    size_t normal_offset,
+    size_t stride) {
+  load_impl(
+      indices,
+      index_count,
+      vertices,
+      vertex_count,
+      pos_offset,
+      normal_offset,
+      0,
+      0,
+      stride);
+}
+
+void Mesh::load_colored(
+    const unsigned int* indices,
+    size_t index_count,
+    const void* vertices,
+    size_t vertex_count,
+    size_t pos_offset,
+    size_t normal_offset,
+    size_t color_offset,
+    size_t stride) {
+  load_impl(
+      indices,
+      index_count,
+      vertices,
+      vertex_count,
+      pos_offset,
+      normal_offset,
+      color_offset,
+      0,
+      stride);
+  data->has_color = true;
+}
+
+void Mesh::load_textured(
+    const unsigned int* indices,
+    size_t index_count,
+    const void* vertices,
+    size_t vertex_count,
+    size_t pos_offset,
+    size_t normal_offset,
+    size_t uv_offset,
+    size_t stride,
+    Image texture) {
+  load_impl(
+      indices,
+      index_count,
+      vertices,
+      vertex_count,
+      pos_offset,
+      normal_offset,
+      0,
+      uv_offset,
+      stride);
+  data->texture = texture;
+  data->has_uv = true;
 }
 
 } // namespace dgui

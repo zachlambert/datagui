@@ -1,0 +1,34 @@
+#pragma once
+
+#include "datagui/asset/mesh.hpp"
+#include "datagui/color.hpp"
+#include "datagui/geometry/mat.hpp"
+
+namespace dgui {
+
+class MeshProgram {
+public:
+  void init();
+  void bind();
+
+  void draw(
+      const Mat4& view,
+      const Mat4& projection,
+      const Mesh& mesh,
+      const Mat4& transform,
+      const Color& base_color = Color::White());
+
+private:
+  // Shader
+  unsigned int program_id;
+
+  // Uniforms
+  unsigned int uniform_P;
+  unsigned int uniform_V;
+  unsigned int uniform_M;
+  unsigned int uniform_mesh_color;
+  unsigned int uniform_use_texture;
+  unsigned int uniform_mesh_texture;
+};
+
+} // namespace dgui

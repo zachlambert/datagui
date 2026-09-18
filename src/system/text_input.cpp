@@ -10,14 +10,13 @@ void TextInputSystem::set_input_state(ElementPtr element) {
   Length text_length = text_input.width
                            ? *text_input.width
                            : LengthFixed(theme->text_input_default_width);
-  Vec2 text_size =
-      fm->text_size(text, theme->text_font, theme->text_size, text_length);
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+  Vec2 text_size = font.text_size(text, text_length, true);
 
   state.fixed_size =
       text_size +
       2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
-  state.dynamic_size = Vec2();
-  state.floating = 0;
 
   if (text_input.width) {
     auto dynamic = std::get_if<LengthDynamic>(&(*text_input.width));
@@ -25,26 +24,36 @@ void TextInputSystem::set_input_state(ElementPtr element) {
       state.dynamic_size.x = dynamic->weight;
     }
   }
+
+  // TODO
+  state.content_overflowed = false;
 }
 
-void TextInputSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void TextInputSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& text_input = element.text_input();
 
-  const std::string& text = state.focused ? active_text : text_input.text;
-
   Color border_color;
-  if (state.in_focus_tree) {
+  if (state.focused) {
     border_color = theme->input_color_border_focus;
   } else {
     border_color = theme->input_color_border;
   }
 
-  renderer.queue_box(
+  dl.draw_box(
       state.box(),
       theme->input_color_bg,
       theme->input_border_width,
       border_color);
+}
+
+void TextInputSystem::render_content(ConstElementPtr element, DrawList& dl) {
+  const auto& state = element.state();
+  const auto& text_input = element.text_input();
+
+  const std::string& text = state.focused ? active_text : text_input.text;
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
 
   Vec2 text_position =
       state.position +
@@ -59,29 +68,15 @@ void TextInputSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
         text,
         text_position,
         active_selection,
-        fm->font_structure(theme->text_font, theme->text_size),
+        font,
         theme->text_cursor_color,
         theme->text_highlight_color,
         theme->text_cursor_width,
         text_length,
-        renderer);
+        dl);
   }
 
-  Box2 mask;
-  mask.lower = state.position +
-               Vec2::uniform(theme->input_border_width + theme->text_padding);
-  mask.upper = state.position + state.size -
-               Vec2::uniform(theme->input_border_width + theme->text_padding);
-
-  renderer.push_mask(mask);
-  renderer.queue_text(
-      text_position,
-      text,
-      theme->text_font,
-      theme->text_size,
-      theme->text_color,
-      text_length);
-  renderer.pop_mask();
+  dl.draw_text(font, text_position, theme->text_color, text_length, text, true);
 }
 
 void TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
@@ -96,13 +91,14 @@ void TextInputSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
       state.position +
       Vec2::uniform(theme->input_border_width + theme->text_padding);
 
-  const auto& font = fm->font_structure(theme->text_font, theme->text_size);
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
   Length text_length = text_input.width
                            ? *text_input.width
                            : LengthFixed(theme->text_input_default_width);
 
   std::size_t cursor_pos =
-      find_cursor(font, active_text, text_length, event.position - text_origin);
+      font.find_cursor(active_text, text_length, event.position - text_origin);
 
   if (event.action == MouseAction::Press) {
     active_selection.reset(cursor_pos);

@@ -57,7 +57,7 @@ void edit_list_1(dgui::Gui& gui) {
       gui.text_input_v(new_desc);
     }
 
-    auto error = gui.variable<std::string>();
+    auto& error = gui.variable<std::string>();
 
     if (gui.button("Add")) {
       if (new_name.empty()) {
@@ -102,20 +102,25 @@ void edit_list_2(dgui::Gui& gui) {
       {
         DGUI_SCOPE(gui);
         std::ignore = gui.text_input("");
-        if (gui.button("Remove")) {
+
+        const bool remove = gui.button("Remove");
+        const bool insert = gui.button("Insert");
+        if (remove) {
           keys.remove(keys[i]);
+          // No change to i
+        } else if (insert) {
+          keys.insert(i + 1);
+          i++;
         } else {
           i++;
         }
       }
     }
-  }
-  gui.group();
-  {
-    DGUI_SCOPE(gui);
-    if (gui.button("Push")) {
-      keys.append();
-    };
+    if (keys.size() == 0) {
+      if (gui.button("Insert")) {
+        keys.append();
+      };
+    }
   }
 }
 

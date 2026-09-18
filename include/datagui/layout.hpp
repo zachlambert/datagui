@@ -1,6 +1,6 @@
 #pragma once
 
-#include "datagui/geometry.hpp"
+#include "datagui/geometry/vec.hpp"
 #include <variant>
 #include <vector>
 
@@ -38,18 +38,20 @@ struct Layout {
 struct InputSizes {
   float fixed = 0;
   float dynamic = 0;
-  float dynamic_y_size = 0; // row_input_sizes only
 };
 
 struct LayoutState {
   std::vector<InputSizes> row_input_sizes;
   std::vector<InputSizes> col_input_sizes;
-
   Vec2 content_fixed_size;
   Vec2 content_dynamic_size;
-  float content_dynamic_y_size;
+
   Vec2 content_overrun;
   Vec2 scroll_pos;
+
+  bool overflowed() const {
+    return content_overrun.x > 0 || content_overrun.y > 0;
+  }
 };
 
 class BoxDims {
@@ -127,19 +129,5 @@ inline BoxDims operator/(BoxDims lhs, float rhs) {
   lhs /= rhs;
   return lhs;
 }
-
-struct FloatingTypeAbsolute {
-  Vec2 size;
-  FloatingTypeAbsolute(const Vec2& size) : size(size) {}
-};
-
-struct FloatingTypeRelative {
-  Vec2 offset;
-  Vec2 size;
-  FloatingTypeRelative(const Vec2& offset, const Vec2& size) :
-      offset(offset), size(size) {}
-};
-
-using FloatingType = std::variant<FloatingTypeAbsolute, FloatingTypeRelative>;
 
 } // namespace dgui

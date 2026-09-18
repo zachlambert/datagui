@@ -1,8 +1,8 @@
 #pragma once
 
 #include "datagui/input/event.hpp"
-#include "datagui/visual/font_manager.hpp"
-#include "datagui/visual/gui_renderer.hpp"
+#include "datagui/render/font_atlas.hpp"
+#include "datagui/render/state/draw_list.hpp"
 
 namespace dgui {
 
@@ -55,18 +55,6 @@ struct TextSelection {
 
 enum class KeyValue { Backspace, LeftArrow, RightArrow, Enter };
 
-std::size_t find_cursor(
-    const FontStructure& font,
-    const std::string& text,
-    Length text_width,
-    const Vec2& point);
-
-Vec2 cursor_offset(
-    const FontStructure& font,
-    const std::string& text,
-    Length text_width,
-    std::size_t cursor);
-
 void selection_key_event(
     std::string& text,
     TextSelection& selection,
@@ -83,11 +71,11 @@ void render_selection(
     const std::string& text,
     const Vec2& origin,
     const TextSelection& selection,
-    const FontStructure& font,
+    const FontAtlas& font,
     Color cursor_color,
     Color highlight_color,
     int cursor_width,
     Length width,
-    GuiRenderer& renderer);
+    DrawList& dl);
 
 } // namespace dgui

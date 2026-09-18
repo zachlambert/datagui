@@ -8,18 +8,14 @@ void ButtonSystem::set_input_state(ElementPtr element) {
 
   state.fixed_size =
       2.f * Vec2::uniform(theme->input_border_width + theme->text_padding);
-  state.dynamic_size = Vec2();
-  state.floating = false;
 
-  Vec2 text_size = fm->text_size(
-      button.text,
-      theme->text_font,
-      theme->text_size,
-      LengthWrap());
+  const auto& font =
+      font_registry->get_font(theme->text_font, theme->text_size);
+  Vec2 text_size = font.text_size(button.text, LengthWrap());
   state.fixed_size += text_size;
 }
 
-void ButtonSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
+void ButtonSystem::render(ConstElementPtr element, DrawList& dl) {
   const auto& state = element.state();
   const auto& button = element.button();
 
@@ -33,17 +29,13 @@ void ButtonSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   }
 
   Color border_color;
-  if (state.in_focus_tree) {
+  if (state.focused) {
     border_color = theme->input_color_border_focus;
   } else {
     border_color = theme->input_color_border;
   }
 
-  renderer.queue_box(
-      state.box(),
-      bg_color,
-      theme->input_border_width,
-      border_color);
+  dl.draw_box(state.box(), bg_color, theme->input_border_width, border_color);
 
   Vec2 text_position =
       state.position +
@@ -52,13 +44,12 @@ void ButtonSystem::render(ConstElementPtr element, GuiRenderer& renderer) {
   Color text_color = button.text_color ? *button.text_color : theme->text_color;
   int text_size = button.text_size != 0 ? button.text_size : theme->text_size;
 
-  renderer.queue_text(
+  dl.draw_text(
+      font_registry->get_font(theme->text_font, text_size),
       text_position,
-      button.text,
-      theme->text_font,
-      text_size,
       text_color,
-      LengthWrap());
+      LengthWrap(),
+      button.text);
 }
 
 void ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
@@ -69,17 +60,17 @@ void ButtonSystem::mouse_event(ElementPtr element, const MouseEvent& event) {
     return;
   }
   switch (event.action) {
-  case MouseAction::Press:
-    button.down = true;
-    break;
-  case MouseAction::Release:
-    button.down = false;
-    if (state.box().contains(event.position)) {
-      button.released = true;
-    }
-    break;
-  default:
-    break;
+    case MouseAction::Press:
+      button.down = true;
+      break;
+    case MouseAction::Release:
+      button.down = false;
+      if (state.box().contains(event.position)) {
+        button.released = true;
+      }
+      break;
+    default:
+      break;
   }
 }
 
@@ -90,15 +81,15 @@ void ButtonSystem::key_event(ElementPtr element, const KeyEvent& event) {
   }
 
   switch (event.action) {
-  case KeyAction::Press:
-    button.down = true;
-    break;
-  case KeyAction::Release:
-    button.down = false;
-    button.released = true;
-    break;
-  default:
-    break;
+    case KeyAction::Press:
+      button.down = true;
+      break;
+    case KeyAction::Release:
+      button.down = false;
+      button.released = true;
+      break;
+    default:
+      break;
   }
 }
 
