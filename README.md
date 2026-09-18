@@ -9,7 +9,7 @@ Easy-to-use immediate-mode GUI with:
 
 The primary use-case is for basic debug/dev tools where you want to quickly get setup with a GUI and data visualisation.
 
-For example, my main use case it for developing robotics algorithms, which involves a mix of 3D rendering, data plotting and only basic GUI functionality.
+For example, my main use case is for developing robotics algorithms, which involves a mix of 3D rendering, data plotting and only basic GUI functionality.
 
 ## GUI features
 
@@ -60,26 +60,28 @@ See [`examples/gui/`](examples/gui/) for code.
 
 ### Automatic datatype editing
 
-Uses the [`datapack`](https://github.com/zachlambert/datapack) library, which provides a way for a type to declare it's own data structure.
+Uses the [`datapack`](https://github.com/zachlambert/datapack) library, which provides a way for a type to declare its own data structure.
 
 If a datatype already has the `datapack` functions defined, then you can create a block for editing/displaying the value with:
 
 ```c++
-// Only care about when the value has changed
-if (auto value = gui.edit<MyStruct>()) {
+// gui.edit() stores the value internally, and returns a pointer to it on the
+// frames where the GUI changed it (nullptr otherwise).
+if (const MyStruct* value = gui.edit<MyStruct>("Label")) {
   // Has been modified
   std::cout << "New value: " << *value << std::endl;
 }
 
-// External value, can also be modified externally
+// gui.edit_v() operates on your own value instead, so it can also be modified
+// externally. Returns true on the frames where the GUI changed it.
 MyStruct value;
-if (gui.edit(value)) {
+if (gui.edit_v("Label", value)) {
   // Has been modified by the GUI
   std::cout << "New value: " << value << std::endl;
 }
 
 // Or if you don't care about checking when it's modified
-gui.edit(value);
+gui.edit_v("Label", value);
 ```
 
 [`examples/datapack/datapack_basic.cpp`](examples/datapack/datapack_basic.cpp)
@@ -114,18 +116,16 @@ int main() {
   dgui::Gui gui;
   gui.open();
 
-  Shape shape;
-
   while (gui.poll()) {
     gui.args().width_expand();
     gui.group();
     DGUI_SCOPE(gui);
 
-    auto points = gui.variable<std::vector<Point>>();
-    gui.edit("Points", points);
+    auto& points = gui.variable<std::vector<Point>>();
+    gui.edit_v("Points", points);
 
-    auto shape = gui.variable<Shape>();
-    gui.edit("Shape", shape);
+    auto& shape = gui.variable<Shape>();
+    gui.edit_v("Shape", shape);
   }
   return 0;
 }
