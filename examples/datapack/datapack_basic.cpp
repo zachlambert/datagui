@@ -34,19 +34,16 @@ int main() {
   dgui::Gui gui;
   gui.open();
 
-  Shape shape;
-
-  int revisit = 0;
   while (gui.poll()) {
     gui.args().width_expand();
     gui.group();
     DGUI_SCOPE(gui);
 
-    auto points = gui.variable<std::vector<Point>>();
-    gui.edit("Points", points);
+    auto& points = gui.variable<std::vector<Point>>();
+    gui.edit_v("Points", points);
 
-    auto shape = gui.variable<Shape>();
-    gui.edit("Shape", shape);
+    auto& shape = gui.variable<Shape>();
+    gui.edit_v("Shape", shape);
   }
   return 0;
 }
