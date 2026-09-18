@@ -1,15 +1,13 @@
 #pragma once
 
-#include "datagui/widget/widget.hpp"
 #include "datagui/render/state/scene_3d.hpp"
+#include "datagui/widget/widget.hpp"
 #include <functional>
 
 namespace dgui {
 
 class Canvas3d : public Widget {
 public:
-  Canvas3d();
-
   void box(
       const Vec3& position,
       const Rot3& orientation,
@@ -80,8 +78,11 @@ public:
     scene->bg_color = color;
   }
 
-  void aspect_ratio(float aspect_ratio) {
-    aspect_ratio_ = aspect_ratio;
+  // Viewpoint the camera is reset to, on the first update and whenever the
+  // view is reset by double clicking
+  void default_viewpoint(const Vec3& from, const Vec3& to) {
+    default_viewpoint_from_ = from;
+    default_viewpoint_to_ = to;
   }
 
   void click_callback(const std::function<void(const MouseEvent&)>& callback) {
@@ -93,8 +94,11 @@ private:
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontRegistry>& font_registry) override;
   void begin() override;
+  void end() override;
 
-  Vec2 min_size() const override { return Vec2::uniform(border_width_ * 2); }
+  Vec2 min_size() const override {
+    return Vec2::uniform(border_width_ * 2);
+  }
   void set_dependent_state(const Box2& box) override;
   void render(const Box2& box, DrawList& dl) const override;
 
@@ -104,10 +108,23 @@ private:
 
   static constexpr float border_width_ = 2;
 
+  bool first_visit_ = true;
   Camera3d camera;
   std::shared_ptr<Scene3d> scene;
 
-  float aspect_ratio_ = 1;
+  // Looks at the origin from the -X, -Y direction, angled down at 30 degrees,
+  // at a distance of 10. ie: 10*cos(30)/sqrt(2) along each of -X and -Y, and
+  // 10*sin(30) up
+  static const Vec3 default_viewpoint_from_init() {
+    return Vec3(-6.1237, -6.1237, 5);
+  }
+  static Vec3 default_viewpoint_to_init() {
+    return Vec3(0, 0, 0);
+  }
+
+  Vec3 default_viewpoint_from_ = default_viewpoint_from_init();
+  Vec3 default_viewpoint_to_ = default_viewpoint_to_init();
+
   Camera3d click_camera;
   std::function<void(const MouseEvent& event)> click_callback_;
 };

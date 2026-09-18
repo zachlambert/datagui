@@ -65,6 +65,8 @@ public:
       std::size_t width = 256,
       std::size_t height = 256);
 
+  // View the camera is reset to, on the first update and whenever the view is
+  // reset by double clicking
   void default_view_position(const Vec2& position) {
     default_position_ = position;
   }
@@ -83,6 +85,7 @@ private:
       const std::shared_ptr<Theme>& theme,
       const std::shared_ptr<FontRegistry>& font_registry) override;
   void begin() override;
+  void end() override;
 
   Vec2 min_size() const override { return Vec2::uniform(border_width_ * 2); }
   void set_dependent_state(const Box2& box) override;
@@ -90,6 +93,7 @@ private:
 
   void mouse_event(const Box2& box, const MouseEvent& event) override;
   bool scroll_event(const Box2& box, const ScrollEvent& event) override;
+  void reset_camera();
 
   // Labels are queued instead of being written to the scene immediately, since
   // the scale depends on the widget size, which isn't known until
@@ -105,7 +109,8 @@ private:
   };
 
   static constexpr float border_width_ = 2;
-  Color bg_color_ = Color::Gray(0.95);
+
+  bool first_visit_ = true;
   Camera2d click_camera;
   std::optional<MouseEvent> mouse_event_;
 

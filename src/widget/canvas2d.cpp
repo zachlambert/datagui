@@ -143,6 +143,13 @@ void Canvas2d::begin() {
   default_view_width_ = 1;
 }
 
+void Canvas2d::end() {
+  if (first_visit_) {
+    reset_camera();
+    first_visit_ = false;
+  }
+}
+
 void Canvas2d::set_dependent_state(const Box2& box) {
   const float view_width = box.size_x() - border_width_ * 2;
   camera.size.x = default_view_width_ / zoom;
@@ -205,9 +212,8 @@ void Canvas2d::mouse_event(const Box2& box, const MouseEvent& event) {
 
   if (event.button == MouseButton::Right) {
     if (event.action == MouseAction::Press) {
-      if (event.mod.ctrl) {
-        camera.position = Vec2();
-        zoom = 1;
+      if (event.is_double_click) {
+        reset_camera();
       }
       click_camera = camera;
     } else {
@@ -235,6 +241,14 @@ bool Canvas2d::scroll_event(const Box2& box, const ScrollEvent& event) {
   camera.position += (position_coords - Vec2::uniform(0.5)) *
                      (change_factor - 1) * camera.size;
   return true;
+}
+
+void Canvas2d::reset_camera() {
+  camera.position = default_position_;
+  camera.angle = 0;
+  // camera.size is derived from default_view_width_ and zoom in
+  // set_dependent_state(), once the widget size is known
+  zoom = 1;
 }
 
 }; // namespace dgui

@@ -2,10 +2,6 @@
 
 namespace dgui {
 
-Canvas3d::Canvas3d() {
-  reset_camera();
-}
-
 void Canvas3d::box(
     const Vec3& position,
     const Rot3& orientation,
@@ -150,8 +146,16 @@ void Canvas3d::begin() {
   }
   scene->clear();
   scene->bg_color = Color::Gray(0.95);
-  aspect_ratio_ = 1;
   click_callback_ = {};
+  default_viewpoint_from_ = default_viewpoint_from_init();
+  default_viewpoint_to_ = default_viewpoint_to_init();
+}
+
+void Canvas3d::end() {
+  if (first_visit_) {
+    reset_camera();
+    first_visit_ = false;
+  }
 }
 
 void Canvas3d::init(
@@ -242,10 +246,13 @@ bool Canvas3d::scroll_event(const Box2& box, const ScrollEvent& event) {
 }
 
 void Canvas3d::reset_camera() {
-  camera.direction = Rot3(Euler(0, M_PI / 6, M_PI / 4)).mat() * Vec3(1, 0, 0);
-  camera.position.x = -7;
-  camera.position.y = -7;
-  camera.position.z = 5;
+  camera.position = default_viewpoint_from_;
+
+  const Vec3 delta = default_viewpoint_to_ - default_viewpoint_from_;
+  const float distance = delta.length();
+  // Fall back on looking along +X if the viewpoint is degenerate
+  camera.direction = distance > 0 ? delta / distance : Vec3::unit_x();
+
   camera.fov.x = M_PI * 70 / 180;
   camera.clipping_min = 0.001;
   camera.clipping_max = 1000;
