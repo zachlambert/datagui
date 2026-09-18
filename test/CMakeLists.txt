@@ -33,6 +33,7 @@ create_test(geometry vec)
 create_test(geometry mat)
 create_test(geometry rot)
 
+create_test_program(render window)
 create_test_program(render glyph_2d_program)
 create_test_program(render image_program)
 create_test_program(render mesh_program)

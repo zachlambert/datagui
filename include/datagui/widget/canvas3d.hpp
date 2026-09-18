@@ -1,7 +1,6 @@
 #pragma once
 
 #include "datagui/widget/widget.hpp"
-#include "datagui/asset/uv_mesh.hpp"
 #include "datagui/render/state/scene_3d.hpp"
 #include <functional>
 
@@ -63,17 +62,13 @@ public:
 
   void grid(std::size_t size, float width);
 
+  // A mesh loaded with Mesh::load_textured() is drawn with its texture, in
+  // which case color acts as a tint (use the alpha channel for opacity)
   void mesh(
       const Mesh& mesh,
       const Vec3& position,
       const Rot3& orientation,
-      const Color& color);
-
-  void uv_mesh(
-      const UvMesh& uv_mesh,
-      const Vec3& position,
-      const Rot3& orientation,
-      float opacity = 1);
+      const Color& color = Color::White());
 
   void point_cloud(
       const PointCloud& point_cloud,

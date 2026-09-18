@@ -1,3 +1,4 @@
+#pragma once
 #include "datagui/geometry/box.hpp"
 #include "datagui/geometry/camera.hpp"
 #include "datagui/geometry/mat.hpp"

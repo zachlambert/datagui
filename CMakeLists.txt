@@ -37,7 +37,6 @@ add_library(datagui SHARED
   src/asset/image.cpp
   src/asset/mesh.cpp
   src/asset/point_cloud.cpp
-  src/asset/uv_mesh.cpp
 
   src/input/number_input.cpp
   src/input/text_selection.cpp

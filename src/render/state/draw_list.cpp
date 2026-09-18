@@ -2,8 +2,6 @@
 
 namespace dgui {
 
-void DrawList::clear_mask() {}
-
 void DrawList::new_group(const Box2& mask) {
   Group group;
   group.mask = mask;

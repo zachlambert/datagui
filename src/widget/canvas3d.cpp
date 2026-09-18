@@ -131,15 +131,6 @@ void Canvas3d::mesh(
   scene->draw_mesh(mesh, position, orientation, Vec3::ones(), color);
 }
 
-void Canvas3d::uv_mesh(
-    const UvMesh& uv_mesh,
-    const Vec3& position,
-    const Rot3& orientation,
-    float opacity) {
-  // TODO: Scene3d has no textured mesh support, and there is no uv mesh
-  // program in the registry, so this can't be queued yet
-}
-
 void Canvas3d::point_cloud(
     const PointCloud& point_cloud,
     const Vec3& position,
