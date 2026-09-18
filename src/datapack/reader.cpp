@@ -1,20 +1,40 @@
 #include "datagui/datapack/reader.hpp"
 #include "datagui/datapack/common.hpp"
-#include <charconv>
 #include <datapack/encode/base64.hpp>
 
 namespace dgui {
 
+namespace {
+
+// Reads a number from the text input, following the same logic as
+// Gui::number_input, with an initial value of zero.
+// Returns true if the value changed.
 template <typename T>
-T number_from_string(const std::string& string) {
-  T value;
-  auto error =
-      std::from_chars(string.data(), string.data() + string.size(), value).ec;
-  if (error != std::errc{}) {
-    return T(0);
+bool read_number(TextInput& text_input, bool is_new, void* value) {
+  T& output = *(T*)value;
+
+  if (is_new) {
+    output = T(0);
+    text_input.text = number_to_string(output);
+    text_input.changed = false;
+    return false;
   }
-  return value;
+
+  bool changed = text_input.changed;
+  text_input.changed = false;
+
+  T number;
+  if (text_to_number(text_input.text, number)) {
+    output = number;
+    return changed;
+  }
+
+  // Not a valid number, revert to the previous value
+  text_input.text = number_to_string(output);
+  return false;
 }
+
+} // namespace
 
 void GuiReader::number(dpack::NumberType type, void* value) {
   if (in_color) {
@@ -84,34 +104,31 @@ void GuiReader::number(dpack::NumberType type, void* value) {
     return;
   }
 
-  node.expect(Type::TextInput, read_id());
+  bool is_new = node.expect(Type::TextInput, read_id());
   auto& text_input = node.text_input();
-  changed_ |= text_input.changed;
-  text_input.changed = false;
+  text_input.number_type = convert_type(type);
 
   switch (type) {
     case dpack::NumberType::I32:
-      *(std::int32_t*)value = number_from_string<std::int32_t>(text_input.text);
+      changed_ |= read_number<std::int32_t>(text_input, is_new, value);
       break;
     case dpack::NumberType::I64:
-      *(std::int64_t*)value = number_from_string<std::int64_t>(text_input.text);
+      changed_ |= read_number<std::int64_t>(text_input, is_new, value);
       break;
     case dpack::NumberType::U32:
-      *(std::uint32_t*)value =
-          number_from_string<std::uint32_t>(text_input.text);
+      changed_ |= read_number<std::uint32_t>(text_input, is_new, value);
       break;
     case dpack::NumberType::U64:
-      *(std::uint64_t*)value =
-          number_from_string<std::uint64_t>(text_input.text);
+      changed_ |= read_number<std::uint64_t>(text_input, is_new, value);
       break;
     case dpack::NumberType::U8:
-      *(std::uint8_t*)value = number_from_string<std::uint8_t>(text_input.text);
+      changed_ |= read_number<std::uint8_t>(text_input, is_new, value);
       break;
     case dpack::NumberType::F32:
-      *(float*)value = number_from_string<float>(text_input.text);
+      changed_ |= read_number<float>(text_input, is_new, value);
       break;
     case dpack::NumberType::F64:
-      *(double*)value = number_from_string<double>(text_input.text);
+      changed_ |= read_number<double>(text_input, is_new, value);
       break;
   }
 }
