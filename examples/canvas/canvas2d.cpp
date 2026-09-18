@@ -33,7 +33,7 @@ int main() {
       }
 
       if (auto event = canvas.mouse_event()) {
-        if (event->button == dgui::MouseButton::Left) {
+        if (event->button == dgui::MouseButton::Right) {
           click_1 = event->press_position;
           click_2 = event->position;
         }

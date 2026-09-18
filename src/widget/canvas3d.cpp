@@ -168,7 +168,7 @@ void Canvas3d::set_dependent_state(const Box2& box) {
 }
 
 void Canvas3d::render(const Box2& box, DrawList& dl) const {
-  dl.draw_box(box, Color::Black(), border_width_);
+  dl.draw_box(box, Color::Clear(), border_width_);
   dl.draw_scene_3d(box.from_shrink(border_width_), camera, scene);
 }
 
@@ -179,7 +179,7 @@ void Canvas3d::mouse_event(const Box2& box, const MouseEvent& event) {
   const Vec2 press_position_coords =
       remap_flip_y(event.press_position, canvas, Box2::unit_box());
 
-  if (event.button == MouseButton::Right) {
+  if (event.button == MouseButton::Left) {
     if (event.action == MouseAction::Press) {
       if (event.is_double_click) {
         reset_camera();
