@@ -203,12 +203,15 @@ void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
   select.choice = value;
   select.changed = false;
 
+  // Offset by one, so that value 0 doesn't collide with the unset id
+  std::size_t expected_id = 1 + value;
+
   node = node.next();
-  while (node && node.id() != value) {
+  while (node && node.id() != expected_id) {
     node.state().hidden = true;
     node = node.next();
   }
-  next_id_ = value;
+  next_id_ = expected_id;
   if (node) {
     node.state().hidden = false;
   }
@@ -332,69 +335,78 @@ void GuiWriter::list_begin(size_t size) {
   auto& group = node.group();
   group.layout.tight = true;
   group.layout.rows = -1;
-  group.layout.cols = 3;
+  group.layout.cols = 1;
   node = node.child();
 
   at_object_begin = true;
 }
 
 void GuiWriter::list_next() {
-  auto& list_state = list_stack.top();
-
   if (!at_object_begin) {
     node = node.next();
-    list_remove_button();
-    list_state.pos++;
-    node = node.next();
+    list_item_end();
   }
   at_object_begin = false;
 
-  list_item_label();
-  node = node.next();
+  list_item_begin();
 }
 
 void GuiWriter::list_end() {
-  auto& list_state = list_stack.top();
-
   if (!at_object_begin) {
     node = node.next();
-    list_remove_button();
-    list_state.pos++;
-    assert(list_state.pos == list_state.var->ids.size());
-    node = node.next();
+    list_item_end();
+    assert(list_stack.top().pos == list_stack.top().var->ids.size());
   }
 
-  while (node) {
-    // Skip the Label, value, remove button
-    node = node.erase().erase().erase();
-  }
+  node.expect_end();
+  node = node.parent();
   at_object_begin = false;
 
-  node = node.parent().next();
+  node = node.next();
   node.expect(Type::Button);
-  node.button().text = "Add";
+  auto& button = node.button();
+  button.text = "Add";
+  // Writing discards any pending add/remove, see list_begin()
+  button.released = false;
 
   list_stack.pop();
   assert(!node.next());
   node = node.parent();
 }
 
-void GuiWriter::list_item_label() {
+void GuiWriter::list_item_begin() {
   auto& list_state = list_stack.top();
 
-  std::uint64_t expected_id = list_state.var->ids[list_state.pos];
-  while (node && node.id() != expected_id) {
-    // Skip the Label, value, remove button
-    node = node.erase().erase().erase();
-  }
+  // The key list was resized to match the value being written in list_begin(),
+  // so this should always be in bounds
+  assert(list_state.pos < list_state.var->ids.size());
 
-  node.expect(Type::TextBox, expected_id);
-  node.text_box().text = "Item " + std::to_string(list_state.pos);
+  next_id_ = list_state.var->ids[list_state.pos];
+  // The item is a plain group, not a collapsable
+  in_composite_ = true;
+  enter_container(1, -1);
+
+  node.expect(Type::TextBox);
+  node.text_box().text = "[" + std::to_string(list_state.pos) + "]";
+
+  node = node.next();
 }
 
-void GuiWriter::list_remove_button() {
+void GuiWriter::list_item_end() {
+  auto& list_state = list_stack.top();
+
   node.expect(Type::Button);
-  node.button().text = "Remove";
+  auto& button = node.button();
+  button.text = "Remove";
+  // Writing discards any pending add/remove, see list_begin()
+  button.released = false;
+
+  node = node.next();
+  node.expect_end();
+  node = node.parent();
+
+  list_state.pos++;
+  node = node.next();
 }
 
 void GuiWriter::enter_primitive() {
