@@ -324,6 +324,10 @@ private:
   Args args_;
   SystemSet systems;
   LayerManager layer_manager;
+
+  // If the content fixed size grows beyond this, have it scroll instead of forcing
+  // the window min size to be set to a larger size
+  const Vec2 max_min_size_ = Vec2(500, 500);
 };
 
 #define DGUI_SCOPE(gui_name) auto defer_end = gui_name.defer_end()

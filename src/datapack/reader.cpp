@@ -219,12 +219,15 @@ int GuiReader::variant_begin(const std::span<const char*>& labels) {
   }
 
   int choice = select.choice;
+  // Offset by one, so that choice 0 doesn't collide with the unset id
+  std::size_t expected_id = 1 + choice;
+
   node = node.next();
-  while (node && node.id() != choice) {
+  while (node && node.id() != expected_id) {
     node.state().hidden = true;
     node = node.next();
   }
-  next_id_ = choice;
+  next_id_ = expected_id;
   if (node) {
     node.state().hidden = false;
   }
@@ -331,12 +334,17 @@ size_t GuiReader::list_begin() {
   list_stack.emplace(var.as<ListVar>());
   auto& list_state = list_stack.top();
 
+  if (list_state.var->dirty) {
+    // An item was added or removed on the previous cycle
+    changed_ = true;
+  }
+
   // Enter items group
   node.expect(Type::Group);
   auto& group = node.group();
   group.layout.tight = true;
   group.layout.rows = -1;
-  group.layout.cols = 3;
+  group.layout.cols = 1;
   node = node.child();
 
   at_object_begin = true;
@@ -344,19 +352,13 @@ size_t GuiReader::list_begin() {
 }
 
 void GuiReader::list_next() {
-  auto& list_state = list_stack.top();
-
   if (!at_object_begin) {
     node = node.next();
-    if (!list_remove_button()) {
-      list_state.pos++;
-    }
-    node = node.next();
+    list_item_end();
   }
   at_object_begin = false;
 
-  list_item_label();
-  node = node.next();
+  list_item_begin();
 }
 
 void GuiReader::list_end() {
@@ -364,22 +366,15 @@ void GuiReader::list_end() {
 
   if (!at_object_begin) {
     node = node.next();
-    if (!list_remove_button()) {
-      list_state.pos++;
-    }
+    list_item_end();
     assert(list_state.pos == list_state.var->ids.size());
-    node = node.next();
   }
 
-  while (node) {
-    // Remove has been pressed on the previous cycle, should have dirty=true
-    assert(list_state.var->dirty);
-    node = node.erase().erase().erase();
-    changed_ = true;
-  }
+  node.expect_end();
+  node = node.parent();
   at_object_begin = false;
 
-  node = node.parent().next();
+  node = node.next();
   node.expect(Type::Button);
   auto& button = node.button();
   button.text = "Add";
@@ -397,7 +392,7 @@ void GuiReader::list_end() {
   node = node.parent();
 }
 
-void GuiReader::list_item_label() {
+void GuiReader::list_item_begin() {
   auto& list_state = list_stack.top();
 
   // The value of state.var->ids.size() should inform the external datapack code
@@ -405,38 +400,41 @@ void GuiReader::list_item_label() {
   // If this isn't followed, then it will go out of bounds here
   assert(list_state.pos < list_state.var->ids.size());
 
-  std::uint64_t expected_id = list_state.var->ids[list_state.pos];
-  while (node && node.id() != expected_id) {
-    // Remove has been pressed on the previous cycle, should have dirty=true
-    assert(list_state.var->dirty);
-    // Skip the Label, value, remove button
-    node = node.erase().erase().erase();
-    changed_ = true;
-  }
-  if (!node) {
-    // Add has been pressed on the previous cycle, should have dirty=true
-    assert(list_state.var->dirty);
-    changed_ = true;
-  }
+  // Any items removed on the previous cycle are erased by expect() searching
+  // forwards for this id
+  node.expect(Type::Group, list_state.var->ids[list_state.pos]);
+  auto& group = node.group();
+  group.layout.tight = true;
+  group.layout.rows = 1;
+  group.layout.cols = 3;
+  node = node.child();
 
-  node.expect(Type::TextBox, expected_id);
-  node.text_box().text = "Item " + std::to_string(list_state.pos);
+  next_label_ = "[" + std::to_string(list_state.pos) + "]";
 }
 
-bool GuiReader::list_remove_button() {
+void GuiReader::list_item_end() {
   auto& list_state = list_stack.top();
 
   node.expect(Type::Button);
   auto& button = node.button();
   button.text = "Remove";
-  if (button.released) {
+  const bool removed = button.released;
+
+  if (removed) {
     // Set changed = true on the next poll()
     button.released = false;
     list_state.var->ids.remove(list_state.var->ids[list_state.pos]);
     list_state.current_dirty = true;
-    return true;
   }
-  return false;
+
+  node = node.next();
+  node.expect_end();
+  node = node.parent();
+
+  if (!removed) {
+    list_state.pos++;
+    node = node.next();
+  }
 }
 
 void GuiReader::enter_primitive() {

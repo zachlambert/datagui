@@ -49,8 +49,8 @@ public:
 private:
   void enter_primitive();
   void enter_container(size_t rows, size_t cols);
-  void list_item_label();
-  void list_remove_button();
+  void list_item_begin();
+  void list_item_end();
 
   std::uint64_t read_id() {
     std::int64_t id = next_id_;
@@ -58,16 +58,15 @@ private:
     return id;
   }
   std::optional<dpack::Hint> consume_hint() {
-    if (hint_) {
-      return std::move(hint_);
-    }
-    return std::nullopt;
+    // NOTE: Moving an optional doesn't reset it
+    auto hint = std::move(hint_);
+    hint_.reset();
+    return hint;
   }
   std::optional<std::string> consume_description() {
-    if (description_) {
-      return std::move(description_);
-    }
-    return std::nullopt;
+    auto description = std::move(description_);
+    description_.reset();
+    return description;
   }
 
   ElementPtr& root;
