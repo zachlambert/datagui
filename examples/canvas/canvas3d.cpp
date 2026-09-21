@@ -1,6 +1,20 @@
 #include "datagui/widget/canvas3d.hpp"
 #include "datagui/gui.hpp"
 
+struct Frame {
+  dgui::Vec3 origin;
+  dgui::Rot3 rotation;
+};
+namespace dgui {
+template <>
+struct DrawArgs<Frame> {
+  float scale = 1;
+};
+void draw(Canvas3d& canvas, const Frame& frame, const DrawArgs<Frame>& args) {
+  canvas.axes(frame.origin, frame.rotation, args.scale);
+}
+} // namespace dgui
+
 int main() {
   dgui::Gui gui;
   gui.open();
@@ -77,7 +91,7 @@ int main() {
       canvas
           .cone(Vec3(-3, -3, 0), Vec3(0, 0, 1), 1, 2, Color::Hsl(200, 1, 0.5));
 
-      canvas.axes(Vec3(-5, -5, 0), Rot3(), 2);
+      canvas.object(Frame{Vec3(-5, -5, 0), Rot3()}, {2});
 
       canvas.point_cloud(point_cloud, Vec3(), Rot3(), 0.08);
     }

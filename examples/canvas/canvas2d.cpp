@@ -1,6 +1,31 @@
 #include "datagui/widget/canvas2d.hpp"
 #include "datagui/gui.hpp"
 
+struct Circle {
+  double x;
+  double y;
+  float radius;
+};
+namespace dgui {
+template <>
+struct DrawArgs<Circle> {
+  dgui::Color color;
+  float border_width = 0;
+  dgui::Color border_color = Color::Black();
+};
+void draw(
+    Canvas2d& canvas,
+    const Circle& circle,
+    const DrawArgs<Circle>& args) {
+  canvas.circle(
+      Vec2{static_cast<float>(circle.x), static_cast<float>(circle.y)},
+      static_cast<float>(circle.radius),
+      args.color,
+      args.border_width,
+      args.border_color);
+}
+} // namespace dgui
+
 int main() {
   dgui::Gui gui;
   gui.open();
@@ -43,6 +68,7 @@ int main() {
       DGUI_SCOPE(gui);
       canvas.default_view_width(5);
       canvas.bg_color(Color::Hsl(300, 0.4, 0.8));
+      canvas.object(Circle{0.0, 0.0, 1.0}, {dgui::Color::Blue(), 0.02f, Color::White()});
       canvas.rect(Vec2(), 0, Vec2::uniform(width), color, border_size);
       canvas.label(std::to_string(width), Vec2(width / 2, width / 2));
 

@@ -1,8 +1,9 @@
 #pragma once
 
-#include "datagui/widget/widget.hpp"
-#include "datagui/render/state/scene_2d.hpp"
+#include "datagui/drawable.hpp"
 #include "datagui/render/font_registry.hpp"
+#include "datagui/render/state/scene_2d.hpp"
+#include "datagui/widget/widget.hpp"
 #include <functional>
 #include <optional>
 #include <string>
@@ -65,6 +66,11 @@ public:
       std::size_t width = 256,
       std::size_t height = 256);
 
+  template <drawable2d T>
+  void object(const T& object, const DrawArgs<T>& args) {
+    draw(*this, object, args);
+  }
+
   // View the camera is reset to, on the first update and whenever the view is
   // reset by double clicking
   void default_view_position(const Vec2& position) {
@@ -87,7 +93,9 @@ private:
   void begin() override;
   void end() override;
 
-  Vec2 min_size() const override { return Vec2::uniform(border_width_ * 2); }
+  Vec2 min_size() const override {
+    return Vec2::uniform(border_width_ * 2);
+  }
   void set_dependent_state(const Box2& box) override;
   void render(const Box2& box, DrawList& dl) const override;
 
