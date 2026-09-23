@@ -18,16 +18,16 @@ public:
   void number(dpack::NumberType type, const void* value) override;
   void boolean(bool value) override;
   void string(const char* value) override;
-  void enumerate(int value, const std::span<const char*>& labels) override;
+  void enumerate(int value, const std::span<const std::string_view>& labels) override;
   void binary(const std::span<const std::uint8_t>& data) override;
 
   void optional_begin(bool has_value) override;
   void optional_end() override;
 
-  void variant_begin(int value, const std::span<const char*>& labels) override;
+  void variant_begin(int value, const std::span<const std::string_view>& labels) override;
   void variant_end() override;
 
-  void object_begin() override;
+  void object_begin(std::string_view debug_name) override;
   void object_next(const char* key) override;
   void object_end() override;
 

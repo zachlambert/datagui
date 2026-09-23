@@ -1,6 +1,5 @@
 #include <datagui/gui.hpp>
 #include <datapack/debug.hpp>
-#include <datapack/labelled_variant.hpp>
 #include <iostream>
 #include <optional>
 
@@ -42,15 +41,12 @@ struct Foo {
 
 namespace dpack {
 
-DPACK_LABELLED_VARIANT(Shape, 2);
-DPACK_LABELLED_VARIANT_DEF(Shape) = {"point", "line"};
-
 DPACK_INLINE(Point, x, y)
 DPACK_INLINE(Line, x1, y1, x2, y2)
 DPACK_INLINE(Person, name, age)
 
 inline void read(Reader& reader, Foo& foo) {
-  reader.object_begin();
+  reader.object_begin(dpack::type_name<Foo>());
   reader.value("number", foo.number);
   reader.value("test", foo.test);
   reader.value("person", foo.person);
@@ -63,7 +59,7 @@ inline void read(Reader& reader, Foo& foo) {
   reader.object_end();
 }
 inline void write(Writer& writer, const Foo& foo) {
-  writer.object_begin();
+  writer.object_begin(dpack::type_name<Foo>());
   writer.value("number", foo.number);
   writer.value("test", foo.test);
   writer.value("person", foo.person);

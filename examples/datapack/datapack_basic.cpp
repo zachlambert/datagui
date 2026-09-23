@@ -1,6 +1,5 @@
 #include <datagui/gui.hpp>
 #include <datapack/debug.hpp>
-#include <datapack/labelled_variant.hpp>
 
 #include <datapack/std/array.hpp>
 #include <datapack/std/optional.hpp>
@@ -24,9 +23,6 @@ namespace dpack {
 
 DPACK_INLINE(Point, x, y)
 DPACK_INLINE(Circle, x, y, r)
-
-DPACK_LABELLED_VARIANT(Shape, 2);
-DPACK_LABELLED_VARIANT_DEF(Shape) = {"Point", "Circle"};
 
 } // namespace dpack
 

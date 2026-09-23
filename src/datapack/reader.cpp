@@ -151,7 +151,7 @@ const char* GuiReader::string() {
   return text_input.text.c_str();
 }
 
-int GuiReader::enumerate(const std::span<const char*>& labels) {
+int GuiReader::enumerate(const std::span<const std::string_view>& labels) {
   enter_primitive();
   node.expect(Type::Select, read_id());
   auto& select = node.select();
@@ -219,7 +219,7 @@ void GuiReader::optional_end() {
   node = node.parent();
 }
 
-int GuiReader::variant_begin(const std::span<const char*>& labels) {
+int GuiReader::variant_begin(const std::span<const std::string_view>& labels) {
   enter_container(-1, 1);
 
   bool is_new = node.expect(Type::Select, read_id());
@@ -265,7 +265,7 @@ void GuiReader::variant_end() {
   node = node.parent();
 }
 
-void GuiReader::object_begin() {
+void GuiReader::object_begin(std::string_view) {
   auto hint = consume_hint();
   auto hint_color = hint ? std::get_if<dpack::HintColor>(&*hint) : nullptr;
   if (hint_color) {

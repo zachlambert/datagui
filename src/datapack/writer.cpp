@@ -117,7 +117,9 @@ void GuiWriter::string(const char* value) {
   text_input.changed = false;
 }
 
-void GuiWriter::enumerate(int value, const std::span<const char*>& labels) {
+void GuiWriter::enumerate(
+    int value,
+    const std::span<const std::string_view>& labels) {
   enter_primitive();
   node.expect(Type::Select, read_id());
   auto& select = node.select();
@@ -179,7 +181,9 @@ void GuiWriter::optional_end() {
   node = node.parent();
 }
 
-void GuiWriter::variant_begin(int value, const std::span<const char*>& labels) {
+void GuiWriter::variant_begin(
+    int value,
+    const std::span<const std::string_view>& labels) {
   enter_container(-1, 1);
 
   node.expect(Type::Select, read_id());
@@ -219,7 +223,7 @@ void GuiWriter::variant_end() {
   node = node.parent();
 }
 
-void GuiWriter::object_begin() {
+void GuiWriter::object_begin(std::string_view) {
   auto hint = consume_hint();
   auto hint_color = hint ? std::get_if<dpack::HintColor>(&*hint) : nullptr;
   if (hint_color) {

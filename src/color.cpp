@@ -120,7 +120,7 @@ namespace dpack {
 
 DPACK_DEF_CUSTOM(dgui::Color, {
   packer.hint(HintColor());
-  packer.object_begin();
+  packer.object_begin(type_name<dgui::Color>());
   packer.value("r", value.r);
   packer.value("g", value.g);
   packer.value("b", value.b);
