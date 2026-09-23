@@ -1,5 +1,6 @@
 #pragma once
 
+#include "datagui/drawable.hpp"
 #include "datagui/render/state/scene_3d.hpp"
 #include "datagui/widget/widget.hpp"
 #include <functional>
@@ -76,6 +77,11 @@ public:
 
   void bg_color(const Color& color) {
     scene->bg_color = color;
+  }
+
+  template <drawable3d T>
+  void object(const T& object, const DrawArgs<T>& args) {
+    draw(*this, object, args);
   }
 
   // Viewpoint the camera is reset to, on the first update and whenever the
